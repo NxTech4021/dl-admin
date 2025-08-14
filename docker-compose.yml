@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: web-frontend
+    ports:
+      - "3030:3030"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - dlmobile_deuceleague  # Use the same network as dl-mobile
+
+  # nginx:
+  #   build: ./nginx
+  #   ports:
+  #     - "81:80"
+  #   restart: always
+  #   volumes:
+  #     - ./nginx:/etc/nginx/conf.d
+  #   networks:
+  #     - deuceleague
+
+networks:
+  dlmobile_deuceleague:
+    external: true  # Reference the existing network from dl-mobile
