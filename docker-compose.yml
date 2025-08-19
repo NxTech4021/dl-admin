@@ -15,7 +15,7 @@ services:
       - .:/app
       - /app/node_modules
     networks:
-      - dl-mobile_deuceleague  # Use the same network as dl-mobile
+      - dlmobile_deuceleague  # Use the same network as dl-mobile
 
   # nginx:
   #   build: ./nginx
@@ -28,6 +28,6 @@ services:
   #     - deuceleague
 
 networks:
-  dl-mobile_deuceleague:
+  dlmobile_deuceleague:
     external: true
-    name: dl-mobile_deuceleague  # Explicitly specify the external network name
+    name: dlmobile_deuceleague  # Explicitly specify the external network name
