@@ -20,6 +20,7 @@ export default function Home() {
         } as React.CSSProperties
       }
     >
+      <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
