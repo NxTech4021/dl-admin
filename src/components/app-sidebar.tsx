@@ -7,6 +7,9 @@ import {
   IconUsers,
   IconSearch,
   IconSettings,
+  IconTrophy,
+  IconCalendar,
+  IconCategory,
 } from "@tabler/icons-react"
 import Image from "next/image"
 
@@ -49,6 +52,21 @@ const data = {
       name: "Players",
       url: "/players",
       icon: IconUsers,
+    },
+    {
+      name: "League",
+      url: "/league",
+      icon: IconTrophy,
+    },
+    {
+      name: "Seasons",
+      url: "/seasons",
+      icon: IconCalendar,
+    },
+    {
+      name: "Divisions",
+      url: "/divisions",
+      icon: IconCategory,
     },
   ],
 }

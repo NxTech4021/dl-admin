@@ -8,6 +8,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 const pageMap = {
   "/dashboard": "Dashboard",
   "/players": "Players",
+  "/league": "League",
+  "/seasons": "Seasons",
+  "/divisions": "Divisions",
   "/settings": "Settings",
 } as const
 
