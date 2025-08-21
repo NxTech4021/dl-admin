@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DeuceLeague",
-  description: "DeuceLeague",
+  title: "Dashboard",
+  description: "DeuceLeague Dashboard",
+  icons: {
+    icon: "/dl-logo.svg",
+    shortcut: "/dl-logo.svg",
+    apple: "/dl-logo.svg",
+  },
 };
 
 export default function RootLayout({

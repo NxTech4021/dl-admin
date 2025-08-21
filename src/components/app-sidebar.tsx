@@ -4,11 +4,11 @@ import * as React from "react"
 import {
   IconDashboard,
   IconHelp,
-  IconInnerShadowTop,
-  IconReport,
+  IconUsers,
   IconSearch,
   IconSettings,
 } from "@tabler/icons-react"
+import Image from "next/image"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -26,14 +26,14 @@ import {
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Superadmin",
+    email: "admin@deuceleague.com",
+    avatar: "/avatars/deuceleague.jpg",
   },
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
     },
   ],
@@ -46,9 +46,9 @@ const data = {
   ],
   documents: [
     {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
+      name: "Players",
+      url: "/players",
+      icon: IconUsers,
     },
   ],
 }
@@ -64,7 +64,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
+                <Image 
+                  src="/dl-logo.svg" 
+                  alt="DeuceLeague Logo" 
+                  width={20} 
+                  height={20} 
+                  className="!size-5"
+                />
                 <span className="text-base font-semibold">DeuceLeague</span>
               </a>
             </SidebarMenuButton>

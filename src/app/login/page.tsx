@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -48,110 +49,112 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fefcf8' }}>
-      {/* Hashtag-like grid box around login card */}
+    <div className="min-h-screen flex items-center justify-center relative px-4 sm:px-6 lg:px-8">
+      {/* Background with gradient and blur */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950"
         style={{
           backgroundImage: `
-            linear-gradient(to right, transparent calc(50% - 250px), rgba(254, 159, 77, 0.3) calc(50% - 250px), rgba(254, 159, 77, 0.3) calc(50% - 248px), transparent calc(50% - 248px)),
-            linear-gradient(to right, transparent calc(50% + 250px), rgba(254, 159, 77, 0.3) calc(50% + 250px), rgba(254, 159, 77, 0.3) calc(50% + 252px), transparent calc(50% + 252px)),
-            linear-gradient(to bottom, transparent calc(50% - 250px), rgba(254, 159, 77, 0.3) calc(50% - 250px), rgba(254, 159, 77, 0.3) calc(50% - 248px), transparent calc(50% - 248px)),
-            linear-gradient(to bottom, transparent calc(50% + 250px), rgba(254, 159, 77, 0.3) calc(50% + 250px), rgba(254, 159, 77, 0.3) calc(50% + 252px), transparent calc(50% + 252px))
+            radial-gradient(circle at 25% 25%, rgba(148, 163, 184, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(100, 116, 139, 0.3) 0%, transparent 50%)
           `
         }}
       />
+      <div className="absolute inset-0 backdrop-blur-[2px]" />
       
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 1000px 700px at center, 
-              rgba(107, 114, 128, 0.3) 0%, 
-              rgba(107, 114, 128, 0.2) 20%, 
-              rgba(107, 114, 128, 0.1) 40%, 
-              rgba(107, 114, 128, 0.05) 60%, 
-              transparent 80%
-            )
-          `,
-          backgroundImage: `
-            linear-gradient(to right, transparent calc(50% - 250px), rgba(107, 114, 128, 0.2) calc(50% - 250px), rgba(107, 114, 128, 0.2) calc(50% - 248px), transparent calc(50% - 248px)),
-            linear-gradient(to right, transparent calc(50% + 250px), rgba(107, 114, 128, 0.2) calc(50% + 250px), rgba(107, 114, 128, 0.2) calc(50% + 252px), transparent calc(50% + 252px)),
-            linear-gradient(to bottom, transparent calc(50% - 250px), rgba(107, 114, 128, 0.2) calc(50% - 250px), rgba(107, 114, 128, 0.2) calc(50% - 248px), transparent calc(50% - 248px)),
-            linear-gradient(to bottom, transparent calc(50% + 250px), rgba(107, 114, 128, 0.2) calc(50% + 250px), rgba(107, 114, 128, 0.2) calc(50% + 252px), transparent calc(50% + 252px))
-          `,
-          maskImage: `radial-gradient(ellipse 1000px 700px at center, black 0%, black 60%, transparent 80%)`,
-          WebkitMaskImage: `radial-gradient(ellipse 1000px 700px at center, black 0%, black 60%, transparent 80%)`
-        }}
-      />
-      
-      {/* Login Card*/}
-      <Card className="w-full max-w-sm relative z-10 bg-white border border-gray-300 shadow-sm">
-        <CardHeader className="space-y-1 pb-4 px-6">
-          <div className="space-y-1">
-            <CardTitle className="text-2xl sm:text-3xl font-bold italic text-center tracking-tight" style={{ color: '#FE9F4D' }}>
-              DEUCE
-            </CardTitle>
-            <CardDescription className="text-center text-gray-600 text-sm">
-              Sign in to your account to continue
-            </CardDescription>
+      {/* Modern Login Card */}
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-8 space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold italic text-orange-500 tracking-tight mb-2">DEUCE</h1>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4 px-6 pb-6">
+
+          {/* Error Alert */}
           {error && (
-            <Alert variant="destructive" className="border-red-400 bg-red-50 text-red-700">
-              <AlertDescription className="text-xs sm:text-sm">{error}</AlertDescription>
-            </Alert>
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
           )}
           
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Mail size={16} className="text-gray-500" />
-                Email address
+          {/* Form */}
+          <form onSubmit={handleEmailLogin} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@deuceleague.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-300 focus:ring-orange-200 h-10 text-sm transition-all duration-300 hover:border-orange-200"
-              />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-muted-foreground group-focus-within:text-foreground transition-colors" />
+                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 h-12 text-sm bg-background/50 border-border/50 focus:border-ring focus:bg-background transition-all duration-200 rounded-xl"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Lock size={16} className="text-gray-500" />
+
+            {/* Password Field */}
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-300 focus:ring-orange-200 h-10 text-sm transition-all duration-300 hover:border-orange-200"
-              />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={18} className="text-muted-foreground group-focus-within:text-foreground transition-colors" />
+                </div>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pl-10 pr-12 h-12 text-sm bg-background/50 border-border/50 focus:border-ring focus:bg-background transition-all duration-200 rounded-xl"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-10 w-10 rounded-lg hover:bg-muted/50 transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={16} className="text-muted-foreground" />
+                  ) : (
+                    <Eye size={16} className="text-muted-foreground" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
+
+            {/* Submit Button */}
             <Button 
               type="submit" 
-              className="w-full h-10 mt-6 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] border-0" 
+              className="w-full h-12 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-lg shadow-orange-500/25 transition-all duration-200 hover:shadow-orange-500/40 hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-orange-500/25" 
               disabled={loading}
             >
               {loading ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Signing in...</span>
                 </div>
               ) : (
-                "Sign in"
+                <span>Sign in</span>
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

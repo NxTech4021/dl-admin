@@ -7,8 +7,8 @@ import {
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "DeuceLeague Dashboard",
+  title: "Players",
+  description: "DeuceLeague Players Management",
   icons: {
     icon: "/dl-logo.svg",
     shortcut: "/dl-logo.svg",
@@ -32,7 +32,7 @@ export default function Page() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col items-center justify-center min-h-[400px] py-4 md:py-6">
-              <h1 className="text-2xl font-semibold text-muted-foreground">Work in progress</h1>
+              <h1 className="text-2xl font-semibold text-muted-foreground">Work in progress...</h1>
             </div>
           </div>
         </div>
