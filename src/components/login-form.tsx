@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import axios from "axios";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,17 +33,30 @@ export function LoginForm({
     e.preventDefault();
     setLoading(true);
     setError("");
+   
+    // removed better-auth logic
+    // try {
+    //   const { data, error } = await authClient.signIn.email({ 
+    //     email,
+    //     password,
+    //   });
+    //    console.log("data", data)
+    //   if (error) {
+    //     setError(error.message || "Login failed");
+    //     return;
+    //   }
 
-    try {
-      const { data, error } = await authClient.signIn.email({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message || "Login failed");
-        return;
+      try {
+    const response = await axios.post(
+       "http://localhost:3001/api/admin/adminlogin",
+      { email, password },
+      {
+        withCredentials: true, // ensures cookies are sent/received
       }
+    );
+
+    const { data } = response;
+    console.log("Login response:", data);
 
       if (data) {
         // Redirect to dashboard on successful login

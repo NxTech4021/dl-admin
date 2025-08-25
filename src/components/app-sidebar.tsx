@@ -68,6 +68,11 @@ const data = {
       url: "/divisions",
       icon: IconCategory,
     },
+    {
+      name: "Admins",
+      url: "dashboard/admin",
+      icon: IconUsers,
+    },
   ],
 }
 
