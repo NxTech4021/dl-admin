@@ -28,8 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { authClient } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
+import { useAdminSession } from "@/hooks/use-admin-session"
 
 export function NavUser({
   user,
@@ -41,23 +40,10 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const router = useRouter()
+  const { logout } = useAdminSession()
 
   const handleLogout = async () => {
-    try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/login")
-            router.refresh()
-          },
-        },
-      })
-    } catch (error) {
-      console.error("Logout error:", error)
-      // Still redirect to login page even if there's an error
-      router.push("/login")
-    }
+    await logout()
   }
 
   return (

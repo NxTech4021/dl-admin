@@ -12,6 +12,7 @@ import {
   IconCategory,
 } from "@tabler/icons-react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -26,6 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAdminSession } from "@/hooks/use-admin-session"
 
 const data = {
   user: {
@@ -77,6 +79,27 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, loading } = useAdminSession();
+  const router = useRouter();
+
+  // Redirect to login if not authenticated and not loading
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Show loading state or return null while checking authentication
+  if (loading || !user) {
+    return null;
+  }
+
+  const userData = {
+    name: user.name,
+    email: user.email,
+    avatar: "/avatars/deuceleague.jpg", // default avatar
+  };
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -106,7 +129,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )

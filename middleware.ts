@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
 export async function middleware(request: NextRequest) {
-    // This is a lightweight check that doesn't hit the database.
-    const sessionCookie = getSessionCookie(request);
+    // Check for JWT token in cookies
+    const accessToken = request.cookies.get("accessToken")?.value;
 
     // Protected routes - add any routes you want to protect
     const protectedPaths = ['/dashboard', '/admin'];
@@ -18,13 +17,13 @@ export async function middleware(request: NextRequest) {
     );
 
     // If accessing a protected route without a session
-    if (isProtectedRoute && !sessionCookie) {
+    if (isProtectedRoute && !accessToken) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // If accessing auth routes while already logged in, redirect to home
-    if (isAuthRoute && sessionCookie && !request.nextUrl.pathname.startsWith('/api/auth')) {
-        return NextResponse.redirect(new URL("/", request.url));
+    // If accessing auth routes while already logged in, redirect to dashboard
+    if (isAuthRoute && accessToken && !request.nextUrl.pathname.startsWith('/api/auth')) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();

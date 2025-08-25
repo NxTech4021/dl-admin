@@ -63,8 +63,25 @@ export function LoginForm({
         router.push("/");
         router.refresh();
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+    } catch (err: any) {
+      // Extract error message from backend response
+      if (err.response?.data?.message) {
+        // Use the specific error message from the backend
+        const backendMessage = err.response.data.message;
+        if (backendMessage === "Invalid credentials" || backendMessage === "Email and password are required") {
+          setError("Wrong email or password");
+        } else if (backendMessage === "Sorry you do not have permission") {
+          setError("You don't have permission to access this admin panel");
+        } else {
+          setError(backendMessage);
+        }
+      } else if (err.response?.status === 400 || err.response?.status === 401 || err.response?.status === 403) {
+        setError("Wrong email or password");
+      } else if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
+        setError("Unable to connect to server. Please try again later.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
       console.error("Login error:", err);
     } finally {
       setLoading(false);
@@ -83,7 +100,7 @@ export function LoginForm({
         <CardContent>
           {/* Error Alert */}
           {error && (
-            <Alert className="mb-6">
+            <Alert variant="destructive" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
