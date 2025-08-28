@@ -327,7 +327,9 @@ export function PlayersDataTable() {
     const fetchPlayers = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${process.env.HOST_URL}/api/player/`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/`
+        );
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }

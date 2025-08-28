@@ -40,7 +40,7 @@ export function AdminRegisterForm({
     const fetchEmail = async () => {
       try {
         const res = await axios.get(
-          `${process.env.HOST_URL}/api/admin/get-invite?token=${token}`
+          `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/get-invite?token=${token}`
         );
         console.log("res", res.data);
         setEmail(res.data.email);
@@ -74,7 +74,7 @@ export function AdminRegisterForm({
 
     try {
       const res = await axios.post(
-        `${process.env.HOST_URL}/api/admin/register`,
+        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/register`,
         formData,
         { withCredentials: true }
       );

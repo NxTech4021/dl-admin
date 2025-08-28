@@ -48,7 +48,7 @@ export function LoginForm({
 
     try {
       const response = await axios.post(
-        `${process.env.HOST_URL}/api/admin/adminlogin`,
+        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/adminlogin`,
         { email, password },
         {
           withCredentials: true, // ensures cookies are sent/received

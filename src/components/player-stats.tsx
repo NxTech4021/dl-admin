@@ -19,7 +19,7 @@ export function PlayerStats() {
     const fetchStats = async () => {
       try {
         const response = await fetch(
-          `${process.env.HOST_URL}/api/player/stats`
+          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/stats`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch stats");

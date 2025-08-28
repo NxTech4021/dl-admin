@@ -37,9 +37,12 @@ export default function AdminInviteModal({
 
     try {
       // Axios call to your admin invite API
-      const res = await axios.post(`${process.env.HOST_URL}/api/admin/invite`, {
-        email,
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/invite`,
+        {
+          email,
+        }
+      );
       setSuccess(res.data.message);
 
       console.log("email", res.data);

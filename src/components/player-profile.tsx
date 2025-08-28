@@ -99,7 +99,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `${process.env.HOST_URL}/api/player/${playerId}`
+          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/${playerId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch profile");
