@@ -1,17 +1,19 @@
+const host = process.env.HOST_URL;
+
 // Proxy auth requests to your backend server
 const handler = async (request: Request) => {
   const url = new URL(request.url);
   // Replace the frontend URL with your backend URL
-  const backendUrl = `http://localhost:3001${url.pathname}${url.search}`;
-  
+  const backendUrl = `${host}${url.pathname}${url.search}`;
+
   const response = await fetch(backendUrl, {
     method: request.method,
     headers: {
-      'Content-Type': request.headers.get('Content-Type') || 'application/json',
-      'Cookie': request.headers.get('Cookie') || '',
-      'Authorization': request.headers.get('Authorization') || '',
+      "Content-Type": request.headers.get("Content-Type") || "application/json",
+      Cookie: request.headers.get("Cookie") || "",
+      Authorization: request.headers.get("Authorization") || "",
     },
-    body: request.method === 'POST' ? await request.text() : undefined,
+    body: request.method === "POST" ? await request.text() : undefined,
   });
 
   // Forward the response headers (especially cookies)

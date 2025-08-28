@@ -33,10 +33,10 @@ export function LoginForm({
     e.preventDefault();
     setLoading(true);
     setError("");
-   
+
     // removed better-auth logic
     // try {
-    //   const { data, error } = await authClient.signIn.email({ 
+    //   const { data, error } = await authClient.signIn.email({
     //     email,
     //     password,
     //   });
@@ -46,17 +46,17 @@ export function LoginForm({
     //     return;
     //   }
 
-      try {
-    const response = await axios.post(
-       "http://localhost:3001/api/admin/adminlogin",
-      { email, password },
-      {
-        withCredentials: true, // ensures cookies are sent/received
-      }
-    );
+    try {
+      const response = await axios.post(
+        `${process.env.HOST_URL}/api/admin/adminlogin`,
+        { email, password },
+        {
+          withCredentials: true, // ensures cookies are sent/received
+        }
+      );
 
-    const { data } = response;
-    console.log("Login response:", data);
+      const { data } = response;
+      console.log("Login response:", data);
 
       if (data) {
         // Redirect to dashboard on successful login
@@ -68,16 +68,26 @@ export function LoginForm({
       if (err.response?.data?.message) {
         // Use the specific error message from the backend
         const backendMessage = err.response.data.message;
-        if (backendMessage === "Invalid credentials" || backendMessage === "Email and password are required") {
+        if (
+          backendMessage === "Invalid credentials" ||
+          backendMessage === "Email and password are required"
+        ) {
           setError("Wrong email or password");
         } else if (backendMessage === "Sorry you do not have permission") {
           setError("You don't have permission to access this admin panel");
         } else {
           setError(backendMessage);
         }
-      } else if (err.response?.status === 400 || err.response?.status === 401 || err.response?.status === 403) {
+      } else if (
+        err.response?.status === 400 ||
+        err.response?.status === 401 ||
+        err.response?.status === 403
+      ) {
         setError("Wrong email or password");
-      } else if (err.code === 'ECONNREFUSED' || err.message.includes('Network Error')) {
+      } else if (
+        err.code === "ECONNREFUSED" ||
+        err.message.includes("Network Error")
+      ) {
         setError("Unable to connect to server. Please try again later.");
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -93,9 +103,7 @@ export function LoginForm({
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>
-            Login with your email and password
-          </CardDescription>
+          <CardDescription>Login with your email and password</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Error Alert */}
@@ -104,7 +112,7 @@ export function LoginForm({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
               <div className="grid gap-6">

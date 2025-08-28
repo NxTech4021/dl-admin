@@ -29,9 +29,9 @@ export function useAdminSession(): UseAdminSessionReturn {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await axios.get(
-        "http://localhost:3001/api/admin/session",
+        `${process.env.HOST_URL}/api/admin/session`,
         {
           withCredentials: true,
         }
@@ -60,7 +60,7 @@ export function useAdminSession(): UseAdminSessionReturn {
   const logout = async () => {
     try {
       await axios.post(
-        "http://localhost:3001/api/admin/logout",
+        `${process.env.HOST_URL}/api/admin/logout`,
         {},
         {
           withCredentials: true,

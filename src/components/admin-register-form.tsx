@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,13 +17,16 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff } from "lucide-react";
 
-export function AdminRegisterForm({ className, ...props }: React.ComponentProps<"div">) {
+export function AdminRegisterForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,8 +39,10 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
 
     const fetchEmail = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/admin/get-invite?token=${token}`);
-        console.log("res", res.data)
+        const res = await axios.get(
+          `${process.env.HOST_URL}/api/admin/get-invite?token=${token}`
+        );
+        console.log("res", res.data);
         setEmail(res.data.email);
       } catch (err) {
         console.error("Error fetching invite email:", err);
@@ -58,9 +62,9 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
     }
 
     if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    return;
-  }
+      setError("Passwords do not match");
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -70,7 +74,7 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
 
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/admin/register",
+        `${process.env.HOST_URL}/api/admin/register`,
         formData,
         { withCredentials: true }
       );
@@ -90,9 +94,7 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create Admin Account</CardTitle>
-          <CardDescription>
-            Fill in your details to register
-          </CardDescription>
+          <CardDescription>Fill in your details to register</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -109,18 +111,24 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
           <form onSubmit={handleRegister} className="grid gap-6">
             <div className="grid gap-3">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} disabled className="bg-gray-100" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                disabled
+                className="bg-gray-100"
+              />
             </div>
-          
-          <div className="grid gap-3">
-            <Label htmlFor="username">Username</Label>
-            <Input
+
+            <div className="grid gap-3">
+              <Label htmlFor="username">Username</Label>
+              <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-            />
+              />
             </div>
 
             <div className="grid gap-3">
@@ -151,35 +159,45 @@ export function AdminRegisterForm({ className, ...props }: React.ComponentProps<
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
                 </Button>
               </div>
             </div>
 
             <div className="grid gap-3">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                  id="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
                 />
-                 <Button
+                <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
                 </Button>
-
               </div>
-           
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

@@ -5,18 +5,26 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Mail, Loader2, XCircle, CheckCircle } from "lucide-react";
 import { CircleCheckBig } from "lucide-react";
-
 
 interface AdminInviteModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function AdminInviteModal({ isOpen, onClose }: AdminInviteModalProps) {
+export default function AdminInviteModal({
+  isOpen,
+  onClose,
+}: AdminInviteModalProps) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -27,12 +35,14 @@ export default function AdminInviteModal({ isOpen, onClose }: AdminInviteModalPr
     setError("");
     setSuccess("");
 
-     try {
+    try {
       // Axios call to your admin invite API
-      const res = await axios.post("http://localhost:3001/api/admin/invite", { email });
+      const res = await axios.post(`${process.env.HOST_URL}/api/admin/invite`, {
+        email,
+      });
       setSuccess(res.data.message);
 
-      console.log("email", res.data)
+      console.log("email", res.data);
       setEmail(""); // reset input
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
@@ -82,9 +92,15 @@ export default function AdminInviteModal({ isOpen, onClose }: AdminInviteModalPr
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button onClick={handleSendInvite} disabled={loading || !email}>
-            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "Send Invitation"}
+            {loading ? (
+              <Loader2 className="animate-spin mr-2 h-4 w-4" />
+            ) : (
+              "Send Invitation"
+            )}
           </Button>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
         </CardFooter>
       </Card>
     </div>

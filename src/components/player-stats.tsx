@@ -1,42 +1,44 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { IconUsers } from "@tabler/icons-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import * as React from "react";
+import { IconUsers } from "@tabler/icons-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PlayerStatsData {
-  total: number
-  active: number
-  inactive: number
-  verified: number
+  total: number;
+  active: number;
+  inactive: number;
+  verified: number;
 }
 
 export function PlayerStats() {
-  const [stats, setStats] = React.useState<PlayerStatsData | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [stats, setStats] = React.useState<PlayerStatsData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/player/stats")
+        const response = await fetch(
+          `${process.env.HOST_URL}/api/player/stats`
+        );
         if (!response.ok) {
-          throw new Error("Failed to fetch stats")
+          throw new Error("Failed to fetch stats");
         }
-        const result = await response.json()
-        setStats(result.data)
+        const result = await response.json();
+        setStats(result.data);
       } catch (error) {
-        console.error("Failed to fetch player stats:", error)
-        setStats({ total: 0, active: 0, inactive: 0, verified: 0 })
+        console.error("Failed to fetch player stats:", error);
+        setStats({ total: 0, active: 0, inactive: 0, verified: 0 });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchStats()
-  }, [])
+    fetchStats();
+  }, []);
 
   if (isLoading) {
-    return <StatsSkeleton />
+    return <StatsSkeleton />;
   }
 
   return (
@@ -78,13 +80,16 @@ export function PlayerStats() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 const StatsSkeleton = () => (
   <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
     {Array.from({ length: 4 }).map((_, index) => (
-      <div key={index} className="flex items-center gap-3 rounded-lg border p-4">
+      <div
+        key={index}
+        className="flex items-center gap-3 rounded-lg border p-4"
+      >
         <Skeleton className="size-9 rounded-full" />
         <div className="space-y-2">
           <Skeleton className="h-7 w-8" />
@@ -93,4 +98,4 @@ const StatsSkeleton = () => (
       </div>
     ))}
   </div>
-)
+);

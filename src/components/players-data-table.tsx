@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconDotsVertical,
   IconMail,
@@ -10,7 +10,7 @@ import {
   IconEye,
   IconEdit,
   IconTrash,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -24,20 +24,20 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from "@tanstack/react-table"
-import { z } from "zod"
+} from "@tanstack/react-table";
+import { z } from "zod";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -45,9 +45,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from "next/link"
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
 
 // Player schema based on the database structure and onboarding data
 export const playerSchema = z.object({
@@ -64,66 +64,71 @@ export const playerSchema = z.object({
   registeredDate: z.coerce.date(),
   lastLoginDate: z.coerce.date().nullable(),
   sports: z.array(z.enum(["pickleball", "tennis", "padel"])),
-  skillRatings: z.record(z.string(), z.object({
-    rating: z.number(),
-    confidence: z.string(),
-    rd: z.number(),
-  })).nullable(),
+  skillRatings: z
+    .record(
+      z.string(),
+      z.object({
+        rating: z.number(),
+        confidence: z.string(),
+        rd: z.number(),
+      })
+    )
+    .nullable(),
   status: z.enum(["active", "inactive", "suspended"]),
   completedOnboarding: z.boolean(),
-})
+});
 
-export type Player = z.infer<typeof playerSchema>
+export type Player = z.infer<typeof playerSchema>;
 
 const getInitials = (name: string) => {
   return name
     .split(" ")
     .map((n) => n[0])
     .join("")
-    .toUpperCase()
-}
+    .toUpperCase();
+};
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-MY", {
     year: "numeric",
     month: "short",
     day: "numeric",
-  })
-}
+  });
+};
 
 const getStatusBadgeVariant = (status: Player["status"]) => {
   switch (status) {
     case "active":
-      return "default"
+      return "default";
     case "inactive":
-      return "secondary"
+      return "secondary";
     case "suspended":
-      return "destructive"
+      return "destructive";
     default:
-      return "secondary"
+      return "secondary";
   }
-}
+};
 
 const getSportsDisplay = (sports: Player["sports"]) => {
   return sports.map((sport) => (
     <Badge key={sport} variant="outline" className="text-xs capitalize">
       {sport}
     </Badge>
-  ))
-}
+  ));
+};
 
 const getHighestRating = (skillRatings: Player["skillRatings"]) => {
-  if (!skillRatings) return null
-  
-  const ratings = Object.values(skillRatings)
-  if (ratings.length === 0) return null
-  
-  const highest = ratings.reduce((max, current) => 
+  if (!skillRatings) return null;
+
+  const ratings = Object.values(skillRatings);
+  if (ratings.length === 0) return null;
+
+  const highest = ratings.reduce((max, current) =>
     current.rating > max.rating ? current : max
-  )
-  
-  return highest.rating.toFixed(1)
-}
+  );
+
+  return highest.rating.toFixed(1);
+};
 
 const columns: ColumnDef<Player>[] = [
   {
@@ -156,7 +161,7 @@ const columns: ColumnDef<Player>[] = [
     accessorKey: "name",
     header: "Player",
     cell: ({ row }) => {
-      const player = row.original
+      const player = row.original;
       return (
         <div className="flex items-center gap-3">
           <Avatar className="size-8">
@@ -174,7 +179,7 @@ const columns: ColumnDef<Player>[] = [
             )}
           </div>
         </div>
-      )
+      );
     },
     enableHiding: false,
   },
@@ -182,7 +187,7 @@ const columns: ColumnDef<Player>[] = [
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => {
-      const player = row.original
+      const player = row.original;
       return (
         <div className="flex items-center gap-2">
           <IconMail className="size-4 text-muted-foreground" />
@@ -193,7 +198,7 @@ const columns: ColumnDef<Player>[] = [
             </Badge>
           )}
         </div>
-      )
+      );
     },
   },
   {
@@ -210,14 +215,14 @@ const columns: ColumnDef<Player>[] = [
     accessorKey: "gender",
     header: "Gender",
     cell: ({ row }) => {
-      const gender = row.original.gender
+      const gender = row.original.gender;
       return gender ? (
         <Badge variant="outline" className="capitalize">
           {gender}
         </Badge>
       ) : (
         <span className="text-muted-foreground">-</span>
-      )
+      );
     },
   },
   {
@@ -233,7 +238,7 @@ const columns: ColumnDef<Player>[] = [
     accessorKey: "skillRating",
     header: "Top Rating",
     cell: ({ row }) => {
-      const rating = getHighestRating(row.original.skillRatings)
+      const rating = getHighestRating(row.original.skillRatings);
       return rating ? (
         <div className="flex items-center gap-2">
           <IconTrophy className="size-4 text-muted-foreground" />
@@ -241,7 +246,7 @@ const columns: ColumnDef<Player>[] = [
         </div>
       ) : (
         <span className="text-muted-foreground">-</span>
-      )
+      );
     },
   },
   {
@@ -258,7 +263,10 @@ const columns: ColumnDef<Player>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={getStatusBadgeVariant(row.original.status)} className="capitalize">
+      <Badge
+        variant={getStatusBadgeVariant(row.original.status)}
+        className="capitalize"
+      >
         {row.original.status}
       </Badge>
     ),
@@ -266,8 +274,8 @@ const columns: ColumnDef<Player>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const player = row.original
-      
+      const player = row.original;
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -298,42 +306,44 @@ const columns: ColumnDef<Player>[] = [
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export function PlayersDataTable() {
-  const [data, setData] = React.useState<Player[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = React.useState("")
+  const [data, setData] = React.useState<Player[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   React.useEffect(() => {
     const fetchPlayers = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
-        const response = await fetch("http://localhost:3001/api/player/")
+        const response = await fetch(`${process.env.HOST_URL}/api/player/`);
         if (!response.ok) {
-          throw new Error("Network response was not ok")
+          throw new Error("Network response was not ok");
         }
-        const result = await response.json()
+        const result = await response.json();
 
-        const parsedData = z.array(playerSchema).parse(result.data)
-        setData(parsedData)
+        const parsedData = z.array(playerSchema).parse(result.data);
+        setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch players:", error)
+        console.error("Failed to fetch players:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchPlayers()
-  }, [])
-
+    fetchPlayers();
+  }, []);
 
   const table = useReactTable({
     data,
@@ -358,7 +368,7 @@ export function PlayersDataTable() {
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     globalFilterFn: "includesString",
-  })
+  });
 
   return (
     <div className="space-y-4">
@@ -394,7 +404,7 @@ export function PlayersDataTable() {
                             header.getContext()
                           )}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -464,5 +474,5 @@ export function PlayersDataTable() {
         </div>
       </div>
     </div>
-  )
+  );
 }
