@@ -47,6 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
 
 // Player schema based on the database structure and onboarding data
 export const playerSchema = z.object({
@@ -56,11 +57,12 @@ export const playerSchema = z.object({
   email: z.string().email(),
   emailVerified: z.boolean(),
   image: z.string().nullable(),
-  area: z.string(), // Location from onboarding
+  area: z.string().nullable(), // Updated to nullable to match API response
   gender: z.enum(["male", "female"]).nullable(),
-  dateOfBirth: z.date().nullable(),
-  registeredDate: z.date(),
-  lastLoginDate: z.date().nullable(),
+  // Use z.coerce.date() to automatically convert date strings from the API
+  dateOfBirth: z.coerce.date().nullable(),
+  registeredDate: z.coerce.date(),
+  lastLoginDate: z.coerce.date().nullable(),
   sports: z.array(z.enum(["pickleball", "tennis", "padel"])),
   skillRatings: z.record(z.string(), z.object({
     rating: z.number(),
@@ -72,129 +74,6 @@ export const playerSchema = z.object({
 })
 
 export type Player = z.infer<typeof playerSchema>
-
-// Mock data for demonstration
-const mockPlayers: Player[] = [
-  {
-    id: "player_1",
-    name: "Ahmad Rahman",
-    displayUsername: "ahmadrahman219",
-    email: "ahmad.rahman@email.com",
-    emailVerified: true,
-    image: null,
-    area: "Kuala Lumpur",
-    gender: "male",
-    dateOfBirth: new Date("1990-05-15"),
-    registeredDate: new Date("2024-01-15"),
-    lastLoginDate: new Date("2024-01-20"),
-    sports: ["tennis", "pickleball"],
-    skillRatings: {
-      tennis: { rating: 4.2, confidence: "High", rd: 150 },
-      pickleball: { rating: 3.8, confidence: "Medium", rd: 200 }
-    },
-    status: "active",
-    completedOnboarding: true,
-  },
-  {
-    id: "player_2",
-    name: "Sarah Lim",
-    displayUsername: "limSarah00",
-    email: "sarah.lim@email.com",
-    emailVerified: true,
-    image: null,
-    area: "Subang Jaya",
-    gender: "female",
-    dateOfBirth: new Date("1985-08-22"),
-    registeredDate: new Date("2024-01-10"),
-    lastLoginDate: new Date("2024-01-21"),
-    sports: ["padel", "tennis"],
-    skillRatings: {
-      padel: { rating: 3.5, confidence: "High", rd: 120 },
-      tennis: { rating: 4.0, confidence: "Medium", rd: 180 }
-    },
-    status: "active",
-    completedOnboarding: true,
-  },
-  {
-    id: "player_3",
-    name: "Raj Patel",
-    displayUsername: "rajpickleball",
-    email: "raj.patel@email.com",
-    emailVerified: false,
-    image: null,
-    area: "Petaling Jaya",
-    gender: "male",
-    dateOfBirth: new Date("1992-03-10"),
-    registeredDate: new Date("2024-01-18"),
-    lastLoginDate: null,
-    sports: ["pickleball"],
-    skillRatings: {
-      pickleball: { rating: 2.8, confidence: "Low", rd: 300 }
-    },
-    status: "inactive",
-    completedOnboarding: false,
-  },
-  {
-    id: "player_4",
-    name: "Michelle Tan",
-    displayUsername: "michelleTan",
-    email: "michelle.tan@email.com",
-    emailVerified: true,
-    image: null,
-    area: "Mont Kiara",
-    gender: "female",
-    dateOfBirth: new Date("1988-11-30"),
-    registeredDate: new Date("2024-01-12"),
-    lastLoginDate: new Date("2024-01-19"),
-    sports: ["tennis", "padel", "pickleball"],
-    skillRatings: {
-      tennis: { rating: 4.5, confidence: "High", rd: 100 },
-      padel: { rating: 3.9, confidence: "High", rd: 130 },
-      pickleball: { rating: 3.2, confidence: "Medium", rd: 220 }
-    },
-    status: "active",
-    completedOnboarding: true,
-  },
-  {
-    id: "player_5",
-    name: "David Wong",
-    displayUsername: "davidwong",
-    email: "david.wong@email.com",
-    emailVerified: true,
-    image: null,
-    area: "Bangsar",
-    gender: "male",
-    dateOfBirth: new Date("1995-07-08"),
-    registeredDate: new Date("2024-01-22"),
-    lastLoginDate: new Date("2024-01-22"),
-    sports: ["tennis"],
-    skillRatings: {
-      tennis: { rating: 3.1, confidence: "Medium", rd: 250 }
-    },
-    status: "active",
-    completedOnboarding: true,
-  },
-  {
-    id: "player_6",
-    name: "Priya Sharma",
-    displayUsername: "priyaS",
-    email: "priya.sharma@email.com",
-    emailVerified: true,
-    image: null,
-    area: "Ampang",
-    gender: "female",
-    dateOfBirth: new Date("1991-12-05"),
-    registeredDate: new Date("2024-01-08"),
-    lastLoginDate: new Date("2024-01-20"),
-    sports: ["pickleball", "padel"],
-    skillRatings: {
-      pickleball: { rating: 4.1, confidence: "High", rd: 140 },
-      padel: { rating: 3.7, confidence: "Medium", rd: 190 }
-    },
-    status: "active",
-    completedOnboarding: true,
-  },
-]
 
 const getInitials = (name: string) => {
   return name
@@ -402,10 +281,12 @@ const columns: ColumnDef<Player>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem>
-              <IconEye className="mr-2 size-4" />
-              View Profile
-            </DropdownMenuItem>
+            <Link href={`/players/${player.id}`}>
+              <DropdownMenuItem>
+                <IconEye className="mr-2 size-4" />
+                View Profile
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem>
               <IconEdit className="mr-2 size-4" />
               Edit Player
@@ -423,12 +304,36 @@ const columns: ColumnDef<Player>[] = [
 ]
 
 export function PlayersDataTable() {
-  const [data, setData] = React.useState(() => mockPlayers)
+  const [data, setData] = React.useState<Player[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
+
+  React.useEffect(() => {
+    const fetchPlayers = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch("http://localhost:3001/api/player/")
+        if (!response.ok) {
+          throw new Error("Network response was not ok")
+        }
+        const result = await response.json()
+
+        const parsedData = z.array(playerSchema).parse(result.data)
+        setData(parsedData)
+      } catch (error) {
+        console.error("Failed to fetch players:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPlayers()
+  }, [])
+
 
   const table = useReactTable({
     data,
@@ -495,7 +400,16 @@ export function PlayersDataTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading players...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

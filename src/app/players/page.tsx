@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react"
 import { Metadata } from "next"
+import { PlayerStats } from "@/components/player-stats"
 
 export const metadata: Metadata = {
   title: "Players",
@@ -64,44 +65,7 @@ export default function Page() {
                     </div>
                     
                     {/* Statistics */}
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                      <div className="flex items-center gap-3 rounded-lg border p-4">
-                        <div className="rounded-full bg-primary/10 p-2">
-                          <IconUsers className="size-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">6</p>
-                          <p className="text-sm text-muted-foreground">Total Players</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg border p-4">
-                        <div className="rounded-full bg-green-500/10 p-2">
-                          <div className="size-4 rounded-full bg-green-500"></div>
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">5</p>
-                          <p className="text-sm text-muted-foreground">Active</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg border p-4">
-                        <div className="rounded-full bg-yellow-500/10 p-2">
-                          <div className="size-4 rounded-full bg-yellow-500"></div>
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">1</p>
-                          <p className="text-sm text-muted-foreground">Inactive</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg border p-4">
-                        <div className="rounded-full bg-blue-500/10 p-2">
-                          <div className="size-4 rounded-full bg-blue-500"></div>
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">5</p>
-                          <p className="text-sm text-muted-foreground">Verified</p>
-                        </div>
-                      </div>
-                    </div>
+                    <PlayerStats />
                   </div>
                 </div>
               </div>
