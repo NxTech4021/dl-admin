@@ -10,6 +10,7 @@ import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react"
 import { Metadata } from "next"
 import AdminInviteModalWrapper from "@/components/wrappers/adminmodalwrapper"
 import { AdminsDataTable } from "@/components/admin-data-table"
+import axios from "axios"
 
 export const metadata: Metadata = {
   title: "Admins",
@@ -21,7 +22,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  let admins: any[] = [];
+
+  try {
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/getadmins`, {
+      withCredentials: true,
+    });
+    admins = res.data?.data?.getAllAdmins ?? [];
+
+    console.log("admins", admins)
+  } catch (err) {
+    console.error("Failed to fetch admins:", err);
+  }
+
+
   return (
     <SidebarProvider
       style={
@@ -106,8 +121,8 @@ export default function Page() {
               
               {/* Data Table */}
               <div className="flex-1">
-                {/* <PlayersDataTable /> */}
-                <AdminsDataTable />
+              
+               <AdminsDataTable data={admins} />
               </div>
             </div>
           </div>

@@ -26,6 +26,7 @@ export default function AdminInviteModal({
   onClose,
 }: AdminInviteModalProps) {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState(""); 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -36,17 +37,25 @@ export default function AdminInviteModal({
     setSuccess("");
 
     try {
-      // Axios call to your admin invite API
+
+      // username is a must for creating users in the backend 
+       const tempUsername =
+        email.split("@")[0] + Math.floor(Math.random() * 1000);
+     
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/invite`,
         {
           email,
+          name,               
+          username: tempUsername, 
         }
       );
-      setSuccess(res.data.message);
+      
 
       console.log("email", res.data);
-      setEmail(""); // reset input
+      setSuccess(res.data.message);
+      setEmail(""); // reset inputs
+      setName("");
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
     } finally {
@@ -63,6 +72,17 @@ export default function AdminInviteModal({
           <CardTitle>Invite a New Admin</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
+           <div className="grid gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Admin Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+         
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -93,8 +113,11 @@ export default function AdminInviteModal({
             </Alert>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button onClick={handleSendInvite} disabled={loading || !email}>
+             <CardFooter className="flex justify-between">
+          <Button
+            onClick={handleSendInvite}
+            disabled={loading || !email || !name}
+          >
             {loading ? (
               <Loader2 className="animate-spin mr-2 h-4 w-4" />
             ) : (
@@ -105,6 +128,7 @@ export default function AdminInviteModal({
             Close
           </Button>
         </CardFooter>
+
       </Card>
     </div>
   );
