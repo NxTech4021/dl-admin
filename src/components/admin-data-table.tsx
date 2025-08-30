@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import axios from "axios"
+import Link from "next/link"
 import {
   IconDotsVertical,
   IconMail,
@@ -176,8 +176,9 @@ const columns: ColumnDef<Admin>[] = [
       const admin = row.original
       return (
         <div className="flex items-center gap-3">
+          {/* WORK On this next week */}
           <Avatar className="size-8">
-            <AvatarImage src={admin.image || undefined} alt={admin.name} />
+            <AvatarImage src={admin.image || undefined} alt={admin.name} /> 
             <AvatarFallback className="text-xs">
               {getInitials(admin.name)}
             </AvatarFallback>
@@ -251,9 +252,13 @@ const columns: ColumnDef<Admin>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem>
+             <Link href={`/admin/view/profile/${admin.id}`}>
+             
               <IconEye className="mr-2 size-4" />
               View Profile
+             </Link>
             </DropdownMenuItem>
+
             <DropdownMenuItem>
               <IconEdit className="mr-2 size-4" />
               Edit Admin
