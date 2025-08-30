@@ -36,6 +36,10 @@ export default async function Page() {
     console.error("Failed to fetch admins:", err);
   }
 
+  //Computing the length in frontend since the numbers of Admin wont be too large 
+  const totalAdmins = admins.length;
+  const activeAdmins = admins.filter((a) => a.type === "ACTIVE").length;
+  const pendingAdmins = admins.filter((a) => a.type === "PENDING").length;
 
   return (
     <SidebarProvider
@@ -83,7 +87,7 @@ export default async function Page() {
                           <IconUsers className="size-4 text-primary" />
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">6</p>
+                          <p className="text-2xl font-bold">{totalAdmins}</p>
                           <p className="text-sm text-muted-foreground">Total Admins</p>
                         </div>
                       </div>
@@ -92,7 +96,7 @@ export default async function Page() {
                           <div className="size-4 rounded-full bg-green-500"></div>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">2</p>
+                          <p className="text-2xl font-bold">{activeAdmins}</p>
                           <p className="text-sm text-muted-foreground">Active</p>
                         </div>
                       </div>
@@ -101,7 +105,7 @@ export default async function Page() {
                           <div className="size-4 rounded-full bg-yellow-500"></div>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">4</p>
+                          <p className="text-2xl font-bold">{pendingAdmins}</p>
                           <p className="text-sm text-muted-foreground">Pending</p>
                         </div>
                       </div>

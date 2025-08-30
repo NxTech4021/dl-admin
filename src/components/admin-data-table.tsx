@@ -272,52 +272,13 @@ const columns: ColumnDef<Admin>[] = [
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
   // const [data, setData] = React.useState(() => mockAdmins)
-  const [adminData, setAdminData] = React.useState<Admin[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const [adminData, setAdminData] = React.useState<Admin[]>(data);
+  // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
-
-
-  // React.useEffect(() => {
-  //   const fetchAdmins = async () => {
-  //     try {
-  //       const response = await axios.get(
-  //         `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/getadmins`,
-  //         { withCredentials: true }
-  //       );
-
-  //       // Log the full response to debug structure
-  //       console.log("API response:", response.data);
-
-  //       const admins = response.data?.data?.getAllAdmins ?? [];
-  //       console.log("admins", admins);
-
-  //      const allAdmins = admins.map((a: any) => ({
-  //       id: a.user?.id ?? a.id,
-  //       name: a.user?.name ?? a.name ?? "",
-  //       email: a.user?.email ?? a.email ?? "",
-  //       role: a.user?.role ?? a.role,
-  //       status: a.status,
-  //       createdAt: a.user?.createdAt ?? a.createdAt,
-  //       updatedAt: a.user?.updatedAt ?? a.updatedAt,
-  //       expiresAt: a.expiresAt,
-  //       type: a.user ? "ACTIVE" : "PENDING",
-  //     }));
-
-  //       console.log("Mapped admins:", allAdmins);
-  //       setAdminData(allAdmins);
-  //     } catch (err: any) {
-  //       console.error("Fetch admins error:", err);
-  //     } finally {
-  //       setLoading(false); // Important: stop loading even on error
-  //     }
-  //   };
-
-  //   fetchAdmins();
-  // }, []);
 
   const table = useReactTable({
     data: adminData, 
@@ -342,9 +303,9 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   })
 
   
-  if (loading) {
-    return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
-  }
+  // if (loading) {
+  //   return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
+  // }
 
   return (
     <div className="space-y-4">
