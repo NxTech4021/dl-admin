@@ -16,7 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2Icon } from "lucide-react";
+import { toast } from "sonner";
 
 export function LoginForm({
   className,
@@ -27,75 +28,83 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    // setError("");
 
-    // removed better-auth logic
-    // try {
-    //   const { data, error } = await authClient.signIn.email({
-    //     email,
-    //     password,
-    //   });
-    //    console.log("data", data)
-    //   if (error) {
-    //     setError(error.message || "Login failed");
-    //     return;
-    //   }
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password,
+      callbackURL: "http://localhost/",
+    });
 
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/adminlogin`,
-        { email, password },
-        {
-          withCredentials: true, // ensures cookies are sent/received
-        }
-      );
-
-      const { data } = response;
-      console.log("Login response:", data);
-
-      if (data) {
-        // Redirect to dashboard on successful login
-        router.push("/");
-        router.refresh();
-      }
-    } catch (err: any) {
-      // Extract error message from backend response
-      if (err.response?.data?.message) {
-        // Use the specific error message from the backend
-        const backendMessage = err.response.data.message;
-        if (
-          backendMessage === "Invalid credentials" ||
-          backendMessage === "Email and password are required"
-        ) {
-          setError("Wrong email or password");
-        } else if (backendMessage === "Sorry you do not have permission") {
-          setError("You don't have permission to access this admin panel");
-        } else {
-          setError(backendMessage);
-        }
-      } else if (
-        err.response?.status === 400 ||
-        err.response?.status === 401 ||
-        err.response?.status === 403
-      ) {
-        setError("Wrong email or password");
-      } else if (
-        err.code === "ECONNREFUSED" ||
-        err.message.includes("Network Error")
-      ) {
-        setError("Unable to connect to server. Please try again later.");
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-      console.error("Login error:", err);
-    } finally {
+    if (error) {
+      toast.error(error.message);
       setLoading(false);
+      return;
     }
+
+    console.log("SUCCESS BETTER AUTH", data);
+    setLoading(false);
+
+    // if (error) {
+    //   toast.error("Error login");
+    //   return;
+    //   console.log("ERROR BETTER AUTH", error);
+    // }
+
+    // try {
+    //   const response = await axios.post(
+    //     `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/adminlogin`,
+    //     { email, password },
+    //     {
+    //       withCredentials: true, // ensures cookies are sent/received
+    //     }
+    //   );
+
+    //   const { data } = response;
+    //   console.log("Login response:", data);
+
+    //   if (data) {
+    //     // Redirect to dashboard on successful login
+    //     router.push("/");
+    //     router.refresh();
+    //   }
+    // } catch (err: any) {
+    //   // Extract error message from backend response
+    //   if (err.response?.data?.message) {
+    //     // Use the specific error message from the backend
+    //     const backendMessage = err.response.data.message;
+    //     if (
+    //       backendMessage === "Invalid credentials" ||
+    //       backendMessage === "Email and password are required"
+    //     ) {
+    //       setError("Wrong email or password");
+    //     } else if (backendMessage === "Sorry you do not have permission") {
+    //       setError("You don't have permission to access this admin panel");
+    //     } else {
+    //       setError(backendMessage);
+    //     }
+    //   } else if (
+    //     err.response?.status === 400 ||
+    //     err.response?.status === 401 ||
+    //     err.response?.status === 403
+    //   ) {
+    //     setError("Wrong email or password");
+    //   } else if (
+    //     err.code === "ECONNREFUSED" ||
+    //     err.message.includes("Network Error")
+    //   ) {
+    //     setError("Unable to connect to server. Please try again later.");
+    //   } else {
+    //     setError("An unexpected error occurred. Please try again.");
+    //   }
+    //   console.error("Login error:", err);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   return (
@@ -125,6 +134,8 @@ export function LoginForm({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    placeholder="Enter your email"
+                    className="focus-visible:ring-3 focus-visible:ring-[#FF690090] focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="grid gap-3">
@@ -144,6 +155,8 @@ export function LoginForm({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      placeholder="Enter your password"
+                      className="focus-visible:ring-3 focus-visible:ring-[#FF691090] focus-visible:ring-offset-0"
                     />
                     <Button
                       type="button"
@@ -164,11 +177,31 @@ export function LoginForm({
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Login"}
+                  {loading ? <Loader2Icon className="animate-spin" /> : "Login"}
                 </Button>
               </div>
             </div>
           </form>
+          {/* <Button
+            className="w-full mt-3"
+            onClick={async () => {
+              const { data, error } = await authClient.signUp.email({
+                name: "Afiq",
+                email: "afiqnrzm@hotmail.com",
+                password: "Afiq7203",
+                username: "apikol",
+                displayUsername: "apikol",
+              });
+
+              console.log(data);
+
+              if (error) {
+                console.log("BETTER AUTH ERROR SIGNUP", error);
+              }
+            }}
+          >
+            {"Register"}
+          </Button> */}
         </CardContent>
       </Card>
     </div>

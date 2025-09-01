@@ -1,23 +1,21 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconDashboard,
-  IconHelp,
   IconUsers,
-  IconSearch,
   IconSettings,
   IconTrophy,
   IconCalendar,
   IconCategory,
-} from "@tabler/icons-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
+} from "@tabler/icons-react";
+import Image from "next/image";
+import { redirect } from "next/navigation";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -26,8 +24,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { useAdminSession } from "@/hooks/use-admin-session"
+} from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth-client";
 
 const data = {
   user: {
@@ -72,33 +70,18 @@ const data = {
     },
     {
       name: "Admins",
-      url: "dashboard/admin",
+      url: "dashboard/admin",
       icon: IconUsers,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, loading } = useAdminSession();
-  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
 
-  // Redirect to login if not authenticated and not loading
-  React.useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
+  if (isPending) return <div>Loading...</div>;
 
-  // Show loading state or return null while checking authentication
-  if (loading || !user) {
-    return null;
-  }
-
-  const userData = {
-    name: user.name,
-    email: user.email,
-    avatar: "/avatars/deuceleague.jpg", // default avatar
-  };
+  if (!session) return redirect("/login");
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -110,11 +93,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <Image 
-                  src="/dl-logo.svg" 
-                  alt="DeuceLeague Logo" 
-                  width={20} 
-                  height={20} 
+                <Image
+                  src="/dl-logo.svg"
+                  alt="DeuceLeague Logo"
+                  width={20}
+                  height={20}
                   className="!size-5"
                 />
                 <span className="text-base font-semibold">DeuceLeague</span>
@@ -129,8 +112,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userData} />
+        <NavUser user={session.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
