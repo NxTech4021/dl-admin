@@ -37,7 +37,7 @@ export function LoginForm({
     const { data, error } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: "http://localhost/",
+      callbackURL: "http://localhost:82/",
     });
 
     if (error) {

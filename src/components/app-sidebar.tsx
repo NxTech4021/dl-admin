@@ -70,7 +70,7 @@ const data = {
     },
     {
       name: "Admins",
-      url: "dashboard/admin",
+      url: "/admin",
       icon: IconUsers,
     },
   ],
