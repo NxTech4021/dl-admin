@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import {
   IconDotsVertical,
   IconMail,
@@ -46,73 +47,80 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 // Admin schema
 export const adminSchema = z.object({
   id: z.string(),
-  name: z.string(),
   email: z.string().email(),
-  emailVerified: z.boolean(),
-  image: z.string().nullable(),
-  status: z.enum(["active", "inactive",  "pending", "suspended"]),
-  roles: z.array(z.enum(["admin", "super admin", "creator"])), // adjust roles as needed
+  name: z.string().optional(),     // only for registered
+  role: z.string().optional(),     // only for registered
+  status: z.string().optional(),   // only for pending
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  expiresAt: z.string().optional(),
+  type: z.enum(["ACTIVE", "PENDING", "SUSPENDED"]), 
 })
+
+
+type AdminsDataTableProps = {
+  data: Admin[];
+};
 
 export type Admin = z.infer<typeof adminSchema>
 
 // Mock data
-const mockAdmins: Admin[] = [
-  {
-    id: "admin_1",
-    name: "Alice Johnson",
-    email: "alice.johnson@deuceleague.com",
-    emailVerified: true,
-    image: null,
-    status: "active",
-    roles: ["admin"],
-  },
-  {
-    id: "admin_2",
-    name: "Brian Lee",
-    email: "brian.lee@deuceleague.com",
-    emailVerified: false,
-    image: null,
-    status: "pending",
-    roles: ["admin"],
-  },
-  {
-    id: "admin_3",
-    name: "Carla Smith",
-    email: "carla.smith@deuceleague.com",
-    emailVerified: true,
-    image: null,
-    status: "pending",
-    roles: ["admin"],
-  },
-    {
-    id: "admin_4",
-    name: "Johnson",
-    email: "johnson@deuceleague.com",
-    emailVerified: true,
-    image: null,
-    status: "active",
-    roles: ["admin"],
-  },
-  {
-    id: "admin_5",
-    name: "Brian Adams",
-    email: "brian.adams@deuceleague.com",
-    emailVerified: false,
-    image: null,
-    status: "pending",
-    roles: ["admin"],
-  },
-  {
-    id: "admin_6",
-    name: "James Smith",
-    email: "james.smith@deuceleague.com",
-    emailVerified: true,
-    image: null,
-    status: "pending",
-    roles: ["admin"],
-  },
-]
+// const mockAdmins: Admin[] = [
+//   {
+//     id: "admin_1",
+//     name: "Alice Johnson",
+//     email: "alice.johnson@deuceleague.com",
+//     emailVerified: true,
+//     image: null,
+//     status: "active",
+//     roles: ["admin"],
+//   },
+//   {
+//     id: "admin_2",
+//     name: "Brian Lee",
+//     email: "brian.lee@deuceleague.com",
+//     emailVerified: false,
+//     image: null,
+//     status: "pending",
+//     roles: ["admin"],
+//   },
+//   {
+//     id: "admin_3",
+//     name: "Carla Smith",
+//     email: "carla.smith@deuceleague.com",
+//     emailVerified: true,
+//     image: null,
+//     status: "pending",
+//     roles: ["admin"],
+//   },
+//     {
+//     id: "admin_4",
+//     name: "Johnson",
+//     email: "johnson@deuceleague.com",
+//     emailVerified: true,
+//     image: null,
+//     status: "active",
+//     roles: ["admin"],
+//   },
+//   {
+//     id: "admin_5",
+//     name: "Brian Adams",
+//     email: "brian.adams@deuceleague.com",
+//     emailVerified: false,
+//     image: null,
+//     status: "pending",
+//     roles: ["admin"],
+//   },
+//   {
+//     id: "admin_6",
+//     name: "James Smith",
+//     email: "james.smith@deuceleague.com",
+//     emailVerified: true,
+//     image: null,
+//     status: "pending",
+//     roles: ["admin"],
+//   },
+// ]
 
 const getInitials = (name: string) =>
   name
@@ -168,8 +176,9 @@ const columns: ColumnDef<Admin>[] = [
       const admin = row.original
       return (
         <div className="flex items-center gap-3">
+          {/* WORK On this next week */}
           <Avatar className="size-8">
-            <AvatarImage src={admin.image || undefined} alt={admin.name} />
+            <AvatarImage src={admin.image || undefined} alt={admin.name} /> 
             <AvatarFallback className="text-xs">
               {getInitials(admin.name)}
             </AvatarFallback>
@@ -210,19 +219,20 @@ const columns: ColumnDef<Admin>[] = [
       </Badge>
     ),
   },
-  {
-    accessorKey: "roles",
-    header: "Roles",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {row.original.roles.map((role) => (
-          <Badge key={role} variant="outline" className="capitalize text-xs">
-            {role}
-          </Badge>
-        ))}
-      </div>
-    ),
+{
+  accessorKey: "role",
+  header: "Role",
+  cell: ({ row }) => {
+    const role = row.original.role 
+    return role ? (
+      <Badge variant="outline" className="capitalize text-xs">
+        {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
+      </Badge>
+    ) : (
+      <span className="text-muted-foreground text-xs italic">Pending</span>
+    )
   },
+},
   {
     id: "actions",
     cell: ({ row }) => {
@@ -242,18 +252,22 @@ const columns: ColumnDef<Admin>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem>
+             <Link href={`/admin/view/profile/${admin.id}`}>
+             
               <IconEye className="mr-2 size-4" />
               View Profile
+             </Link>
             </DropdownMenuItem>
+
             <DropdownMenuItem>
               <IconEdit className="mr-2 size-4" />
               Edit Admin
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            {/* <DropdownMenuSeparator /> */}
+            {/* <DropdownMenuItem variant="destructive">
               <IconTrash className="mr-2 size-4" />
               Delete Admin
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -261,8 +275,10 @@ const columns: ColumnDef<Admin>[] = [
   },
 ]
 
-export function AdminsDataTable() {
-  const [data, setData] = React.useState(() => mockAdmins)
+export function AdminsDataTable({ data }: AdminsDataTableProps) {
+  // const [data, setData] = React.useState(() => mockAdmins)
+  const [adminData, setAdminData] = React.useState<Admin[]>(data);
+  // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -270,7 +286,7 @@ export function AdminsDataTable() {
   const [globalFilter, setGlobalFilter] = React.useState("")
 
   const table = useReactTable({
-    data,
+    data: adminData, 
     columns,
     state: {
       sorting,
@@ -290,6 +306,11 @@ export function AdminsDataTable() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
+
+  
+  // if (loading) {
+  //   return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
+  // }
 
   return (
     <div className="space-y-4">

@@ -10,6 +10,7 @@ import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react"
 import { Metadata } from "next"
 import AdminInviteModalWrapper from "@/components/wrappers/adminmodalwrapper"
 import { AdminsDataTable } from "@/components/admin-data-table"
+import axios from "axios"
 
 export const metadata: Metadata = {
   title: "Admins",
@@ -21,7 +22,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  let admins: any[] = [];
+
+  try {
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/getadmins`, {
+      withCredentials: true,
+    });
+    admins = res.data?.data?.getAllAdmins ?? [];
+
+    console.log("admins", admins)
+  } catch (err) {
+    console.error("Failed to fetch admins:", err);
+  }
+
+  //Computing the length in frontend since the numbers of Admin wont be too large 
+  const totalAdmins = admins.length;
+  const activeAdmins = admins.filter((a) => a.type === "ACTIVE").length;
+  const pendingAdmins = admins.filter((a) => a.type === "PENDING").length;
+
   return (
     <SidebarProvider
       style={
@@ -68,7 +87,7 @@ export default function Page() {
                           <IconUsers className="size-4 text-primary" />
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">6</p>
+                          <p className="text-2xl font-bold">{totalAdmins}</p>
                           <p className="text-sm text-muted-foreground">Total Admins</p>
                         </div>
                       </div>
@@ -77,7 +96,7 @@ export default function Page() {
                           <div className="size-4 rounded-full bg-green-500"></div>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">2</p>
+                          <p className="text-2xl font-bold">{activeAdmins}</p>
                           <p className="text-sm text-muted-foreground">Active</p>
                         </div>
                       </div>
@@ -86,7 +105,7 @@ export default function Page() {
                           <div className="size-4 rounded-full bg-yellow-500"></div>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold">4</p>
+                          <p className="text-2xl font-bold">{pendingAdmins}</p>
                           <p className="text-sm text-muted-foreground">Pending</p>
                         </div>
                       </div>
@@ -106,8 +125,8 @@ export default function Page() {
               
               {/* Data Table */}
               <div className="flex-1">
-                {/* <PlayersDataTable /> */}
-                <AdminsDataTable />
+              
+               <AdminsDataTable data={admins} />
               </div>
             </div>
           </div>
