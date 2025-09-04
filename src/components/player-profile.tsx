@@ -31,6 +31,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import axios from "axios";
 
 interface PlayerProfileData {
   id: string;
@@ -98,13 +99,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/${playerId}`
         );
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error("Failed to fetch profile");
         }
-        const result = await response.json();
+        const result = response.data;
         setProfile(result.data);
       } catch (error) {
         console.error("Error fetching player profile:", error);

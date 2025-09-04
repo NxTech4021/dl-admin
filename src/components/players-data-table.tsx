@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import axios from "axios";
 
 // Player schema based on the database structure and onboarding data
 export const playerSchema = z.object({
@@ -57,12 +58,12 @@ export const playerSchema = z.object({
   email: z.string().email(),
   emailVerified: z.boolean(),
   image: z.string().nullable(),
-  area: z.string().nullable(), // Updated to nullable to match API response
+  area: z.string().nullish(), // Updated to handle null or undefined
   gender: z.enum(["male", "female"]).nullable(),
   // Use z.coerce.date() to automatically convert date strings from the API
   dateOfBirth: z.coerce.date().nullable(),
   registeredDate: z.coerce.date(),
-  lastLoginDate: z.coerce.date().nullable(),
+  lastLoginDate: z.coerce.date().nullish(), // Updated to handle null or undefined
   sports: z.array(z.enum(["pickleball", "tennis", "padel"])),
   skillRatings: z
     .record(
@@ -74,8 +75,8 @@ export const playerSchema = z.object({
       })
     )
     .nullable(),
-  status: z.enum(["active", "inactive", "suspended"]),
-  completedOnboarding: z.boolean(),
+  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).nullish(), // Updated to handle null or undefined
+  completedOnboarding: z.boolean().default(false), // Updated to handle undefined with a default
 });
 
 export type Player = z.infer<typeof playerSchema>;
@@ -327,13 +328,13 @@ export function PlayersDataTable() {
     const fetchPlayers = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/`
         );
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
-        const result = await response.json();
+        const result = await response.data;
 
         const parsedData = z.array(playerSchema).parse(result.data);
         setData(parsedData);

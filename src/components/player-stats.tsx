@@ -3,6 +3,7 @@
 import * as React from "react";
 import { IconUsers } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
 
 interface PlayerStatsData {
   total: number;
@@ -18,13 +19,13 @@ export function PlayerStats() {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/stats`
         );
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error("Failed to fetch stats");
         }
-        const result = await response.json();
+        const result = response.data;
         setStats(result.data);
       } catch (error) {
         console.error("Failed to fetch player stats:", error);
