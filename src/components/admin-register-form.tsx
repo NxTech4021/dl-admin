@@ -53,6 +53,13 @@ export function AdminRegisterForm({
     fetchEmail();
   }, [token]);
 
+    const validateUsername = (raw: string) => {
+    const sanitized = raw.trim().toLowerCase().replace(/\s+/g, "_");
+    const regex = /^[a-z0-9_]{3,20}$/; // letters, numbers, underscore, 3–20 chars
+    return regex.test(sanitized) ? sanitized : null;
+  };
+
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -65,12 +72,21 @@ export function AdminRegisterForm({
       setError("Passwords do not match");
       return;
     }
+
+    const safeUsername = validateUsername(username);
+    if (!safeUsername) {
+      setError(
+        "Invalid username. Use 3–20 characters: letters, numbers, underscores only."
+      );
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
 
-    const formData = { token, email, username, name, password };
+    const formData = { token, email, username: safeUsername, name, password };
     console.log("Submitting form data:", formData);
+
 
     try {
       const res = await axios.post(
@@ -129,7 +145,11 @@ export function AdminRegisterForm({
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
+              <p className="text-xs text-red-500">
+                No spaces or Uppercase Letters
+              </p>
             </div>
+
 
             <div className="grid gap-3">
               <Label htmlFor="name">Full Name</Label>
