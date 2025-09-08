@@ -81,10 +81,12 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
+            <DropdownMenuItem asChild>
+              <a href="/admin/account" className="flex items-center gap-2">
+                <IconUserCircle className="size-4" />
                 Account
-              </DropdownMenuItem>
+              </a>
+            </DropdownMenuItem>
               {/* <DropdownMenuItem>
                 <IconCreditCard />
                 Billing
