@@ -2,6 +2,7 @@
   "name": "dl-frontend",
   "version": "0.1.0",
   "private": true,
+  
   "scripts": {
     "dev": "next dev --turbopack -p 3030",
     "build": "next build",
