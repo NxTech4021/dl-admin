@@ -8,6 +8,7 @@ import {
   IconTrophy,
   IconCalendar,
   IconCategory,
+  IconMessage 
 } from "@tabler/icons-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -72,6 +73,11 @@ const data = {
       name: "Admins",
       url: "/admin",
       icon: IconUsers,
+    },
+     {
+      name: "Chat",
+      url: "/chat",
+      icon:  IconMessage ,
     },
   ],
 };
