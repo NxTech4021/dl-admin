@@ -160,8 +160,8 @@ export default function ChatView() {
 
       <Card className="flex flex-row h-[72vh]">
         {/* renderNav corresponds to the navigation/sidebar */}
-        {/* {renderNav} */}
-        <p> render navigation </p>
+        {renderNav}
+        {/* <p> render navigation </p> */}
 
         <div className="w-full h-full overflow-hidden flex flex-col">
           {/* renderHead corresponds to the chat header */}

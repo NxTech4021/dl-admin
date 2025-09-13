@@ -21,7 +21,7 @@ import Scrollbar from 'src/components/scrollbar';
 import { useCollapseNav } from '../../app/chat/hooks';
 import ChatNavItem from './chat-nav-item';
 import ChatNavAccount from './chat-nav-account';
-import { ChatNavItemSkeleton } from './chat-skeleton';
+import ChatNavItemSkeleton from './chat-skeleton';
 import ChatNavSearchResults from './chat-nav-search-results';
 
 // ----------------------------------------------------------------------
