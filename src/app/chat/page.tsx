@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { _mockContacts, _mockConversation, _mockConversations } from "./hooks/_mockData";
+import { _mockContacts, _mockConversation, _mockConversations, _mockUser } from "./hooks/_mockData";
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import ChatNav from '@/components/chat/chat-nav';
@@ -19,9 +19,7 @@ import ChatNav from '@/components/chat/chat-nav';
 
 // import { useRouter, useSearchParams } from 'src/routes/hooks';
 
-import { useMockedUser } from './hooks/use-mocked-user';
-import { useGetContacts, useGetConversation, useGetConversations } from "./hooks/chat";
-
+// import { useMockedUser } from './hooks/use-mocked-user';
 
 
 // ----------------------------------------------------------------------
@@ -29,7 +27,7 @@ import { useGetContacts, useGetConversation, useGetConversations } from "./hooks
 export default function ChatView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useMockedUser();
+  const user = _mockUser;
 
 //   const settings = useSettingsContext();
 
@@ -114,7 +112,9 @@ export default function ChatView() {
       conversations={conversations}
       loading={conversationsLoading}
       selectedConversationId={selectedConversationId}
+       user={_mockUser}
     />
+    // <p> hi </p>
   );
 
 //   const renderMessages = (
