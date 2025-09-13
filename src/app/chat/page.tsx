@@ -1,6 +1,17 @@
-// import { useState, useEffect, useCallback } from 'react';
-
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
 import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { _mockContacts, _mockConversation, _mockConversations } from "./hooks/_mockData";
+import { useRouter, useSearchParams } from 'next/navigation';
+
+import ChatNav from '@/components/chat/chat-nav';
 // import Stack from '@mui/material/Stack';
 // import Container from '@mui/material/Container';
 // import Typography from '@mui/material/Typography';
@@ -9,22 +20,15 @@ import { Card } from '@/components/ui/card';
 // import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useMockedUser } from './hooks/use-mocked-user';
-// import { useGetContacts, useGetConversation, useGetConversations } from 'src/api/chat';
+import { useGetContacts, useGetConversation, useGetConversations } from "./hooks/chat";
 
-// import { useSettingsContext } from 'src/components/settings';
 
-// import ChatNav from '../chat-nav';
-// import ChatRoom from '../chat-room';
-// import ChatMessageList from '../chat-message-list';
-// import ChatMessageInput from '../chat-message-input';
-// import ChatHeaderDetail from '../chat-header-detail';
-// import ChatHeaderCompose from '../chat-header-compose';
 
 // ----------------------------------------------------------------------
 
 export default function ChatView() {
-//   const router = useRouter();
-
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useMockedUser();
 
 //   const settings = useSettingsContext();
@@ -72,14 +76,46 @@ export default function ChatView() {
 //     </Stack>
 //   );
 
-//   const renderNav = (
-//     <ChatNav
-//       contacts={contacts}
-//       conversations={conversations}
-//       loading={conversationsLoading}
-//       selectedConversationId={selectedConversationId}
-//     />
-//   );
+ // --- MOCK DATA INTEGRATION ---
+  const contacts = _mockContacts;
+  const conversations = _mockConversations;
+  const conversationsLoading = false;
+
+  const selectedConversationId = searchParams.get('id') || '';
+
+  const conversation = _mockConversations.find(conv => conv.id === selectedConversationId) || _mockConversation;
+  const conversationError = !conversation;
+
+  // --- STATE MANAGEMENT ---
+  const [recipients, setRecipients] = useState([]);
+  
+  const participants = conversation
+    ? conversation.participants.filter((participant) => participant.id !== user.id)
+    : [];
+  
+  const details = !!conversation;
+
+//   useEffect(() => {
+//     // Redirect if conversation is not found or no ID is provided
+//     // if (conversationError || !selectedConversationId) {
+//     //   router.push(paths.dashboard.chat);
+//     // }
+//   }, [conversationError, router, selectedConversationId]);
+
+  const handleAddRecipients = useCallback((selected :any) => {
+    setRecipients(selected);
+  }, []);
+
+
+
+  const renderNav = (
+    <ChatNav
+      contacts={contacts}
+      conversations={conversations}
+      loading={conversationsLoading}
+      selectedConversationId={selectedConversationId}
+    />
+  );
 
 //   const renderMessages = (
 //     <Stack
@@ -102,44 +138,51 @@ export default function ChatView() {
 //   );
 
   return (
-    // <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-    //   <Typography
-    //     variant="h4"
-    //     sx={{
-    //       mb: { xs: 3, md: 5 },
-    //     }}
-    //   >
-    //     Chat
-    //   </Typography>
+  
 
-    //   <Stack component={Card} direction="row" sx={{ height: '72vh' }}>
-    //     {renderNav}
+     <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+              "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
+          <AppSidebar variant="inset" />
+          <SidebarInset>
+            <SiteHeader />
 
-    //     <Stack
-    //       sx={{
-    //         width: 1,
-    //         height: 1,
-    //         overflow: 'hidden',
-    //       }}
-    //     >
-    //       {renderHead}
+    
+     <div className="mt-20  mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h4 className="text-2xl  mt-6 font-bold mb-6 md:mb-10">
+        Chat
+      </h4>
 
-    //       <Stack
-    //         direction="row"
-    //         sx={{
-    //           width: 1,
-    //           height: 1,
-    //           overflow: 'hidden',
-    //           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
-    //         }}
-    //       >
-    //         {renderMessages}
+      <Card className="flex flex-row h-[72vh]">
+        {/* renderNav corresponds to the navigation/sidebar */}
+        {/* {renderNav} */}
+        <p> render navigation </p>
 
-    //         {details && <ChatRoom conversation={conversation} participants={participants} />}
-    //       </Stack>
-    //     </Stack>
-    //   </Stack>
-    // </Container>
-    <h1> Chat page </h1>
+        <div className="w-full h-full overflow-hidden flex flex-col">
+          {/* renderHead corresponds to the chat header */}
+          {/* {renderHead} */}
+          <p> render head </p>
+
+          <Separator className="bg-border" />
+
+          <div className="flex flex-row w-full h-full overflow-hidden">
+            {/* renderMessages corresponds to the main chat message area */}
+            {/* {renderMessages} */}
+            <p> place where messages will be rendered </p>
+
+            {/* ChatRoom corresponds to the detailed view or side panel */}
+            {/* {details && <ChatRoom conversation={conversation} participants={participants} />} */}
+            <p> place for chat room </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+       </SidebarInset>
+    </SidebarProvider>
   );
 }
