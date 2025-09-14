@@ -1,50 +1,42 @@
-import { sub } from 'date-fns';
-import PropTypes from 'prop-types';
-import { useRef, useMemo, useState, useCallback } from 'react';
+import { sub } from "date-fns";
+import PropTypes from "prop-types";
+import { useRef, useMemo, useState, useCallback } from "react";
 
-import Stack from '@mui/material/Stack';
-import InputBase from '@mui/material/InputBase';
-import IconButton from '@mui/material/IconButton';
+import { useRouter } from "next/navigation";
+// import { paths } from "src/routes/paths";
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { _mockContacts, _mockUser } from "@/app/chat/hooks/_mockData";
+// import uuidv4 from "src/utils/uuidv4";
+// import { sendMessage, createConversation } from "src/api/chat";
 
-import { useMockedUser } from 'src/hooks/use-mocked-user';
-
-import uuidv4 from 'src/utils/uuidv4';
-
-import { sendMessage, createConversation } from 'src/api/chat';
-
-import Iconify from 'src/components/iconify';
-
-// ----------------------------------------------------------------------
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Smile, ImagePlus, Paperclip, Mic } from "lucide-react";
+import { uuidv4 } from "zod";
 
 export default function ChatMessageInput({
   recipients,
   onAddRecipients,
-  //
   disabled,
   selectedConversationId,
 }) {
   const router = useRouter();
+  const user  = _mockUser
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const { user } = useMockedUser();
-
-  const fileRef = useRef(null);
-
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   const myContact = useMemo(
     () => ({
       id: `${user?.id}`,
       role: `${user?.role}`,
       email: `${user?.email}`,
-      address: `${user?.address}`,
+      // address: `${user?.address}`,
       name: `${user?.displayName}`,
       lastActivity: new Date(),
       avatarUrl: `${user?.photoURL}`,
       phoneNumber: `${user?.phoneNumber}`,
-      status: 'online',
+      status: "online",
     }),
     [user]
   );
@@ -54,7 +46,7 @@ export default function ChatMessageInput({
       id: uuidv4(),
       attachments: [],
       body: message,
-      contentType: 'text',
+      contentType: "text",
       createdAt: sub(new Date(), { minutes: 1 }),
       senderId: myContact.id,
     }),
@@ -66,38 +58,38 @@ export default function ChatMessageInput({
       id: uuidv4(),
       messages: [messageData],
       participants: [...recipients, myContact],
-      type: recipients.length > 1 ? 'GROUP' : 'ONE_TO_ONE',
+      type: recipients.length > 1 ? "GROUP" : "ONE_TO_ONE",
       unreadCount: 0,
     }),
     [messageData, myContact, recipients]
   );
 
   const handleAttach = useCallback(() => {
-    if (fileRef.current) {
-      fileRef.current.click();
-    }
+    fileRef.current?.click();
   }, []);
 
-  const handleChangeMessage = useCallback((event) => {
-    setMessage(event.target.value);
-  }, []);
+  const handleChangeMessage = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setMessage(event.target.value);
+    },
+    []
+  );
 
   const handleSendMessage = useCallback(
-    async (event) => {
+    async (event: React.KeyboardEvent<HTMLInputElement>) => {
       try {
-        if (event.key === 'Enter') {
+        if (event.key === "Enter") {
           if (message) {
             if (selectedConversationId) {
-              await sendMessage(selectedConversationId, messageData);
+              // await sendMessage(selectedConversationId, messageData);
             } else {
-              const res = await createConversation(conversationData);
+              // const res = await createConversation(conversationData);
 
               router.push(`${paths.dashboard.chat}?id=${res.conversation.id}`);
-
               onAddRecipients([]);
             }
           }
-          setMessage('');
+          setMessage("");
         }
       } catch (error) {
         console.error(error);
@@ -107,41 +99,38 @@ export default function ChatMessageInput({
   );
 
   return (
-    <>
-      <InputBase
+    <div className="border-t border-border flex items-center gap-2 px-2 h-14 flex-shrink-0">
+      {/* Left icon (emoji) */}
+      <Button variant="ghost" size="icon">
+        <Smile className="h-5 w-5" />
+      </Button>
+
+      {/* Input field */}
+      <Input
         value={message}
         onKeyUp={handleSendMessage}
         onChange={handleChangeMessage}
         placeholder="Type a message"
         disabled={disabled}
-        startAdornment={
-          <IconButton>
-            <Iconify icon="eva:smiling-face-fill" />
-          </IconButton>
-        }
-        endAdornment={
-          <Stack direction="row" sx={{ flexShrink: 0 }}>
-            <IconButton onClick={handleAttach}>
-              <Iconify icon="solar:gallery-add-bold" />
-            </IconButton>
-            <IconButton onClick={handleAttach}>
-              <Iconify icon="eva:attach-2-fill" />
-            </IconButton>
-            <IconButton>
-              <Iconify icon="solar:microphone-bold" />
-            </IconButton>
-          </Stack>
-        }
-        sx={{
-          px: 1,
-          height: 56,
-          flexShrink: 0,
-          borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
-        }}
+        className="flex-1 border-none focus-visible:ring-0 shadow-none"
       />
 
-      <input type="file" ref={fileRef} style={{ display: 'none' }} />
-    </>
+      {/* Right side actions */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Button variant="ghost" size="icon" onClick={handleAttach}>
+          <ImagePlus className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={handleAttach}>
+          <Paperclip className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Mic className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Hidden file input */}
+      <input type="file" ref={fileRef} className="hidden" />
+    </div>
   );
 }
 
