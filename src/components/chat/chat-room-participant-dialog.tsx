@@ -1,112 +1,79 @@
-import PropTypes from 'prop-types';
+"use client"
 
-import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
-import Dialog from '@mui/material/Dialog';
-import { alpha } from '@mui/material/styles';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import DialogContent from '@mui/material/DialogContent';
+import PropTypes from "prop-types"
+import { X, Phone, MessageCircle, Mail, Video } from "lucide-react"
 
-import Iconify from 'src/components/iconify';
-
-// ----------------------------------------------------------------------
+import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 
 export default function ChatRoomParticipantDialog({ participant, open, onClose }) {
   return (
-    <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
-      <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
-        <Iconify icon="mingcute:close-line" />
-      </IconButton>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-xs p-6 relative flex gap-4">
+        <DialogClose asChild>
+          <button className="absolute top-2 right-2 p-1 rounded hover:bg-muted/50">
+            <X className="h-4 w-4" />
+          </button>
+        </DialogClose>
 
-      <DialogContent sx={{ py: 5, px: 3, display: 'flex' }}>
-        <Avatar
-          alt={participant.name}
-          src={participant.avatarUrl}
-          sx={{ width: 96, height: 96, mr: 3 }}
-        />
+        <Avatar className="h-24 w-24">
+          <AvatarImage src={participant.avatarUrl} alt={participant.name} />
+          <AvatarFallback>{participant.name?.charAt(0)}</AvatarFallback>
+        </Avatar>
 
-        <Stack spacing={1}>
-          <Typography variant="caption" sx={{ color: 'primary.main' }}>
-            {participant.role}
-          </Typography>
+        <div className="flex flex-col flex-1 justify-between">
+          <div className="space-y-1">
+            <p className="text-xs text-primary">{participant.role}</p>
+            <p className="text-lg font-medium">{participant.name}</p>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <MessageCircle className="h-4 w-4 flex-shrink-0 mr-1" />
+              {participant.address}
+            </div>
+          </div>
 
-          <Typography variant="subtitle1">{participant.name}</Typography>
-
-          <Stack direction="row" sx={{ typography: 'caption', color: 'text.disabled' }}>
-            <Iconify
-              icon="mingcute:location-fill"
-              width={16}
-              sx={{ flexShrink: 0, mr: 0.5, mt: '2px' }}
-            />
-            {participant.address}
-          </Stack>
-
-          <Stack spacing={1} direction="row" sx={{ pt: 1.5 }}>
-            <IconButton
-              size="small"
-              color="error"
-              sx={{
-                borderRadius: 1,
-                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.error.main, 0.16),
-                },
-              }}
+          <div className="flex gap-2 pt-3">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-red-100 hover:bg-red-200"
             >
-              <Iconify width={18} icon="solar:phone-bold" />
-            </IconButton>
+              <Phone className="h-4 w-4 text-red-600" />
+            </Button>
 
-            <IconButton
-              size="small"
-              color="info"
-              sx={{
-                borderRadius: 1,
-                bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
-                },
-              }}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-sky-100 hover:bg-sky-200"
             >
-              <Iconify width={18} icon="solar:chat-round-dots-bold" />
-            </IconButton>
+              <MessageCircle className="h-4 w-4 text-sky-600" />
+            </Button>
 
-            <IconButton
-              size="small"
-              color="primary"
-              sx={{
-                borderRadius: 1,
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
-                },
-              }}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-primary/10 hover:bg-primary/20"
             >
-              <Iconify width={18} icon="fluent:mail-24-filled" />
-            </IconButton>
+              <Mail className="h-4 w-4 text-primary" />
+            </Button>
 
-            <IconButton
-              size="small"
-              color="secondary"
-              sx={{
-                borderRadius: 1,
-                bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.08),
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.16),
-                },
-              }}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="bg-secondary/10 hover:bg-secondary/20"
             >
-              <Iconify width={18} icon="solar:videocamera-record-bold" />
-            </IconButton>
-          </Stack>
-        </Stack>
+              <Video className="h-4 w-4 text-secondary" />
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 ChatRoomParticipantDialog.propTypes = {
   onClose: PropTypes.func,
   open: PropTypes.bool,
   participant: PropTypes.object,
-};
+}

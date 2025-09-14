@@ -1,106 +1,124 @@
-import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+"use client"
 
-import Box from '@mui/material/Box';
-import Badge from '@mui/material/Badge';
-import Avatar from '@mui/material/Avatar';
-import Collapse from '@mui/material/Collapse';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemButton from '@mui/material/ListItemButton';
+import { useState, useCallback } from "react"
+import PropTypes from "prop-types"
+import { ChevronDown, ChevronRight } from "lucide-react"
 
-import { useBoolean } from 'src/hooks/use-boolean';
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
-import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
-
-import ChatRoomParticipantDialog from './chat-room-participant-dialog';
-
-// ----------------------------------------------------------------------
+import { useBoolean } from "@/app/chat/hooks/use-boolean"
+import ChatRoomParticipantDialog from "./chat-room-participant-dialog"
 
 export default function ChatRoomGroup({ participants }) {
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<any | null>(null)
+  const collapse = useBoolean(true)
 
-  const collapse = useBoolean(true);
+  const handleOpen = useCallback((participant: any) => {
+    setSelected(participant)
+  }, [])
 
-  const handleOpen = useCallback((participant) => {
-    setSelected(participant);
-  }, []);
+  const handleClose = () => setSelected(null)
 
-  const handleClose = () => {
-    setSelected(null);
-  };
-
-  const totalParticipants = participants.length;
+  const totalParticipants = participants.length
 
   const renderBtn = (
-    <ListItemButton
+    <Button
+      variant="ghost"
       onClick={collapse.onToggle}
-      sx={{
-        pl: 2.5,
-        pr: 1.5,
-        height: 40,
-        flexShrink: 0,
-        flexGrow: 'unset',
-        typography: 'overline',
-        color: 'text.secondary',
-        bgcolor: 'background.neutral',
-      }}
+      className="flex items-center justify-between w-full h-10 px-3 text-xs font-medium text-muted-foreground bg-muted/50"
     >
-      <Box component="span" sx={{ flexGrow: 1 }}>
-        In room ({totalParticipants})
-      </Box>
-      <Iconify
-        width={16}
-        icon={collapse.value ? 'eva:arrow-ios-downward-fill' : 'eva:arrow-ios-forward-fill'}
-      />
-    </ListItemButton>
-  );
+      <span>In room ({totalParticipants})</span>
+      {collapse.value ? (
+        <ChevronDown className="h-4 w-4" />
+      ) : (
+        <ChevronRight className="h-4 w-4" />
+      )}
+    </Button>
+  )
 
   const renderContent = (
-    <Scrollbar sx={{ height: 56 * 4 }}>
-      {participants.map((participant) => (
-        <ListItemButton key={participant.id} onClick={() => handleOpen(participant)}>
-          <Badge
-            variant={participant.status}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    <ScrollArea className="h-[224px]">
+      <ul className="divide-y divide-border">
+        {participants.map((participant: any) => (
+          <li
+            key={participant.id}
+            onClick={() => handleOpen(participant)}
+            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/70"
           >
-            <Avatar alt={participant.name} src={participant.avatarUrl} />
-          </Badge>
+            <div className="relative">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={participant.avatarUrl} alt={participant.name} />
+                <AvatarFallback>
+                  {participant.name?.charAt(0) ?? "?"}
+                </AvatarFallback>
+              </Avatar>
+              {/* Status dot */}
+              <span
+                className={cn(
+                  "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-background",
+                  participant.status === "online"
+                    ? "bg-green-500"
+                    : participant.status === "offline"
+                    ? "bg-gray-400"
+                    : "bg-yellow-500"
+                )}
+              />
+            </div>
 
-          <ListItemText
-            sx={{ ml: 2 }}
-            primary={participant.name}
-            secondary={participant.role}
-            primaryTypographyProps={{
-              noWrap: true,
-              typography: 'subtitle2',
-            }}
-            secondaryTypographyProps={{
-              noWrap: true,
-              component: 'span',
-              typography: 'caption',
-            }}
-          />
-        </ListItemButton>
-      ))}
-    </Scrollbar>
-  );
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium truncate">
+                {participant.name}
+              </span>
+              <span className="text-xs text-muted-foreground truncate">
+                {participant.role}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </ScrollArea>
+  )
 
   return (
     <>
       {renderBtn}
 
-      <div>
-        <Collapse in={collapse.value}>{renderContent}</Collapse>
+      <div
+        className={cn(
+          "transition-all overflow-hidden",
+          collapse.value ? "max-h-[224px]" : "max-h-0"
+        )}
+      >
+        {collapse.value && renderContent}
       </div>
 
       {selected && (
-        <ChatRoomParticipantDialog participant={selected} open={!!selected} onClose={handleClose} />
+        <Dialog open={!!selected} onOpenChange={handleClose}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selected.name}</DialogTitle>
+            </DialogHeader>
+            <ChatRoomParticipantDialog
+              participant={selected}
+              open={!!selected}
+              onClose={handleClose}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </>
-  );
+  )
 }
 
 ChatRoomGroup.propTypes = {
   participants: PropTypes.array,
-};
+}

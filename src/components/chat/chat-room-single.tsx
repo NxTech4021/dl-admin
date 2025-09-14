@@ -1,102 +1,78 @@
-import PropTypes from 'prop-types';
+"use client"
 
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
-import Collapse from '@mui/material/Collapse';
-import Typography from '@mui/material/Typography';
-import ListItemButton from '@mui/material/ListItemButton';
-
-import { useBoolean } from 'src/hooks/use-boolean';
-
-import Iconify from 'src/components/iconify';
-
-// ----------------------------------------------------------------------
+import PropTypes from "prop-types"
+import { useBoolean } from "@/app/chat/hooks/use-boolean"
+import { cn } from "@/lib/utils"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { ChevronDown, ChevronRight, MapPin, Phone, Mail } from "lucide-react"
 
 export default function ChatRoomSingle({ participant }) {
-  const collapse = useBoolean(true);
-
-  const { name, avatarUrl, role, address, phoneNumber, email } = participant;
+  const collapse = useBoolean(true)
+  const { name, avatarUrl, role, address, phoneNumber, email } = participant
 
   const renderInfo = (
-    <Stack alignItems="center" sx={{ py: 5 }}>
-      <Avatar alt={name} src={avatarUrl} sx={{ width: 96, height: 96, mb: 2 }} />
-      <Typography variant="subtitle1">{name}</Typography>
-      <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-        {role}
-      </Typography>
-    </Stack>
-  );
+    <div className="flex flex-col items-center py-5">
+      <Avatar className="h-24 w-24 mb-2">
+        <AvatarImage src={avatarUrl} alt={name} />
+        <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <p className="text-lg font-medium">{name}</p>
+      <p className="text-sm text-muted-foreground mt-1">{role}</p>
+    </div>
+  )
 
   const renderBtn = (
-    <ListItemButton
+    <Button
+      variant="ghost"
       onClick={collapse.onToggle}
-      sx={{
-        pl: 2.5,
-        pr: 1.5,
-        height: 40,
-        flexShrink: 0,
-        flexGrow: 'unset',
-        typography: 'overline',
-        color: 'text.secondary',
-        bgcolor: 'background.neutral',
-      }}
+      className="flex items-center justify-between w-full h-10 px-3 text-xs font-medium text-muted-foreground bg-muted/50"
     >
-      <Box component="span" sx={{ flexGrow: 1 }}>
-        Information
-      </Box>
-      <Iconify
-        width={16}
-        icon={collapse.value ? 'eva:arrow-ios-downward-fill' : 'eva:arrow-ios-forward-fill'}
-      />
-    </ListItemButton>
-  );
+      <span>Information</span>
+      {collapse.value ? (
+        <ChevronDown className="h-4 w-4" />
+      ) : (
+        <ChevronRight className="h-4 w-4" />
+      )}
+    </Button>
+  )
 
   const renderContent = (
-    <Stack
-      spacing={2}
-      sx={{
-        px: 2,
-        py: 2.5,
-        '& svg': {
-          mr: 1,
-          flexShrink: 0,
-          color: 'text.disabled',
-        },
-      }}
+    <div
+      className={cn(
+        "overflow-hidden transition-all duration-200",
+        collapse.value ? "max-h-40" : "max-h-0"
+      )}
     >
-      <Stack direction="row">
-        <Iconify icon="mingcute:location-fill" />
-        <Typography variant="body2">{address}</Typography>
-      </Stack>
+      <div className="flex flex-col px-2 py-2.5 space-y-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <span>{address}</span>
+        </div>
 
-      <Stack direction="row">
-        <Iconify icon="solar:phone-bold" />
-        <Typography variant="body2">{phoneNumber}</Typography>
-      </Stack>
+        <div className="flex items-center gap-2">
+          <Phone className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <span>{phoneNumber}</span>
+        </div>
 
-      <Stack direction="row">
-        <Iconify icon="fluent:mail-24-filled" />
-        <Typography variant="body2" noWrap>
-          {email}
-        </Typography>
-      </Stack>
-    </Stack>
-  );
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <span className="truncate">{email}</span>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
-    <>
+    <div>
       {renderInfo}
-
       {renderBtn}
-
-      <div>
-        <Collapse in={collapse.value}>{renderContent}</Collapse>
-      </div>
-    </>
-  );
+      {renderContent}
+    </div>
+  )
 }
 
 ChatRoomSingle.propTypes = {
   participant: PropTypes.object,
-};
+}

@@ -52,7 +52,7 @@ export default function ChatRoom({ participants, conversation }) {
         <ChatRoomSingle participant={participants[0]} />
       )}
 
-      <ChatRoomAttachments attachments={""} />
+      {/* <ChatRoomAttachments attachments={""} /> */}
     </div>
   )
 
