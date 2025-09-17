@@ -48,9 +48,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 export const adminSchema = z.object({
   id: z.string(),
   email: z.string().email(),
-  name: z.string().optional(),     // only for registered
-  role: z.string().optional(),     // only for registered
-  status: z.string().optional(),   // only for pending
+  name: z.string(),    
+  role: z.string().optional(),    
+  status: z.string().optional(),  
   createdAt: z.string(),
   updatedAt: z.string().optional(),
   expiresAt: z.string().optional(),
@@ -219,20 +219,20 @@ const columns: ColumnDef<Admin>[] = [
       </Badge>
     ),
   },
-{
-  accessorKey: "role",
-  header: "Role",
-  cell: ({ row }) => {
-    const role = row.original.role 
-    return role ? (
-      <Badge variant="outline" className="capitalize text-xs">
-        {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
-      </Badge>
-    ) : (
-      <span className="text-muted-foreground text-xs italic">Pending</span>
-    )
-  },
-},
+// {
+//   accessorKey: "role",
+//   header: "Role",
+//   cell: ({ row }) => {
+//     const role = row.original.role 
+//     return role ? (
+//       <Badge variant="outline" className="capitalize text-xs">
+//         {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
+//       </Badge>
+//     ) : (
+//       <span className="text-muted-foreground text-xs italic">Pending</span>
+//     )
+//   },
+// },
   {
     id: "actions",
     cell: ({ row }) => {

@@ -24,18 +24,24 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   let admins: any[] = [];
+try {
 
-  try {
-    const res = await axios.get(`${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/getadmins`, {
-      withCredentials: true,
-    });
-    admins = res.data?.data?.getAllAdmins ?? [];
+  // const targetUrl = 'http://dl-backend:3001/api/admin/getadmins';
+  // console.log('Target URL:', targetUrl);
+  
+  // switched to fetch because Nextjs Server side handles fetch faster 
+    const res = await fetch("http://dl-backend:3001/api/admin/getadmins", {
+    cache: "no-store",
+    next: { revalidate: 60 },
+  });
 
-    console.log("admins", admins)
-  } catch (err) {
-    console.error("Failed to fetch admins:", err);
-  }
-
+  const data = await res.json();
+  admins = data?.data?.getAllAdmins ?? []; 
+  console.log("admins yay", admins);
+} catch (err) {
+  console.error("Failed to fetch admins:", err);
+}
+  
   //Computing the length in frontend since the numbers of Admin wont be too large 
   const totalAdmins = admins.length;
   const activeAdmins = admins.filter((a) => a.type === "ACTIVE").length;
@@ -132,6 +138,7 @@ export default async function Page() {
           </div>
         </div>
       </SidebarInset>
+
     </SidebarProvider>
   )
 }

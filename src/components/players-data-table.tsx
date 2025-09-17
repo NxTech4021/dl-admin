@@ -75,7 +75,7 @@ export const playerSchema = z.object({
       })
     )
     .nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).nullish(), // Updated to handle null or undefined
+  status: z.enum(["active", "inactive", "suspended"]).nullish(),
   completedOnboarding: z.boolean().default(false), // Updated to handle undefined with a default
 });
 
