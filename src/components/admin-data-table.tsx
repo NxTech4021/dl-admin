@@ -1,14 +1,13 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
+import Link from "next/link";
 import {
   IconDotsVertical,
   IconMail,
   IconEye,
   IconEdit,
-  IconTrash,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -20,20 +19,20 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from "@tanstack/react-table"
-import { z } from "zod"
-
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@tanstack/react-table";
+import { z } from "zod";
+import { useAdminSession } from "@/hooks/use-admin-session";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -41,107 +40,59 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { toast } from "sonner";
 
 // Admin schema
 export const adminSchema = z.object({
   id: z.string(),
   email: z.string().email(),
-  name: z.string().optional(),     // only for registered
-  role: z.string().optional(),     // only for registered
-  status: z.string().optional(),   // only for pending
+  name: z.string(),
+  role: z.string().optional(),
+  status: z.enum(["PENDING", "ACTIVE", "SUSPENDED"]),
   createdAt: z.string(),
+  image: z.string().optional(),
   updatedAt: z.string().optional(),
   expiresAt: z.string().optional(),
-  type: z.enum(["ACTIVE", "PENDING", "SUSPENDED"]), 
-})
-
+});
 
 type AdminsDataTableProps = {
   data: Admin[];
 };
 
-export type Admin = z.infer<typeof adminSchema>
-
-// Mock data
-// const mockAdmins: Admin[] = [
-//   {
-//     id: "admin_1",
-//     name: "Alice Johnson",
-//     email: "alice.johnson@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "active",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_2",
-//     name: "Brian Lee",
-//     email: "brian.lee@deuceleague.com",
-//     emailVerified: false,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_3",
-//     name: "Carla Smith",
-//     email: "carla.smith@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//     {
-//     id: "admin_4",
-//     name: "Johnson",
-//     email: "johnson@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "active",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_5",
-//     name: "Brian Adams",
-//     email: "brian.adams@deuceleague.com",
-//     emailVerified: false,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_6",
-//     name: "James Smith",
-//     email: "james.smith@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-// ]
+export type Admin = z.infer<typeof adminSchema>;
 
 const getInitials = (name: string) =>
   name
     .split(" ")
     .map((n) => n[0])
     .join("")
-    .toUpperCase()
+    .toUpperCase();
+
+const handleResendInvite = async (adminId: string) => {
+  try {
+    const res = await axiosInstance.post(endpoints.admin.sendInvite, { adminId });
+    toast.success(res.data.message || "Invite resent successfully!");
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "Failed to resend invite");
+  }
+};
 
 const getStatusBadgeVariant = (status: Admin["status"]) => {
   switch (status) {
-    case "active":
-      return "default"
-    case "inactive":
-      return "secondary"
-    case "suspended":
-      return "destructive"
+    case "ACTIVE":
+      return "bg-green-300 text-black-800";
+    case "PENDING":
+      return "bg-yellow-300 text-black-800";
+    case "SUSPENDED":
+      return "bg-red-300 text-white-800";
     default:
-      return "secondary"
+      return "bg-gray-100 text-gray-800";
   }
-}
-
+};
 const columns: ColumnDef<Admin>[] = [
   {
     id: "select",
@@ -173,19 +124,18 @@ const columns: ColumnDef<Admin>[] = [
     accessorKey: "name",
     header: "Admin",
     cell: ({ row }) => {
-      const admin = row.original
+      const admin = row.original;
       return (
         <div className="flex items-center gap-3">
-          {/* WORK On this next week */}
           <Avatar className="size-8">
-            <AvatarImage src={admin.image || undefined} alt={admin.name} /> 
+            <AvatarImage src={admin.image || undefined} alt={admin.name} />
             <AvatarFallback className="text-xs">
               {getInitials(admin.name)}
             </AvatarFallback>
           </Avatar>
           <div className="font-medium">{admin.name}</div>
         </div>
-      )
+      );
     },
     enableHiding: false,
   },
@@ -193,7 +143,7 @@ const columns: ColumnDef<Admin>[] = [
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => {
-      const admin = row.original
+      const admin = row.original;
       return (
         <div className="flex items-center gap-2">
           <IconMail className="size-4 text-muted-foreground" />
@@ -204,7 +154,7 @@ const columns: ColumnDef<Admin>[] = [
             </Badge>
           )} */}
         </div>
-      )
+      );
     },
   },
   {
@@ -212,31 +162,30 @@ const columns: ColumnDef<Admin>[] = [
     header: "Status",
     cell: ({ row }) => (
       <Badge
-        variant={getStatusBadgeVariant(row.original.status)}
-        className="capitalize"
+        className={`capitalize ${getStatusBadgeVariant(row.original.status)}`}
       >
         {row.original.status}
       </Badge>
     ),
   },
-{
-  accessorKey: "role",
-  header: "Role",
-  cell: ({ row }) => {
-    const role = row.original.role 
-    return role ? (
-      <Badge variant="outline" className="capitalize text-xs">
-        {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
-      </Badge>
-    ) : (
-      <span className="text-muted-foreground text-xs italic">Pending</span>
-    )
-  },
-},
+  // {
+  //   accessorKey: "role",
+  //   header: "Role",
+  //   cell: ({ row }) => {
+  //     const role = row.original.role
+  //     return role ? (
+  //       <Badge variant="outline" className="capitalize text-xs">
+  //         {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
+  //       </Badge>
+  //     ) : (
+  //       <span className="text-muted-foreground text-xs italic">Pending</span>
+  //     )
+  //   },
+  // },
   {
     id: "actions",
     cell: ({ row }) => {
-      const admin = row.original
+      const admin = row.original;
 
       return (
         <DropdownMenu>
@@ -250,43 +199,70 @@ const columns: ColumnDef<Admin>[] = [
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem>
-             <Link href={`/admin/view/profile/${admin.id}`}>
-             
-              <IconEye className="mr-2 size-4" />
-              View Profile
-             </Link>
-            </DropdownMenuItem>
 
-            <DropdownMenuItem>
-              <IconEdit className="mr-2 size-4" />
-              Edit Admin
-            </DropdownMenuItem>
-            {/* <DropdownMenuSeparator /> */}
-            {/* <DropdownMenuItem variant="destructive">
-              <IconTrash className="mr-2 size-4" />
-              Delete Admin
-            </DropdownMenuItem> */}
+          <DropdownMenuContent align="end" className="w-40">
+            {admin.status === "PENDING" ? (
+              <DropdownMenuItem onClick={() => handleResendInvite(admin.id)}>
+                <IconMail className="mr-2 size-4" />
+                Resend Invite
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem>
+                  <Link href={`/admin/view/profile/${admin.id}`}>
+                    <IconEye className="mr-2 size-4" />
+                    View Profile
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                  <IconEdit className="mr-2 size-4" />
+                  Edit Admin
+                </DropdownMenuItem>
+
+                {/* Optional: add Delete if needed */}
+                {/* <DropdownMenuSeparator /> */}
+                {/* <DropdownMenuItem variant="destructive">
+          <IconTrash className="mr-2 size-4" />
+          Delete Admin
+        </DropdownMenuItem> */}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
-  // const [data, setData] = React.useState(() => mockAdmins)
-  const [adminData, setAdminData] = React.useState<Admin[]>(data);
+  const { user: currentUser } = useAdminSession();
+  const [adminData, setAdminData] = useState<Admin[]>([]);
   // const [loading, setLoading] = React.useState(true)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = React.useState("")
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
+
+
+  useEffect(() => {
+    if (currentUser) {
+    
+      const updatedData = data.map((admin) =>
+        admin.id === currentUser.id ? { ...admin, name: "ME" } : admin
+      );
+      setAdminData(updatedData);
+    } else {
+      setAdminData(data);
+    }
+  }, [data, currentUser]);
 
   const table = useReactTable({
-    data: adminData, 
+    data: adminData,
     columns,
     state: {
       sorting,
@@ -305,12 +281,12 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-  })
+  });
 
-  
   // if (loading) {
   //   return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
   // }
+
 
   return (
     <div className="space-y-4">
@@ -336,7 +312,10 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
                   <TableHead key={header.id} colSpan={header.colSpan}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -345,17 +324,26 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No admins found.
                 </TableCell>
               </TableRow>
@@ -389,5 +377,5 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

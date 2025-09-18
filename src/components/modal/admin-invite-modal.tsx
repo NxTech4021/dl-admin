@@ -1,10 +1,10 @@
-// components/AdminInviteModal.tsx
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -12,9 +12,8 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Mail, Loader2, XCircle, CheckCircle } from "lucide-react";
-import { CircleCheckBig } from "lucide-react";
+import { Mail, Loader2, } from "lucide-react";
+
 
 interface AdminInviteModalProps {
   isOpen: boolean;
@@ -50,14 +49,23 @@ export default function AdminInviteModal({
           username: tempUsername, 
         }
       );
-      
+      console.log("Success toast about to fire");
+      toast.success(res.data.message || "Invitation sent successfully!");
 
       console.log("email", res.data);
       setSuccess(res.data.message);
-      setEmail(""); // reset inputs
+      setEmail(""); 
       setName("");
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
+      const message =
+        err.response?.data?.error ||      
+        err.response?.data?.message ||   
+        err.message ||                   
+        "Failed to send invite";
+
+    toast.error(message);
+    setError(message);
     } finally {
       setLoading(false);
     }
@@ -98,31 +106,15 @@ export default function AdminInviteModal({
             </div>
           </div>
 
-          {success && (
-            <Alert variant="default" className="bg-green-500 text-white">
-              <CircleCheckBig className="h-4 w-4" />
-              <AlertTitle>Success</AlertTitle>
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-          {error && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      
         </CardContent>
              <CardFooter className="flex justify-between">
-          <Button
+        <Button
+            type="button"
             onClick={handleSendInvite}
             disabled={loading || !email || !name}
           >
-            {loading ? (
-              <Loader2 className="animate-spin mr-2 h-4 w-4" />
-            ) : (
-              "Send Invitation"
-            )}
+            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "Send Invitation"}
           </Button>
           <Button variant="ghost" onClick={onClose}>
             Close

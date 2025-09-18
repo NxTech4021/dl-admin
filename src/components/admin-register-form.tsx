@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export function AdminRegisterForm({
   className,
@@ -36,7 +36,7 @@ export function AdminRegisterForm({
 
   useEffect(() => {
     if (!token) return;
-
+    console.log("Fetching invite for token:", token);
     const fetchEmail = async () => {
       try {
         const res = await axios.get(
@@ -64,6 +64,7 @@ export function AdminRegisterForm({
     e.preventDefault();
 
     if (!token) {
+      toast.error("Invalid or missing invite token")
       setError("Invalid or missing invite token");
       return;
     }
@@ -96,10 +97,11 @@ export function AdminRegisterForm({
       );
 
       setSuccess(res.data.message);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      toast.success(res.data.message || "You have registered successfully!");
+      setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
-      console.error("Register error:", err);
       setError(err.response?.data?.message || "Failed to register");
+      toast.error(err.response?.data?.message || "Failed to register admin");
     } finally {
       setLoading(false);
     }
@@ -113,17 +115,6 @@ export function AdminRegisterForm({
           <CardDescription>Fill in your details to register</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <Alert className="mb-6" variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {success && (
-            <Alert className="mb-6" variant="default">
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-
           <form onSubmit={handleRegister} className="grid gap-6">
             <div className="grid gap-3">
               <Label htmlFor="email">Email</Label>

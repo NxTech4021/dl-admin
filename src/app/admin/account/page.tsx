@@ -11,6 +11,8 @@ import { ProfileCard } from "@/components/profile-card";
 import { useAdminSession } from "@/hooks/use-admin-session";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import ChangePasswordForm from "@/components/change-password-form";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 export default function AdminAccountPage() {
   const { user, loading, error, refreshSession } = useAdminSession();
@@ -29,8 +31,9 @@ export default function AdminAccountPage() {
     const handleSave = async (data: Partial<typeof user>) => {
     setSaving(true);
     try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/account/update`,
+      await axiosInstance.put(
+        endpoints.admin.updateAccount,
+        // `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/account/update`,
         { 
         adminId: user?.id,
         ...data 
@@ -70,7 +73,7 @@ export default function AdminAccountPage() {
             <p className="text-sm text-muted-foreground">
               Manage your password, security, and notifications here.
             </p>
-            {/* you can add a Change Password form here */}
+            <ChangePasswordForm />
           </div>
         </div>
       </div>
