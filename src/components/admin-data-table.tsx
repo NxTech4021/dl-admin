@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useEffect, useState } from "react"
 
 // Admin schema
 export const adminSchema = z.object({
@@ -50,11 +51,12 @@ export const adminSchema = z.object({
   email: z.string().email(),
   name: z.string(),    
   role: z.string().optional(),    
-  status: z.string().optional(),  
+  status: z.enum(["PENDING", "ACTIVE", "SUSPENDED"]), 
   createdAt: z.string(),
+  image: z.string().optional(),
   updatedAt: z.string().optional(),
   expiresAt: z.string().optional(),
-  type: z.enum(["ACTIVE", "PENDING", "SUSPENDED"]), 
+
 })
 
 
@@ -64,63 +66,6 @@ type AdminsDataTableProps = {
 
 export type Admin = z.infer<typeof adminSchema>
 
-// Mock data
-// const mockAdmins: Admin[] = [
-//   {
-//     id: "admin_1",
-//     name: "Alice Johnson",
-//     email: "alice.johnson@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "active",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_2",
-//     name: "Brian Lee",
-//     email: "brian.lee@deuceleague.com",
-//     emailVerified: false,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_3",
-//     name: "Carla Smith",
-//     email: "carla.smith@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//     {
-//     id: "admin_4",
-//     name: "Johnson",
-//     email: "johnson@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "active",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_5",
-//     name: "Brian Adams",
-//     email: "brian.adams@deuceleague.com",
-//     emailVerified: false,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-//   {
-//     id: "admin_6",
-//     name: "James Smith",
-//     email: "james.smith@deuceleague.com",
-//     emailVerified: true,
-//     image: null,
-//     status: "pending",
-//     roles: ["admin"],
-//   },
-// ]
 
 const getInitials = (name: string) =>
   name
@@ -131,17 +76,16 @@ const getInitials = (name: string) =>
 
 const getStatusBadgeVariant = (status: Admin["status"]) => {
   switch (status) {
-    case "active":
-      return "default"
-    case "inactive":
-      return "secondary"
-    case "suspended":
-      return "destructive"
+   case "ACTIVE":
+      return "bg-green-300 text-black-800"
+    case "PENDING":
+      return "bg-yellow-300 text-black-800"
+    case "SUSPENDED":
+      return "bg-red-300 text-white-800"
     default:
-      return "secondary"
+      return "bg-gray-100 text-gray-800"
   }
 }
-
 const columns: ColumnDef<Admin>[] = [
   {
     id: "select",
@@ -176,7 +120,6 @@ const columns: ColumnDef<Admin>[] = [
       const admin = row.original
       return (
         <div className="flex items-center gap-3">
-          {/* WORK On this next week */}
           <Avatar className="size-8">
             <AvatarImage src={admin.image || undefined} alt={admin.name} /> 
             <AvatarFallback className="text-xs">
@@ -211,12 +154,9 @@ const columns: ColumnDef<Admin>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge
-        variant={getStatusBadgeVariant(row.original.status)}
-        className="capitalize"
-      >
-        {row.original.status}
-      </Badge>
+      <Badge className={`capitalize ${getStatusBadgeVariant(row.original.status)}`}>
+      {row.original.status}
+    </Badge>
     ),
   },
 // {
@@ -277,13 +217,18 @@ const columns: ColumnDef<Admin>[] = [
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
   // const [data, setData] = React.useState(() => mockAdmins)
-  const [adminData, setAdminData] = React.useState<Admin[]>(data);
+   const [adminData, setAdminData] = useState<Admin[]>([])
   // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
+
+  useEffect(() => {
+    setAdminData(data)
+  }, [data])
+
 
   const table = useReactTable({
     data: adminData, 
@@ -311,6 +256,8 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   // if (loading) {
   //   return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
   // }
+
+  console.log("data", data)
 
   return (
     <div className="space-y-4">
