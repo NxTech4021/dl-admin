@@ -30,7 +30,7 @@ export const endpoints = {
     getProfile: (id: string) => `/api/admin/profile/${id}`,
     updateAccount: "/api/admin/account/update",
     createSuperadmin: "/api/admin/superadmin",
-    registerAdmin: "/api/admin/register",
+    updatepassword: "/api/admin/updatepassword",
     sendInvite: "/api/admin/invite",
   },
   player: {
