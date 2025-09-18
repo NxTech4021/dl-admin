@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { IconDownload, IconUsers } from "@tabler/icons-react";
 import AdminInviteModalWrapper from "@/components/wrappers/adminmodalwrapper";
 import { AdminsDataTable, Admin } from "@/components/admin-data-table";
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 
 
@@ -23,8 +23,7 @@ export default function AdminsWrapper() {
     useEffect(() => {
     const fetchAdmins = async () => {
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/getadmins`,
+        const res = await axiosInstance.get(endpoints.admin.getAdmins,
           { headers: { "Cache-Control": "no-cache" } }
         )
 
