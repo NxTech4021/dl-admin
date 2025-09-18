@@ -36,7 +36,7 @@ export function AdminRegisterForm({
 
   useEffect(() => {
     if (!token) return;
-
+    console.log("Fetching invite for token:", token);
     const fetchEmail = async () => {
       try {
         const res = await axios.get(
@@ -101,7 +101,7 @@ export function AdminRegisterForm({
       setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to register");
-      toast.error(err.response?.data?.message || "Failed to register");
+      toast.error(err.response?.data?.message || "Failed to register admin");
     } finally {
       setLoading(false);
     }

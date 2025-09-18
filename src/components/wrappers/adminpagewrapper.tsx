@@ -44,7 +44,7 @@ export default function AdminsWrapper() {
   const totalAdmins = admins.length
   const activeAdmins = admins.filter((a) => a.status === "ACTIVE").length
   const pendingAdmins = admins.filter((a) => a.status === "PENDING").length
-  const suspendedAdmins = admins.filter((a) => a.status === "SUSPENDED").length
+//   const suspendedAdmins = admins.filter((a) => a.status === "SUSPENDED").length
 
   return (
     <SidebarProvider
