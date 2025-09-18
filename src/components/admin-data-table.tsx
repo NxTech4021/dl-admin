@@ -21,7 +21,7 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { z } from "zod";
-
+import { useAdminSession } from "@/hooks/use-admin-session";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -236,7 +236,7 @@ const columns: ColumnDef<Admin>[] = [
 ];
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
-  // const [data, setData] = React.useState(() => mockAdmins)
+  const { user: currentUser } = useAdminSession();
   const [adminData, setAdminData] = useState<Admin[]>([]);
   // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({});
@@ -248,9 +248,18 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
+
   useEffect(() => {
-    setAdminData(data);
-  }, [data]);
+    if (currentUser) {
+    
+      const updatedData = data.map((admin) =>
+        admin.id === currentUser.id ? { ...admin, name: "ME" } : admin
+      );
+      setAdminData(updatedData);
+    } else {
+      setAdminData(data);
+    }
+  }, [data, currentUser]);
 
   const table = useReactTable({
     data: adminData,

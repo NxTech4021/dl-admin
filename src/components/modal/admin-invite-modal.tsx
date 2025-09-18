@@ -54,11 +54,18 @@ export default function AdminInviteModal({
 
       console.log("email", res.data);
       setSuccess(res.data.message);
-      setEmail(""); // reset inputs
+      setEmail(""); 
       setName("");
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
-       toast.error(err.response?.data?.error || "Failed to send invite");
+      const message =
+        err.response?.data?.error ||      
+        err.response?.data?.message ||   
+        err.message ||                   
+        "Failed to send invite";
+
+    toast.error(message);
+    setError(message);
     } finally {
       setLoading(false);
     }
