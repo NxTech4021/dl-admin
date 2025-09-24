@@ -6,7 +6,6 @@ import {
   IconMail,
   IconMapPin,
   IconCalendar,
-  IconTrophy,
   IconEye,
   IconEdit,
   IconTrash,
@@ -64,7 +63,7 @@ export const playerSchema = z.object({
   dateOfBirth: z.coerce.date().nullable(),
   registeredDate: z.coerce.date(),
   lastLoginDate: z.coerce.date().nullish(), // Updated to handle null or undefined
-  sports: z.array(z.enum(["pickleball", "tennis", "padel"])),
+  sports: z.array(z.string()), // Sports from ALL questionnaires (completed and incomplete)
   skillRatings: z
     .record(
       z.string(),
@@ -97,39 +96,25 @@ const formatDate = (date: Date) => {
   });
 };
 
-const getStatusBadgeVariant = (status: Player["status"]) => {
-  switch (status) {
-    case "active":
-      return "default";
-    case "inactive":
-      return "secondary";
-    case "suspended":
-      return "destructive";
-    default:
-      return "secondary";
-  }
+const getOnboardingBadgeVariant = (completedOnboarding: boolean) => {
+  return completedOnboarding ? "default" : "secondary";
 };
 
-const getSportsDisplay = (sports: Player["sports"]) => {
-  return sports.map((sport) => (
+const getSportsDisplay = (player: Player): React.ReactNode => {
+  // The backend now provides sports from ALL questionnaires (completed and incomplete)
+  const sportsToShow = player.sports;
+
+  if (!sportsToShow || sportsToShow.length === 0) {
+    return <span className="text-muted-foreground text-xs">No sports</span>;
+  }
+
+  return sportsToShow.map((sport) => (
     <Badge key={sport} variant="outline" className="text-xs capitalize">
       {sport}
     </Badge>
   ));
 };
 
-const getHighestRating = (skillRatings: Player["skillRatings"]) => {
-  if (!skillRatings) return null;
-
-  const ratings = Object.values(skillRatings);
-  if (ratings.length === 0) return null;
-
-  const highest = ratings.reduce((max, current) =>
-    current.rating > max.rating ? current : max
-  );
-
-  return highest.rating.toFixed(1);
-};
 
 const columns: ColumnDef<Player>[] = [
   {
@@ -231,24 +216,9 @@ const columns: ColumnDef<Player>[] = [
     header: "Sports",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
-        {getSportsDisplay(row.original.sports)}
+        {getSportsDisplay(row.original)}
       </div>
     ),
-  },
-  {
-    accessorKey: "skillRating",
-    header: "Top Rating",
-    cell: ({ row }) => {
-      const rating = getHighestRating(row.original.skillRatings);
-      return rating ? (
-        <div className="flex items-center gap-2">
-          <IconTrophy className="size-4 text-muted-foreground" />
-          <span className="font-medium">{rating}</span>
-        </div>
-      ) : (
-        <span className="text-muted-foreground">-</span>
-      );
-    },
   },
   {
     accessorKey: "registeredDate",
@@ -261,14 +231,14 @@ const columns: ColumnDef<Player>[] = [
     ),
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "completedOnboarding",
+    header: "Onboarding",
     cell: ({ row }) => (
       <Badge
-        variant={getStatusBadgeVariant(row.original.status)}
+        variant={getOnboardingBadgeVariant(row.original.completedOnboarding)}
         className="capitalize"
       >
-        {row.original.status}
+        {row.original.completedOnboarding ? "Onboarded" : "Incomplete"}
       </Badge>
     ),
   },
@@ -282,26 +252,39 @@ const columns: ColumnDef<Player>[] = [
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+              className="hover:bg-muted hover:text-foreground transition-colors flex size-8"
               size="icon"
             >
               <IconDotsVertical className="size-4" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <Link href={`/players/${player.id}`}>
-              <DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem asChild className="cursor-pointer focus:bg-accent focus:text-accent-foreground">
+              <Link href={`/players/${player.id}`}>
                 <IconEye className="mr-2 size-4" />
                 View Profile
-              </DropdownMenuItem>
-            </Link>
-            <DropdownMenuItem>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+              onClick={() => {
+                // TODO: Implement edit player functionality
+                console.log("Edit player:", player.id);
+              }}
+            >
               <IconEdit className="mr-2 size-4" />
               Edit Player
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem 
+              variant="destructive"
+              className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
+              onClick={() => {
+                // TODO: Implement delete player functionality
+                console.log("Delete player:", player.id);
+              }}
+            >
               <IconTrash className="mr-2 size-4" />
               Delete Player
             </DropdownMenuItem>
@@ -375,6 +358,7 @@ export function PlayersDataTable() {
 
   return (
     <div className="space-y-4">
+      {/* Search and Selection Info */}
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="flex items-center space-x-2">
           <Input
@@ -392,7 +376,8 @@ export function PlayersDataTable() {
         </div>
       </div>
 
-      <div className="rounded-md border mx-4 lg:mx-6">
+      {/* Table Container */}
+      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -417,9 +402,12 @@ export function PlayersDataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
-                  Loading players...
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Loading players...
+                  </div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -427,6 +415,7 @@ export function PlayersDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -442,7 +431,7 @@ export function PlayersDataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
                   No players found.
                 </TableCell>
@@ -452,6 +441,7 @@ export function PlayersDataTable() {
         </Table>
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}

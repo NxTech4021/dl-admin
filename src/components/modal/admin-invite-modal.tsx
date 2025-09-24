@@ -6,23 +6,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Mail, Loader2, } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Mail, Loader2, UserPlus } from "lucide-react";
 
 
 interface AdminInviteModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children?: React.ReactNode;
 }
 
 export default function AdminInviteModal({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
+  children,
 }: AdminInviteModalProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState(""); 
@@ -56,6 +60,8 @@ export default function AdminInviteModal({
       setSuccess(res.data.message);
       setEmail(""); 
       setName("");
+      // Close modal after successful invite
+      onOpenChange(false);
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
       const message =
@@ -71,57 +77,78 @@ export default function AdminInviteModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Invite a New Admin</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children}
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" />
+            Invite a New Admin
+          </DialogTitle>
+          <DialogDescription>
+            Send an invitation to a new admin user. They will receive an email with setup instructions.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Full Name</Label>
             <Input
               id="name"
               type="text"
-              placeholder="Admin Name"
+              placeholder="Enter admin's full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="w-full"
             />
           </div>
          
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email Address</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-9"
               />
             </div>
           </div>
+        </div>
 
-      
-        </CardContent>
-             <CardFooter className="flex justify-between">
-        <Button
+        <DialogFooter className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
             type="button"
             onClick={handleSendInvite}
             disabled={loading || !email || !name}
+            className="min-w-[120px]"
           >
-            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "Send Invitation"}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Send Invitation
+              </>
+            )}
           </Button>
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
-        </CardFooter>
-
-      </Card>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

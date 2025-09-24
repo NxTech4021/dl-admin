@@ -7,6 +7,8 @@ import {
   IconMail,
   IconEye,
   IconEdit,
+  IconUserCheck,
+  IconUserX,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -192,7 +194,7 @@ const columns: ColumnDef<Admin>[] = [
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+              className="data-[state=open]:bg-muted hover:bg-muted text-muted-foreground hover:text-foreground flex size-8 transition-colors"
               size="icon"
             >
               <IconDotsVertical className="size-4" />
@@ -200,32 +202,57 @@ const columns: ColumnDef<Admin>[] = [
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-52">
             {admin.status === "PENDING" ? (
-              <DropdownMenuItem onClick={() => handleResendInvite(admin.id)}>
+              <DropdownMenuItem 
+                onClick={() => handleResendInvite(admin.id)}
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+              >
                 <IconMail className="mr-2 size-4" />
                 Resend Invite
               </DropdownMenuItem>
             ) : (
               <>
-                <DropdownMenuItem>
-                  <Link href={`/admin/view/profile/${admin.id}`}>
+                <DropdownMenuItem asChild>
+                  <Link 
+                    href={`/admin/view/profile/${admin.id}`}
+                    className="flex items-center w-full cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                  >
                     <IconEye className="mr-2 size-4" />
                     View Profile
                   </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    // TODO: Implement edit admin functionality
+                    toast.info("Edit admin functionality coming soon");
+                  }}
+                  className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                >
                   <IconEdit className="mr-2 size-4" />
                   Edit Admin
                 </DropdownMenuItem>
 
-                {/* Optional: add Delete if needed */}
-                {/* <DropdownMenuSeparator /> */}
-                {/* <DropdownMenuItem variant="destructive">
-          <IconTrash className="mr-2 size-4" />
-          Delete Admin
-        </DropdownMenuItem> */}
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem 
+                  onClick={() => {
+                    // TODO: Implement suspend/activate functionality
+                    const action = admin.status === "ACTIVE" ? "suspend" : "activate";
+                    toast.info(`${action} admin functionality coming soon`);
+                  }}
+                  className={`cursor-pointer focus:bg-accent focus:text-accent-foreground ${
+                    admin.status === "ACTIVE" ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"
+                  }`}
+                >
+                  {admin.status === "ACTIVE" ? (
+                    <IconUserX className="mr-2 size-4" />
+                  ) : (
+                    <IconUserCheck className="mr-2 size-4" />
+                  )}
+                  {admin.status === "ACTIVE" ? "Suspend Admin" : "Activate Admin"}
+                </DropdownMenuItem>
               </>
             )}
           </DropdownMenuContent>
@@ -250,16 +277,8 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
 
 
   useEffect(() => {
-    if (currentUser) {
-    
-      const updatedData = data.map((admin) =>
-        admin.id === currentUser.id ? { ...admin, name: "ME" } : admin
-      );
-      setAdminData(updatedData);
-    } else {
-      setAdminData(data);
-    }
-  }, [data, currentUser]);
+    setAdminData(data);
+  }, [data]);
 
   const table = useReactTable({
     data: adminData,
