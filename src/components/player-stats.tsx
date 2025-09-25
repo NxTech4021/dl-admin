@@ -65,8 +65,8 @@ export function PlayerStats() {
         </div>
       </div> */}
       <div className="flex items-center gap-3 rounded-lg border p-4">
-        <div className="rounded-full bg-blue-500/10 p-2">
-          <div className="size-4 rounded-full bg-blue-500"></div>
+        <div className="rounded-full bg-green-500/10 p-2">
+          <div className="size-4 rounded-full bg-green-500"></div>
         </div>
         <div>
           <p className="text-2xl font-bold">{stats?.verified ?? 0}</p>
