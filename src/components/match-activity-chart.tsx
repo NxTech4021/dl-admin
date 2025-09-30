@@ -40,27 +40,27 @@ const chartData = [
 const chartConfig = {
   tennisLeague: {
     label: "Tennis League",
-    color: "#374F35",
+    color: "#ABFE4D",
   },
   tennisFriendly: {
     label: "Tennis Friendly",
-    color: "#5A7A57",
+    color: "#8FE83A",
   },
   pickleballLeague: {
     label: "Pickleball League",
-    color: "#512546",
+    color: "#A04DFE",
   },
   pickleballFriendly: {
     label: "Pickleball Friendly",
-    color: "#7A3A6B",
+    color: "#B366FF",
   },
   padelLeague: {
     label: "Padel League",
-    color: "#7D3C03",
+    color: "#4DABFE",
   },
   padelFriendly: {
     label: "Padel Friendly",
-    color: "#B55A04",
+    color: "#6BB6FF",
   },
 } satisfies ChartConfig
 

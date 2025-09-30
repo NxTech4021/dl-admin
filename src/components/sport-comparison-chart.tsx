@@ -26,19 +26,19 @@ const chartData = [
     sport: "Tennis",
     payingMembers: 68,
     revenue: 1700,
-    fill: "#374F35",
+    fill: "#ABFE4D",
   },
   {
     sport: "Pickleball",
     payingMembers: 42,
     revenue: 1260,
-    fill: "#512546",
+    fill: "#A04DFE",
   },
   {
     sport: "Padel",
     payingMembers: 22,
     revenue: 1000,
-    fill: "#7D3C03",
+    fill: "#4DABFE",
   },
 ]
 

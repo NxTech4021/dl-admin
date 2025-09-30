@@ -39,11 +39,11 @@ const chartConfig = {
   },
   totalUsers: {
     label: "Total Users",
-    color: "#374F35",
+    color: "#3B82F6", 
   },
   payingMembers: {
     label: "Paying Members",
-    color: "#512546",
+    color: "#10B981",
   },
 } satisfies ChartConfig
 
