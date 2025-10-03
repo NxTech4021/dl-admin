@@ -1,9 +1,16 @@
-"use client"
+"use client";
 
-import React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, Users, DollarSign, Target, UserCheck, CreditCard } from "lucide-react"
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Target,
+  UserCheck,
+  CreditCard,
+} from "lucide-react";
 
 // Static mock data - replace with real API calls (realistic for 100+ member app)
 const mockKPIData = {
@@ -14,7 +21,7 @@ const mockKPIData = {
   previousTotalUsers: 259,
   previousLeagueParticipants: 121,
   previousRevenue: 3630,
-}
+};
 
 const mockSportData = {
   tennis: {
@@ -41,20 +48,23 @@ const mockSportData = {
     previousPayingMembers: 21,
     previousRevenue: 940,
   },
-}
+};
 
 interface KPICardProps {
-  title: string
-  value: string | number
-  previousValue?: number
-  icon: React.ComponentType<{ className?: string }>
-  format?: "number" | "currency" | "percentage"
-  trend?: "up" | "down" | "neutral"
+  title: string;
+  value: string | number;
+  previousValue?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  format?: "number" | "currency" | "percentage";
+  trend?: "up" | "down" | "neutral";
 }
 
-function formatValue(value: string | number, format: "number" | "currency" | "percentage" = "number"): string {
-  const numValue = typeof value === "string" ? parseFloat(value) : value
-  
+function formatValue(
+  value: string | number,
+  format: "number" | "currency" | "percentage" = "number"
+): string {
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+
   switch (format) {
     case "currency":
       return new Intl.NumberFormat("en-MY", {
@@ -62,27 +72,40 @@ function formatValue(value: string | number, format: "number" | "currency" | "pe
         currency: "MYR",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-      }).format(numValue)
+      }).format(numValue);
     case "percentage":
-      return `${numValue.toFixed(1)}%`
+      return `${numValue.toFixed(1)}%`;
     case "number":
     default:
-      return new Intl.NumberFormat("en-US").format(numValue)
+      return new Intl.NumberFormat("en-US").format(numValue);
   }
 }
 
-function calculateTrend(current: number, previous: number): { trend: "up" | "down" | "neutral"; percentage: number } {
-  if (previous === 0) return { trend: "neutral", percentage: 0 }
-  
-  const change = ((current - previous) / previous) * 100
-  const trend = change > 0 ? "up" : change < 0 ? "down" : "neutral"
-  
-  return { trend, percentage: Math.abs(change) }
+function calculateTrend(
+  current: number,
+  previous: number
+): { trend: "up" | "down" | "neutral"; percentage: number } {
+  if (previous === 0) return { trend: "neutral", percentage: 0 };
+
+  const change = ((current - previous) / previous) * 100;
+  const trend = change > 0 ? "up" : change < 0 ? "down" : "neutral";
+
+  return { trend, percentage: Math.abs(change) };
 }
 
-function KPICard({ title, value, previousValue, icon: Icon, format = "number", trend }: KPICardProps) {
-  const numValue = typeof value === "string" ? parseFloat(value) : value
-  const trendData = previousValue ? calculateTrend(numValue, previousValue) : null
+function KPICard({
+  title,
+  value,
+  previousValue,
+  icon: Icon,
+  format = "number",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  trend,
+}: KPICardProps) {
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  const trendData = previousValue
+    ? calculateTrend(numValue, previousValue)
+    : null;
 
   return (
     <Card className="relative overflow-hidden">
@@ -93,9 +116,7 @@ function KPICard({ title, value, previousValue, icon: Icon, format = "number", t
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-          {formatValue(value, format)}
-        </div>
+        <div className="text-2xl font-bold">{formatValue(value, format)}</div>
         {trendData && (
           <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
             {trendData.trend === "up" ? (
@@ -103,38 +124,62 @@ function KPICard({ title, value, previousValue, icon: Icon, format = "number", t
             ) : trendData.trend === "down" ? (
               <TrendingDown className="h-3 w-3 text-red-500" />
             ) : null}
-            <span className={trendData.trend === "up" ? "text-green-500" : trendData.trend === "down" ? "text-red-500" : ""}>
-              {trendData.percentage > 0 && `${trendData.percentage.toFixed(1)}%`}
+            <span
+              className={
+                trendData.trend === "up"
+                  ? "text-green-500"
+                  : trendData.trend === "down"
+                  ? "text-red-500"
+                  : ""
+              }
+            >
+              {trendData.percentage > 0 &&
+                `${trendData.percentage.toFixed(1)}%`}
             </span>
             <span>from last period</span>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface SportKPICardProps {
-  sport: string
-  users: number
-  payingMembers: number
-  revenue: number
-  previousUsers?: number
-  previousPayingMembers?: number
-  previousRevenue?: number
+  sport: string;
+  users: number;
+  payingMembers: number;
+  revenue: number;
+  previousUsers?: number;
+  previousPayingMembers?: number;
+  previousRevenue?: number;
 }
 
-function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, previousPayingMembers, previousRevenue }: SportKPICardProps) {
-  const usersTrend = previousUsers ? calculateTrend(users, previousUsers) : null
-  const membersTrend = previousPayingMembers ? calculateTrend(payingMembers, previousPayingMembers) : null
-  const revenueTrend = previousRevenue ? calculateTrend(revenue, previousRevenue) : null
+function SportKPICard({
+  sport,
+  users,
+  payingMembers,
+  revenue,
+  previousUsers,
+  previousPayingMembers,
+  previousRevenue,
+}: SportKPICardProps) {
+  const usersTrend = previousUsers
+    ? calculateTrend(users, previousUsers)
+    : null;
+  const membersTrend = previousPayingMembers
+    ? calculateTrend(payingMembers, previousPayingMembers)
+    : null;
+  const revenueTrend = previousRevenue
+    ? calculateTrend(revenue, previousRevenue)
+    : null;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getSportIcon = (sport: string) => {
     // You can replace these with actual sport icons
-    return Target
-  }
+    return Target;
+  };
 
-  const SportIcon = getSportIcon(sport)
+  const SportIcon = getSportIcon(sport);
 
   return (
     <Card className="relative overflow-hidden">
@@ -154,7 +199,9 @@ function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, pre
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Users</p>
-              <p className="text-xl font-bold">{formatValue(users, "number")}</p>
+              <p className="text-xl font-bold">
+                {formatValue(users, "number")}
+              </p>
               {usersTrend && (
                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                   {usersTrend.trend === "up" ? (
@@ -162,18 +209,31 @@ function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, pre
                   ) : usersTrend.trend === "down" ? (
                     <TrendingDown className="h-3 w-3 text-red-500" />
                   ) : null}
-                  <span className={usersTrend.trend === "up" ? "text-green-500" : usersTrend.trend === "down" ? "text-red-500" : ""}>
-                    {usersTrend.percentage > 0 && `${usersTrend.percentage.toFixed(1)}%`}
+                  <span
+                    className={
+                      usersTrend.trend === "up"
+                        ? "text-green-500"
+                        : usersTrend.trend === "down"
+                        ? "text-red-500"
+                        : ""
+                    }
+                  >
+                    {usersTrend.percentage > 0 &&
+                      `${usersTrend.percentage.toFixed(1)}%`}
                   </span>
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Paying Members</p>
-              <p className="text-xl font-bold">{formatValue(payingMembers, "number")}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Paying Members
+              </p>
+              <p className="text-xl font-bold">
+                {formatValue(payingMembers, "number")}
+              </p>
               {membersTrend && (
                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                   {membersTrend.trend === "up" ? (
@@ -181,18 +241,31 @@ function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, pre
                   ) : membersTrend.trend === "down" ? (
                     <TrendingDown className="h-3 w-3 text-red-500" />
                   ) : null}
-                  <span className={membersTrend.trend === "up" ? "text-green-500" : membersTrend.trend === "down" ? "text-red-500" : ""}>
-                    {membersTrend.percentage > 0 && `${membersTrend.percentage.toFixed(1)}%`}
+                  <span
+                    className={
+                      membersTrend.trend === "up"
+                        ? "text-green-500"
+                        : membersTrend.trend === "down"
+                        ? "text-red-500"
+                        : ""
+                    }
+                  >
+                    {membersTrend.percentage > 0 &&
+                      `${membersTrend.percentage.toFixed(1)}%`}
                   </span>
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Revenue</p>
-              <p className="text-xl font-bold">{formatValue(revenue, "currency")}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Revenue
+              </p>
+              <p className="text-xl font-bold">
+                {formatValue(revenue, "currency")}
+              </p>
               {revenueTrend && (
                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                   {revenueTrend.trend === "up" ? (
@@ -200,8 +273,17 @@ function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, pre
                   ) : revenueTrend.trend === "down" ? (
                     <TrendingDown className="h-3 w-3 text-red-500" />
                   ) : null}
-                  <span className={revenueTrend.trend === "up" ? "text-green-500" : revenueTrend.trend === "down" ? "text-red-500" : ""}>
-                    {revenueTrend.percentage > 0 && `${revenueTrend.percentage.toFixed(1)}%`}
+                  <span
+                    className={
+                      revenueTrend.trend === "up"
+                        ? "text-green-500"
+                        : revenueTrend.trend === "down"
+                        ? "text-red-500"
+                        : ""
+                    }
+                  >
+                    {revenueTrend.percentage > 0 &&
+                      `${revenueTrend.percentage.toFixed(1)}%`}
                   </span>
                 </div>
               )}
@@ -210,7 +292,7 @@ function SportKPICard({ sport, users, payingMembers, revenue, previousUsers, pre
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function TopKPICards() {
@@ -244,7 +326,7 @@ export function TopKPICards() {
         format="currency"
       />
     </div>
-  )
+  );
 }
 
 export function SportKPICards() {
@@ -278,5 +360,5 @@ export function SportKPICards() {
         previousRevenue={mockSportData.padel.previousRevenue}
       />
     </div>
-  )
+  );
 }

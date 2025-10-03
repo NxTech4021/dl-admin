@@ -1,6 +1,5 @@
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export default function ChangePasswordForm() {
   const [oldPassword, setOldPassword] = useState("");
@@ -10,37 +9,39 @@ export default function ChangePasswordForm() {
   const [message, setMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (newPassword !== confirmPassword) {
-    setMessage("New password and confirm password do not match");
-    return;
-  }
-
-  setLoading(true);
-  setMessage(null);
-
-  try {
-    const res = await axiosInstance.post(endpoints.admin.updatepassword, 
-      { oldPassword, newPassword },
-      { withCredentials: true } 
-    );
-
-    setMessage(res.data.message || "Password updated successfully");
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  } catch (err: any) {
-    console.error(err);
-    if (err.response) {
-      setMessage(err.response.data?.message || "Failed to update password");
-    } else {
-      setMessage("Something went wrong");
+    if (newPassword !== confirmPassword) {
+      setMessage("New password and confirm password do not match");
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
+
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const res = await axiosInstance.post(
+        endpoints.admin.updatepassword,
+        { oldPassword, newPassword },
+        { withCredentials: true }
+      );
+
+      setMessage(res.data.message || "Password updated successfully");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error(err);
+      if (err.response) {
+        setMessage(err.response.data?.message || "Failed to update password");
+      } else {
+        setMessage("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -57,7 +58,9 @@ export default function ChangePasswordForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1">Current Password</label>
+        <label className="block text-sm font-medium mb-1">
+          Current Password
+        </label>
         <input
           type="password"
           className="w-full border rounded-md p-2"
@@ -79,7 +82,9 @@ export default function ChangePasswordForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+        <label className="block text-sm font-medium mb-1">
+          Confirm New Password
+        </label>
         <input
           type="password"
           className="w-full border rounded-md p-2"

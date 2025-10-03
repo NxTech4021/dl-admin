@@ -14,13 +14,11 @@ axiosInstance.interceptors.response.use(
 
 export default axiosInstance;
 
-
-export const fetcher = async (args: any) => {
+export const fetcher = async (args: unknown) => {
   const [url, config] = Array.isArray(args) ? args : [args];
   const res = await axiosInstance.get(url, { ...config });
   return res.data;
 };
-
 
 export const endpoints = {
   admin: {

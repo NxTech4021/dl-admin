@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import * as React from "react";
 import {
   IconDotsVertical,
   IconCalendar,
-  IconCurrencyDollar,
   IconEye,
   IconEdit,
   IconTrash,
@@ -47,7 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Season schema 
+// Season schema
 export const seasonSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -57,7 +57,9 @@ export const seasonSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   regiDeadline: z.coerce.date().nullable().optional(),
-  status: z.enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"]).default("UPCOMING"),
+  status: z
+    .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"])
+    .default("UPCOMING"),
   current: z.boolean().default(false),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -160,7 +162,7 @@ const handleDeleteSeason = async (seasonId: string) => {
   if (!confirm("Are you sure you want to delete this season?")) {
     return;
   }
-  
+
   try {
     await axios.delete(
       `${process.env.NEXT_PUBLIC_HOST_URL}/api/season/${seasonId}`
@@ -222,16 +224,17 @@ const columns: ColumnDef<Season>[] = [
     header: "Sports",
     cell: ({ row }) => {
       const sportType = row.original.sportType;
-      if (!sportType) return <span className="text-muted-foreground">No sport</span>;
-      
+      if (!sportType)
+        return <span className="text-muted-foreground">No sport</span>;
+
       return (
-        <Badge 
-          variant={getLeagueTypeBadgeVariant(sportType)} 
+        <Badge
+          variant={getLeagueTypeBadgeVariant(sportType)}
           className="capitalize"
-          style={{ 
+          style={{
             backgroundColor: getSportColor(sportType),
-            color: 'white',
-            borderColor: getSportColor(sportType)
+            color: "white",
+            borderColor: getSportColor(sportType),
           }}
         >
           {sportType}
@@ -244,8 +247,9 @@ const columns: ColumnDef<Season>[] = [
     header: "League Type",
     cell: ({ row }) => {
       const seasonType = row.original.seasonType;
-      if (!seasonType) return <span className="text-muted-foreground">No type</span>;
-      
+      if (!seasonType)
+        return <span className="text-muted-foreground">No type</span>;
+
       return (
         <Badge variant="outline" className="capitalize">
           {seasonType}
@@ -282,8 +286,9 @@ const columns: ColumnDef<Season>[] = [
     header: "Registration Deadline",
     cell: ({ row }) => {
       const regiDeadline = row.original.regiDeadline;
-      if (!regiDeadline) return <span className="text-muted-foreground">No deadline</span>;
-      
+      if (!regiDeadline)
+        return <span className="text-muted-foreground">No deadline</span>;
+
       return (
         <div className="flex items-center gap-2">
           <span>{formatDate(regiDeadline)}</span>
@@ -297,7 +302,10 @@ const columns: ColumnDef<Season>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <IconCalendar className="size-4 text-muted-foreground" />
-        <span>{formatDate(row.original.startDate)} – {formatDate(row.original.endDate)}</span>
+        <span>
+          {formatDate(row.original.startDate)} –{" "}
+          {formatDate(row.original.endDate)}
+        </span>
       </div>
     ),
   },
@@ -319,14 +327,14 @@ const columns: ColumnDef<Season>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => handleViewSeason(season.id)}
             >
               <IconEye className="mr-2 size-4" />
               View Season
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => handleEditSeason(season.id)}
             >
@@ -334,7 +342,7 @@ const columns: ColumnDef<Season>[] = [
               Edit Season
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => handleDeleteSeason(season.id)}
@@ -368,13 +376,13 @@ export function SeasonsDataTable() {
       response = await axios.get(
         `${process.env.NEXT_PUBLIC_HOST_URL}/api/season/getall`
       );
-      
+
       // Handle empty response or non-array response
       if (!response.data || !Array.isArray(response.data)) {
         setData([]);
         return;
       }
-      
+
       const parsedData = z.array(seasonSchema).parse(response.data);
       setData(parsedData);
     } catch (error) {

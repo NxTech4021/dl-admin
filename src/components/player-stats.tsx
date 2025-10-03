@@ -3,7 +3,6 @@
 import * as React from "react";
 import { IconUsers } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import axios from "axios";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 interface PlayerStatsData {

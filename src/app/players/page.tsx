@@ -1,23 +1,32 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react"
-import { Metadata } from "next"
-import dynamic from "next/dynamic"
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+
+import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react";
+import { Metadata } from "next";
+import dynamic from "next/dynamic";
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
-const PlayersDataTable = dynamic(() => import("@/components/players-data-table").then(mod => ({ default: mod.PlayersDataTable })), {
-  loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
-})
+const PlayersDataTable = dynamic(
+  () =>
+    import("@/components/players-data-table").then((mod) => ({
+      default: mod.PlayersDataTable,
+    })),
+  {
+    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
+  }
+);
 
-const PlayerStats = dynamic(() => import("@/components/player-stats").then(mod => ({ default: mod.PlayerStats })), {
-  loading: () => <div className="h-32 animate-pulse bg-muted rounded-lg" />
-})
+const PlayerStats = dynamic(
+  () =>
+    import("@/components/player-stats").then((mod) => ({
+      default: mod.PlayerStats,
+    })),
+  {
+    loading: () => <div className="h-32 animate-pulse bg-muted rounded-lg" />,
+  }
+);
 
 // STANDARD: Enable Static Generation with ISR
 export const revalidate = 300; // Revalidate every 5 minutes (players data changes less frequently)
@@ -57,7 +66,9 @@ export default function Page() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <IconUsers className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">Players</h1>
+                          <h1 className="text-3xl font-bold tracking-tight">
+                            Players
+                          </h1>
                         </div>
                         {/* <p className="text-muted-foreground">
                           Manage and view all registered players
@@ -74,13 +85,13 @@ export default function Page() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Statistics */}
                     <PlayerStats />
                   </div>
                 </div>
               </div>
-              
+
               {/* Data Table */}
               <div className="flex-1">
                 <PlayersDataTable />
@@ -90,5 +101,5 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

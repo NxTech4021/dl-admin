@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Mail, Loader2, UserPlus } from "lucide-react";
-
 
 interface AdminInviteModalProps {
   open: boolean;
@@ -29,7 +28,7 @@ export default function AdminInviteModal({
   children,
 }: AdminInviteModalProps) {
   const [email, setEmail] = useState("");
-  const [name, setName] = useState(""); 
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -40,17 +39,16 @@ export default function AdminInviteModal({
     setSuccess("");
 
     try {
-
-      // username is a must for creating users in the backend 
-       const tempUsername =
+      // username is a must for creating users in the backend
+      const tempUsername =
         email.split("@")[0] + Math.floor(Math.random() * 1000);
-     
+
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/invite`,
         {
           email,
-          name,               
-          username: tempUsername, 
+          name,
+          username: tempUsername,
         }
       );
       console.log("Success toast about to fire");
@@ -58,20 +56,21 @@ export default function AdminInviteModal({
 
       console.log("email", res.data);
       setSuccess(res.data.message);
-      setEmail(""); 
+      setEmail("");
       setName("");
       // Close modal after successful invite
       onOpenChange(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to send invite");
       const message =
-        err.response?.data?.error ||      
-        err.response?.data?.message ||   
-        err.message ||                   
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
         "Failed to send invite";
 
-    toast.error(message);
-    setError(message);
+      toast.error(message);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -87,10 +86,11 @@ export default function AdminInviteModal({
             Invite a New Admin
           </DialogTitle>
           <DialogDescription>
-            Send an invitation to a new admin user. They will receive an email with setup instructions.
+            Send an invitation to a new admin user. They will receive an email
+            with setup instructions.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Full Name</Label>
@@ -103,7 +103,7 @@ export default function AdminInviteModal({
               className="w-full"
             />
           </div>
-         
+
           <div className="grid gap-2">
             <Label htmlFor="email">Email Address</Label>
             <div className="relative">

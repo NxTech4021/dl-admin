@@ -4,11 +4,7 @@ import * as React from "react";
 import {
   IconMail,
   IconMapPin,
-  IconCalendar,
-  IconTrophy,
   IconUserCircle,
-  IconListCheck,
-  IconChevronDown,
   IconActivity,
   IconDatabase,
   IconDashboard,
@@ -18,16 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 
 interface AdminProfileData {
   id: string;
@@ -45,52 +32,45 @@ interface AdminProfileProps {
   initialData?: AdminProfileData;
 }
 
-
 export function AdminProfile({ adminId }: AdminProfileProps) {
-  const [profile, setProfile] = React.useState<AdminProfileData | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [profile, setProfile] = React.useState<AdminProfileData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-
- React.useEffect(() => {
+  React.useEffect(() => {
     const fetchProfile = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/profile/${adminId}`)
-        const data = res.data
-
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/profile/${adminId}`
+        );
+        const data = res.data;
 
         // to shape the backend with frontend interface
-      const mappedProfile: AdminProfileData = {
-        id: data.id,
-        name: data.user?.name ?? "N/A",
-        email: data.user?.email ?? "N/A",
-        image: data.user?.image ?? null,
-        area: null, // or map if backend provides it
-        gender: data.user?.gender ?? null,
-        status: data.status ?? null,
-        accounts: data.user?.accounts ?? [],
-      }
+        const mappedProfile: AdminProfileData = {
+          id: data.id,
+          name: data.user?.name ?? "N/A",
+          email: data.user?.email ?? "N/A",
+          image: data.user?.image ?? null,
+          area: null, // or map if backend provides it
+          gender: data.user?.gender ?? null,
+          status: data.status ?? null,
+          accounts: data.user?.accounts ?? [],
+        };
 
-      setProfile(mappedProfile)
+        setProfile(mappedProfile);
       } catch (err) {
-        console.error("Failed to fetch admin data:", err)
+        console.error("Failed to fetch admin data:", err);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchProfile()
-  }, [adminId])
+    fetchProfile();
+  }, [adminId]);
 
-   if (isLoading) {
+  if (isLoading) {
     return <ProfileSkeleton />;
   }
-  
-
-
-
-
- 
 
   if (!profile) {
     return (
@@ -107,24 +87,23 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
     );
   }
 
- const getInitials = (name?: string) =>
-  name
-    ? name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : "NA";
+  const getInitials = (name?: string) =>
+    name
+      ? name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+      : "NA";
 
-
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-    });
+  // const formatDate = (dateString: string) =>
+  //   new Date(dateString).toLocaleDateString("en-US", {
+  //     year: "numeric",
+  //     month: "long",
+  //     day: "numeric",
+  //     hour: "numeric",
+  //     minute: "numeric",
+  //   });
 
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -189,11 +168,11 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <IconDashboard className="size-5" />
-                    Future modules section
+                  Future modules section
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                    <p> Coming soon.... </p>
+                <p> Coming soon.... </p>
               </CardContent>
             </Card>
 
@@ -201,10 +180,10 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <IconActivity className="size-5" />
-                    Future modules section
+                  Future modules section
                 </CardTitle>
               </CardHeader>
-                
+
               <CardContent>
                 {/* <Table>
                   <TableHeader>
@@ -219,14 +198,12 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
                       
                   </TableBody>
                 </Table> */}
-                 <p> Coming soon.... </p>
+                <p> Coming soon.... </p>
               </CardContent>
             </Card>
           </div>
         </div>
       </TabsContent>
-
-     
 
       {/* Future tabs*/}
       <TabsContent value="leagues">
@@ -240,12 +217,10 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
           <CardContent className="space-y-2">
             <p> Coming soon.... </p>
           </CardContent>
-
-          
         </Card>
       </TabsContent>
 
-        <TabsContent value="complaints">
+      <TabsContent value="complaints">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -258,11 +233,7 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
           </CardContent>
         </Card>
       </TabsContent>
-
-
     </Tabs>
-
-    
   );
 }
 

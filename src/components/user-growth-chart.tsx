@@ -1,22 +1,28 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck } from "lucide-react"
+import * as React from "react";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Users, UserCheck } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 // Static mock data for the last 12 months - realistic fluctuations for 100+ member app
 const chartData = [
@@ -26,12 +32,12 @@ const chartData = [
   { month: "2024-04", totalUsers: 203, payingMembers: 91 },
   { month: "2024-05", totalUsers: 196, payingMembers: 87 },
   { month: "2024-07", totalUsers: 234, payingMembers: 108 },
-  { month: "2024-08", totalUsers: 229, payingMembers: 104 }, 
+  { month: "2024-08", totalUsers: 229, payingMembers: 104 },
   { month: "2024-09", totalUsers: 251, payingMembers: 118 },
   { month: "2024-10", totalUsers: 267, payingMembers: 125 },
   { month: "2024-11", totalUsers: 259, payingMembers: 121 },
   { month: "2024-12", totalUsers: 284, payingMembers: 132 },
-]
+];
 
 const chartConfig = {
   users: {
@@ -39,35 +45,36 @@ const chartConfig = {
   },
   totalUsers: {
     label: "Total Users",
-    color: "#3B82F6", 
+    color: "#3B82F6",
   },
   payingMembers: {
     label: "Paying Members",
     color: "#10B981",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function UserGrowthChart() {
-  const [activeChart, setActiveChart] = 
-    React.useState<keyof typeof chartConfig>("totalUsers")
-  const [timeRange, setTimeRange] = React.useState("12m")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeChart, setActiveChart] =
+    React.useState<keyof typeof chartConfig>("totalUsers");
+  const [timeRange, setTimeRange] = React.useState("12m");
 
   const formatMonth = (value: string) => {
-    const date = new Date(value + "-01")
+    const date = new Date(value + "-01");
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   const filteredData = React.useMemo(() => {
-    let monthsToShow = 12
-    
-    if (timeRange === "6m") monthsToShow = 6
-    if (timeRange === "3m") monthsToShow = 3
-    
-    return chartData.slice(-monthsToShow)
-  }, [timeRange])
+    let monthsToShow = 12;
+
+    if (timeRange === "6m") monthsToShow = 6;
+    if (timeRange === "3m") monthsToShow = 3;
+
+    return chartData.slice(-monthsToShow);
+  }, [timeRange]);
 
   const total = React.useMemo(
     () => ({
@@ -75,7 +82,7 @@ export function UserGrowthChart() {
       payingMembers: filteredData[filteredData.length - 1].payingMembers,
     }),
     [filteredData]
-  )
+  );
 
   return (
     <Card>
@@ -113,14 +120,18 @@ export function UserGrowthChart() {
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Total Users</span>
             </div>
-            <div className="text-2xl font-bold">{total.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {total.totalUsers.toLocaleString()}
+            </div>
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Paying Members</span>
             </div>
-            <div className="text-2xl font-bold">{total.payingMembers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {total.payingMembers.toLocaleString()}
+            </div>
           </div>
         </div>
         <ChartContainer
@@ -151,7 +162,7 @@ export function UserGrowthChart() {
               axisLine={false}
               tickMargin={8}
               tickFormatter={(value) => value.toString()}
-              domain={['dataMin - 10', 'dataMax + 10']}
+              domain={["dataMin - 10", "dataMax + 10"]}
             />
             <ChartTooltip
               content={
@@ -162,11 +173,12 @@ export function UserGrowthChart() {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })
+                    });
                   }}
                   formatter={(value, name) => {
-                    const config = chartConfig[name as keyof typeof chartConfig]
-                    const color = 'color' in config ? config.color : '#374F35'
+                    const config =
+                      chartConfig[name as keyof typeof chartConfig];
+                    const color = "color" in config ? config.color : "#374F35";
                     return [
                       <div className="flex items-center gap-2" key={name}>
                         <div
@@ -177,10 +189,13 @@ export function UserGrowthChart() {
                           {new Intl.NumberFormat().format(value as number)}
                         </span>
                       </div>,
-                      <span className="text-xs text-muted-foreground" key={`${name}-label`}>
+                      <span
+                        className="text-xs text-muted-foreground"
+                        key={`${name}-label`}
+                      >
                         {config?.label || name}
-                      </span>
-                    ]
+                      </span>,
+                    ];
                   }}
                 />
               }
@@ -203,5 +218,5 @@ export function UserGrowthChart() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

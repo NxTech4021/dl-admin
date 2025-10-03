@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -16,14 +17,19 @@ import {
   IconClock,
   IconShield,
   IconTarget,
-  IconChartBar,
   IconUserCheck,
   IconStar,
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -254,8 +260,8 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
-                  <div>
-                    <CardTitle className="text-2xl">{profile.name}</CardTitle>
+                    <div>
+                      <CardTitle className="text-2xl">{profile.name}</CardTitle>
                       <p className="text-sm text-muted-foreground">
                         @{profile.username}
                       </p>
@@ -279,7 +285,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                         <Badge variant="outline" className="text-blue-600">
                           <IconUserCheck className="size-3 mr-1" />
                           Onboarded
-                    </Badge>
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -287,35 +293,35 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <div className="space-y-3">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconMail className="size-4" />
-                  <span>{profile.email}</span>
-                </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconMail className="size-4" />
+                    <span>{profile.email}</span>
+                  </div>
                   {profile.phoneNumber && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <IconPhone className="size-4" />
                       <span>{profile.phoneNumber}</span>
                     </div>
                   )}
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconMapPin className="size-4" />
-                  <span>{profile.area || "Location not set"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconUserCircle className="size-4" />
-                  <span className="capitalize">
-                    {profile.gender || "Gender not set"}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconMapPin className="size-4" />
+                    <span>{profile.area || "Location not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconUserCircle className="size-4" />
+                    <span className="capitalize">
+                      {profile.gender || "Gender not set"}
+                    </span>
+                  </div>
                   {profile.dateOfBirth && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <IconCake className="size-4" />
                       <span>{formatDate(profile.dateOfBirth)}</span>
                     </div>
                   )}
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconCalendar className="size-4" />
-                  <span>Joined on {formatDate(profile.registeredDate)}</span>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconCalendar className="size-4" />
+                    <span>Joined on {formatDate(profile.registeredDate)}</span>
                   </div>
                   {profile.lastLogin && (
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -324,11 +330,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     </div>
                   )}
                 </div>
-                
+
                 {profile.bio && (
                   <div className="pt-3 border-t">
                     <p className="text-sm text-muted-foreground italic">
-                      "{profile.bio}"
+                      &quot;{profile.bio}&quot;
                     </p>
                   </div>
                 )}
@@ -349,7 +355,10 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                 {profile.questionnaires && profile.questionnaires.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {profile.questionnaires.map((q, index) => (
-                      <div key={index} className="rounded-lg border p-4 space-y-4">
+                      <div
+                        key={index}
+                        className="rounded-lg border p-4 space-y-4"
+                      >
                         {/* Sport Header */}
                         <div className="text-center">
                           <h4 className="text-lg font-semibold capitalize text-primary">
@@ -360,7 +369,10 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                               v{q.qVersion}
                             </Badge>
                             {q.completedAt ? (
-                              <Badge variant="default" className="text-xs bg-green-600 text-white border-green-600">
+                              <Badge
+                                variant="default"
+                                className="text-xs bg-green-600 text-white border-green-600"
+                              >
                                 <IconUserCheck className="size-3 mr-1" />
                                 Completed
                               </Badge>
@@ -412,28 +424,38 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                             {/* Additional Info */}
                             <div className="pt-2 border-t space-y-2">
                               <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Confidence:</span>
-                          <Badge
-                            variant="outline"
+                                <span className="text-muted-foreground">
+                                  Confidence:
+                                </span>
+                                <Badge
+                                  variant="outline"
                                   className={`text-xs capitalize ${
-                                    q.result.confidence === 'high' ? 'text-green-600 border-green-200' :
-                                    q.result.confidence === 'medium' ? 'text-yellow-600 border-yellow-200' :
-                                    q.result.confidence === 'low' ? 'text-red-600 border-red-200' : ''
+                                    q.result.confidence === "high"
+                                      ? "text-green-600 border-green-200"
+                                      : q.result.confidence === "medium"
+                                      ? "text-yellow-600 border-yellow-200"
+                                      : q.result.confidence === "low"
+                                      ? "text-red-600 border-red-200"
+                                      : ""
                                   }`}
                                 >
                                   {q.result.confidence}
-                          </Badge>
-                        </div>
+                                </Badge>
+                              </div>
                               {q.result.source && (
                                 <div className="flex items-center justify-between text-sm">
-                                  <span className="text-muted-foreground">Source:</span>
+                                  <span className="text-muted-foreground">
+                                    Source:
+                                  </span>
                                   <span className="text-xs capitalize font-medium">
                                     {q.result.source}
                                   </span>
                                 </div>
                               )}
                               <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Started:</span>
+                                <span className="text-muted-foreground">
+                                  Started:
+                                </span>
                                 <span className="text-xs">
                                   {formatDate(q.startedAt)}
                                 </span>
@@ -456,9 +478,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                 ) : (
                   <div className="text-center py-8">
                     <IconTrophy className="size-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       No questionnaire data available
-                  </p>
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -502,7 +524,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                           {q.completedAt ? (
                             <div className="flex items-center gap-2">
                               <IconUserCheck className="size-4 text-green-600" />
-                              <span className="text-sm">{formatDate(q.completedAt)}</span>
+                              <span className="text-sm">
+                                {formatDate(q.completedAt)}
+                              </span>
                             </div>
                           ) : (
                             <Badge variant="secondary" className="text-xs">
@@ -517,12 +541,16 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                           {q.result?.doubles || "N/A"}
                         </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`capitalize text-xs ${
-                              q.result?.confidence === 'high' ? 'text-green-600' :
-                              q.result?.confidence === 'medium' ? 'text-yellow-600' :
-                              q.result?.confidence === 'low' ? 'text-red-600' : ''
+                              q.result?.confidence === "high"
+                                ? "text-green-600"
+                                : q.result?.confidence === "medium"
+                                ? "text-yellow-600"
+                                : q.result?.confidence === "low"
+                                ? "text-red-600"
+                                : ""
                             }`}
                           >
                             {q.result?.confidence || "N/A"}
@@ -556,19 +584,27 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               {profile.accounts && profile.accounts.length > 0 ? (
                 <div className="space-y-3">
                   {profile.accounts.map((acc, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20">
                           <IconShield className="size-4 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-medium capitalize">{acc.providerId}</p>
+                          <p className="font-medium capitalize">
+                            {acc.providerId}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             Linked on {formatDate(acc.createdAt)}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-green-600 border-green-200">
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200"
+                      >
                         Active
                       </Badge>
                     </div>
@@ -577,7 +613,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               ) : (
                 <div className="text-center py-8">
                   <IconShield className="size-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No login methods found</p>
+                  <p className="text-sm text-muted-foreground">
+                    No login methods found
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -604,7 +642,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/20">
                             <div className="w-2 h-2 rounded-full bg-green-600"></div>
                           </div>
-                          <span className="text-sm font-medium">Active Session</span>
+                          <span className="text-sm font-medium">
+                            Active Session
+                          </span>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {formatDate(sess.expiresAt)}
@@ -613,11 +653,15 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Device:</span>
-                          <span className="truncate">{sess.userAgent || "Unknown device"}</span>
+                          <span className="truncate">
+                            {sess.userAgent || "Unknown device"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">IP:</span>
-                          <span className="font-mono text-xs">{sess.ipAddress || "Unknown"}</span>
+                          <span className="font-mono text-xs">
+                            {sess.ipAddress || "Unknown"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -626,7 +670,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               ) : (
                 <div className="text-center py-8">
                   <IconClock className="size-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No active sessions found</p>
+                  <p className="text-sm text-muted-foreground">
+                    No active sessions found
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -672,8 +718,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                       <TableCell>
                         <Badge
                           variant={
-                            match.outcome === "win" ? "default" : 
-                            match.outcome === "loss" ? "destructive" : "secondary"
+                            match.outcome === "win"
+                              ? "default"
+                              : match.outcome === "loss"
+                              ? "destructive"
+                              : "secondary"
                           }
                           className="capitalize"
                         >
@@ -694,8 +743,8 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                 No match history found for this player.
               </p>
             )}
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
       </TabsContent>
 
       {/* ACHIEVEMENTS TAB */}
@@ -726,12 +775,14 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                         <Badge variant="secondary" className="capitalize">
                           {achievement.category}
                         </Badge>
-                        <span>Unlocked: {formatDate(achievement.unlockedAt)}</span>
+                        <span>
+                          Unlocked: {formatDate(achievement.unlockedAt)}
+                        </span>
                       </div>
                     </div>
                   </Card>
                 ))}
-                    </div>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
                 No achievements unlocked yet.
@@ -784,11 +835,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                       )}
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-0">
                     <Collapsible>
                       <CollapsibleTrigger className="flex w-full items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                        <span className="text-sm font-medium">View Responses</span>
+                        <span className="text-sm font-medium">
+                          View Responses
+                        </span>
                         <IconChevronDown className="size-4 transition-transform data-[state=open]:rotate-180" />
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-4">
@@ -801,19 +854,29 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                               <div className="text-sm">
                                 {typeof value === "object" && value !== null ? (
                                   <div className="space-y-3">
-                                    {Object.entries(value).map(([subKey, subValue]) => (
-                                      <div key={subKey} className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2"></div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium text-xs text-muted-foreground mb-1">
-                                            {subKey.replace(/_/g, " ").replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-                                          </div>
-                                          <div className="text-sm break-words">
-                                            {String(subValue)}
+                                    {Object.entries(value).map(
+                                      ([subKey, subValue]) => (
+                                        <div
+                                          key={subKey}
+                                          className="flex items-start gap-3"
+                                        >
+                                          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2"></div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-xs text-muted-foreground mb-1">
+                                              {subKey
+                                                .replace(/_/g, " ")
+                                                .replace(/([A-Z])/g, " $1")
+                                                .replace(/^./, (str) =>
+                                                  str.toUpperCase()
+                                                )}
+                                            </div>
+                                            <div className="text-sm break-words">
+                                              {String(subValue)}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      )
+                                    )}
                                   </div>
                                 ) : (
                                   <div className="text-sm break-words">
@@ -834,9 +897,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <IconDatabase className="size-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Questionnaire Data</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Questionnaire Data
+                </h3>
                 <p className="text-muted-foreground text-center max-w-md">
-                  This player hasn't completed any questionnaires yet.
+                  This player hasn&apos;t completed any questionnaires yet.
                 </p>
               </CardContent>
             </Card>

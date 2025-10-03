@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,7 +16,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, User, UserCheck, Lock, Check, X, AlertCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  User,
+  UserCheck,
+  Lock,
+  Check,
+  X,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export function AdminRegisterForm({
@@ -33,13 +45,13 @@ export function AdminRegisterForm({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // Real-time validation states
   const [usernameValid, setUsernameValid] = useState(false);
   const [passwordValid, setPasswordValid] = useState(false);
   const [confirmPasswordValid, setConfirmPasswordValid] = useState(false);
   const [nameValid, setNameValid] = useState(false);
-  
+
   // Focus states for showing requirements
   const [usernameFocused, setUsernameFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -65,7 +77,7 @@ export function AdminRegisterForm({
     fetchEmail();
   }, [token]);
 
-    const validateUsername = (raw: string) => {
+  const validateUsername = (raw: string) => {
     const sanitized = raw.trim().toLowerCase().replace(/\s+/g, "_");
     const regex = /^[a-z0-9_]{3,20}$/; // letters, numbers, underscore, 3–20 chars
     return regex.test(sanitized) ? sanitized : null;
@@ -73,7 +85,9 @@ export function AdminRegisterForm({
 
   // Real-time validation functions
   const validatePassword = (password: string) => {
-    return password.length >= 8 && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password);
+    return (
+      password.length >= 8 && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)
+    );
   };
 
   const validateName = (name: string) => {
@@ -91,19 +105,20 @@ export function AdminRegisterForm({
   }, [password]);
 
   useEffect(() => {
-    setConfirmPasswordValid(password === confirmPassword && confirmPassword.length > 0);
+    setConfirmPasswordValid(
+      password === confirmPassword && confirmPassword.length > 0
+    );
   }, [password, confirmPassword]);
 
   useEffect(() => {
     setNameValid(validateName(name));
   }, [name]);
 
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
-      toast.error("Invalid or missing invite token")
+      toast.error("Invalid or missing invite token");
       setError("Invalid or missing invite token");
       return;
     }
@@ -126,7 +141,6 @@ export function AdminRegisterForm({
 
     const formData = { token, email, username: safeUsername, name, password };
     console.log("Submitting form data:", formData);
-
 
     try {
       const res = await axios.post(
@@ -154,8 +168,8 @@ export function AdminRegisterForm({
           <CardDescription>Fill in your details to register</CardDescription>
         </CardHeader>
         <CardContent>
-          <form 
-            onSubmit={handleRegister} 
+          <form
+            onSubmit={handleRegister}
             className="grid gap-6"
             autoComplete="off"
             data-form-type="other"
@@ -178,10 +192,8 @@ export function AdminRegisterForm({
               </div>
             </div>
 
-              <div className="grid gap-3">
-                <Label htmlFor="username">
-                  Username
-                </Label>
+            <div className="grid gap-3">
+              <Label htmlFor="username">Username</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -192,9 +204,9 @@ export function AdminRegisterForm({
                   onFocus={() => setUsernameFocused(true)}
                   onBlur={() => setUsernameFocused(false)}
                   className={`pl-9 pr-10 ${
-                    username.length > 0 
-                      ? usernameValid 
-                        ? "border-green-500 focus:border-green-500" 
+                    username.length > 0
+                      ? usernameValid
+                        ? "border-green-500 focus:border-green-500"
                         : "border-red-500 focus:border-red-500"
                       : ""
                   }`}
@@ -214,18 +226,50 @@ export function AdminRegisterForm({
               </div>
               {usernameFocused && (
                 <div className="space-y-2 p-3 bg-muted/50 rounded-md border">
-                  <p className="text-xs font-medium text-muted-foreground">Requirements:</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Requirements:
+                  </p>
                   <div className="space-y-1">
-                    <div className={`flex items-center gap-2 text-xs ${username.length >= 3 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {username.length >= 3 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        username.length >= 3
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {username.length >= 3 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       3-20 characters
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${/^[a-z0-9_]*$/.test(username) && username.length > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {/^[a-z0-9_]*$/.test(username) && username.length > 0 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        /^[a-z0-9_]*$/.test(username) && username.length > 0
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {/^[a-z0-9_]*$/.test(username) && username.length > 0 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       Lowercase letters, numbers, underscores only
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${username.length <= 20 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {username.length <= 20 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        username.length <= 20
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {username.length <= 20 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       Maximum 20 characters
                     </div>
                   </div>
@@ -233,10 +277,8 @@ export function AdminRegisterForm({
               )}
             </div>
 
-              <div className="grid gap-3">
-                <Label htmlFor="name">
-                  Full Name
-                </Label>
+            <div className="grid gap-3">
+              <Label htmlFor="name">Full Name</Label>
               <div className="relative">
                 <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -247,9 +289,9 @@ export function AdminRegisterForm({
                   onFocus={() => setNameFocused(true)}
                   onBlur={() => setNameFocused(false)}
                   className={`pl-9 pr-10 ${
-                    name.length > 0 
-                      ? nameValid 
-                        ? "border-green-500 focus:border-green-500" 
+                    name.length > 0
+                      ? nameValid
+                        ? "border-green-500 focus:border-green-500"
                         : "border-red-500 focus:border-red-500"
                       : ""
                   }`}
@@ -269,14 +311,36 @@ export function AdminRegisterForm({
               </div>
               {nameFocused && (
                 <div className="space-y-2 p-3 bg-muted/50 rounded-md border">
-                  <p className="text-xs font-medium text-muted-foreground">Requirements:</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Requirements:
+                  </p>
                   <div className="space-y-1">
-                    <div className={`flex items-center gap-2 text-xs ${name.trim().length >= 2 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {name.trim().length >= 2 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        name.trim().length >= 2
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {name.trim().length >= 2 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       At least 2 characters
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${/^[a-zA-Z\s]*$/.test(name) && name.length > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {/^[a-zA-Z\s]*$/.test(name) && name.length > 0 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        /^[a-zA-Z\s]*$/.test(name) && name.length > 0
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {/^[a-zA-Z\s]*$/.test(name) && name.length > 0 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       Letters and spaces only
                     </div>
                   </div>
@@ -284,10 +348,8 @@ export function AdminRegisterForm({
               )}
             </div>
 
-              <div className="grid gap-3">
-                <Label htmlFor="password">
-                  Password
-                </Label>
+            <div className="grid gap-3">
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -298,9 +360,9 @@ export function AdminRegisterForm({
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
                   className={`pl-9 pr-20 ${
-                    password.length > 0 
-                      ? passwordValid 
-                        ? "border-green-500 focus:border-green-500" 
+                    password.length > 0
+                      ? passwordValid
+                        ? "border-green-500 focus:border-green-500"
                         : "border-red-500 focus:border-red-500"
                       : ""
                   }`}
@@ -338,22 +400,64 @@ export function AdminRegisterForm({
               </div>
               {passwordFocused && (
                 <div className="space-y-2 p-3 bg-muted/50 rounded-md border">
-                  <p className="text-xs font-medium text-muted-foreground">Requirements:</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Requirements:
+                  </p>
                   <div className="space-y-1">
-                    <div className={`flex items-center gap-2 text-xs ${password.length >= 8 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {password.length >= 8 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        password.length >= 8
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {password.length >= 8 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       At least 8 characters
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${/[a-z]/.test(password) ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {/[a-z]/.test(password) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        /[a-z]/.test(password)
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {/[a-z]/.test(password) ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       One lowercase letter
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {/[A-Z]/.test(password) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        /[A-Z]/.test(password)
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {/[A-Z]/.test(password) ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       One uppercase letter
                     </div>
-                    <div className={`flex items-center gap-2 text-xs ${/\d/.test(password) ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {/\d/.test(password) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        /\d/.test(password)
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {/\d/.test(password) ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       One number
                     </div>
                   </div>
@@ -361,10 +465,8 @@ export function AdminRegisterForm({
               )}
             </div>
 
-              <div className="grid gap-3">
-                <Label htmlFor="confirmPassword">
-                  Confirm Password
-                </Label>
+            <div className="grid gap-3">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -375,9 +477,9 @@ export function AdminRegisterForm({
                   onFocus={() => setConfirmPasswordFocused(true)}
                   onBlur={() => setConfirmPasswordFocused(false)}
                   className={`pl-9 pr-20 ${
-                    confirmPassword.length > 0 
-                      ? confirmPasswordValid 
-                        ? "border-green-500 focus:border-green-500" 
+                    confirmPassword.length > 0
+                      ? confirmPasswordValid
+                        ? "border-green-500 focus:border-green-500"
                         : "border-red-500 focus:border-red-500"
                       : ""
                   }`}
@@ -415,10 +517,24 @@ export function AdminRegisterForm({
               </div>
               {confirmPasswordFocused && (
                 <div className="space-y-2 p-3 bg-muted/50 rounded-md border">
-                  <p className="text-xs font-medium text-muted-foreground">Requirements:</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Requirements:
+                  </p>
                   <div className="space-y-1">
-                    <div className={`flex items-center gap-2 text-xs ${confirmPassword === password && confirmPassword.length > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {confirmPassword === password && confirmPassword.length > 0 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        confirmPassword === password &&
+                        confirmPassword.length > 0
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {confirmPassword === password &&
+                      confirmPassword.length > 0 ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                       Must match the password above
                     </div>
                   </div>
@@ -426,32 +542,72 @@ export function AdminRegisterForm({
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading || !usernameValid || !passwordValid || !confirmPasswordValid || !nameValid}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                loading ||
+                !usernameValid ||
+                !passwordValid ||
+                !confirmPasswordValid ||
+                !nameValid
+              }
             >
               {loading ? "Registering..." : "Register"}
             </Button>
-            
+
             {/* Validation Summary */}
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Form Requirements:</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className={`flex items-center gap-2 ${usernameValid ? 'text-green-600' : 'text-muted-foreground'}`}>
-                  {usernameValid ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    usernameValid ? "text-green-600" : "text-muted-foreground"
+                  }`}
+                >
+                  {usernameValid ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
                   Username valid
                 </div>
-                <div className={`flex items-center gap-2 ${nameValid ? 'text-green-600' : 'text-muted-foreground'}`}>
-                  {nameValid ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    nameValid ? "text-green-600" : "text-muted-foreground"
+                  }`}
+                >
+                  {nameValid ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
                   Name valid
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValid ? 'text-green-600' : 'text-muted-foreground'}`}>
-                  {passwordValid ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValid ? "text-green-600" : "text-muted-foreground"
+                  }`}
+                >
+                  {passwordValid ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
                   Password valid
                 </div>
-                <div className={`flex items-center gap-2 ${confirmPasswordValid ? 'text-green-600' : 'text-muted-foreground'}`}>
-                  {confirmPasswordValid ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    confirmPasswordValid
+                      ? "text-green-600"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {confirmPasswordValid ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
                   Passwords match
                 </div>
               </div>

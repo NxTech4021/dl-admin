@@ -13,7 +13,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -30,9 +29,15 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarIcon, Loader2, Trophy, DollarSign, X, Check, ArrowLeft, ArrowRight, Eye } from "lucide-react";
+import {
+  CalendarIcon,
+  Loader2,
+  Trophy,
+  X,
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+} from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -81,9 +86,9 @@ export default function SeasonCreateModal({
   const [error, setError] = useState("");
 
   const handleLeagueTypeToggle = (leagueType: string) => {
-    setLeagueTypes(prev => 
-      prev.includes(leagueType) 
-        ? prev.filter(type => type !== leagueType)
+    setLeagueTypes((prev) =>
+      prev.includes(leagueType)
+        ? prev.filter((type) => type !== leagueType)
         : [...prev, leagueType]
     );
   };
@@ -117,7 +122,16 @@ export default function SeasonCreateModal({
 
     try {
       // Validate required fields
-      if (!seasonName || !sport || !league || leagueTypes.length === 0 || !entryFee || !registrationDeadline || !startDate || !endDate) {
+      if (
+        !seasonName ||
+        !sport ||
+        !league ||
+        leagueTypes.length === 0 ||
+        !entryFee ||
+        !registrationDeadline ||
+        !startDate ||
+        !endDate
+      ) {
         throw new Error("Please fill in all required fields");
       }
 
@@ -133,8 +147,8 @@ export default function SeasonCreateModal({
       const seasonData = {
         name: seasonName,
         sportType: sport,
-        seasonType: leagueTypes.join(', '),
-        description: `${league} - ${leagueTypes.join(', ')}`,
+        seasonType: leagueTypes.join(", "),
+        description: `${league} - ${leagueTypes.join(", ")}`,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         regiDeadline: registrationDeadline.toISOString(),
@@ -147,11 +161,12 @@ export default function SeasonCreateModal({
       );
 
       toast.success(res.data.message || "Season created successfully!");
-      
+
       // Reset modal and close
       resetModal();
       onOpenChange(false);
       onSeasonCreated?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       const message =
         err.response?.data?.error ||
@@ -166,8 +181,15 @@ export default function SeasonCreateModal({
     }
   };
 
-  const isFormValid = seasonName && sport && league && leagueTypes.length > 0 && entryFee && 
-                     registrationDeadline && startDate && endDate;
+  const isFormValid =
+    seasonName &&
+    sport &&
+    league &&
+    leagueTypes.length > 0 &&
+    entryFee &&
+    registrationDeadline &&
+    startDate &&
+    endDate;
 
   const getSportColor = (leagueType: string) => {
     switch (leagueType) {
@@ -183,10 +205,13 @@ export default function SeasonCreateModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetModal();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetModal();
+        onOpenChange(isOpen);
+      }}
+    >
       {children}
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
@@ -198,38 +223,55 @@ export default function SeasonCreateModal({
                 <Eye className="h-5 w-5 text-primary" />
               )}
             </div>
-            {currentStep === "form" ? "Create New Season" : "Confirm Season Details"}
+            {currentStep === "form"
+              ? "Create New Season"
+              : "Confirm Season Details"}
           </DialogTitle>
           <DialogDescription className="text-base">
-            {currentStep === "form" 
+            {currentStep === "form"
               ? "Set up a new season with comprehensive details. Select multiple league types to offer various competition formats."
-              : "Review all details before creating the season. You can go back to make changes if needed."
-            }
+              : "Review all details before creating the season. You can go back to make changes if needed."}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           {/* Step Indicator */}
           <div className="flex items-center justify-center space-x-4">
-            <div className={cn(
-              "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-              currentStep === "form" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            )}>
-              <div className={cn(
-                "w-2 h-2 rounded-full",
-                currentStep === "form" ? "bg-primary-foreground" : "bg-muted-foreground"
-              )} />
+            <div
+              className={cn(
+                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                currentStep === "form"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  currentStep === "form"
+                    ? "bg-primary-foreground"
+                    : "bg-muted-foreground"
+                )}
+              />
               <span>1. Details</span>
             </div>
             <div className="w-8 h-px bg-border" />
-            <div className={cn(
-              "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-              currentStep === "preview" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            )}>
-              <div className={cn(
-                "w-2 h-2 rounded-full",
-                currentStep === "preview" ? "bg-primary-foreground" : "bg-muted-foreground"
-              )} />
+            <div
+              className={cn(
+                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                currentStep === "preview"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  currentStep === "preview"
+                    ? "bg-primary-foreground"
+                    : "bg-muted-foreground"
+                )}
+              />
               <span>2. Confirm</span>
             </div>
           </div>
@@ -241,10 +283,12 @@ export default function SeasonCreateModal({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">Basic Information</span>
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Basic Information
+                  </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
-                
+
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Season Name */}
                   <div className="space-y-2">
@@ -284,10 +328,12 @@ export default function SeasonCreateModal({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">Sports & League</span>
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Sports & League
+                  </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
-                
+
                 <div className="space-y-4">
                   {/* Sports Selection */}
                   <div className="space-y-2">
@@ -334,13 +380,16 @@ export default function SeasonCreateModal({
                           key={option.value}
                           className={cn(
                             "flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-all hover:bg-muted/50",
-                            leagueTypes.includes(option.value) && "border-primary bg-primary/5"
+                            leagueTypes.includes(option.value) &&
+                              "border-primary bg-primary/5"
                           )}
                           onClick={() => handleLeagueTypeToggle(option.value)}
                         >
                           <Checkbox
                             checked={leagueTypes.includes(option.value)}
-                            onChange={() => handleLeagueTypeToggle(option.value)}
+                            onChange={() =>
+                              handleLeagueTypeToggle(option.value)
+                            }
                             className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                           />
                           <Label className="text-sm font-medium cursor-pointer flex-1">
@@ -349,7 +398,6 @@ export default function SeasonCreateModal({
                         </div>
                       ))}
                     </div>
-                    
                   </div>
                 </div>
               </div>
@@ -358,14 +406,18 @@ export default function SeasonCreateModal({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">Schedule</span>
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Schedule
+                  </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
-                
+
                 <div className="grid gap-4 md:grid-cols-3">
                   {/* Registration Deadline */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Registration Deadline *</Label>
+                    <Label className="text-sm font-medium">
+                      Registration Deadline *
+                    </Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -376,7 +428,9 @@ export default function SeasonCreateModal({
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {registrationDeadline ? format(registrationDeadline, "MMM dd, yyyy") : "Select date"}
+                          {registrationDeadline
+                            ? format(registrationDeadline, "MMM dd, yyyy")
+                            : "Select date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -403,7 +457,9 @@ export default function SeasonCreateModal({
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? format(startDate, "MMM dd, yyyy") : "Select date"}
+                          {startDate
+                            ? format(startDate, "MMM dd, yyyy")
+                            : "Select date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -430,7 +486,9 @@ export default function SeasonCreateModal({
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? format(endDate, "MMM dd, yyyy") : "Select date"}
+                          {endDate
+                            ? format(endDate, "MMM dd, yyyy")
+                            : "Select date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -473,14 +531,16 @@ export default function SeasonCreateModal({
                 {/* Seamless Details */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Sport & League</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Sport & League
+                    </span>
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         className="capitalize text-xs"
-                        style={{ 
+                        style={{
                           backgroundColor: getSportColor(sport),
-                          color: 'white',
-                          borderColor: getSportColor(sport)
+                          color: "white",
+                          borderColor: getSportColor(sport),
                         }}
                       >
                         {sport}
@@ -491,9 +551,11 @@ export default function SeasonCreateModal({
                       </Badge>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Entry Fee</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Entry Fee
+                    </span>
                     <span className="text-sm font-medium">
                       {new Intl.NumberFormat("en-MY", {
                         style: "currency",
@@ -501,12 +563,18 @@ export default function SeasonCreateModal({
                       }).format(Number(entryFee))}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">League Types</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      League Types
+                    </span>
                     <div className="flex gap-1">
                       {leagueTypes.map((type, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {type}
                         </Badge>
                       ))}
@@ -519,14 +587,16 @@ export default function SeasonCreateModal({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">Schedule</span>
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Schedule
+                  </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
-                
+
                 <div className="relative">
                   {/* Timeline Line */}
                   <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 via-green-400 to-blue-400" />
-                  
+
                   {/* Registration Deadline */}
                   <div className="relative flex items-center gap-4 pb-4">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 z-10">
@@ -535,12 +605,20 @@ export default function SeasonCreateModal({
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-sm">Registration Deadline</h4>
-                          <p className="text-xs text-muted-foreground">Last day to register</p>
+                          <h4 className="font-medium text-sm">
+                            Registration Deadline
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            Last day to register
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-sm">{format(registrationDeadline!, "MMM dd, yyyy")}</p>
-                          <p className="text-xs text-muted-foreground">{format(registrationDeadline!, "EEEE")}</p>
+                          <p className="font-medium text-sm">
+                            {format(registrationDeadline!, "MMM dd, yyyy")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(registrationDeadline!, "EEEE")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -555,11 +633,17 @@ export default function SeasonCreateModal({
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-sm">Season Start</h4>
-                          <p className="text-xs text-muted-foreground">Season begins</p>
+                          <p className="text-xs text-muted-foreground">
+                            Season begins
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-sm">{format(startDate!, "MMM dd, yyyy")}</p>
-                          <p className="text-xs text-muted-foreground">{format(startDate!, "EEEE")}</p>
+                          <p className="font-medium text-sm">
+                            {format(startDate!, "MMM dd, yyyy")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(startDate!, "EEEE")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -574,11 +658,17 @@ export default function SeasonCreateModal({
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-sm">Season End</h4>
-                          <p className="text-xs text-muted-foreground">Season concludes</p>
+                          <p className="text-xs text-muted-foreground">
+                            Season concludes
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-sm">{format(endDate!, "MMM dd, yyyy")}</p>
-                          <p className="text-xs text-muted-foreground">{format(endDate!, "EEEE")}</p>
+                          <p className="font-medium text-sm">
+                            {format(endDate!, "MMM dd, yyyy")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(endDate!, "EEEE")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -591,12 +681,17 @@ export default function SeasonCreateModal({
                     <div>
                       <h4 className="font-medium text-sm">Season Duration</h4>
                       <p className="text-xs text-muted-foreground">
-                        {Math.ceil((endDate!.getTime() - startDate!.getTime()) / (1000 * 60 * 60 * 24))} days total
+                        {Math.ceil(
+                          (endDate!.getTime() - startDate!.getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}{" "}
+                        days total
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">
-                        {format(startDate!, "MMM dd")} – {format(endDate!, "MMM dd, yyyy")}
+                        {format(startDate!, "MMM dd")} –{" "}
+                        {format(endDate!, "MMM dd, yyyy")}
                       </p>
                     </div>
                   </div>

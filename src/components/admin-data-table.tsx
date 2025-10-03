@@ -23,7 +23,6 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { z } from "zod";
-import { useAdminSession } from "@/hooks/use-admin-session";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,8 +75,11 @@ const getInitials = (name: string) =>
 
 const handleResendInvite = async (adminId: string) => {
   try {
-    const res = await axiosInstance.post(endpoints.admin.sendInvite, { adminId });
+    const res = await axiosInstance.post(endpoints.admin.sendInvite, {
+      adminId,
+    });
     toast.success(res.data.message || "Invite resent successfully!");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     toast.error(err.response?.data?.message || "Failed to resend invite");
   }
@@ -204,7 +206,7 @@ const columns: ColumnDef<Admin>[] = [
 
           <DropdownMenuContent align="end" className="w-52">
             {admin.status === "PENDING" ? (
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => handleResendInvite(admin.id)}
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               >
@@ -214,7 +216,7 @@ const columns: ColumnDef<Admin>[] = [
             ) : (
               <>
                 <DropdownMenuItem asChild>
-                  <Link 
+                  <Link
                     href={`/admin/view/profile/${admin.id}`}
                     className="flex items-center w-full cursor-pointer focus:bg-accent focus:text-accent-foreground"
                   >
@@ -223,7 +225,7 @@ const columns: ColumnDef<Admin>[] = [
                   </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => {
                     // TODO: Implement edit admin functionality
                     toast.info("Edit admin functionality coming soon");
@@ -235,15 +237,18 @@ const columns: ColumnDef<Admin>[] = [
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   onClick={() => {
                     // TODO: Implement suspend/activate functionality
-                    const action = admin.status === "ACTIVE" ? "suspend" : "activate";
+                    const action =
+                      admin.status === "ACTIVE" ? "suspend" : "activate";
                     toast.info(`${action} admin functionality coming soon`);
                   }}
                   className={`cursor-pointer focus:bg-accent focus:text-accent-foreground ${
-                    admin.status === "ACTIVE" ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"
+                    admin.status === "ACTIVE"
+                      ? "text-orange-600 hover:text-orange-700"
+                      : "text-green-600 hover:text-green-700"
                   }`}
                 >
                   {admin.status === "ACTIVE" ? (
@@ -251,7 +256,9 @@ const columns: ColumnDef<Admin>[] = [
                   ) : (
                     <IconUserCheck className="mr-2 size-4" />
                   )}
-                  {admin.status === "ACTIVE" ? "Suspend Admin" : "Activate Admin"}
+                  {admin.status === "ACTIVE"
+                    ? "Suspend Admin"
+                    : "Activate Admin"}
                 </DropdownMenuItem>
               </>
             )}
@@ -263,7 +270,6 @@ const columns: ColumnDef<Admin>[] = [
 ];
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
-  const { user: currentUser } = useAdminSession();
   const [adminData, setAdminData] = useState<Admin[]>([]);
   // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({});
@@ -274,7 +280,6 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-
 
   useEffect(() => {
     setAdminData(data);
@@ -305,7 +310,6 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   // if (loading) {
   //   return <div className="p-4 text-center text-muted-foreground">Loading data...</div>
   // }
-
 
   return (
     <div className="space-y-4">
