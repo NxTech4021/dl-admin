@@ -3,6 +3,7 @@
 import { AdminRegisterForm } from "@/components/admin-register-form";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function Page() {
   return (
@@ -22,7 +23,9 @@ export default function Page() {
             DEUCE
           </span>
         </Link>
-        <AdminRegisterForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <AdminRegisterForm />
+        </Suspense>
       </div>
     </div>
   );
