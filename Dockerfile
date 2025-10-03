@@ -31,7 +31,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:21-bookworm-slim
+FROM node:21-bookworm-slim as production
 
 WORKDIR /app
 

@@ -37,11 +37,12 @@ export function LoginForm({
     const { data, error } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: "http://localhost:82/",
+      callbackURL: "/dashboard",
     });
 
     if (error) {
-      toast.error(error.message);
+      console.log(error);
+      toast.error(error.message || error?.statusText);
       setLoading(false);
       return;
     }
