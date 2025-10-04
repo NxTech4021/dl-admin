@@ -44,4 +44,16 @@ export const endpoints = {
     getAchievements: "/api/player/profile/achievements",
     getMatchDetails: (matchId: string) => `/api/player/matches/${matchId}`,
   },
+  league:{
+
+  },
+  season:{
+
+  },
+  division:{
+
+  },
+  match:{
+
+  },
 };
