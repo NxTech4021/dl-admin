@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
 const PlayersDataTable = dynamic(
   () =>
-    import("@/components/players-data-table").then((mod) => ({
+    import("@/components/data-table/players-data-table").then((mod) => ({
       default: mod.PlayersDataTable,
     })),
   {

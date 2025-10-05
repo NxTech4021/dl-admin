@@ -12,7 +12,7 @@ import dynamic from "next/dynamic"
 import { useState } from "react"
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
-const SeasonsDataTable = dynamic(() => import("@/components/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
+const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 })
 

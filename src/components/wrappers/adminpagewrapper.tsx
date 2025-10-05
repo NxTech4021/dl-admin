@@ -17,12 +17,12 @@ const AdminInviteModalWrapper = dynamic(() => import("@/components/wrappers/admi
   loading: () => <div className="h-8 w-24 animate-pulse bg-muted rounded" />
 });
 
-const AdminsDataTable = dynamic(() => import("@/components/admin-data-table").then(mod => ({ default: mod.AdminsDataTable })), {
+const AdminsDataTable = dynamic(() => import("@/components/data-table/admin-data-table").then(mod => ({ default: mod.AdminsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 });
 
 // Import the type separately to avoid bundling the entire component
-import type { Admin } from "@/components/admin-data-table";
+import type { Admin } from "@/components/data-table/admin-data-table";
 
 
 
