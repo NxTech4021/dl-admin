@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axiosInstance, {endpoints} from "@/lib/endpoints";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 import {
   Dialog,
   DialogContent,
@@ -24,10 +24,16 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils"; 
-import { Trophy, Eye, ArrowLeft, ArrowRight, Loader2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  IconCategory,
+  IconEye,
+  IconArrowLeft,
+  IconArrowRight,
+  IconLoader2,
+  IconX,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 type DivisionCreateModalProps = {
   open: boolean;
@@ -43,20 +49,10 @@ const divisionSchema = z
     divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
     genderCategory: z.enum(["male", "female", "mixed"]),
-    maxSinglesPlayers: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .nullable(),
-    maxDoublesTeams: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .nullable(),
-    autoAssignmentEnabled: z.boolean().default(false),
-    isActiveDivision: z.boolean().default(true),
+    maxSinglesPlayers: z.number().int().positive().optional().nullable(),
+    maxDoublesTeams: z.number().int().positive().optional().nullable(),
+    autoAssignmentEnabled: z.boolean().default(false).optional(),
+    isActive: z.boolean().default(true).optional(),
     prizePoolTotal: z.number().int().nonnegative().optional().nullable(),
     sponsorName: z.string().optional().nullable(),
     description: z.string().optional().nullable(),
@@ -103,6 +99,7 @@ export default function DivisionCreateModal({
     control,
     reset,
     setValue,
+    trigger,
     formState: { errors, isValid },
   } = useForm<DivisionFormValues>({
     resolver: zodResolver(divisionSchema),
@@ -116,7 +113,7 @@ export default function DivisionCreateModal({
       maxSinglesPlayers: undefined,
       maxDoublesTeams: undefined,
       autoAssignmentEnabled: false,
-      isActiveDivision: true,
+      isActive: true,
       prizePoolTotal: undefined,
       sponsorName: "",
       description: "",
@@ -133,11 +130,11 @@ export default function DivisionCreateModal({
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
         // assume array of { id, name, startDate? }
-        console.log("seasons", res.data)
+        console.log("seasons", res.data);
         setSeasons(
           Array.isArray(res.data) ? res.data : res.data?.seasons ?? []
         );
-      } catch (err: any) {  
+      } catch (err: any) {
         try {
           const raw = await axiosInstance.get(endpoints.season.getAll);
           setSeasons(Array.isArray(raw.data) ? raw.data : []);
@@ -156,8 +153,9 @@ export default function DivisionCreateModal({
     setError("");
   };
 
-  const handleNextToPreview = () => {
-    // trigger validation by attempting to parse schema via form state's isValid
+  const handleNextToPreview = async () => {
+    const valid = await trigger(); // triggers validation for all fields
+    if (!valid) return;
     if (isValid) {
       setCurrentStep("preview");
     } else {
@@ -179,10 +177,11 @@ export default function DivisionCreateModal({
         gameType: data.gameType,
         genderCategory: data.genderCategory,
         autoAssignmentEnabled: Boolean(data.autoAssignmentEnabled),
-        isActiveDivision: Boolean(data.isActiveDivision),
+        isActive: Boolean(data.isActive),
       };
 
-      if (data.maxSinglesPlayers) payload.maxSinglesPlayers = data.maxSinglesPlayers;
+      if (data.maxSinglesPlayers)
+        payload.maxSinglesPlayers = data.maxSinglesPlayers;
       if (data.maxDoublesTeams) payload.maxDoublesTeams = data.maxDoublesTeams;
       if (data.prizePoolTotal !== undefined && data.prizePoolTotal !== null)
         payload.prizePoolTotal = data.prizePoolTotal;
@@ -192,7 +191,7 @@ export default function DivisionCreateModal({
         payload.threshold = data.threshold;
 
       const res = await axiosInstance.post(endpoints.division.create, payload);
-      console.log("data", payload)
+      console.log("data", payload);
       toast.success(res.data?.message ?? "Division created");
       resetModal();
       onOpenChange(false);
@@ -224,12 +223,14 @@ export default function DivisionCreateModal({
           <DialogTitle className="flex items-center gap-3 text-2xl">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
               {currentStep === "form" ? (
-                <Trophy className="h-5 w-5 text-primary" />
+                <IconCategory className="h-5 w-5 text-primary" />
               ) : (
-                <Eye className="h-5 w-5 text-primary" />
+                <IconEye className="h-5 w-5 text-primary" />
               )}
             </div>
-            {currentStep === "form" ? "Create New Division" : "Confirm Division"}
+            {currentStep === "form"
+              ? "Create New Division"
+              : "Confirm Division"}
           </DialogTitle>
           <DialogDescription className="text-base">
             {currentStep === "form"
@@ -296,7 +297,8 @@ export default function DivisionCreateModal({
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium">
-                      Division Name *
+                      Division Name
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="name"
@@ -312,7 +314,10 @@ export default function DivisionCreateModal({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Season *</Label>
+                    <Label className="text-sm font-medium">
+                      Season
+                      <span className="text-destructive">*</span>
+                    </Label>
                     <Controller
                       control={control}
                       name="seasonId"
@@ -332,7 +337,7 @@ export default function DivisionCreateModal({
                                 </SelectItem>
                               ))
                             ) : (
-                             <SelectItem value="no-season" disabled>
+                              <SelectItem value="no-season" disabled>
                                 No seasons available
                               </SelectItem>
                             )}
@@ -349,30 +354,37 @@ export default function DivisionCreateModal({
                 </div>
               </div>
 
-              {/* Settings */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
                   <span className="text-sm font-medium text-muted-foreground px-2">
-                    Settings
+                    Division Type
                   </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Division Level *</Label>
+                    <Label className="text-sm font-medium">
+                      Division Level
+                      <span className="text-destructive">*</span>
+                    </Label>
                     <Controller
                       control={control}
                       name="divisionLevel"
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <SelectTrigger className="h-11 w-full">
                             <SelectValue placeholder="Select level" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="beginner">Beginner</SelectItem>
-                            <SelectItem value="intermediate">Intermediate</SelectItem>
+                            <SelectItem value="intermediate">
+                              Intermediate
+                            </SelectItem>
                             <SelectItem value="advanced">Advanced</SelectItem>
                           </SelectContent>
                         </Select>
@@ -381,12 +393,18 @@ export default function DivisionCreateModal({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Game Type *</Label>
+                    <Label className="text-sm font-medium">
+                      Game Type
+                      <span className="text-destructive">*</span>
+                    </Label>
                     <Controller
                       control={control}
                       name="gameType"
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <SelectTrigger className="h-11 w-full">
                             <SelectValue placeholder="Select game type" />
                           </SelectTrigger>
@@ -400,12 +418,18 @@ export default function DivisionCreateModal({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Gender Category *</Label>
+                    <Label className="text-sm font-medium">
+                      Gender
+                      <span className="text-destructive">*</span>
+                    </Label>
                     <Controller
                       control={control}
                       name="genderCategory"
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <SelectTrigger className="h-11 w-full">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
@@ -420,55 +444,72 @@ export default function DivisionCreateModal({
                   </div>
                 </div>
 
-                {/* Capacity inputs */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Max Singles Players</Label>
-                    <Input
-                      type="number"
-                      {...register("maxSinglesPlayers", {
-                        valueAsNumber: true,
-                      })}
-                      className="h-11"
-                      placeholder="Only required for singles"
-                    />
-                    {errors.maxSinglesPlayers && (
-                      <p className="text-xs text-destructive mt-1">
-                        {errors.maxSinglesPlayers.message as string}
-                      </p>
-                    )}
-                  </div>
+                <div className="grid gap-4 md:grid-cols-2 mt-4">
+                  {watch("gameType") === "singles" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Max Singles Players
+                      </Label>
+                      <Input
+                        type="number"
+                        {...register("maxSinglesPlayers", {
+                          valueAsNumber: true,
+                        })}
+                        className={`h-11 ${
+                          errors.maxSinglesPlayers
+                            ? "border-destructive focus:border-destructive focus:ring-destructive"
+                            : ""
+                        }`}
+                        placeholder="e.g 12"
+                      />
+                      {errors.maxSinglesPlayers && (
+                        <p className="text-xs text-destructive mt-1">
+                          {errors.maxSinglesPlayers.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Max Doubles Teams</Label>
-                    <Input
-                      type="number"
-                      {...register("maxDoublesTeams", { valueAsNumber: true })}
-                      className="h-11"
-                      placeholder="Only required for doubles"
-                    />
-                    {errors.maxDoublesTeams && (
-                      <p className="text-xs text-destructive mt-1">
-                        {errors.maxDoublesTeams.message as string}
-                      </p>
-                    )}
-                  </div>
+                  {watch("gameType") === "doubles" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Max Doubles Teams
+                      </Label>
+                      <Input
+                        type="number"
+                        {...register("maxDoublesTeams", {
+                          valueAsNumber: true,
+                        })}
+                        className={`h-11 ${
+                          errors.maxDoublesTeams
+                            ? "border-destructive focus:border-destructive focus:ring-destructive"
+                            : ""
+                        }`}
+                        placeholder="e.g 10"
+                      />
+                      {errors.maxDoublesTeams && (
+                        <p className="text-xs text-destructive mt-1">
+                          {errors.maxDoublesTeams.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Optional & Extra */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
+              <div className="space-y-2">
+                {/* <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
                   <span className="text-sm font-medium text-muted-foreground px-2">
                     Optional
                   </span>
                   <div className="h-px bg-border flex-1" />
-                </div>
+                </div> */}
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Prize Pool (Integer)</Label>
+                    <Label className="text-sm font-medium">Prize Pool</Label>
                     <Input
                       type="number"
                       {...register("prizePoolTotal", { valueAsNumber: true })}
@@ -477,22 +518,25 @@ export default function DivisionCreateModal({
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label className="text-sm font-medium">Sponsor Name</Label>
                     <Input
                       {...register("sponsorName")}
                       className="h-11"
                       placeholder="Optional sponsor display name"
                     />
-                  </div>
+                  </div> */}
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Threshold</Label>
+                    <Label className="text-sm font-medium">
+                      Threshold
+                      <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       type="number"
                       {...register("threshold", { valueAsNumber: true })}
                       className="h-11"
-                      placeholder="Optional threshold"
+                      placeholder="e.g 100"
                     />
                   </div>
                 </div>
@@ -507,7 +551,7 @@ export default function DivisionCreateModal({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                  {/* <div className="flex items-center gap-2">
                     <Switch
                       checked={formValues.autoAssignmentEnabled}
                       onCheckedChange={(val) =>
@@ -515,13 +559,13 @@ export default function DivisionCreateModal({
                       }
                     />
                     <Label className="text-sm">Auto assignment</Label>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={formValues.isActiveDivision}
+                      checked={formValues.isActive}
                       onCheckedChange={(val) =>
-                        setValue("isActiveDivision", Boolean(val))
+                        setValue("isActive", Boolean(val))
                       }
                     />
                     <Label className="text-sm">Active</Label>
@@ -533,7 +577,7 @@ export default function DivisionCreateModal({
               {error && (
                 <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
                   <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
-                    <X className="h-2.5 w-2.5" />
+                    <IconX className="h-2.5 w-2.5" />
                   </div>
                   {error}
                 </div>
@@ -546,7 +590,7 @@ export default function DivisionCreateModal({
             <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
               <div className="space-y-4 text-center">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto">
-                  <Trophy className="h-6 w-6 text-primary" />
+                  <IconCategory className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold">{formValues.name}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -632,7 +676,7 @@ export default function DivisionCreateModal({
                     Active
                   </span>
                   <span className="text-sm font-medium">
-                    {formValues.isActiveDivision ? "Yes" : "No"}
+                    {formValues.isActive ? "Yes" : "No"}
                   </span>
                 </div>
 
@@ -667,7 +711,7 @@ export default function DivisionCreateModal({
                 disabled={loading}
                 className="flex-1 sm:flex-none min-w-[140px]"
               >
-                <ArrowRight className="mr-2 h-4 w-4" />
+                <IconArrowRight className="mr-2 h-4 w-4" />
                 Review Details
               </Button>
             </>
@@ -680,7 +724,7 @@ export default function DivisionCreateModal({
                 disabled={loading}
                 className="flex-1 sm:flex-none"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <IconArrowLeft className="mr-2 h-4 w-4" />
                 Back to Edit
               </Button>
 
@@ -692,12 +736,12 @@ export default function DivisionCreateModal({
               >
                 {loading ? (
                   <>
-                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Trophy className="mr-2 h-4 w-4" />
+                    <IconCategory className="mr-2 h-4 w-4" />
                     Create Division
                   </>
                 )}
