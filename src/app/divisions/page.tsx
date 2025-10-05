@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button"
 import { IconCalendar, IconPlus, IconDownload } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
+import { DivisionsDataTable } from "@/components/data-table/divisions-data-table";
 
 
-const SeasonsDataTable = dynamic(() => import("@/components/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
+const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 })
 
-const SeasonCreateModal = dynamic(() => import("@/components/modal/season-create-modal").then(mod => ({ default: mod.default })), {
+const DivisionCreateModal = dynamic(() => import("@/components/modal/division-create-modal").then(mod => ({ default: mod.default })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 })
 
@@ -53,7 +54,7 @@ export default function Page() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <IconCalendar className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">Divisions Test</h1>
+                          <h1 className="text-3xl font-bold tracking-tight">Divisions</h1>
                         </div>
                         <p className="text-muted-foreground">
                           Manage league divisions
@@ -64,7 +65,7 @@ export default function Page() {
                           <IconDownload className="mr-2 size-4" />
                           Export
                         </Button>
-                        <SeasonCreateModal
+                        <DivisionCreateModal
                           open={isCreateModalOpen}
                           onOpenChange={setIsCreateModalOpen}
                           onSeasonCreated={handleSeasonCreated}
@@ -73,7 +74,7 @@ export default function Page() {
                             <IconPlus className="mr-2 size-4" />
                             Create Division
                           </Button>
-                        </SeasonCreateModal>
+                        </DivisionCreateModal>
                       </div>
                     </div>
                   </div>
@@ -82,7 +83,7 @@ export default function Page() {
               
               {/* Data Table */}
               <div className="flex-1">
-                <SeasonsDataTable key={refreshKey} />
+                <DivisionsDataTable key={refreshKey} />
               </div>
             </div>
           </div>
