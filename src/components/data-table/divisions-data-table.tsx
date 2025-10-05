@@ -4,11 +4,10 @@
 import * as React from "react";
 import {
   IconDotsVertical,
-  IconCalendar,
   IconEye,
   IconEdit,
   IconTrash,
-  IconTrophy,
+  IconCategory,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -24,9 +23,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import axios from "axios";
 import { z } from "zod";
-
+import { toast } from "sonner";
+import { seasonSchema } from "./seasons-data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,26 +47,34 @@ import {
 } from "@/components/ui/table";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-// Season schema
-export const seasonSchema = z.object({
+// ENUMS
+export const divisionLevelEnum = z.enum(["beginner", "intermediate", "advanced"]);
+export const gameTypeEnum = z.enum(["singles", "doubles"]);
+export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
+
+// Division schema
+export const divisionSchema = z.object({
   id: z.string(),
+  seasonId: z.string(),
   name: z.string(),
-  sportType: z.string().nullable().optional(),
-  seasonType: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  regiDeadline: z.coerce.date().nullable().optional(),
-  status: z
-    .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"])
-    .default("UPCOMING"),
-  current: z.boolean().default(false),
+  threshold: z.number().int().nullable().optional(),
+  divisionLevel: divisionLevelEnum,
+  gameType: gameTypeEnum,
+  genderCategory: genderCategoryEnum,
+
+  maxSingles: z.number().int().nullable().optional(),
+  maxDoublesTeams: z.number().int().nullable().optional(),
+  season: seasonSchema,
+  isActive: z.boolean().default(true),
+
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
 
-export type Season = z.infer<typeof seasonSchema>;
+export type Division = z.infer<typeof divisionSchema>;
 
+// Helper to format dates
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-MY", {
     year: "numeric",
@@ -76,101 +83,35 @@ const formatDate = (date: Date) => {
   });
 };
 
-
-const getLeagueTypeBadgeVariant = (leagueType: string) => {
-  switch (leagueType) {
-    case "Pickleball":
-      return "default";
-    case "Tennis":
-      return "secondary";
-    case "Padel":
-      return "outline";
-    default:
-      return "outline";
-  }
+// Action handlers
+const handleViewDivision = (divisionId: string) => {
+  // TODO: Navigate to division details page
 };
 
-const getSportColor = (leagueType: string) => {
-  switch (leagueType) {
-    case "Pickleball":
-      return "#A04DFE";
-    case "Tennis":
-      return "#ABFE4D";
-    case "Padel":
-      return "#4DABFE";
-    default:
-      return "#6B7280";
-  }
-};
-
-// const getCompetitionTypeBadgeVariant = (competitionType: string) => {
-//   switch (competitionType) {
-//     case "Men's Singles":
-//       return "default";
-//     case "Men's Doubles":
-//       return "secondary";
-//     case "Mixed Doubles":
-//       return "outline";
-//     default:
-//       return "outline";
-//   }
-// };
-
-// const getLeagueBadgeVariant = (league: string) => {
-//   switch (league) {
-//     case "PJ League":
-//       return "default";
-//     case "Subang League":
-//       return "secondary";
-//     case "KL League":
-//       return "outline";
-//     default:
-//       return "outline";
-//   }
-// };
-
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "UPCOMING":
-      return "secondary";
-    case "ACTIVE":
-      return "default";
-    case "FINISHED":
-      return "outline";
-    case "CANCELLED":
-      return "destructive";
-    default:
-      return "outline";
-  }
-};
-
-// Define handlers outside of component to avoid scope issues
-const handleViewSeason = (seasonId: string) => {
-  // TODO: Navigate to season details page
-};
-
-const handleEditSeason = (seasonId: string) => {
+const handleEditDivision = (divisionId: string) => {
   // TODO: Open edit modal or navigate to edit page
 };
 
-const handleDeleteDivision = async (seasonId: string) => {
-  if (!confirm("Are you sure you want to delete this season?")) {
-    return;
-  }
+const handleDeleteDivision = async (divisionId: string) => {
+  if (!confirm("Are you sure you want to delete this Division?")) return;
 
   try {
-    const res = await axiosInstance.delete(endpoints.division.delete(seasonId));
-    // await axios.delete(
-    //   `${process.env.NEXT_PUBLIC_HOST_URL}/api/season/${seasonId}`
-    // );
-    // Refresh the data after successful deletion
-    window.location.reload(); // Simple refresh for now
-  } catch (error) {
-    console.error("Failed to delete season:", error);
+    const res = await axiosInstance.delete(endpoints.division.delete(divisionId));
+    toast.success(res.data?.message ?? "Division deleted successfully");
+    window.location.reload();
+  } catch (err: any) {
+    console.error("Failed to delete division:", err);
+    const message =
+      err.response?.data?.error ||
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to delete division";
+    toast.error(message);
   }
 };
 
-const columns: ColumnDef<Season>[] = [
+// Columns
+const columns: ColumnDef<Division>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -199,116 +140,80 @@ const columns: ColumnDef<Season>[] = [
   },
   {
     accessorKey: "name",
-    header: "Season Name",
+    header: "Division Name",
     cell: ({ row }) => {
-      const season = row.original;
+      const division = row.original;
+
+      // console.log("division data", division);
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-            <IconTrophy className="size-4 text-primary" />
+            <IconCategory className="size-4 text-primary" />
           </div>
           <div className="flex flex-col">
-            <div className="font-medium">{season.name}</div>
+            <div className="font-medium">{division.name}</div>
+            <div className="text-xs text-muted-foreground">
+              Level: {division.divisionLevel}
+            </div>
           </div>
         </div>
       );
     },
     enableHiding: false,
   },
+  // Show which season the division belongs to
+ {
+  accessorKey: "season.name", // Correct accessor for nested object
+  header: "Season",
+  cell: ({ row }) => <span>{row.original.season.name ?? "—"}</span>,
+},
   {
-    accessorKey: "sportType",
-    header: "Sports",
-    cell: ({ row }) => {
-      const sportType = row.original.sportType;
-      if (!sportType)
-        return <span className="text-muted-foreground">No sport</span>;
-
-      return (
-        <Badge
-          variant={getLeagueTypeBadgeVariant(sportType)}
-          className="capitalize"
-          style={{
-            backgroundColor: getSportColor(sportType),
-            color: "white",
-            borderColor: getSportColor(sportType),
-          }}
-        >
-          {sportType}
-        </Badge>
-      );
-    },
+    accessorKey: "gameType",
+    header: "Game Type",
+    cell: ({ row }) => <span className="capitalize">{row.original.gameType}</span>,
   },
   {
-    accessorKey: "seasonType",
-    header: "League Type",
-    cell: ({ row }) => {
-      const seasonType = row.original.seasonType;
-      if (!seasonType)
-        return <span className="text-muted-foreground">No type</span>;
-
-      return (
-        <Badge variant="outline" className="capitalize">
-          {seasonType}
-        </Badge>
-      );
-    },
+    accessorKey: "genderCategory",
+    header: "Gender",
+    cell: ({ row }) => <span className="capitalize">{row.original.genderCategory}</span>,
   },
   {
-    accessorKey: "Season", // TODO: change description to 'Leagues' later when module has been implemented
-    header: "Season",
-    cell: ({ row }) => {
-      const description = row.original.description;
-      return (
-        <div className="max-w-[200px] truncate">
-          {description || "No description"}
-        </div>
-      );
-    },
+    accessorKey: "maxSingles",
+    header: "Max Singles Players",
+    cell: ({ row }) =>
+      row.original.gameType === "singles"
+        ? row.original.maxSingles ?? "—"
+        : "—",
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status;
-      return (
-        <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
-          {status}
-        </Badge>
-      );
-    },
+    accessorKey: "maxDoublesTeams",
+    header: "Max Doubles Teams",
+    cell: ({ row }) =>
+      row.original.gameType === "doubles"
+        ? row.original.maxDoublesTeams ?? "—"
+        : "—",
   },
   {
-    accessorKey: "regiDeadline",
-    header: "Registration Deadline",
-    cell: ({ row }) => {
-      const regiDeadline = row.original.regiDeadline;
-      if (!regiDeadline)
-        return <span className="text-muted-foreground">No deadline</span>;
-
-      return (
-        <div className="flex items-center gap-2">
-          <span>{formatDate(regiDeadline)}</span>
-        </div>
-      );
-    },
+    accessorKey: "threshold",
+    header: "Threshold",
+    cell: ({ row }) => row.original.threshold ?? "—",
   },
   {
-    accessorKey: "duration",
-    header: "Duration",
+    accessorKey: "isActive",
+    header: "Active",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconCalendar className="size-4 text-muted-foreground" />
-        <span>
-          {formatDate(row.original.startDate)} –{" "}
-          {formatDate(row.original.endDate)}
-        </span>
-      </div>
+      <Badge
+        variant={row.original.isActive ? "outline" : "default"}
+        className="capitalize"
+      >
+        {row.original.isActive ? "Yes" : "No"}
+      </Badge>
     ),
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const season = row.original;
+      const division = row.original;
 
       return (
         <DropdownMenu>
@@ -325,26 +230,26 @@ const columns: ColumnDef<Season>[] = [
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleViewSeason(season.id)}
+              onClick={() => handleViewDivision(division.id)}
             >
               <IconEye className="mr-2 size-4" />
-              View Season
+              View Division
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleEditSeason(season.id)}
+              onClick={() => handleEditDivision(division.id)}
             >
               <IconEdit className="mr-2 size-4" />
-              Edit Season
+              Edit Division
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
-              onClick={() => handleDeleteDivision(season.id)}
+              onClick={() => handleDeleteDivision(division.id)}
             >
               <IconTrash className="mr-2 size-4" />
-              Delete Season
+              Delete Division
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -354,7 +259,7 @@ const columns: ColumnDef<Season>[] = [
 ];
 
 export function DivisionsDataTable() {
-  const [data, setData] = React.useState<Season[]>([]);
+  const [data, setData] = React.useState<Division[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -379,10 +284,10 @@ export function DivisionsDataTable() {
         return;
       }
 
-      const parsedData = z.array(seasonSchema).parse(response.data);
+      const parsedData = z.array(divisionSchema).parse(response.data);
       setData(parsedData);
     } catch (error) {
-      console.error("Failed to fetch divsions:", error);
+      console.error("Failed to fetch divisions:", error);
       setData([]);
     } finally {
       setIsLoading(false);
@@ -424,7 +329,7 @@ export function DivisionsDataTable() {
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search seasons by name, league type..."
+            placeholder="Search divisions by name, game type..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
@@ -433,7 +338,7 @@ export function DivisionsDataTable() {
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} season(s) selected
+            {table.getFilteredRowModel().rows.length} division(s) selected
           </div>
         </div>
       </div>
@@ -468,7 +373,7 @@ export function DivisionsDataTable() {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Loading seasons...
+                    Loading divisions...
                   </div>
                 </TableCell>
               </TableRow>
@@ -495,7 +400,7 @@ export function DivisionsDataTable() {
                   colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No seasons found.
+                  No divisions found.
                 </TableCell>
               </TableRow>
             )}
@@ -507,7 +412,7 @@ export function DivisionsDataTable() {
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} season(s)
+          {table.getFilteredRowModel().rows.length} division(s)
         </div>
         <div className="flex items-center space-x-2">
           <Button
