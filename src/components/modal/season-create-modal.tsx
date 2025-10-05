@@ -50,9 +50,9 @@ interface SeasonCreateModalProps {
 
 // Available options for dropdowns
 const SPORTS_OPTIONS = [
-  { value: "Pickleball", label: "Pickleball" },
-  { value: "Tennis", label: "Tennis" },
-  { value: "Padel", label: "Padel" },
+  { value: "tennis", label: "Tennis" },
+  { value: "pickleball", label: "Pickleball" },
+  { value: "padel", label: "Padel" },
 ];
 
 const LEAGUE_OPTIONS = [
