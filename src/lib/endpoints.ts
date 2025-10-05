@@ -47,13 +47,27 @@ export const endpoints = {
   league:{
 
   },
-  season:{
-
+ season: {
+    create: "/api/season/create",
+    getAll: "/api/season/getall",
+    getById: (id: string) => `/api/season/${id}`,
+    update: (id: string) => `/api/season/${id}`,
+    delete: (id: string) => `/api/season/${id}`, 
   },
-  division:{
 
+  division: {
+    create: "/api/division/create",
+    getAll: "/api/division/",
+    getById: (id: string) => `/api/division/${id}`,
+    update: (id: string) => `/api/division/${id}`,
+    delete: (id: string) => `/api/division/delete/${id}`,
   },
-  match:{
 
+  match: {
+    create: "/api/match/create",
+    getAll: "/api/match",
+    getById: (id: string) => `/api/match/${id}`,
+    update: (id: string) => `/api/match/${id}`,
+    delete: (id: string) => `/api/match/delete/${id}`,
   },
 };
