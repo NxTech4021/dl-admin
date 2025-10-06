@@ -87,8 +87,48 @@ const FORMAT_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
   { value: "active", label: "Active" },
-  { value: "registration", label: "Registration Open" },
+  { value: "upcoming", label: "Upcoming" },
 ];
+
+function SponsorCreateModal({ open, onOpenChange, onSponsorCreated }: { open: boolean, onOpenChange: (open: boolean) => void, onSponsorCreated: (sponsor: any) => void }) {
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post("/api/companies", { name });
+      onSponsorCreated(res.data.company);
+      onOpenChange(false);
+      setName("");
+      toast.success("Sponsor created!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create sponsor");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Sponsor</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label>Sponsor Name</Label>
+          <Input value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button onClick={handleCreate} disabled={loading || !name}>
+            {loading ? "Creating..." : "Create"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export default function LeagueCreateModal({
   open,
@@ -103,6 +143,9 @@ export default function LeagueCreateModal({
   const [sponsorLogoFile, setSponsorLogoFile] = useState<File | null>(null);
   const [sponsorLogoPreview, setSponsorLogoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(false);
+  const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -125,6 +168,19 @@ export default function LeagueCreateModal({
     endDate: undefined as Date | undefined,
     registrationDeadline: undefined as Date | undefined,
   });
+
+
+  // Fetch sponsors when needed
+  React.useEffect(() => {
+    if (formData.hasSponsor) {
+      setSponsorsLoading(true);
+      axiosInstance.get("/api/companies")
+        .then(res => setSponsors(res.data))
+        .catch(() => setSponsors([]))
+        .finally(() => setSponsorsLoading(false));
+    }
+  }, [formData.hasSponsor]);
+
 
   // Pre-fill form data when template is selected
   React.useEffect(() => {
@@ -191,6 +247,7 @@ export default function LeagueCreateModal({
       handleFileUpload(e.target.files[0]);
     }
   };
+
 
   const handleRemoveLogo = () => {
     setSponsorLogoFile(null);
@@ -306,14 +363,7 @@ export default function LeagueCreateModal({
   setError("");
 
   try {
-    // Validation
-    if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
-      throw new Error("End date must be after start date");
-    }
-
-    if (formData.registrationDeadline && formData.startDate && formData.registrationDeadline >= formData.startDate) {
-      throw new Error("Registration deadline must be before start date");
-    }
+  
 
     let sponsorId: string | null = null;
 
@@ -592,10 +642,148 @@ export default function LeagueCreateModal({
                   </div>
                 </div>
 
+                  {/* Sponsor */}
+                {/* <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="hasSponsor"
+                      checked={formData.hasSponsor}
+                      onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
+                    />
+                    <Label htmlFor="hasSponsor" className="text-sm font-medium">
+                      This league has a sponsor
+                    </Label>
+                  </div>
+
+                  {formData.hasSponsor && (
+                    <div className="space-y-4 pl-6 border-l-2 border-muted">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       
+                        <div className="space-y-2">
+                          <Label htmlFor="sponsorName" className="text-sm font-medium">
+                            Sponsor Name *
+                          </Label>
+                          <Input
+                            id="sponsorName"
+                            type="text"
+                            placeholder="Enter sponsor name"
+                            value={formData.sponsorName}
+                            onChange={(e) => updateFormData("sponsorName", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="sponsorWebsite" className="text-sm font-medium">
+                            Website (Optional)
+                          </Label>
+                          <Input
+                            id="sponsorWebsite"
+                            type="url"
+                            placeholder="https://sponsor-website.com"
+                            value={formData.sponsorWebsite}
+                            onChange={(e) => updateFormData("sponsorWebsite", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               
+                        <div className="space-y-2">
+                          <Label htmlFor="sponsorEmail" className="text-sm font-medium">
+                            Contact Email (Optional)
+                          </Label>
+                          <Input
+                            id="sponsorEmail"
+                            type="email"
+                            placeholder="contact@sponsor.com"
+                            value={formData.sponsorEmail}
+                            onChange={(e) => updateFormData("sponsorEmail", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div> */}
+                
+<div className="space-y-4">
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id="hasSponsor"
+        checked={formData.hasSponsor}
+        onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
+      />
+      <Label htmlFor="hasSponsor" className="text-sm font-medium">
+        This league has a sponsor
+      </Label>
+    </div>
+
+    {formData.hasSponsor && (
+      <div className="space-y-4 pl-6 border-l-2 border-muted">
+        {sponsorsLoading ? (
+          <div>Loading sponsors...</div>
+        ) : sponsors.length > 0 ? (
+          <div className="space-y-2">
+            <Label htmlFor="sponsorCompany" className="text-sm font-medium">
+              Select Sponsor *
+            </Label>
+            <Select
+              value={formData.sponsorCompanyId}
+              onValueChange={val => updateFormData("sponsorCompanyId", val)}
+            >
+              <SelectTrigger className="h-11 w-full">
+                <SelectValue placeholder="Select sponsor" />
+              </SelectTrigger>
+              <SelectContent>
+                {sponsors.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+                <div className="p-2 border-t text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-xs"
+                    onClick={() => setSponsorModalOpen(true)}
+                  >
+                    + Create new sponsor
+                  </Button>
+                </div>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div>No sponsors found.</div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSponsorModalOpen(true)}
+              size="sm"
+            >
+              + Create Sponsor
+            </Button>
+          </div>
+        )}
+      </div>
+    )}
+    <SponsorCreateModal
+      open={sponsorModalOpen}
+      onOpenChange={setSponsorModalOpen}
+      onSponsorCreated={sponsor => {
+        setSponsors(s => [...s, sponsor]);
+        updateFormData("sponsorCompanyId", sponsor.id);
+      }}
+    />
+  </div>
+
                 {/* Description */}
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm font-medium">
-                    Description (Optional)
+                    Description
                   </Label>
                   <Textarea
                     id="description"
@@ -684,149 +872,88 @@ export default function LeagueCreateModal({
                   </div>
                 </div>
 
-                {/* Sponsor */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="hasSponsor"
-                      checked={formData.hasSponsor}
-                      onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
-                    />
-                    <Label htmlFor="hasSponsor" className="text-sm font-medium">
-                      This league has a sponsor
-                    </Label>
-                  </div>
+              
+                {/* Category Name */}
+<div className="space-y-2">
+  <Label htmlFor="categoryName" className="text-sm font-medium">
+    Category Name *
+  </Label>
+  <Input
+    id="categoryName"
+    type="text"
+    placeholder="e.g., Junior Singles"
+    value={formData.categoryName}
+    onChange={(e) => updateFormData("categoryName", e.target.value)}
+    className="h-11"
+  />
+</div>
 
-                  {formData.hasSponsor && (
-                    <div className="space-y-4 pl-6 border-l-2 border-muted">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Sponsor Name */}
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorName" className="text-sm font-medium">
-                            Sponsor Name *
-                          </Label>
-                          <Input
-                            id="sponsorName"
-                            type="text"
-                            placeholder="Enter sponsor name"
-                            value={formData.sponsorName}
-                            onChange={(e) => updateFormData("sponsorName", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
+{/* Match Format */}
+<div className="space-y-2">
+  <Label htmlFor="matchFormat" className="text-sm font-medium">
+    Match Format
+  </Label>
+  <Input
+    id="matchFormat"
+    type="text"
+    placeholder="e.g., Best of 3 sets"
+    value={formData.matchFormat}
+    onChange={(e) => updateFormData("matchFormat", e.target.value)}
+    className="h-11"
+  />
+</div>
 
-                        {/* Sponsor Website */}
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorWebsite" className="text-sm font-medium">
-                            Website (Optional)
-                          </Label>
-                          <Input
-                            id="sponsorWebsite"
-                            type="url"
-                            placeholder="https://sponsor-website.com"
-                            value={formData.sponsorWebsite}
-                            onChange={(e) => updateFormData("sponsorWebsite", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
-                      </div>
+{/* Max Players */}
+<div className="space-y-2">
+  <Label htmlFor="maxPlayers" className="text-sm font-medium">
+    Maximum Players
+  </Label>
+  <Input
+    id="maxPlayers"
+    type="number"
+    placeholder="32"
+    value={formData.maxPlayers}
+    onChange={(e) => updateFormData("maxPlayers", e.target.value)}
+    className="h-11"
+    min="1"
+  />
+</div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Sponsor Email */}
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorEmail" className="text-sm font-medium">
-                            Contact Email (Optional)
-                          </Label>
-                          <Input
-                            id="sponsorEmail"
-                            type="email"
-                            placeholder="contact@sponsor.com"
-                            value={formData.sponsorEmail}
-                            onChange={(e) => updateFormData("sponsorEmail", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
+{/* Max Teams */}
+<div className="space-y-2">
+  <Label htmlFor="maxTeams" className="text-sm font-medium">
+    Maximum Teams
+  </Label>
+  <Input
+    id="maxTeams"
+    type="number"
+    placeholder="8"
+    value={formData.maxTeams}
+    onChange={(e) => updateFormData("maxTeams", e.target.value)}
+    className="h-11"
+    min="1"
+  />
+</div>
 
-                        {/* Sponsor Logo Upload */}
-                        {/* <div className="space-y-2">
-                          <Label className="text-sm font-medium">
-                            Logo (Optional)
-                          </Label>
-                          
-                          {!sponsorLogoPreview ? (
-                            <div className="space-y-2">
-                              <div 
-                                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer"
-                                onClick={() => fileInputRef.current?.click()}
-                              >
-                                <IconUpload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  Click to upload sponsor logo
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  PNG, JPG, GIF, WebP up to 5MB
-                                </p>
-                              </div>
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                              />
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <div className="relative border rounded-lg p-4 bg-muted/30">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-12 h-12 rounded-md overflow-hidden bg-white border">
-                                    <img 
-                                      src={sponsorLogoPreview} 
-                                      alt="Logo preview" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium">{sponsorLogoFile?.name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {sponsorLogoFile && (sponsorLogoFile.size / 1024).toFixed(1)} KB
-                                    </p>
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleRemoveLogo}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <IconX className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full"
-                              >
-                                <IconPhoto className="mr-2 h-4 w-4" />
-                                Change Logo
-                              </Button>
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                              />
-                            </div>
-                          )}
-                        </div> */}
-                      </div>
-                    </div>
-                  )}
-                </div>
+{/* Gender Restriction */}
+<div className="space-y-2">
+  <Label htmlFor="genderRestriction" className="text-sm font-medium">
+    Gender Restriction
+  </Label>
+  <Select
+    value={formData.genderRestriction}
+    onValueChange={(value) => updateFormData("genderRestriction", value)}
+  >
+    <SelectTrigger className="h-11 w-full">
+      <SelectValue placeholder="Select gender restriction" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="open">Open</SelectItem>
+      <SelectItem value="male">Male</SelectItem>
+      <SelectItem value="female">Female</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
               </div>
 
               {/* Schedule Section */}
