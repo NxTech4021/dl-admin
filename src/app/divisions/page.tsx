@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button"
 import { IconCalendar, IconPlus, IconDownload } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
-import { DivisionsDataTable } from "@/components/data-table/divisions-data-table";
+// import { DivisionsDataTable } from "@/components/data-table/divisions-data-table";
+ 
 
-
-const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
+const DivisionsDataTable = dynamic(() => import("@/components/data-table/divisions-data-table").then(mod => ({ default: mod.DivisionsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 })
 

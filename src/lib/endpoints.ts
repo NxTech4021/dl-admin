@@ -32,7 +32,7 @@ export const endpoints = {
     sendInvite: "/api/admin/invite",
   },
   player: {
-    getAll: "/api/player",
+    getAll: "/api/player/",
     getStats: "/api/player/stats",
     getById: (id: string) => `/api/player/${id}`,
 
@@ -44,8 +44,14 @@ export const endpoints = {
     getAchievements: "/api/player/profile/achievements",
     getMatchDetails: (matchId: string) => `/api/player/matches/${matchId}`,
   },
-  league:{
-
+  league: {
+    getAll: "/api/league/",
+    // getBySport: (sportId: string) => `/api/league/sport/${sportId}`,
+    getById: (id: string) => `/api/league/${id}`,
+    create: "/api/league/create",
+    update: (id: string) => `/api/league/${id}`,
+    delete: (id: string) => `/api/league/${id}`,
+    // getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
   },
  season: {
     create: "/api/season/create",

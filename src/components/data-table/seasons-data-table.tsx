@@ -24,7 +24,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import axios from "axios";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
