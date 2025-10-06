@@ -48,7 +48,8 @@ import {
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import axiosInstance from "@/lib/endpoints";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { SponsorCreateModal } from "./sponsor-create-modal";
 
 interface LeagueCreateModalProps {
   open: boolean;
@@ -90,44 +91,44 @@ const STATUS_OPTIONS = [
   { value: "upcoming", label: "Upcoming" },
 ];
 
-function SponsorCreateModal({ open, onOpenChange, onSponsorCreated }: { open: boolean, onOpenChange: (open: boolean) => void, onSponsorCreated: (sponsor: any) => void }) {
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
+// function SponsorCreateModal({ open, onOpenChange, onSponsorCreated }: { open: boolean, onOpenChange: (open: boolean) => void, onSponsorCreated: (sponsor: any) => void }) {
+//   const [name, setName] = useState("");
+//   const [loading, setLoading] = useState(false);
 
-  const handleCreate = async () => {
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post("/api/companies", { name });
-      onSponsorCreated(res.data.company);
-      onOpenChange(false);
-      setName("");
-      toast.success("Sponsor created!");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create sponsor");
-    } finally {
-      setLoading(false);
-    }
-  };
+//   const handleCreate = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await axiosInstance.post("/api/companies", { name });
+//       onSponsorCreated(res.data.company);
+//       onOpenChange(false);
+//       setName("");
+//       toast.success("Sponsor created!");
+//     } catch (err: any) {
+//       toast.error(err.response?.data?.message || "Failed to create sponsor");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Sponsor</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label>Sponsor Name</Label>
-          <Input value={name} onChange={e => setName(e.target.value)} />
-        </div>
-        <DialogFooter>
-          <Button onClick={handleCreate} disabled={loading || !name}>
-            {loading ? "Creating..." : "Create"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+//   return (
+//     <Dialog open={open} onOpenChange={onOpenChange}>
+//       <DialogContent>
+//         <DialogHeader>
+//           <DialogTitle>Create Sponsor</DialogTitle>
+//         </DialogHeader>
+//         <div className="space-y-2">
+//           <Label>Sponsor Name</Label>
+//           <Input value={name} onChange={e => setName(e.target.value)} />
+//         </div>
+//         <DialogFooter>
+//           <Button onClick={handleCreate} disabled={loading || !name}>
+//             {loading ? "Creating..." : "Create"}
+//           </Button>
+//         </DialogFooter>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
 
 
 export default function LeagueCreateModal({
@@ -170,16 +171,31 @@ export default function LeagueCreateModal({
   });
 
 
-  // Fetch sponsors when needed
-  React.useEffect(() => {
-    if (formData.hasSponsor) {
-      setSponsorsLoading(true);
-      axiosInstance.get("/api/companies")
-        .then(res => setSponsors(res.data))
-        .catch(() => setSponsors([]))
-        .finally(() => setSponsorsLoading(false));
-    }
-  }, [formData.hasSponsor]);
+React.useEffect(() => {
+  if (formData.hasSponsor) {
+    console.log("Attempting to fetch sponsors..."); // Log the start of the process
+    setSponsorsLoading(true);
+    axiosInstance.get(endpoints.sponsors.getAll)
+      .then(res => {
+        console.log("Sponsors fetched successfully, setting state.");
+        setSponsors(res.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching sponsors:", error); // Log any errors
+        setSponsors([]);
+      })
+      .finally(() => setSponsorsLoading(false));
+  }
+}, [formData.hasSponsor]);
+
+
+// 2. **Add this new useEffect to log the actual state value**
+React.useEffect(() => {
+  // This will run AFTER the `setSponsors(res.data)` update completes
+  if (formData.hasSponsor) {
+    console.log("Current sponsors state:", sponsors); 
+  }
+}, [sponsors, formData.hasSponsor]);
 
 
   // Pre-fill form data when template is selected
@@ -367,18 +383,7 @@ export default function LeagueCreateModal({
 
     let sponsorId: string | null = null;
 
-    // 1️⃣ Create sponsor if exists
-    if (formData.hasSponsor && formData.sponsorName) {
-      const sponsorResponse = await axiosInstance.post("/api/sponsors", {
-        name: formData.sponsorName,
-        website: formData.sponsorWebsite,
-        email: formData.sponsorEmail,
-      });
-
-      sponsorId = sponsorResponse.data.sponsor.id; 
-    }
-
-    // 2️⃣ Create league
+    // Create league
     const leagueResponse = await axiosInstance.post("/api/leagues", {
       name: formData.leagueName,
       location: formData.location,
@@ -643,71 +648,6 @@ export default function LeagueCreateModal({
                 </div>
 
                   {/* Sponsor */}
-                {/* <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="hasSponsor"
-                      checked={formData.hasSponsor}
-                      onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
-                    />
-                    <Label htmlFor="hasSponsor" className="text-sm font-medium">
-                      This league has a sponsor
-                    </Label>
-                  </div>
-
-                  {formData.hasSponsor && (
-                    <div className="space-y-4 pl-6 border-l-2 border-muted">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorName" className="text-sm font-medium">
-                            Sponsor Name *
-                          </Label>
-                          <Input
-                            id="sponsorName"
-                            type="text"
-                            placeholder="Enter sponsor name"
-                            value={formData.sponsorName}
-                            onChange={(e) => updateFormData("sponsorName", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorWebsite" className="text-sm font-medium">
-                            Website (Optional)
-                          </Label>
-                          <Input
-                            id="sponsorWebsite"
-                            type="url"
-                            placeholder="https://sponsor-website.com"
-                            value={formData.sponsorWebsite}
-                            onChange={(e) => updateFormData("sponsorWebsite", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               
-                        <div className="space-y-2">
-                          <Label htmlFor="sponsorEmail" className="text-sm font-medium">
-                            Contact Email (Optional)
-                          </Label>
-                          <Input
-                            id="sponsorEmail"
-                            type="email"
-                            placeholder="contact@sponsor.com"
-                            value={formData.sponsorEmail}
-                            onChange={(e) => updateFormData("sponsorEmail", e.target.value)}
-                            className="h-11"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div> */}
-                
 <div className="space-y-4">
     <div className="flex items-center space-x-2">
       <Checkbox
@@ -736,7 +676,10 @@ export default function LeagueCreateModal({
               <SelectTrigger className="h-11 w-full">
                 <SelectValue placeholder="Select sponsor" />
               </SelectTrigger>
-              <SelectContent>
+            <SelectContent
+  className="w-[var(--radix-select-trigger-width)] max-h-60 overflow-y-auto"
+  position="popper"
+>
                 {sponsors.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}

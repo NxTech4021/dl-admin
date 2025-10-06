@@ -55,11 +55,19 @@ export const endpoints = {
   },
  season: {
     create: "/api/season/create",
-    getAll: "/api/season/getall",
+    getAll: "/api/season/",
     getById: (id: string) => `/api/season/${id}`,
     update: (id: string) => `/api/season/${id}`,
     delete: (id: string) => `/api/season/${id}`, 
   },
+
+  sponsors: {
+  create: "/api/sponsor/create",
+  getAll: "/api/sponsor/",
+  getById: (id: string) => `/api/sponsor/${id}`,
+  update: (id: string) => `/api/sponsor/${id}`,
+  delete: (id: string) => `/api/sponsor/${id}`,
+},
 
   division: {
     create: "/api/division/create",

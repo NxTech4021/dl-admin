@@ -4,26 +4,61 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
-import { CartesianGrid, XAxis, YAxis, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
- 
-import { 
-  IconPlus, 
-  IconTrophy, 
-  IconUsers, 
-  IconCalendar, 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
+import {
+  IconPlus,
+  IconTrophy,
+  IconUsers,
+  IconCalendar,
   IconCurrencyDollar,
   IconEye,
   IconEdit,
@@ -39,13 +74,10 @@ import {
   IconBolt,
   IconChartBar,
   IconActivity,
-  IconGift
+  IconGift,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { 
-  LeagueCreateModal, 
-  LeagueTemplateModal
-} from "../../components/modal";
+import { LeagueCreateModal, LeagueTemplateModal } from "../../components/modal";
 
 // Enhanced mock data with all new features
 const mockLeagues = [
@@ -67,16 +99,16 @@ const mockLeagues = [
     matches: {
       total: 96,
       completed: 45,
-      pending: 51
+      pending: 51,
     },
     sponsor: {
       name: "SportsTech Malaysia",
-      logo: "/sponsors/sportstech.png"
+      logo: "/sponsors/sportstech.png",
     },
     prizes: {
       total: 2500,
-      positions: 4
-    }
+      positions: 4,
+    },
   },
   {
     id: 2,
@@ -96,16 +128,16 @@ const mockLeagues = [
     matches: {
       total: 0,
       completed: 0,
-      pending: 0
+      pending: 0,
     },
     sponsor: {
       name: "Wilson Sports",
-      logo: "/sponsors/wilson.png"
+      logo: "/sponsors/wilson.png",
     },
     prizes: {
       total: 1800,
-      positions: 3
-    }
+      positions: 3,
+    },
   },
   {
     id: 3,
@@ -125,17 +157,17 @@ const mockLeagues = [
     matches: {
       total: 84,
       completed: 84,
-      pending: 0
+      pending: 0,
     },
     sponsor: {
       name: "Butterfly Malaysia",
-      logo: "/sponsors/butterfly.png"
+      logo: "/sponsors/butterfly.png",
     },
     prizes: {
       total: 2000,
-      positions: 5
-    }
-  }
+      positions: 5,
+    },
+  },
 ];
 
 const quickStats = {
@@ -148,17 +180,18 @@ const quickStats = {
   totalSeasons: 6,
   totalDivisions: 10,
   totalPrizes: 6300,
-  averageParticipants: 28
+  averageParticipants: 28,
 };
 
 const recentActivity = [
   {
     id: 1,
     type: "match_completed",
-    description: "Ahmad Rahman defeated Lim Wei Ming in KL Pickleball Championship",
+    description:
+      "Ahmad Rahman defeated Lim Wei Ming in KL Pickleball Championship",
     time: "2 hours ago",
     icon: IconTrophy,
-    color: "text-green-600"
+    color: "text-green-600",
   },
   {
     id: 2,
@@ -166,7 +199,7 @@ const recentActivity = [
     description: "3 new players registered for PJ Tennis League",
     time: "4 hours ago",
     icon: IconUsers,
-    color: "text-blue-600"
+    color: "text-blue-600",
   },
   {
     id: 3,
@@ -174,7 +207,7 @@ const recentActivity = [
     description: "Season 4 created for Subang Table Tennis Pro",
     time: "1 day ago",
     icon: IconCalendar,
-    color: "text-purple-600"
+    color: "text-purple-600",
   },
   {
     id: 4,
@@ -182,7 +215,7 @@ const recentActivity = [
     description: "Prize structure updated for KL Pickleball Championship",
     time: "2 days ago",
     icon: IconGift,
-    color: "text-orange-600"
+    color: "text-orange-600",
   },
   {
     id: 5,
@@ -190,8 +223,8 @@ const recentActivity = [
     description: "New sponsor Wilson Sports added to PJ Tennis League",
     time: "3 days ago",
     icon: IconUser,
-    color: "text-indigo-600"
-  }
+    color: "text-indigo-600",
+  },
 ];
 
 export default function LeaguePage() {
@@ -210,11 +243,11 @@ export default function LeaguePage() {
 
   const handleLeagueCreated = (newLeagueData?: any) => {
     console.log("League created, refreshing list...");
-    
+
     // If we have new league data, add it to the leagues list
     if (newLeagueData) {
       const newLeague = {
-        id: Math.max(...leagues.map(l => l.id), 0) + 1, // More stable ID generation
+        id: Math.max(...leagues.map((l) => l.id), 0) + 1, // More stable ID generation
         name: newLeagueData.leagueName || "New League",
         sport: newLeagueData.sport || "Tennis",
         city: newLeagueData.location || "Unknown",
@@ -231,27 +264,31 @@ export default function LeaguePage() {
         matches: {
           total: 0,
           completed: 0,
-          pending: 0
+          pending: 0,
         },
-        sponsor: newLeagueData.hasSponsor ? {
-          name: newLeagueData.sponsorName || "Sponsor",
-          logo: newLeagueData.sponsorLogo || "/sponsors/default.png"
-        } : {
-          name: "No Sponsor",
-          logo: "/sponsors/default.png"
-        },
+        sponsor: newLeagueData.hasSponsor
+          ? {
+              name: newLeagueData.sponsorName || "Sponsor",
+              logo: newLeagueData.sponsorLogo || "/sponsors/default.png",
+            }
+          : {
+              name: "No Sponsor",
+              logo: "/sponsors/default.png",
+            },
         prizes: {
           total: 0,
-          positions: 0
-        }
+          positions: 0,
+        },
       };
-      
-      setLeagues(prevLeagues => [...prevLeagues, newLeague]);
-      toast.success(`League "${newLeagueData.leagueName}" created successfully!`);
+
+      setLeagues((prevLeagues) => [...prevLeagues, newLeague]);
+      toast.success(
+        `League "${newLeagueData.leagueName}" created successfully!`
+      );
     } else {
       toast.success("League created successfully!");
     }
-    
+
     setSelectedTemplate(null); // Clear template after creation
   };
 
@@ -262,31 +299,41 @@ export default function LeaguePage() {
     toast.success(`Template "${template.name}" selected!`);
   };
 
-  const handleViewLeague = (league: typeof leagues[0]) => {
+  const handleViewLeague = (league: (typeof leagues)[0]) => {
     router.push(`/league/view/${league.id}`);
   };
 
-  const handleEditLeague = (league: typeof leagues[0]) => {
+  const handleEditLeague = (league: (typeof leagues)[0]) => {
     router.push(`/league/edit/${league.id}`);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "default";
-      case "registration": return "secondary";
-      case "completed": return "outline";
-      case "upcoming": return "secondary";
-      default: return "outline";
+      case "active":
+        return "default";
+      case "registration":
+        return "secondary";
+      case "completed":
+        return "outline";
+      case "upcoming":
+        return "secondary";
+      default:
+        return "outline";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "active": return <IconPlayerPlay className="size-3" />;
-      case "registration": return <IconClock className="size-3" />;
-      case "completed": return <IconCheck className="size-3" />;
-      case "upcoming": return <IconCalendar className="size-3" />;
-      default: return <IconClock className="size-3" />;
+      case "active":
+        return <IconPlayerPlay className="size-3" />;
+      case "registration":
+        return <IconClock className="size-3" />;
+      case "completed":
+        return <IconCheck className="size-3" />;
+      case "upcoming":
+        return <IconCalendar className="size-3" />;
+      default:
+        return <IconClock className="size-3" />;
     }
   };
 
@@ -334,17 +381,30 @@ export default function LeaguePage() {
     remaining: { label: "Remaining", color: "#F97316" },
   };
 
-  const sportChartColors = ["#60A5FA", "#F97316", "#34D399", "#A78BFA", "#F43F5E", "#F59E0B"];
+  const sportChartColors = [
+    "#60A5FA",
+    "#F97316",
+    "#34D399",
+    "#A78BFA",
+    "#F43F5E",
+    "#F59E0B",
+  ];
 
   // Top 5 active leagues by utilization
   const topActiveLeagues = leagues
     .filter((l) => l.status === "active")
-    .sort((a, b) => (b.participants / b.maxParticipants) - (a.participants / a.maxParticipants))
+    .sort(
+      (a, b) =>
+        b.participants / b.maxParticipants - a.participants / a.maxParticipants
+    )
     .slice(0, 5);
 
   // Pagination for all leagues
   const totalPages = Math.max(1, Math.ceil(leagues.length / pageSize));
-  const paginatedLeagues = leagues.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedLeagues = leagues.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
@@ -362,7 +422,9 @@ export default function LeaguePage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader items={[{ label: "League", href: "/league" }, { label: "Overview" }]} />
+        <SiteHeader
+          items={[{ label: "League", href: "/league" }, { label: "Overview" }]}
+        />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-6">
@@ -370,7 +432,6 @@ export default function LeaguePage() {
               <div className="border-b bg-gradient-to-r from-background/95 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="px-4 lg:px-6 py-8">
                   <div className="flex flex-col gap-6">
-                    
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
@@ -378,19 +439,21 @@ export default function LeaguePage() {
                             <IconTrophy className="size-8 text-primary" />
                           </div>
                           <div>
-                            <h1 className="text-3xl font-bold tracking-tight">League Management</h1>
-                            <p className="text-muted-foreground">
-                              
-                            </p>
+                            <h1 className="text-3xl font-bold tracking-tight">
+                              League Management
+                            </h1>
+                            <p className="text-muted-foreground"></p>
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <LeagueTemplateModal onTemplateSelect={handleTemplateSelect}>
+                        <LeagueTemplateModal
+                          onTemplateSelect={handleTemplateSelect}
+                        >
                           <Button variant="outline">
                             <IconTemplate className="mr-2 h-4 w-4" />
                             Templates
-                              </Button>
+                          </Button>
                         </LeagueTemplateModal>
                         <LeagueCreateModal
                           open={isCreateDialogOpen}
@@ -401,14 +464,14 @@ export default function LeaguePage() {
                           <Button>
                             <IconPlus className="mr-2 h-4 w-4" />
                             Create League
-                              </Button>
+                          </Button>
                         </LeagueCreateModal>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Main Content */}
               <div className="flex-1 px-4 lg:px-6 py-6">
                 <div className="space-y-8">
@@ -416,23 +479,32 @@ export default function LeaguePage() {
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Leagues</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Leagues
+                        </CardTitle>
                         <IconTrophy className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{quickStats.totalLeagues}</div>
+                        <div className="text-2xl font-bold">
+                          {quickStats.totalLeagues}
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          {quickStats.activeLeagues} active, {quickStats.totalSeasons} seasons
+                          {quickStats.activeLeagues} active,{" "}
+                          {quickStats.totalSeasons} seasons
                         </p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Players</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Players
+                        </CardTitle>
                         <IconUsers className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{quickStats.totalPlayers}</div>
+                        <div className="text-2xl font-bold">
+                          {quickStats.totalPlayers}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           Avg {quickStats.averageParticipants} per league
                         </p>
@@ -440,11 +512,15 @@ export default function LeaguePage() {
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Revenue
+                        </CardTitle>
                         <IconCurrencyDollar className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">RM {quickStats.totalRevenue.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">
+                          RM {quickStats.totalRevenue.toLocaleString()}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           RM {quickStats.totalPrizes.toLocaleString()} in prizes
                         </p>
@@ -452,21 +528,31 @@ export default function LeaguePage() {
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Match Progress</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Match Progress
+                        </CardTitle>
                         <IconActivity className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{Math.round((quickStats.completedMatches / quickStats.totalMatches) * 100)}%</div>
+                        <div className="text-2xl font-bold">
+                          {Math.round(
+                            (quickStats.completedMatches /
+                              quickStats.totalMatches) *
+                              100
+                          )}
+                          %
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          {quickStats.completedMatches} of {quickStats.totalMatches} completed
+                          {quickStats.completedMatches} of{" "}
+                          {quickStats.totalMatches} completed
                         </p>
                       </CardContent>
                     </Card>
-                              </div>
+                  </div>
 
                   {/* League Overview - main content only */}
-                  <Card>
-                            <CardHeader>
+                  {/* <Card>
+                      <CardHeader>
                       <CardTitle>League Overview</CardTitle>
                               <CardDescription>
                         Manage and track your leagues at a glance. Top active leagues are highlighted below; use pagination to browse all.
@@ -673,8 +759,9 @@ export default function LeaguePage() {
                                 </div>
                               </div>
                             </CardContent>
-                          </Card>
-                      </div>
+                  
+                  </Card> */}
+                </div>
               </div>
             </div>
           </div>
