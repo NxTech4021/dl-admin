@@ -48,6 +48,7 @@ import {
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import axiosInstance from "@/lib/endpoints";
 
 interface LeagueCreateModalProps {
   open: boolean;
@@ -251,51 +252,120 @@ export default function LeagueCreateModal({
     (!formData.hasSponsor || (formData.hasSponsor && formData.sponsorName.trim()));
   const isFormValid = isBasicStepValid && isDetailsStepValid;
 
-  const handleCreateLeague = async () => {
-    if (!isFormValid) return;
+  // const handleCreateLeague = async () => {
+  //   if (!isFormValid) return;
     
-    setLoading(true);
-    setError("");
+  //   setLoading(true);
+  //   setError("");
 
-    try {
-      // Validate dates
-      if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
-        throw new Error("End date must be after start date");
-      }
+  //   try {
+  //     // Validate dates
+  //     if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
+  //       throw new Error("End date must be after start date");
+  //     }
 
-      if (formData.registrationDeadline && formData.startDate && formData.registrationDeadline >= formData.startDate) {
-        throw new Error("Registration deadline must be before start date");
-      }
+  //     if (formData.registrationDeadline && formData.startDate && formData.registrationDeadline >= formData.startDate) {
+  //       throw new Error("Registration deadline must be before start date");
+  //     }
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+  //     // TODO: Replace with actual API call
+  //     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
       
-      // Simulate logo upload if file exists
-      let logoUrl = "";
-      if (sponsorLogoFile) {
-        // TODO: Upload file to server and get URL
-        logoUrl = `/uploads/sponsors/${Date.now()}-${sponsorLogoFile.name}`;
-      }
+  //     // Simulate logo upload if file exists
+  //     let logoUrl = "";
+  //     if (sponsorLogoFile) {
+  //       // TODO: Upload file to server and get URL
+  //       logoUrl = `/uploads/sponsors/${Date.now()}-${sponsorLogoFile.name}`;
+  //     }
       
-      const leagueDataWithLogo = {
-        ...formData,
-        sponsorLogo: logoUrl || formData.sponsorLogo,
-        sponsorLogoFile: sponsorLogoFile // Include file for parent component if needed
-      };
+  //     const leagueDataWithLogo = {
+  //       ...formData,
+  //       sponsorLogo: logoUrl || formData.sponsorLogo,
+  //       sponsorLogoFile: sponsorLogoFile // Include file for parent component if needed
+  //     };
       
-      console.log("Creating league:", leagueDataWithLogo);
+  //     console.log("Creating league:", leagueDataWithLogo);
       
-      resetModal();
-      onOpenChange(false);
-      onLeagueCreated?.(leagueDataWithLogo); // Pass form data with logo to parent
-    } catch (err: any) {
-      const message = err.message || "Failed to create league";
-      toast.error(message);
-      setError(message);
-    } finally {
-      setLoading(false);
+  //     resetModal();
+  //     onOpenChange(false);
+  //     onLeagueCreated?.(leagueDataWithLogo); // Pass form data with logo to parent
+  //   } catch (err: any) {
+  //     const message = err.message || "Failed to create league";
+  //     toast.error(message);
+  //     setError(message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+ const handleCreateLeague = async () => {
+  if (!isFormValid) return;
+
+  setLoading(true);
+  setError("");
+
+  try {
+    // Validation
+    if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
+      throw new Error("End date must be after start date");
     }
-  };
+
+    if (formData.registrationDeadline && formData.startDate && formData.registrationDeadline >= formData.startDate) {
+      throw new Error("Registration deadline must be before start date");
+    }
+
+    let sponsorId: string | null = null;
+
+    // 1️⃣ Create sponsor if exists
+    if (formData.hasSponsor && formData.sponsorName) {
+      const sponsorResponse = await axiosInstance.post("/api/sponsors", {
+        name: formData.sponsorName,
+        website: formData.sponsorWebsite,
+        email: formData.sponsorEmail,
+      });
+
+      sponsorId = sponsorResponse.data.sponsor.id; 
+    }
+
+    // 2️⃣ Create league
+    const leagueResponse = await axiosInstance.post("/api/leagues", {
+      name: formData.leagueName,
+      location: formData.location,
+      sport: formData.sport,
+      description: formData.description,
+      status: formData.status,
+      sponsorships: sponsorId ? [{ companyId: sponsorId }] : [],
+    });
+
+    const leagueId = leagueResponse.data.league.leagueId || leagueResponse.data.league.id;
+
+    // 3️⃣ Create category 
+    if (formData.format || formData.maxPlayers || formData.divisions) {
+      await axiosInstance.post("/api/categories", {
+        leagueId,
+        name: formData.format || "Default Category",
+        matchFormat: formData.format,
+        maxPlayers: Number(formData.maxPlayers) || undefined,
+        maxTeams: Number(formData.divisions) || undefined,
+      });
+    }
+
+    toast.success("League, sponsor, and category created successfully!");
+    resetModal();
+    onOpenChange(false);
+    onLeagueCreated?.(leagueResponse.data);
+
+  } catch (err: any) {
+    const message =
+      err.response?.data?.message || err.message || "Something went wrong";
+    setError(message);
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const getSportColor = (sport: string) => {
     switch (sport) {
@@ -557,7 +627,7 @@ export default function LeagueCreateModal({
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
                   <span className="text-sm font-medium text-muted-foreground px-2">
-                    Competition Settings
+                    Category Settings
                   </span>
                   <div className="h-px bg-border flex-1" />
                 </div>
@@ -580,22 +650,6 @@ export default function LeagueCreateModal({
                     </Select>
                   </div>
 
-                  {/* Entry Fee */}
-                  <div className="space-y-2">
-                    <Label htmlFor="entryFee" className="text-sm font-medium">
-                      Entry Fee (RM) *
-                    </Label>
-                    <Input
-                      id="entryFee"
-                      type="number"
-                      placeholder="100"
-                      value={formData.entryFee}
-                      onChange={(e) => updateFormData("entryFee", e.target.value)}
-                      className="h-11"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
 
                   {/* Max Players */}
                   <div className="space-y-2">
@@ -694,7 +748,7 @@ export default function LeagueCreateModal({
                         </div>
 
                         {/* Sponsor Logo Upload */}
-                        <div className="space-y-2">
+                        {/* <div className="space-y-2">
                           <Label className="text-sm font-medium">
                             Logo (Optional)
                           </Label>
@@ -768,7 +822,7 @@ export default function LeagueCreateModal({
                               />
                             </div>
                           )}
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   )}
@@ -776,7 +830,7 @@ export default function LeagueCreateModal({
               </div>
 
               {/* Schedule Section */}
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px bg-border flex-1" />
                   <span className="text-sm font-medium text-muted-foreground px-2">
@@ -786,7 +840,7 @@ export default function LeagueCreateModal({
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                  {/* Registration Deadline */}
+                
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
                       Registration Deadline
@@ -816,66 +870,9 @@ export default function LeagueCreateModal({
                       </PopoverContent>
                     </Popover>
                   </div>
-
-                  {/* Start Date */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Start Date *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-11",
-                            !formData.startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <IconCalendar className="mr-2 h-4 w-4" />
-                          {formData.startDate
-                            ? format(formData.startDate, "MMM dd, yyyy")
-                            : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.startDate}
-                          onSelect={(date) => updateFormData("startDate", date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* End Date */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">End Date *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-11",
-                            !formData.endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <IconCalendar className="mr-2 h-4 w-4" />
-                          {formData.endDate
-                            ? format(formData.endDate, "MMM dd, yyyy")
-                            : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.endDate}
-                          onSelect={(date) => updateFormData("endDate", date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+ 
                 </div>
-              </div>
+              </div> */}
 
               {/* Rules */}
               <div className="space-y-2">
