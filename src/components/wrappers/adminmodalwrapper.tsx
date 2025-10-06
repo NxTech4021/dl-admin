@@ -1,4 +1,3 @@
-// AdminInviteModalWrapper.tsx
 "use client";
 import { useState } from "react";
 import AdminInviteModal from "../modal/admin-invite-modal";

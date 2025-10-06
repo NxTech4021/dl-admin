@@ -17,6 +17,8 @@ export default function Page() {
             src="/dl-logo.svg"
             alt="Deuce League Logo"
             className="w-8 h-8"
+            width={32}
+            height={32}
           />
           {/* <img src="/dl-logo.svg" alt="Deuce League Logo" className="w-8 h-8" /> */}
           <span className="text-2xl font-bold italic text-orange-500 tracking-tight">

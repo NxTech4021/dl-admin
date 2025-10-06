@@ -24,7 +24,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import axios from "axios";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 // Season schema
 export const seasonSchema = z.object({
@@ -66,6 +66,11 @@ export const seasonSchema = z.object({
 });
 
 export type Season = z.infer<typeof seasonSchema>;
+
+export type SeasonsDataTableProps = {
+  data: Season[];
+  isLoading: boolean;
+};
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-MY", {
@@ -121,19 +126,6 @@ const getSportColor = (leagueType: string) => {
 //   }
 // };
 
-// const getLeagueBadgeVariant = (league: string) => {
-//   switch (league) {
-//     case "PJ League":
-//       return "default";
-//     case "Subang League":
-//       return "secondary";
-//     case "KL League":
-//       return "outline";
-//     default:
-//       return "outline";
-//   }
-// };
-
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
     case "UPCOMING":
@@ -164,11 +156,11 @@ const handleDeleteSeason = async (seasonId: string) => {
   }
 
   try {
-    await axios.delete(
-      `${process.env.NEXT_PUBLIC_HOST_URL}/api/season/${seasonId}`
+    await axiosInstance.delete(
+     endpoints.season.delete(seasonId)
     );
     // Refresh the data after successful deletion
-    window.location.reload(); // Simple refresh for now
+    window.location.reload(); 
   } catch (error) {
     console.error("Failed to delete season:", error);
   }
@@ -357,9 +349,9 @@ const columns: ColumnDef<Season>[] = [
   },
 ];
 
-export function SeasonsDataTable() {
-  const [data, setData] = React.useState<Season[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+
+
+export function SeasonsDataTable({ data, isLoading }: SeasonsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -368,34 +360,6 @@ export function SeasonsDataTable() {
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-
-  const fetchSeasons = React.useCallback(async () => {
-    setIsLoading(true);
-    let response;
-    try {
-      response = await axios.get(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/season/getall`
-      );
-
-      // Handle empty response or non-array response
-      if (!response.data || !Array.isArray(response.data)) {
-        setData([]);
-        return;
-      }
-
-      const parsedData = z.array(seasonSchema).parse(response.data);
-      setData(parsedData);
-    } catch (error) {
-      console.error("Failed to fetch seasons:", error);
-      setData([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchSeasons();
-  }, [fetchSeasons]);
 
   const table = useReactTable({
     data,

@@ -32,7 +32,7 @@ export const endpoints = {
     sendInvite: "/api/admin/invite",
   },
   player: {
-    getAll: "/api/player",
+    getAll: "/api/player/",
     getStats: "/api/player/stats",
     getById: (id: string) => `/api/player/${id}`,
 
@@ -43,5 +43,45 @@ export const endpoints = {
     getMatchHistory: "/api/player/profile/matches",
     getAchievements: "/api/player/profile/achievements",
     getMatchDetails: (matchId: string) => `/api/player/matches/${matchId}`,
+  },
+  league: {
+    getAll: "/api/league/",
+    // getBySport: (sportId: string) => `/api/league/sport/${sportId}`,
+    getById: (id: string) => `/api/league/${id}`,
+    create: "/api/league/create",
+    update: (id: string) => `/api/league/${id}`,
+    delete: (id: string) => `/api/league/${id}`,
+    // getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
+  },
+ season: {
+    create: "/api/season/create",
+    getAll: "/api/season/",
+    getById: (id: string) => `/api/season/${id}`,
+    update: (id: string) => `/api/season/${id}`,
+    delete: (id: string) => `/api/season/${id}`, 
+  },
+
+  sponsors: {
+  create: "/api/sponsor/create",
+  getAll: "/api/sponsor/",
+  getById: (id: string) => `/api/sponsor/${id}`,
+  update: (id: string) => `/api/sponsor/${id}`,
+  delete: (id: string) => `/api/sponsor/${id}`,
+},
+
+  division: {
+    create: "/api/division/create",
+    getAll: "/api/division/",
+    getById: (id: string) => `/api/division/${id}`,
+    update: (id: string) => `/api/division/${id}`,
+    delete: (id: string) => `/api/division/delete/${id}`,
+  },
+
+  match: {
+    create: "/api/match/create",
+    getAll: "/api/match",
+    getById: (id: string) => `/api/match/${id}`,
+    update: (id: string) => `/api/match/${id}`,
+    delete: (id: string) => `/api/match/delete/${id}`,
   },
 };
