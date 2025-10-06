@@ -38,6 +38,7 @@ import {
   IconTarget,
   IconTrophy,
 } from "@tabler/icons-react";
+import { leagueService } from "@/lib/league-service";
 
 interface LeagueTemplate {
   id: string;
@@ -271,7 +272,43 @@ export default function LeagueTemplateModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const createTemplateRef = useRef<HTMLDivElement>(null);
-  
+
+  // Fetch templates from backend when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      leagueService.getTemplates()
+        .then((response) => {
+          if (response.data?.templates && response.data.templates.length > 0) {
+            // Transform backend templates to match UI expectations
+            const transformedTemplates = response.data.templates.map((t: any) => ({
+              id: t.id,
+              name: t.name,
+              sport: t.sport,
+              description: t.description || "",
+              format: t.settings?.format || "singles",
+              maxPlayers: t.settings?.maxPlayersPerDivision || 32,
+              entryFee: t.settings?.paymentSettings?.fees?.flat || 0,
+              currency: t.settings?.paymentSettings?.fees?.currency || "RM",
+              duration: t.settings?.durationValue || 8,
+              divisions: t.settings?.divisionRules?.ratingRanges || [],
+              prizes: [],
+              rules: t.settings?.customRulesText ? [t.settings.customRulesText] : [],
+              isPopular: false,
+              usageCount: 0,
+              createdBy: "System",
+              category: "official" as const,
+            }));
+            setTemplates(transformedTemplates);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch templates:", err);
+          toast.error("Failed to load templates, using defaults");
+          // Keep default templates if API fails
+        });
+    }
+  }, [isOpen]);
+
   // Auto-scroll to create template form when it becomes visible
   useEffect(() => {
     if (isCreatingTemplate && createTemplateRef.current) {

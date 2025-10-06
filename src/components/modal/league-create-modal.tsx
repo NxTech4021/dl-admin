@@ -48,6 +48,7 @@ import {
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { leagueService } from "@/lib/league-service";
 
 interface LeagueCreateModalProps {
   open: boolean;
@@ -57,24 +58,17 @@ interface LeagueCreateModalProps {
   selectedTemplate?: any;
 }
 
-// Available options for dropdowns
-const SPORTS_OPTIONS = [
-  { value: "tennis", label: "Tennis" },
-  { value: "pickleball", label: "Pickleball" },
-  { value: "padel", label: "Padel" },
+// Default fallback options (will be replaced by API data)
+const DEFAULT_SPORTS_OPTIONS = [
+  { value: "Tennis", label: "Tennis" },
+  { value: "Pickleball", label: "Pickleball" },
+  { value: "Badminton", label: "Badminton" },
 ];
 
-const LOCATION_OPTIONS = [
-  { value: "kuala-lumpur", label: "Kuala Lumpur" },
-  { value: "petaling-jaya", label: "Petaling Jaya" },
-  { value: "subang-jaya", label: "Subang Jaya" },
-  { value: "shah-alam", label: "Shah Alam" },
-  { value: "klang", label: "Klang" },
-  { value: "ampang", label: "Ampang" },
-  { value: "cheras", label: "Cheras" },
-  { value: "puchong", label: "Puchong" },
-  { value: "cyberjaya", label: "Cyberjaya" },
-  { value: "putrajaya", label: "Putrajaya" },
+const DEFAULT_LOCATION_OPTIONS = [
+  { value: "Downtown Sports Center", label: "Downtown Sports Center" },
+  { value: "North Recreational Complex", label: "North Recreational Complex" },
+  { value: "East Community Center", label: "East Community Center" },
 ];
 
 const FORMAT_OPTIONS = [
@@ -103,6 +97,10 @@ export default function LeagueCreateModal({
   const [sponsorLogoPreview, setSponsorLogoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sports and Locations from API
+  const [sportsOptions, setSportsOptions] = useState(DEFAULT_SPORTS_OPTIONS);
+  const [locationOptions, setLocationOptions] = useState(DEFAULT_LOCATION_OPTIONS);
+
   // Form data
   const [formData, setFormData] = useState({
     leagueName: "",
@@ -124,6 +122,35 @@ export default function LeagueCreateModal({
     endDate: undefined as Date | undefined,
     registrationDeadline: undefined as Date | undefined,
   });
+
+  // Fetch sports and locations on modal open
+  React.useEffect(() => {
+    if (open) {
+      // Fetch sports
+      leagueService.getSports()
+        .then((response) => {
+          if (response.data?.sports) {
+            setSportsOptions(response.data.sports);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch sports:", err);
+          // Keep default options if API fails
+        });
+
+      // Fetch locations
+      leagueService.getLocations()
+        .then((response) => {
+          if (response.data?.locations) {
+            setLocationOptions(response.data.locations);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch locations:", err);
+          // Keep default options if API fails
+        });
+    }
+  }, [open]);
 
   // Pre-fill form data when template is selected
   React.useEffect(() => {
@@ -253,7 +280,7 @@ export default function LeagueCreateModal({
 
   const handleCreateLeague = async () => {
     if (!isFormValid) return;
-    
+
     setLoading(true);
     setError("");
 
@@ -267,29 +294,35 @@ export default function LeagueCreateModal({
         throw new Error("Registration deadline must be before start date");
       }
 
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      // Simulate logo upload if file exists
+      // TODO: Upload sponsor logo if file exists
       let logoUrl = "";
       if (sponsorLogoFile) {
         // TODO: Upload file to server and get URL
+        // For now, we'll skip the upload - this can be added later
         logoUrl = `/uploads/sponsors/${Date.now()}-${sponsorLogoFile.name}`;
       }
-      
-      const leagueDataWithLogo = {
-        ...formData,
-        sponsorLogo: logoUrl || formData.sponsorLogo,
-        sponsorLogoFile: sponsorLogoFile // Include file for parent component if needed
+
+      // Prepare league data for API
+      const leagueData = {
+        name: formData.leagueName,
+        sport: formData.sport,
+        location: formData.location,
+        status: formData.status.toUpperCase() as "DRAFT" | "REGISTRATION" | "ACTIVE",
+        description: formData.description || undefined,
+        brandingLogoUrl: logoUrl || formData.sponsorLogo || undefined,
       };
-      
-      console.log("Creating league:", leagueDataWithLogo);
-      
+
+      // Call the backend API to create league
+      const response = await leagueService.createLeague(leagueData);
+
+      // If successful, close modal and notify parent
       resetModal();
       onOpenChange(false);
-      onLeagueCreated?.(leagueDataWithLogo); // Pass form data with logo to parent
+      onLeagueCreated?.(response.data.league); // Pass the created league data to parent
+
+      toast.success(`League "${response.data.league.name}" created successfully!`);
     } catch (err: any) {
-      const message = err.message || "Failed to create league";
+      const message = err?.response?.data?.message || err.message || "Failed to create league";
       toast.error(message);
       setError(message);
     } finally {
@@ -478,7 +511,7 @@ export default function LeagueCreateModal({
                         <SelectValue placeholder="Select a sport" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SPORTS_OPTIONS.map((option) => (
+                        {sportsOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -495,7 +528,7 @@ export default function LeagueCreateModal({
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent>
-                        {LOCATION_OPTIONS.map((option) => (
+                        {locationOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -935,13 +968,13 @@ export default function LeagueCreateModal({
                           borderColor: getSportColor(formData.sport),
                         }}
                       >
-                        {SPORTS_OPTIONS.find(s => s.value === formData.sport)?.label}
+                        {sportsOptions.find(s => s.value === formData.sport)?.label}
                       </Badge>
                       <span className="text-sm text-muted-foreground">•</span>
                       <div className="flex items-center gap-1">
                         <IconMapPin className="h-3 w-3 text-muted-foreground" />
                         <span className="text-sm">
-                          {LOCATION_OPTIONS.find(l => l.value === formData.location)?.label}
+                          {locationOptions.find(l => l.value === formData.location)?.label}
                         </span>
                       </div>
                     </div>

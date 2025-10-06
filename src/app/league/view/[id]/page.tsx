@@ -40,6 +40,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { leagueService } from "@/lib/league-service";
 
 // Location options for label mapping
 const LOCATION_OPTIONS = [
@@ -249,22 +250,54 @@ export default function LeagueViewPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // TODO: Replace with actual API calls
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Get league data based on ID parameter
-        const leagueData = mockLeagues[leagueId as string];
+        // Fetch league data from API
+        const response = await leagueService.getLeagueById(leagueId);
+        const leagueData = response.data.league;
+
         if (!leagueData) {
           toast.error("League not found");
+          router.push("/league");
           return;
         }
-        
-        setLeague(leagueData);
+
+        // Transform backend data to match component interface
+        const transformedLeague: League = {
+          id: leagueData.id,
+          name: leagueData.name,
+          sport: leagueData.sport.toLowerCase(),
+          location: leagueData.location,
+          status: leagueData.status.toLowerCase() as any,
+          playerCount: 0, // TODO: Get from backend when available
+          maxPlayers: leagueData.settings?.maxPlayersPerDivision || 32,
+          registrationDeadline: leagueData.createdAt, // TODO: Get actual deadline
+          startDate: leagueData.createdAt,
+          endDate: leagueData.updatedAt,
+          createdAt: leagueData.createdAt,
+          createdBy: "Admin User", // TODO: Get from backend
+          divisions: 0, // TODO: Get count from backend
+          pendingRequests: leagueData._count?.joinRequests || 0,
+          description: leagueData.description,
+          rules: leagueData.settings?.customRulesText,
+          fees: leagueData.settings?.paymentSettings?.fees?.flat || 0,
+          currency: leagueData.settings?.paymentSettings?.fees?.currency || "RM",
+        };
+
+        setLeague(transformedLeague);
+        // TODO: Fetch players and divisions when endpoints are ready
         setPlayers(mockPlayers);
         setDivisions(mockDivisions);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading league data:", error);
-        toast.error("Failed to load league details");
+        toast.error(error?.response?.data?.message || "Failed to load league details");
+        // Fallback to mock data
+        const leagueData = mockLeagues[leagueId];
+        if (leagueData) {
+          setLeague(leagueData);
+          setPlayers(mockPlayers);
+          setDivisions(mockDivisions);
+        } else {
+          router.push("/league");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -273,7 +306,7 @@ export default function LeagueViewPage() {
     if (leagueId) {
       loadData();
     }
-  }, [leagueId]);
+  }, [leagueId, router]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {

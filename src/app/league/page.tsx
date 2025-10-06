@@ -42,10 +42,74 @@ import {
   IconGift
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { 
-  LeagueCreateModal, 
+import {
+  LeagueCreateModal,
   LeagueTemplateModal
 } from "../../components/modal";
+import { leagueService, League } from "@/lib/league-service";
+
+// Transform backend League to match UI expectations
+interface UILeague {
+  id: string;
+  name: string;
+  sport: string;
+  city: string;
+  season: string;
+  participants: number;
+  maxParticipants: number;
+  status: string;
+  revenue: number;
+  entryFee: number;
+  startDate: string;
+  endDate: string;
+  divisions: number;
+  seasons: number;
+  matches: {
+    total: number;
+    completed: number;
+    pending: number;
+  };
+  sponsor?: {
+    name: string;
+    logo: string;
+  };
+  prizes: {
+    total: number;
+    positions: number;
+  };
+}
+
+const transformLeagueForUI = (league: League): UILeague => {
+  return {
+    id: league.id,
+    name: league.name,
+    sport: league.sport,
+    city: league.location || "Unknown",
+    season: "Season 1 - 2025", // TODO: Get from seasons when available
+    participants: 0, // TODO: Get from backend when available
+    maxParticipants: league.settings?.maxPlayersPerDivision || 32,
+    status: league.status.toLowerCase(),
+    revenue: 0, // TODO: Calculate from participants when available
+    entryFee: 0, // TODO: Get from settings when available
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
+    divisions: 0, // TODO: Get count from backend
+    seasons: league._count?.seasons || 0,
+    matches: {
+      total: 0,
+      completed: 0,
+      pending: 0,
+    },
+    sponsor: league.brandingLogoUrl ? {
+      name: "Sponsor",
+      logo: league.brandingLogoUrl,
+    } : undefined,
+    prizes: {
+      total: 0,
+      positions: 0,
+    },
+  };
+};
 
 // Enhanced mock data with all new features
 const mockLeagues = [
@@ -138,18 +202,7 @@ const mockLeagues = [
   }
 ];
 
-const quickStats = {
-  totalLeagues: 3,
-  activeLeagues: 1,
-  totalPlayers: 84,
-  totalRevenue: 11760,
-  totalMatches: 180,
-  completedMatches: 129,
-  totalSeasons: 6,
-  totalDivisions: 10,
-  totalPrizes: 6300,
-  averageParticipants: 28
-};
+// This will be calculated from actual leagues data - moved to component
 
 const recentActivity = [
   {
@@ -198,60 +251,67 @@ export default function LeaguePage() {
   const router = useRouter();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [leagues, setLeagues] = useState(mockLeagues);
+  const [leagues, setLeagues] = useState<UILeague[]>([]);
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const pageSize = 10;
+
+  // Fetch leagues from API
+  useEffect(() => {
+    const fetchLeagues = async () => {
+      setIsLoading(true);
+      try {
+        const response = await leagueService.getLeagues({
+          page: currentPage,
+          pageSize,
+        });
+        // Transform backend data to match UI expectations
+        const transformedLeagues = response.data.items.map(transformLeagueForUI);
+        setLeagues(transformedLeagues);
+        setTotalPages(response.data.meta.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch leagues:", error);
+        toast.error("Failed to load leagues");
+        setLeagues(mockLeagues as any); // Fallback to mock data
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (mounted) {
+      fetchLeagues();
+    }
+  }, [currentPage, mounted]);
 
   // Ensure component is mounted before rendering dynamic content
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleLeagueCreated = (newLeagueData?: any) => {
-    console.log("League created, refreshing list...");
-    
-    // If we have new league data, add it to the leagues list
-    if (newLeagueData) {
-      const newLeague = {
-        id: Math.max(...leagues.map(l => l.id), 0) + 1, // More stable ID generation
-        name: newLeagueData.leagueName || "New League",
-        sport: newLeagueData.sport || "Tennis",
-        city: newLeagueData.location || "Unknown",
-        season: "Season 1 - 2025",
-        participants: 0,
-        maxParticipants: parseInt(newLeagueData.maxPlayers) || 32,
-        status: newLeagueData.status || "draft",
-        revenue: 0,
-        entryFee: parseInt(newLeagueData.entryFee) || 0,
-        startDate: newLeagueData.startDate || "2025-02-01",
-        endDate: newLeagueData.endDate || "2025-04-01",
-        divisions: parseInt(newLeagueData.divisions) || 1,
-        seasons: 1,
-        matches: {
-          total: 0,
-          completed: 0,
-          pending: 0
-        },
-        sponsor: newLeagueData.hasSponsor ? {
-          name: newLeagueData.sponsorName || "Sponsor",
-          logo: newLeagueData.sponsorLogo || "/sponsors/default.png"
-        } : {
-          name: "No Sponsor",
-          logo: "/sponsors/default.png"
-        },
-        prizes: {
-          total: 0,
-          positions: 0
-        }
-      };
-      
-      setLeagues(prevLeagues => [...prevLeagues, newLeague]);
-      toast.success(`League "${newLeagueData.leagueName}" created successfully!`);
-    } else {
-      toast.success("League created successfully!");
+  const handleLeagueCreated = async (newLeagueData?: League) => {
+    console.log("League created, refreshing list...", newLeagueData);
+
+    // Refetch leagues from API to get the latest data
+    try {
+      const response = await leagueService.getLeagues({
+        page: currentPage,
+        pageSize,
+      });
+      // Transform backend data to match UI expectations
+      const transformedLeagues = response.data.items.map(transformLeagueForUI);
+      setLeagues(transformedLeagues);
+      setTotalPages(response.data.meta.totalPages);
+    } catch (error) {
+      console.error("Failed to refresh leagues:", error);
+      // If refresh fails, just add the new league to the list
+      if (newLeagueData) {
+        const transformedLeague = transformLeagueForUI(newLeagueData);
+        setLeagues(prevLeagues => [transformedLeague, ...prevLeagues]);
+      }
     }
-    
+
     setSelectedTemplate(null); // Clear template after creation
   };
 
@@ -288,6 +348,20 @@ export default function LeaguePage() {
       case "upcoming": return <IconCalendar className="size-3" />;
       default: return <IconClock className="size-3" />;
     }
+  };
+
+  // Calculate statistics from actual leagues data
+  const quickStats = {
+    totalLeagues: leagues.length,
+    activeLeagues: leagues.filter(l => l.status.toLowerCase() === "active").length,
+    totalPlayers: leagues.reduce((sum, l) => sum + l.participants, 0),
+    totalRevenue: leagues.reduce((sum, l) => sum + l.revenue, 0),
+    totalMatches: leagues.reduce((sum, l) => sum + l.matches.total, 0),
+    completedMatches: leagues.reduce((sum, l) => sum + l.matches.completed, 0),
+    totalSeasons: leagues.reduce((sum, l) => sum + l.seasons, 0),
+    totalDivisions: leagues.reduce((sum, l) => sum + l.divisions, 0),
+    totalPrizes: leagues.reduce((sum, l) => sum + l.prizes.total, 0),
+    averageParticipants: leagues.length > 0 ? Math.round(leagues.reduce((sum, l) => sum + l.participants, 0) / leagues.length) : 0
   };
 
   // Build analytics datasets from leagues
@@ -338,13 +412,11 @@ export default function LeaguePage() {
 
   // Top 5 active leagues by utilization
   const topActiveLeagues = leagues
-    .filter((l) => l.status === "active")
-    .sort((a, b) => (b.participants / b.maxParticipants) - (a.participants / a.maxParticipants))
+    .filter((l) => l.status.toLowerCase() === "active")
     .slice(0, 5);
 
-  // Pagination for all leagues
-  const totalPages = Math.max(1, Math.ceil(leagues.length / pageSize));
-  const paginatedLeagues = leagues.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Use paginated leagues directly from state (backend handles pagination)
+  const paginatedLeagues = leagues;
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
@@ -456,7 +528,7 @@ export default function LeaguePage() {
                         <IconActivity className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{Math.round((quickStats.completedMatches / quickStats.totalMatches) * 100)}%</div>
+                        <div className="text-2xl font-bold">{quickStats.totalMatches > 0 ? Math.round((quickStats.completedMatches / quickStats.totalMatches) * 100) : 0}%</div>
                         <p className="text-xs text-muted-foreground">
                           {quickStats.completedMatches} of {quickStats.totalMatches} completed
                         </p>
@@ -563,7 +635,20 @@ export default function LeaguePage() {
                             <span className="text-xs text-muted-foreground">Page {currentPage} of {totalPages}</span>
                               </div>
                           <div className="space-y-3 transition-opacity duration-300">
-                            {paginatedLeagues.map((league) => (
+                            {paginatedLeagues.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <IconTrophy className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                                <h3 className="text-lg font-semibold mb-2">No leagues found</h3>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  Get started by creating your first league
+                                </p>
+                                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                                  <IconPlus className="h-4 w-4 mr-2" />
+                                  Create League
+                                </Button>
+                              </div>
+                            ) : (
+                              paginatedLeagues.map((league) => (
                               <Card key={league.id} className="p-4">
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-3 flex-1">
@@ -633,7 +718,7 @@ export default function LeaguePage() {
                                   </div>
                                 </div>
                               </Card>
-                            ))}
+                            )))}
                           </div>
 
                           <Pagination className="pt-2">

@@ -69,6 +69,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { leagueService } from "@/lib/league-service";
  
 
 interface JoinRequest {
@@ -187,15 +188,53 @@ export default function LeagueJoinRequestsPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // TODO: Replace with actual API calls
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        // Fetch league data
+        const leagueResponse = await leagueService.getLeagueById(leagueId);
+        const apiLeague = leagueResponse.data.league;
+
+        const transformedLeague: League = {
+          id: apiLeague.id,
+          name: apiLeague.name,
+          sport: apiLeague.sport,
+          location: apiLeague.location,
+          status: apiLeague.status.toLowerCase(),
+          playerCount: 0,
+          maxPlayers: apiLeague.settings?.maxPlayersPerDivision || 32,
+          pendingRequests: apiLeague._count?.joinRequests || 0,
+        };
+        setLeague(transformedLeague);
+
+        // Fetch join requests
+        const requestsResponse = await leagueService.getLeagueJoinRequests(leagueId, {
+          status: statusFilter === "all" ? undefined : statusFilter.toUpperCase(),
+        });
+
+        if (requestsResponse.data?.requests) {
+          // Transform backend requests to component format
+          const transformedRequests: JoinRequest[] = requestsResponse.data.requests.map((r: any) => ({
+            id: r.id,
+            playerId: r.userId,
+            playerName: r.user?.name || "Unknown",
+            playerEmail: r.user?.email || "",
+            playerRating: 0, // TODO: Get from user profile
+            playerLocation: "", // TODO: Get from user profile
+            requestDate: r.createdAt,
+            status: r.status.toLowerCase() as any,
+            message: r.notes,
+            adminNotes: "",
+            denialReason: r.decisionReason,
+            reviewedBy: r.decidedBy?.name,
+            reviewedAt: r.decidedAt,
+          }));
+          setRequests(transformedRequests);
+        }
+      } catch (error: any) {
+        console.error("Error loading data:", error);
+        toast.error(error?.response?.data?.message || "Failed to load join requests");
+        // Fallback to mock data
         const resolvedLeague = mockLeaguesById[leagueId] ?? null;
         setLeague(resolvedLeague);
         setRequests(mockRequests);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Failed to load join requests");
       } finally {
         setIsLoading(false);
       }
@@ -204,7 +243,7 @@ export default function LeagueJoinRequestsPage() {
     if (leagueId) {
       loadData();
     }
-  }, [leagueId]);
+  }, [leagueId, statusFilter]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.playerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,25 +259,27 @@ export default function LeagueJoinRequestsPage() {
   const handleApprove = async (request: JoinRequest) => {
     setIsProcessing(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setRequests(prev => prev.map(r => 
-        r.id === request.id 
-          ? { 
-              ...r, 
+      // Call backend API to approve request
+      await leagueService.updateJoinRequestStatus(leagueId, request.id, {
+        status: "APPROVED",
+      });
+
+      setRequests(prev => prev.map(r =>
+        r.id === request.id
+          ? {
+              ...r,
               status: "approved" as const,
               reviewedBy: "Admin User",
               reviewedAt: new Date().toISOString(),
-              adminNotes 
+              adminNotes
             }
           : r
       ));
-      
+
       toast.success(`Approved ${request.playerName}'s join request`);
       setAdminNotes("");
-    } catch (error) {
-      toast.error("Failed to approve request");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to approve request");
     } finally {
       setIsProcessing(false);
     }
@@ -252,29 +293,32 @@ export default function LeagueJoinRequestsPage() {
 
     setIsProcessing(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setRequests(prev => prev.map(r => 
-        r.id === request.id 
-          ? { 
-              ...r, 
+      // Call backend API to deny request with reason
+      await leagueService.updateJoinRequestStatus(leagueId, request.id, {
+        status: "DENIED",
+        decisionReason: denialReason.trim(),
+      });
+
+      setRequests(prev => prev.map(r =>
+        r.id === request.id
+          ? {
+              ...r,
               status: "denied" as const,
               denialReason: denialReason.trim(),
               reviewedBy: "Admin User",
               reviewedAt: new Date().toISOString(),
-              adminNotes 
+              adminNotes
             }
           : r
       ));
-      
+
       toast.success(`Denied ${request.playerName}'s join request`);
       setDenialReason("");
       setAdminNotes("");
       setShowDenialDialog(false);
       setSelectedRequest(null);
-    } catch (error) {
-      toast.error("Failed to deny request");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to deny request");
     } finally {
       setIsProcessing(false);
     }

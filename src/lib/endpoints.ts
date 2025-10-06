@@ -2,6 +2,7 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_HOST_URL,
+  withCredentials: true, // Send cookies with requests for authentication
 });
 
 axiosInstance.interceptors.response.use(
@@ -43,5 +44,38 @@ export const endpoints = {
     getMatchHistory: "/api/player/profile/matches",
     getAchievements: "/api/player/profile/achievements",
     getMatchDetails: (matchId: string) => `/api/player/matches/${matchId}`,
+  },
+  league: {
+    // League CRUD
+    getAll: "/api/league",
+    getById: (id: string) => `/api/league/${id}`,
+    create: "/api/league",
+    update: (id: string) => `/api/league/${id}`,
+    delete: (id: string) => `/api/league/${id}`,
+
+    // League Settings
+    getSettings: (id: string) => `/api/league/${id}/settings`,
+    updateSettings: (id: string) => `/api/league/${id}/settings`,
+    previewSettings: (id: string) => `/api/league/${id}/settings/preview`,
+
+    // Join Requests
+    getJoinRequests: (id: string) => `/api/league/${id}/join-requests`,
+    createJoinRequest: (id: string) => `/api/league/${id}/join-requests`,
+    updateJoinRequest: (leagueId: string, requestId: string) =>
+      `/api/league/${leagueId}/join-requests/${requestId}`,
+
+    // Templates
+    getTemplates: "/api/league/templates",
+    createTemplate: "/api/league/templates",
+
+    // Bulk Operations
+    bulkCreate: "/api/league/bulk/create",
+    copySettings: "/api/league/bulk/copy-settings",
+
+    // Sports & Locations
+    getSports: "/api/league/sports",
+    getLocations: "/api/league/locations",
+    searchSports: "/api/league/sports/search",
+    searchLocations: "/api/league/locations/search",
   },
 };

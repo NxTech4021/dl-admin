@@ -67,9 +67,10 @@ import {
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { PrizeStructureModal } from "@/components/modal";
- 
+
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { leagueService } from "@/lib/league-service";
 
 // Add sports and format options
 const SPORTS_OPTIONS = [
@@ -303,15 +304,41 @@ export default function EditLeaguePage() {
     const loadLeague = async () => {
       setIsLoading(true);
       try {
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-        
-        const leagueData = mockLeagues[leagueId];
-        if (!leagueData) {
+        // Fetch league data from API
+        const response = await leagueService.getLeagueById(leagueId);
+        const apiLeague = response.data.league;
+
+        if (!apiLeague) {
           toast.error("League not found");
           router.push("/league");
           return;
         }
+
+        // Transform API data to component format
+        const leagueData: League = {
+          id: apiLeague.id,
+          name: apiLeague.name,
+          sport: apiLeague.sport.toLowerCase(),
+          location: apiLeague.location,
+          status: apiLeague.status.toLowerCase() as any,
+          playerCount: 0,
+          maxPlayers: apiLeague.settings?.maxPlayersPerDivision || 32,
+          registrationDeadline: apiLeague.createdAt,
+          startDate: apiLeague.createdAt,
+          endDate: apiLeague.updatedAt,
+          createdAt: apiLeague.createdAt,
+          createdBy: "Admin User",
+          divisions: 0,
+          pendingRequests: apiLeague._count?.joinRequests || 0,
+          format: "singles", // TODO: Get from settings
+          entryFee: apiLeague.settings?.paymentSettings?.fees?.flat || 0,
+          description: apiLeague.description,
+          rules: apiLeague.settings?.customRulesText,
+          sponsor: apiLeague.brandingLogoUrl ? {
+            name: "Sponsor",
+            logo: apiLeague.brandingLogoUrl
+          } : undefined
+        };
 
         setLeague(leagueData);
         const initialFormData = {
@@ -336,15 +363,43 @@ export default function EditLeaguePage() {
         };
         setFormData(initialFormData);
         setOriginalData(initialFormData);
-        
+
         // Set sponsor logo preview if exists
         if (leagueData.sponsor?.logo) {
           setSponsorLogoPreview(leagueData.sponsor.logo);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading league:", error);
-        toast.error("Failed to load league data");
-        router.push("/league");
+        toast.error(error?.response?.data?.message || "Failed to load league data");
+        // Fallback to mock data
+        const leagueData = mockLeagues[leagueId];
+        if (leagueData) {
+          setLeague(leagueData);
+          const initialFormData = {
+            leagueName: leagueData.name,
+            sport: leagueData.sport,
+            status: leagueData.status,
+            location: leagueData.location,
+            format: leagueData.format || "",
+            entryFee: leagueData.entryFee?.toString() || "",
+            maxPlayers: leagueData.maxPlayers?.toString() || "",
+            divisions: leagueData.divisions?.toString() || "",
+            hasSponsor: !!leagueData.sponsor,
+            sponsorName: leagueData.sponsor?.name || "",
+            sponsorWebsite: leagueData.sponsor?.website || "",
+            sponsorEmail: leagueData.sponsor?.email || "",
+            sponsorLogo: leagueData.sponsor?.logo || "",
+            description: leagueData.description || "",
+            rules: leagueData.rules || "",
+            startDate: leagueData.startDate ? new Date(leagueData.startDate) : undefined,
+            endDate: leagueData.endDate ? new Date(leagueData.endDate) : undefined,
+            registrationDeadline: leagueData.registrationDeadline ? new Date(leagueData.registrationDeadline) : undefined,
+          };
+          setFormData(initialFormData);
+          setOriginalData(initialFormData);
+        } else {
+          router.push("/league");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -439,7 +494,7 @@ export default function EditLeaguePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error("Please fix the errors below");
       return;
@@ -448,21 +503,29 @@ export default function EditLeaguePage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      console.log("Updating league:", { id: leagueId, ...formData });
-      
+      // Prepare update data for API
+      const updateData = {
+        name: formData.leagueName,
+        sport: formData.sport,
+        location: formData.location,
+        status: formData.status.toUpperCase() as "DRAFT" | "REGISTRATION" | "ACTIVE" | "COMPLETED",
+        description: formData.description || undefined,
+        brandingLogoUrl: formData.sponsorLogo || undefined,
+      };
+
+      // Call backend API to update league
+      await leagueService.updateLeague(leagueId, updateData);
+
       toast.success("League updated successfully!");
       setOriginalData(formData);
       setHasChanges(false);
-      
+
       // Optionally redirect back to league list
-      // router.push("/league?tab=manage");
-      
-    } catch (error) {
+      // router.push("/league");
+
+    } catch (error: any) {
       console.error("Error updating league:", error);
-      toast.error("Failed to update league. Please try again.");
+      toast.error(error?.response?.data?.message || "Failed to update league. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
