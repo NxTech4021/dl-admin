@@ -48,7 +48,11 @@ import {
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 // ENUMS
-export const divisionLevelEnum = z.enum(["beginner", "intermediate", "advanced"]);
+export const divisionLevelEnum = z.enum([
+  "beginner",
+  "intermediate",
+  "advanced",
+]);
 export const gameTypeEnum = z.enum(["singles", "doubles"]);
 export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
 
@@ -96,7 +100,9 @@ const handleDeleteDivision = async (divisionId: string) => {
   if (!confirm("Are you sure you want to delete this Division?")) return;
 
   try {
-    const res = await axiosInstance.delete(endpoints.division.delete(divisionId));
+    const res = await axiosInstance.delete(
+      endpoints.division.delete(divisionId)
+    );
     toast.success(res.data?.message ?? "Division deleted successfully");
     window.location.reload();
   } catch (err: any) {
@@ -161,21 +167,24 @@ const columns: ColumnDef<Division>[] = [
     },
     enableHiding: false,
   },
-  // Show which season the division belongs to
- {
-  accessorKey: "season.name", // Correct accessor for nested object
-  header: "Season",
-  cell: ({ row }) => <span>{row.original.season.name ?? "—"}</span>,
-},
+  {
+    accessorKey: "season.name",
+    header: "Season",
+    cell: ({ row }) => <span>{row.original.season.name ?? "—"}</span>,
+  },
   {
     accessorKey: "gameType",
     header: "Game Type",
-    cell: ({ row }) => <span className="capitalize">{row.original.gameType}</span>,
+    cell: ({ row }) => (
+      <span className="capitalize">{row.original.gameType}</span>
+    ),
   },
   {
     accessorKey: "genderCategory",
     header: "Gender",
-    cell: ({ row }) => <span className="capitalize">{row.original.genderCategory}</span>,
+    cell: ({ row }) => (
+      <span className="capitalize">{row.original.genderCategory}</span>
+    ),
   },
   {
     accessorKey: "maxSingles",
@@ -274,11 +283,8 @@ export function DivisionsDataTable() {
     setIsLoading(true);
     let response;
     try {
-      response = await axiosInstance.get(
-        endpoints.division.getAll
-      );
+      response = await axiosInstance.get(endpoints.division.getAll);
 
-      // Handle empty response or non-array response
       if (!response.data || !Array.isArray(response.data)) {
         setData([]);
         return;
