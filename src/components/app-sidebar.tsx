@@ -1,5 +1,6 @@
 "use client";
-
+import { IconTax } from '@tabler/icons-react';
+import { IconMessage2Question } from '@tabler/icons-react';
 import * as React from "react";
 import {
   IconDashboard,
@@ -69,10 +70,16 @@ const data = {
       icon: IconCategory,
     },
     {
-      name: "Admins",
-      url: "/admin",
-      icon: IconUsers,
+      name: "Payments",
+      url: "/payments",
+      icon: IconTax,
     },
+     {
+      name: "Feedbacks",
+      url: "/feedback",
+      icon: IconMessage2Question,
+    },
+    
   ],
 };
 
