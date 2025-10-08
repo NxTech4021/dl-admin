@@ -24,7 +24,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { z } from "zod";
+import { Season } from "@/ZodSchema/season-schema";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,29 +47,12 @@ import {
 } from "@/components/ui/table";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-// Season schema
-export const seasonSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  sportType: z.string().nullable().optional(),
-  seasonType: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  regiDeadline: z.coerce.date().nullable().optional(),
-  status: z
-    .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"])
-    .default("UPCOMING"),
-  current: z.boolean().default(false),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
 
-export type Season = z.infer<typeof seasonSchema>;
 
 export type SeasonsDataTableProps = {
   data: Season[];
   isLoading: boolean;
+  onViewSeason?: (seasonId: string) => void;
 };
 
 const formatDate = (date: Date) => {
@@ -102,12 +85,12 @@ const getLeagueTypeBadgeVariant = (leagueType: string) => {
 
 const getSportColor = (leagueType: string) => {
   switch (leagueType) {
-    case "Pickleball":
-      return "#A04DFE";
-    case "Tennis":
-      return "#ABFE4D";
-    case "Padel":
-      return "#4DABFE";
+    case "PICKLEBALL":
+      return "#8e41e6ff";
+    case "TENNIS":
+      return "#518516ff";
+    case "PADEL":
+      return "#3880c0ff";
     default:
       return "#6B7280";
   }
@@ -142,8 +125,8 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 // Define handlers outside of component to avoid scope issues
-const handleViewSeason = (seasonId: string) => {
-  // TODO: Navigate to season details page
+const handleViewSeason = (seasonId: string, onViewSeason?: (id: string) => void) => {
+  if (onViewSeason) onViewSeason(seasonId);
 };
 
 const handleEditSeason = (seasonId: string) => {
@@ -303,9 +286,9 @@ const columns: ColumnDef<Season>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row, table  }) => {
       const season = row.original;
-
+     const onViewSeason = table.options.meta?.onViewSeason;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -321,7 +304,7 @@ const columns: ColumnDef<Season>[] = [
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleViewSeason(season.id)}
+              onClick={() => handleViewSeason(season.id, onViewSeason)}
             >
               <IconEye className="mr-2 size-4" />
               View Season
@@ -351,7 +334,7 @@ const columns: ColumnDef<Season>[] = [
 
 
 
-export function SeasonsDataTable({ data, isLoading }: SeasonsDataTableProps) {
+export function SeasonsDataTable({ data, isLoading, onViewSeason }: SeasonsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -371,6 +354,7 @@ export function SeasonsDataTable({ data, isLoading }: SeasonsDataTableProps) {
       columnFilters,
       globalFilter,
     },
+    meta: { onViewSeason }, 
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

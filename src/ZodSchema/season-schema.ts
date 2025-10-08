@@ -1,0 +1,49 @@
+import { z } from 'zod';
+
+export const membershipSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  seasonId: z.string(),
+  status: z.enum(['ACTIVE', 'WAITLISTED', 'PENDING', 'WITHDRAWN']),
+  createdAt: z.coerce.date(),
+  user: z.object({
+    name: z.string(),
+    email: z.string().email(),
+  }),
+});
+
+export const withdrawalRequestSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  seasonId: z.string(),
+  amount: z.number(),
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  createdAt: z.coerce.date(),
+  user: z.object({
+    name: z.string(),
+  }),
+});
+
+// Season schema
+export const seasonSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  sportType: z.string().nullable().optional(),
+  seasonType: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  regiDeadline: z.coerce.date().nullable().optional(),
+  status: z
+    .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"])
+    .default("UPCOMING"),
+  current: z.boolean().default(false),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+  memberships: z.array(membershipSchema).default([]),
+  withdrawalRequests: z.array(withdrawalRequestSchema).default([]),
+});
+
+export type Season = z.infer<typeof seasonSchema>;
+export type Membership = z.infer<typeof membershipSchema>;
+export type WithdrawalRequest = z.infer<typeof withdrawalRequestSchema>;
