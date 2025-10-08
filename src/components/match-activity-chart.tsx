@@ -22,21 +22,41 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-// Static mock data for the last 12 weeks (realistic for 100+ member app with fluctuations)
-const chartData = [
-  { week: "Week 1", date: "Aug 26", tennisLeague: 8, tennisFriendly: 5, pickleballLeague: 6, pickleballFriendly: 3, padelLeague: 3, padelFriendly: 2 },
-  { week: "Week 2", date: "Sep 2", tennisLeague: 12, tennisFriendly: 7, pickleballLeague: 9, pickleballFriendly: 4, padelLeague: 4, padelFriendly: 2 },
-  { week: "Week 3", date: "Sep 9", tennisLeague: 10, tennisFriendly: 6, pickleballLeague: 8, pickleballFriendly: 5, padelLeague: 5, padelFriendly: 3 },
-  { week: "Week 4", date: "Sep 16", tennisLeague: 15, tennisFriendly: 8, pickleballLeague: 7, pickleballFriendly: 3, padelLeague: 2, padelFriendly: 1 },
-  { week: "Week 5", date: "Sep 23", tennisLeague: 13, tennisFriendly: 9, pickleballLeague: 11, pickleballFriendly: 6, padelLeague: 6, padelFriendly: 4 },
-  { week: "Week 6", date: "Sep 30", tennisLeague: 11, tennisFriendly: 7, pickleballLeague: 9, pickleballFriendly: 5, padelLeague: 4, padelFriendly: 2 },
-  { week: "Week 7", date: "Oct 7", tennisLeague: 9, tennisFriendly: 5, pickleballLeague: 6, pickleballFriendly: 3, padelLeague: 3, padelFriendly: 2 },
-  { week: "Week 8", date: "Oct 14", tennisLeague: 16, tennisFriendly: 10, pickleballLeague: 12, pickleballFriendly: 7, padelLeague: 7, padelFriendly: 4 },
-  { week: "Week 9", date: "Oct 21", tennisLeague: 14, tennisFriendly: 8, pickleballLeague: 10, pickleballFriendly: 6, padelLeague: 5, padelFriendly: 3 },
-  { week: "Week 10", date: "Oct 28", tennisLeague: 12, tennisFriendly: 6, pickleballLeague: 8, pickleballFriendly: 4, padelLeague: 4, padelFriendly: 2 },
-  { week: "Week 11", date: "Nov 4", tennisLeague: 18, tennisFriendly: 11, pickleballLeague: 13, pickleballFriendly: 8, padelLeague: 6, padelFriendly: 4 },
-  { week: "Week 12", date: "Nov 11", tennisLeague: 17, tennisFriendly: 9, pickleballLeague: 11, pickleballFriendly: 7, padelLeague: 5, padelFriendly: 3 },
-]
+// Generate dynamic mock data based on chart range and history range
+const generateMatchData = (chartRange: "monthly" | "average" | "thisWeek", historyRange: 1 | 3 | 6) => {
+  const weeksToShow = historyRange * 4; // Approximate weeks per month
+  const data = [];
+  const currentDate = new Date();
+  
+  // Base match numbers per sport
+  const baseMatches = {
+    tennisLeague: 12, tennisFriendly: 7,
+    pickleballLeague: 8, pickleballFriendly: 5,
+    padelLeague: 4, padelFriendly: 3
+  };
+  
+  const multiplier = chartRange === "average" ? 1 : chartRange === "thisWeek" ? 1.2 : 1;
+  
+  for (let i = weeksToShow - 1; i >= 0; i--) {
+    const weekDate = new Date(currentDate);
+    weekDate.setDate(weekDate.getDate() - (i * 7));
+    
+    const randomVariation = () => 0.7 + Math.random() * 0.6; // ±30% variation
+    
+    data.push({
+      week: `Week ${weeksToShow - i}`,
+      date: weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      tennisLeague: Math.round(baseMatches.tennisLeague * multiplier * randomVariation()),
+      tennisFriendly: Math.round(baseMatches.tennisFriendly * multiplier * randomVariation()),
+      pickleballLeague: Math.round(baseMatches.pickleballLeague * multiplier * randomVariation()),
+      pickleballFriendly: Math.round(baseMatches.pickleballFriendly * multiplier * randomVariation()),
+      padelLeague: Math.round(baseMatches.padelLeague * multiplier * randomVariation()),
+      padelFriendly: Math.round(baseMatches.padelFriendly * multiplier * randomVariation()),
+    });
+  }
+  
+  return data;
+};
 
 const chartConfig = {
   tennisLeague: {
@@ -68,9 +88,23 @@ const chartConfig = {
 type SportFilter = "all" | "tennis" | "pickleball" | "padel"
 type ChartType = "line" | "bar"
 
-export function MatchActivityChart() {
+interface MatchActivityChartProps {
+  chartRange?: "monthly" | "average" | "thisWeek";
+  historyRange?: 1 | 3 | 6;
+}
+
+export function MatchActivityChart({
+  chartRange = "monthly",
+  historyRange = 3,
+}: MatchActivityChartProps) {
   const [sportFilter, setSportFilter] = React.useState<SportFilter>("all")
   const [chartType, setChartType] = React.useState<ChartType>("line")
+  
+  // Generate data based on current props
+  const chartData = React.useMemo(() => 
+    generateMatchData(chartRange, historyRange), 
+    [chartRange, historyRange]
+  );
 
   const getFilteredConfig = (sport: SportFilter) => {
     if (sport === "all") return chartConfig
@@ -91,15 +125,13 @@ export function MatchActivityChart() {
     return Object.keys(chartConfig).filter(key => key.startsWith(sport))
   }
 
-  const getAggregatedData = () => {
+  const aggregatedData = React.useMemo(() => {
     return chartData.map(item => {
       const keys = getDataKeys(sportFilter)
       const total = keys.reduce((sum, key) => sum + (item[key as keyof typeof item] as number), 0)
       return { ...item, total }
     })
-  }
-
-  const aggregatedData = getAggregatedData()
+  }, [chartData, sportFilter]);
   const filteredConfig = getFilteredConfig(sportFilter)
   const dataKeys = getDataKeys(sportFilter)
 
@@ -127,7 +159,7 @@ export function MatchActivityChart() {
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>Match Activity</CardTitle>
           <CardDescription>
-            Weekly matches (league + friendly) per sport
+            Weekly matches (league + friendly) per sport - {chartRange === "average" ? "Average per week" : chartRange === "thisWeek" ? "This week" : "Monthly"} ({historyRange} month{historyRange > 1 ? "s" : ""})
           </CardDescription>
         </div>
         <div className="flex items-center space-x-2">
@@ -164,7 +196,7 @@ export function MatchActivityChart() {
             </div>
             <div className="text-2xl font-bold">{totalMatches.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">
-              Total matches (12 weeks)
+              Total matches ({chartData.length} weeks)
             </div>
           </div>
           <div className="flex flex-col space-y-2">
