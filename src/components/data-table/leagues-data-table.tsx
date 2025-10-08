@@ -52,112 +52,32 @@ import {
   IconDownload,
   IconPlus,
   IconArchive,
+  IconTarget,
+  IconPlayerPlay,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import z from "zod";
 
-// League type definition
-interface League {
-  id: string;
-  name: string;
-  sport: string;
-  location: string;
-  status: "draft" | "registration" | "active" | "completed" | "cancelled" | "archived";
-  playerCount: number;
-  maxPlayers: number;
-  registrationDeadline: string;
-  startDate: string;
-  endDate: string;
-  createdAt: string;
-  createdBy: string;
-  divisions: number;
-  pendingRequests: number;
-}
+// League schema based on Prisma schema
+export const leagueSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  location: z.string().nullable(),
+  description: z.string().nullable(),
+  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "UPCOMING", "ONGOING", "FINISHED", "CANCELLED"]),
+  sportType: z.enum(["PADDLE", "PICKLEBALL", "TENNIS"]),
+  registrationType: z.enum(["OPEN", "INVITE_ONLY", "MANUAL"]),
+  gameType: z.enum(["SINGLES", "DOUBLES"]),
+  createdById: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  // Computed fields
+  memberCount: z.number().optional(),
+  seasonCount: z.number().optional(),
+  categoryCount: z.number().optional(),
+});
 
-// Mock data
-const mockLeagues: League[] = [
-  {
-    id: "1",
-    name: "KL Tennis Championship",
-    sport: "tennis",
-    location: "Kuala Lumpur",
-    status: "active",
-    playerCount: 24,
-    maxPlayers: 32,
-    registrationDeadline: "2024-01-15",
-    startDate: "2024-01-20",
-    endDate: "2024-03-20",
-    createdAt: "2024-01-01",
-    createdBy: "Admin User",
-    divisions: 3,
-    pendingRequests: 5,
-  },
-  {
-    id: "2",
-    name: "PJ Pickleball League",
-    sport: "pickleball",
-    location: "Petaling Jaya",
-    status: "registration",
-    playerCount: 16,
-    maxPlayers: 24,
-    registrationDeadline: "2024-02-01",
-    startDate: "2024-02-05",
-    endDate: "2024-04-05",
-    createdAt: "2024-01-10",
-    createdBy: "Admin User",
-    divisions: 2,
-    pendingRequests: 12,
-  },
-  {
-    id: "3",
-    name: "Shah Alam Padel Tournament",
-    sport: "padel",
-    location: "Shah Alam",
-    status: "draft",
-    playerCount: 0,
-    maxPlayers: 16,
-    registrationDeadline: "2024-02-15",
-    startDate: "2024-02-20",
-    endDate: "2024-04-20",
-    createdAt: "2024-01-15",
-    createdBy: "Admin User",
-    divisions: 1,
-    pendingRequests: 0,
-  },
-  {
-    id: "4",
-    name: "Cyberjaya Tennis Open",
-    sport: "tennis",
-    location: "Cyberjaya",
-    status: "completed",
-    playerCount: 28,
-    maxPlayers: 32,
-    registrationDeadline: "2023-11-15",
-    startDate: "2023-12-01",
-    endDate: "2024-01-01",
-    createdAt: "2023-11-01",
-    createdBy: "Admin User",
-    divisions: 4,
-    pendingRequests: 0,
-  },
-];
+export type League = z.infer<typeof leagueSchema>;
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -169,18 +89,18 @@ const formatDate = (dateString: string) => {
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
-    case "active":
+    case "ACTIVE":
+    case "ONGOING":
       return "default";
-    case "registration":
+    case "UPCOMING":
       return "secondary";
-    case "completed":
+    case "FINISHED":
       return "outline";
-    case "draft":
+    case "INACTIVE":
       return "outline";
-    case "cancelled":
+    case "CANCELLED":
+    case "SUSPENDED":
       return "destructive";
-    case "archived":
-      return "secondary";
     default:
       return "outline";
   }
@@ -188,11 +108,28 @@ const getStatusBadgeVariant = (status: string) => {
 
 const getSportLabel = (sport: string) => {
   const sportLabels: Record<string, string> = {
-    tennis: "Tennis",
-    pickleball: "Pickleball",
-    padel: "Padel",
+    TENNIS: "Tennis",
+    PICKLEBALL: "Pickleball",
+    PADDLE: "Padel",
   };
   return sportLabels[sport] || sport;
+};
+
+const getRegistrationTypeLabel = (type: string) => {
+  const typeLabels: Record<string, string> = {
+    OPEN: "Open",
+    INVITE_ONLY: "Invite Only",
+    MANUAL: "Manual",
+  };
+  return typeLabels[type] || type;
+};
+
+const getGameTypeLabel = (type: string) => {
+  const typeLabels: Record<string, string> = {
+    SINGLES: "Singles",
+    DOUBLES: "Doubles",
+  };
+  return typeLabels[type] || type;
 };
 
 const columns: ColumnDef<League>[] = [
@@ -239,10 +176,10 @@ const columns: ColumnDef<League>[] = [
     },
   },
   {
-    accessorKey: "sport",
+    accessorKey: "sportType",
     header: "Sport",
     cell: ({ row }) => {
-      const sport = row.original.sport;
+      const sport = row.original.sportType;
       return (
         <Badge variant="outline" className="capitalize">
           {getSportLabel(sport)}
@@ -258,7 +195,7 @@ const columns: ColumnDef<League>[] = [
       return (
         <div className="flex items-center gap-2">
           <IconMapPin className="size-4 text-muted-foreground" />
-          <span>{location}</span>
+          <span>{location || "Not specified"}</span>
         </div>
       );
     },
@@ -270,76 +207,84 @@ const columns: ColumnDef<League>[] = [
       const status = row.original.status;
       return (
         <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
-          {status}
+          {status.toLowerCase()}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "playerCount",
-    header: "Players",
+    accessorKey: "registrationType",
+    header: "Registration",
     cell: ({ row }) => {
-      const league = row.original;
-      const percentage = (league.playerCount / league.maxPlayers) * 100;
+      const type = row.original.registrationType;
+      return (
+        <Badge variant="outline" className="capitalize">
+          {getRegistrationTypeLabel(type)}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "gameType",
+    header: "Game Type",
+    cell: ({ row }) => {
+      const type = row.original.gameType;
+      return (
+        <div className="flex items-center gap-2">
+          <IconPlayerPlay className="size-4 text-muted-foreground" />
+          <span>{getGameTypeLabel(type)}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "memberCount",
+    header: "Members",
+    cell: ({ row }) => {
+      const memberCount = row.original.memberCount || 0;
       return (
         <div className="flex items-center gap-2">
           <IconUsers className="size-4 text-muted-foreground" />
-          <span>
-            {league.playerCount}/{league.maxPlayers}
-          </span>
-          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
+          <span>{memberCount}</span>
         </div>
       );
     },
   },
   {
-    accessorKey: "pendingRequests",
-    header: "Pending Requests",
+    accessorKey: "seasonCount",
+    header: "Seasons",
     cell: ({ row }) => {
-      const pendingRequests = row.original.pendingRequests;
-      return (
-        <div className="flex items-center gap-2">
-          {pendingRequests > 0 ? (
-            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-              {pendingRequests} pending
-            </Badge>
-          ) : (
-            <span className="text-muted-foreground">None</span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "registrationDeadline",
-    header: "Registration Deadline",
-    cell: ({ row }) => {
-      const deadline = row.original.registrationDeadline;
-      const isOverdue = new Date(deadline) < new Date();
+      const seasonCount = row.original.seasonCount || 0;
       return (
         <div className="flex items-center gap-2">
           <IconCalendar className="size-4 text-muted-foreground" />
-          <span className={isOverdue ? "text-red-500" : ""}>
-            {formatDate(deadline)}
-          </span>
+          <span>{seasonCount}</span>
         </div>
       );
     },
   },
   {
-    accessorKey: "duration",
-    header: "Duration",
+    accessorKey: "categoryCount",
+    header: "Categories",
     cell: ({ row }) => {
-      const league = row.original;
+      const categoryCount = row.original.categoryCount || 0;
       return (
-        <div className="text-sm">
-          <div>{formatDate(league.startDate)}</div>
-          <div className="text-muted-foreground">to {formatDate(league.endDate)}</div>
+        <div className="flex items-center gap-2">
+          <IconTarget className="size-4 text-muted-foreground" />
+          <span>{categoryCount}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Created",
+    cell: ({ row }) => {
+      const createdAt = row.original.createdAt;
+      return (
+        <div className="flex items-center gap-2">
+          <IconCalendar className="size-4 text-muted-foreground" />
+          <span>{formatDate(createdAt)}</span>
         </div>
       );
     },
@@ -381,16 +326,18 @@ const columns: ColumnDef<League>[] = [
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => router.push(`/league/requests/${league.id}`)}
+              onClick={() => router.push(`/seasons?leagueId=${league.id}`)}
+            >
+              <IconCalendar className="mr-2 h-4 w-4" />
+              Manage Seasons
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(`/league/members/${league.id}`)}
             >
               <IconUsers className="mr-2 h-4 w-4" />
-              Join Requests
-              {league.pendingRequests > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {league.pendingRequests}
-                </Badge>
-              )}
+              Manage Members
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(league.id);
@@ -427,10 +374,13 @@ const columns: ColumnDef<League>[] = [
   },
 ];
 
-export function LeaguesDataTable() {
+interface LeaguesDataTableProps {
+  data: League[];
+  isLoading?: boolean;
+}
+
+export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTableProps) {
   const router = useRouter();
-  const [data, setData] = React.useState<League[]>(mockLeagues);
-  const [isLoading, setIsLoading] = React.useState(false);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -503,7 +453,7 @@ export function LeaguesDataTable() {
             <DropdownMenuContent align="start">
               <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {["draft", "registration", "active", "completed", "cancelled"].map((status) => (
+              {["ACTIVE", "UPCOMING", "ONGOING", "FINISHED", "INACTIVE", "CANCELLED", "SUSPENDED"].map((status) => (
                 <DropdownMenuCheckboxItem
                   key={status}
                   className="capitalize"
@@ -514,7 +464,7 @@ export function LeaguesDataTable() {
                     table.getColumn("status")?.setFilterValue(checked ? status : "")
                   }
                 >
-                  {status}
+                  {status.toLowerCase()}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
@@ -578,10 +528,6 @@ export function LeaguesDataTable() {
               </Button>
             </div>
           )}
-          <Button onClick={() => router.push("/league")}>
-            <IconPlus className="mr-2 h-4 w-4" />
-            Create League
-          </Button>
         </div>
       </div>
 
