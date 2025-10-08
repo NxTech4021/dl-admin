@@ -58,6 +58,7 @@ export const endpoints = {
     getAll: "/api/season/",
     getById: (id: string) => `/api/season/${id}`,
     update: (id: string) => `/api/season/${id}`,
+    updateStatus: (id: string) => `/api/season/${id}/status`,
     delete: (id: string) => `/api/season/${id}`, 
   },
 
