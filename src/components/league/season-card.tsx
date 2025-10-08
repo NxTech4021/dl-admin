@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { IconCalendar, IconPlus } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,20 +11,50 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Season, FormatDateFunction } from "./types";
+import dynamic from "next/dynamic";
+
+// Dynamic import for the SeasonCreateModal
+const SeasonCreateModal = dynamic(() => import("@/components/modal/season-create-modal").then(mod => ({ default: mod.default })), {
+  loading: () => <div className="h-8 w-24 animate-pulse bg-muted rounded" />
+});
 
 interface SeasonCardProps {
   seasons: Season[];
   formatDate: FormatDateFunction;
+  onSeasonCreated?: () => void;
 }
 
-export function SeasonCard({ seasons, formatDate }: SeasonCardProps) {
+export function SeasonCard({ seasons, formatDate, onSeasonCreated }: SeasonCardProps) {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handleSeasonCreated = () => {
+    setIsCreateModalOpen(false);
+    onSeasonCreated?.();
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconCalendar className="size-5" />
-          Seasons
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <IconCalendar className="size-5" />
+            Seasons
+          </CardTitle>
+          <SeasonCreateModal
+            open={isCreateModalOpen}
+            onOpenChange={setIsCreateModalOpen}
+            onSeasonCreated={handleSeasonCreated}
+          >
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <IconPlus className="size-4 mr-2" />
+              Create Season
+            </Button>
+          </SeasonCreateModal>
+        </div>
       </CardHeader>
       <CardContent>
         {seasons.length > 0 ? (
@@ -55,13 +86,9 @@ export function SeasonCard({ seasons, formatDate }: SeasonCardProps) {
         ) : (
           <div className="text-center py-8">
             <IconCalendar className="size-12 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">
-              No seasons yet
+            <p className="text-sm text-muted-foreground">
+              No seasons yet.
             </p>
-            <Button variant="outline" size="sm">
-              <IconPlus className="size-4 mr-2" />
-              Create Season
-            </Button>
           </div>
         )}
       </CardContent>

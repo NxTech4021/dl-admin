@@ -50,6 +50,7 @@ interface LeagueTabsProps {
   getStatusBadge: GetStatusBadgeFunction;
   formatDate: FormatDateFunction;
   calculateWinRate: CalculateWinRateFunction;
+  onSeasonCreated?: () => void;
 }
 
 export function LeagueTabs({
@@ -63,7 +64,8 @@ export function LeagueTabs({
   getSportLabel,
   getStatusBadge,
   formatDate,
-  calculateWinRate
+  calculateWinRate,
+  onSeasonCreated
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -127,7 +129,7 @@ export function LeagueTabs({
             
             <CategoryCard categories={categories} />
             
-            <SeasonCard seasons={seasons} formatDate={formatDate} />
+            <SeasonCard seasons={seasons} formatDate={formatDate} onSeasonCreated={onSeasonCreated} />
           </div>
         </div>
       </TabsContent>

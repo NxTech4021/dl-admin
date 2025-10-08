@@ -175,6 +175,13 @@ export default function LeagueViewPage() {
     return total > 0 ? Math.round((wins / total) * 100) : 0;
   };
 
+  const handleSeasonCreated = () => {
+    // Refresh the seasons data when a new season is created
+    console.log("Season created, refreshing data...");
+    // TODO: Implement actual data refresh when season endpoints are available
+    // For now, this will just log the event
+  };
+
   if (isLoading) {
     return <LeagueSkeleton />;
   }
@@ -258,6 +265,7 @@ export default function LeagueViewPage() {
                   getStatusBadge={getStatusBadge}
                   formatDate={formatDate}
                   calculateWinRate={calculateWinRate}
+                  onSeasonCreated={handleSeasonCreated}
                 />
               </div>
             </div>
