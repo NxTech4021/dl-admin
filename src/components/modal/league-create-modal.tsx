@@ -153,12 +153,13 @@ export default function LeagueCreateModal({
     leagueName: "",
     sport: "",
     location: "",
-    status: "draft",
+    status: "UPCOMING",
     format: "",
     entryFee: "",
     maxPlayers: "",
     divisions: "",
     hasSponsor: false,
+    sponsorCompanyId: "",
     sponsorName: "",
     sponsorWebsite: "",
     sponsorEmail: "",
@@ -168,20 +169,25 @@ export default function LeagueCreateModal({
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
     registrationDeadline: undefined as Date | undefined,
+    // Category fields
+    categoryName: "",
+    matchFormat: "",
+    maxTeams: "",
+    genderRestriction: "OPEN",
   });
 
 
 React.useEffect(() => {
   if (formData.hasSponsor) {
-    console.log("Attempting to fetch sponsors..."); // Log the start of the process
+    console.log("Attempting to fetch companies..."); // Log the start of the process
     setSponsorsLoading(true);
-    axiosInstance.get(endpoints.sponsors.getAll)
+    axiosInstance.get(endpoints.companies.getAll)
       .then(res => {
-        console.log("Sponsors fetched successfully, setting state.");
-        setSponsors(res.data);
+        console.log("Companies fetched successfully, setting state.");
+        setSponsors(res.data.data || []);
       })
       .catch((error) => {
-        console.error("Error fetching sponsors:", error); // Log any errors
+        console.error("Error fetching companies:", error); // Log any errors
         setSponsors([]);
       })
       .finally(() => setSponsorsLoading(false));
@@ -279,12 +285,13 @@ React.useEffect(() => {
       leagueName: "",
       sport: "",
       location: "",
-      status: "draft",
+      status: "UPCOMING",
       format: "",
       entryFee: "",
       maxPlayers: "",
       divisions: "",
       hasSponsor: false,
+      sponsorCompanyId: "",
       sponsorName: "",
       sponsorWebsite: "",
       sponsorEmail: "",
@@ -294,6 +301,11 @@ React.useEffect(() => {
       startDate: undefined,
       endDate: undefined,
       registrationDeadline: undefined,
+      // Category fields
+      categoryName: "",
+      matchFormat: "",
+      maxTeams: "",
+      genderRestriction: "OPEN",
     });
     setSponsorLogoFile(null);
     setSponsorLogoPreview("");
@@ -321,8 +333,8 @@ React.useEffect(() => {
   };
 
   const isBasicStepValid = formData.leagueName && formData.sport && formData.location;
-  const isDetailsStepValid = formData.format && formData.startDate && formData.endDate && formData.entryFee &&
-    (!formData.hasSponsor || (formData.hasSponsor && formData.sponsorName.trim()));
+  const isDetailsStepValid = formData.categoryName && formData.format &&
+    (!formData.hasSponsor || (formData.hasSponsor && formData.sponsorCompanyId));
   const isFormValid = isBasicStepValid && isDetailsStepValid;
 
   // const handleCreateLeague = async () => {
@@ -379,34 +391,65 @@ React.useEffect(() => {
   setError("");
 
   try {
-  
+    // Map sport values to match backend enum
+    const sportTypeMap: { [key: string]: string } = {
+      "tennis": "TENNIS",
+      "pickleball": "PICKLEBALL", 
+      "padel": "PADDLE"
+    };
 
-    let sponsorId: string | null = null;
+    // Map format values to match backend enum
+    const gameTypeMap: { [key: string]: string } = {
+      "singles": "SINGLES",
+      "doubles": "DOUBLES",
+      "mixed": "DOUBLES" // Mixed doubles is still doubles
+    };
+
+    // Map status values to match backend enum
+    const statusMap: { [key: string]: string } = {
+      "draft": "UPCOMING",
+      "active": "ACTIVE", 
+      "upcoming": "UPCOMING"
+    };
+
+    // Map gender restriction values to match backend enum
+    const genderRestrictionMap: { [key: string]: string } = {
+      "open": "OPEN",
+      "male": "MALE",
+      "female": "FEMALE"
+    };
 
     // Create league
-    const leagueResponse = await axiosInstance.post("/api/leagues", {
+    const leagueResponse = await axiosInstance.post(endpoints.league.create, {
       name: formData.leagueName,
       location: formData.location,
-      sport: formData.sport,
       description: formData.description,
-      status: formData.status,
-      sponsorships: sponsorId ? [{ companyId: sponsorId }] : [],
+      status: statusMap[formData.status] || "UPCOMING",
+      sportType: sportTypeMap[formData.sport] || "TENNIS",
+      registrationType: "OPEN", // Default to open registration
+      gameType: gameTypeMap[formData.format] || "SINGLES",
+      sponsorships: formData.hasSponsor && formData.sponsorCompanyId ? [{
+        companyId: formData.sponsorCompanyId,
+        packageTier: "BRONZE", // Default tier
+        createdById: null // Will be set by backend from auth
+      }] : []
     });
 
-    const leagueId = leagueResponse.data.league.leagueId || leagueResponse.data.league.id;
+    const leagueId = leagueResponse.data.data.league.id;
 
-    // 3️⃣ Create category 
-    if (formData.format || formData.maxPlayers || formData.divisions) {
-      await axiosInstance.post("/api/categories", {
+    // Create category 
+    if (formData.categoryName) {
+      await axiosInstance.post(endpoints.categories.create, {
         leagueId,
-        name: formData.format || "Default Category",
-        matchFormat: formData.format,
-        maxPlayers: Number(formData.maxPlayers) || undefined,
-        maxTeams: Number(formData.divisions) || undefined,
+        name: formData.categoryName,
+        matchFormat: formData.matchFormat || formData.format,
+        maxPlayers: formData.maxPlayers ? Number(formData.maxPlayers) : undefined,
+        maxTeams: formData.maxTeams ? Number(formData.maxTeams) : undefined,
+        genderRestriction: genderRestrictionMap[formData.genderRestriction] || "OPEN"
       });
     }
 
-    toast.success("League, sponsor, and category created successfully!");
+    toast.success("League and category created successfully!");
     resetModal();
     onOpenChange(false);
     onLeagueCreated?.(leagueResponse.data);
@@ -664,7 +707,7 @@ React.useEffect(() => {
       <div className="space-y-4 pl-6 border-l-2 border-muted">
         {sponsorsLoading ? (
           <div>Loading sponsors...</div>
-        ) : sponsors.length > 0 ? (
+        ) : Array.isArray(sponsors) && sponsors.length > 0 ? (
           <div className="space-y-2">
             <Label htmlFor="sponsorCompany" className="text-sm font-medium">
               Select Sponsor *
@@ -680,7 +723,7 @@ React.useEffect(() => {
   className="w-[var(--radix-select-trigger-width)] max-h-60 overflow-y-auto"
   position="popper"
 >
-                {sponsors.map((s) => (
+                {Array.isArray(sponsors) && sponsors.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
                   </SelectItem>
@@ -717,7 +760,7 @@ React.useEffect(() => {
       open={sponsorModalOpen}
       onOpenChange={setSponsorModalOpen}
       onSponsorCreated={sponsor => {
-        setSponsors(s => [...s, sponsor]);
+        setSponsors(s => Array.isArray(s) ? [...s, sponsor] : [sponsor]);
         updateFormData("sponsorCompanyId", sponsor.id);
       }}
     />

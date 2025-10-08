@@ -36,8 +36,8 @@ export function SponsorCreateModal({ open, onOpenChange, onSponsorCreated }: Spo
     setLoading(true);
     try {
    
-      const res = await axiosInstance.post(endpoints.sponsors.create , { name });
-      onSponsorCreated(res.data.company); 
+      const res = await axiosInstance.post(endpoints.companies.create , { name });
+      onSponsorCreated(res.data.data.company); 
       
       // Close the modal
       onOpenChange(false); 

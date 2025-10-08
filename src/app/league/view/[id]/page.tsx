@@ -40,6 +40,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 // Location options for label mapping
 const LOCATION_OPTIONS = [
@@ -59,22 +60,17 @@ const LOCATION_OPTIONS = [
 interface League {
   id: string;
   name: string;
-  sport: string;
-  location: string;
-  status: "draft" | "registration" | "active" | "completed" | "cancelled" | "archived";
-  playerCount: number;
-  maxPlayers: number;
-  registrationDeadline: string;
-  startDate: string;
-  endDate: string;
+  sportType: string;
+  location: string | null;
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "UPCOMING" | "ONGOING" | "FINISHED" | "CANCELLED";
+  registrationType: "OPEN" | "INVITE_ONLY" | "MANUAL";
+  gameType: "SINGLES" | "DOUBLES";
   createdAt: string;
-  createdBy: string;
-  divisions: number;
-  pendingRequests: number;
-  description?: string;
-  rules?: string;
-  fees?: number;
-  currency?: string;
+  updatedAt: string;
+  description?: string | null;
+  memberCount?: number;
+  seasonCount?: number;
+  categoryCount?: number;
 }
 
 interface Player {
@@ -99,127 +95,7 @@ interface Division {
   status: string;
 }
 
-// Mock data - this should be dynamic based on league ID
-const mockLeagues: { [key: string]: League } = {
-  "1": {
-    id: "1",
-    name: "KL Pickleball Championship",
-    sport: "pickleball",
-    location: "Kuala Lumpur",
-    status: "active",
-    playerCount: 32,
-    maxPlayers: 32,
-    registrationDeadline: "2025-01-10",
-    startDate: "2025-01-15",
-    endDate: "2025-03-15",
-    createdAt: "2024-12-01",
-    createdBy: "Admin User",
-    divisions: 4,
-    pendingRequests: 3,
-    description: "Premier pickleball championship in Kuala Lumpur featuring multiple divisions for players of all skill levels. Join us for exciting matches and improve your pickleball skills!",
-    rules: "Best of 3 games to 11 points. Must win by 2 points. Service alternates every 2 points. Non-volley zone rules apply.",
-    fees: 120,
-    currency: "RM"
-  },
-  "2": {
-    id: "2",
-    name: "PJ Tennis League",
-    sport: "tennis",
-    location: "Petaling Jaya",
-    status: "registration",
-    playerCount: 24,
-    maxPlayers: 32,
-    registrationDeadline: "2025-01-25",
-    startDate: "2025-02-01",
-    endDate: "2025-04-01",
-    createdAt: "2024-12-15",
-    createdBy: "Admin User",
-    divisions: 3,
-    pendingRequests: 8,
-    description: "Competitive tennis league for intermediate to advanced players in Petaling Jaya. Perfect for players looking to improve their game!",
-    rules: "Best of 3 sets. Tiebreak at 6-6 in each set. No-ad scoring system. All matches must be played within scheduled timeframe.",
-    fees: 120,
-    currency: "RM"
-  },
-  "3": {
-    id: "3",
-    name: "Subang Table Tennis Pro",
-    sport: "table tennis",
-    location: "Subang Jaya",
-    status: "completed",
-    playerCount: 28,
-    maxPlayers: 28,
-    registrationDeadline: "2024-09-15",
-    startDate: "2024-10-01",
-    endDate: "2024-12-01",
-    createdAt: "2024-08-15",
-    createdBy: "Admin User",
-    divisions: 3,
-    pendingRequests: 0,
-    description: "Professional table tennis tournament with prize pool and sponsor support. Completed season with great success!",
-    rules: "Best of 5 sets to 11 points. 2-point advantage required. Service alternates every 2 points. Professional tournament rules apply.",
-    fees: 100,
-    currency: "RM"
-  }
-};
-
-const mockPlayers: Player[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    rating: 4.2,
-    division: "Advanced",
-    joinedAt: "2024-01-05",
-    matchesPlayed: 8,
-    wins: 6,
-    losses: 2,
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    rating: 3.8,
-    division: "Intermediate",
-    joinedAt: "2024-01-06",
-    matchesPlayed: 6,
-    wins: 4,
-    losses: 2,
-  },
-  // Add more mock players...
-];
-
-const mockDivisions: Division[] = [
-  {
-    id: "1",
-    name: "Beginner",
-    minRating: 0,
-    maxRating: 2.5,
-    playerCount: 6,
-    maxPlayers: 10,
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Intermediate",
-    minRating: 2.5,
-    maxRating: 4.0,
-    playerCount: 10,
-    maxPlayers: 12,
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Advanced",
-    minRating: 4.0,
-    maxRating: 7.0,
-    playerCount: 8,
-    maxPlayers: 10,
-    status: "active",
-  },
-];
-
-// Helper functions
+// Helper functions for data formatting
 const getLocationLabel = (locationValue: string) => {
   return LOCATION_OPTIONS.find(loc => loc.value === locationValue)?.label || locationValue;
 };
@@ -230,7 +106,10 @@ const getSportLabel = (sportValue: string) => {
     "pickleball": "Pickleball", 
     "padel": "Padel",
     "badminton": "Badminton",
-    "table-tennis": "Table Tennis"
+    "table-tennis": "Table Tennis",
+    "PICKLEBALL": "Pickleball",
+    "TENNIS": "Tennis",
+    "PADDLE": "Padel"
   };
   return sports[sportValue] || sportValue;
 };
@@ -249,19 +128,38 @@ export default function LeagueViewPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // TODO: Replace with actual API calls
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Fetch league data from API
+        const response = await axiosInstance.get(endpoints.league.getById(leagueId));
         
-        // Get league data based on ID parameter
-        const leagueData = mockLeagues[leagueId as string];
-        if (!leagueData) {
+        if (!response.data || !response.data.data || !response.data.data.league) {
           toast.error("League not found");
           return;
         }
         
-        setLeague(leagueData);
-        setPlayers(mockPlayers);
-        setDivisions(mockDivisions);
+        const leagueData = response.data.data.league;
+        
+        // Transform the data to match our interface
+        const transformedLeague: League = {
+          id: leagueData.id,
+          name: leagueData.name,
+          sportType: leagueData.sportType,
+          location: leagueData.location,
+          status: leagueData.status,
+          registrationType: leagueData.registrationType,
+          gameType: leagueData.gameType,
+          createdAt: leagueData.createdAt,
+          updatedAt: leagueData.updatedAt,
+          description: leagueData.description,
+          memberCount: leagueData._count?.memberships || 0,
+          seasonCount: leagueData._count?.seasons || 0,
+          categoryCount: leagueData._count?.categories || 0,
+        };
+        
+        setLeague(transformedLeague);
+        
+        // TODO: Fetch players and divisions data when those endpoints are available
+        setPlayers([]);
+        setDivisions([]);
       } catch (error) {
         console.error("Error loading league data:", error);
         toast.error("Failed to load league details");
@@ -285,18 +183,19 @@ export default function LeagueViewPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "draft":
-        return <Badge variant="outline">Draft</Badge>;
-      case "registration":
-        return <Badge variant="secondary">Registration Open</Badge>;
-      case "active":
+      case "ACTIVE":
+      case "ONGOING":
         return <Badge variant="default">Active</Badge>;
-      case "completed":
-        return <Badge variant="outline">Completed</Badge>;
-      case "cancelled":
+      case "UPCOMING":
+        return <Badge variant="secondary">Upcoming</Badge>;
+      case "FINISHED":
+        return <Badge variant="outline">Finished</Badge>;
+      case "INACTIVE":
+        return <Badge variant="outline">Inactive</Badge>;
+      case "CANCELLED":
         return <Badge variant="destructive">Cancelled</Badge>;
-      case "archived":
-        return <Badge variant="secondary">Archived</Badge>;
+      case "SUSPENDED":
+        return <Badge variant="destructive">Suspended</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -367,7 +266,7 @@ export default function LeagueViewPage() {
     );
   }
 
-  const registrationProgress = (league.playerCount / league.maxPlayers) * 100;
+  const registrationProgress = league.memberCount ? (league.memberCount / (league.memberCount + 10)) * 100 : 0;
 
   return (
     <SidebarProvider
@@ -411,11 +310,11 @@ export default function LeagueViewPage() {
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <span className="flex items-center gap-1">
                             <IconMapPin className="size-4" />
-                            {getLocationLabel(league.location)}
+                            {getLocationLabel(league.location || "")}
                           </span>
                           <span className="flex items-center gap-1">
                             <IconTrophy className="size-4" />
-                            {getSportLabel(league.sport)}
+                            {getSportLabel(league.sportType)}
                           </span>
                           {getStatusBadge(league.status)}
                         </div>
@@ -470,9 +369,9 @@ export default function LeagueViewPage() {
                       >
                         <IconUserCheck className="size-4 mr-2" />
                         Requests
-                        {league.pendingRequests > 0 && (
+                        {league.memberCount && league.memberCount > 0 && (
                           <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
-                            {league.pendingRequests}
+                            {league.memberCount} members
                           </Badge>
                         )}
                       </Button>
@@ -511,7 +410,7 @@ export default function LeagueViewPage() {
                           <div className="flex items-center gap-2">
                             <IconUsers className="size-5 text-blue-500" />
                             <div>
-                              <p className="text-2xl font-bold">{league.playerCount}</p>
+                              <p className="text-2xl font-bold">{league.memberCount || 0}</p>
                               <p className="text-sm text-muted-foreground">Total Players</p>
                             </div>
                           </div>
@@ -522,7 +421,7 @@ export default function LeagueViewPage() {
                           <div className="flex items-center gap-2">
                             <IconTarget className="size-5 text-green-500" />
                             <div>
-                              <p className="text-2xl font-bold">{league.divisions}</p>
+                              <p className="text-2xl font-bold">{league.categoryCount || 0}</p>
                               <p className="text-sm text-muted-foreground">Divisions</p>
                             </div>
                           </div>
@@ -533,8 +432,8 @@ export default function LeagueViewPage() {
                           <div className="flex items-center gap-2">
                             <IconClock className="size-5 text-yellow-500" />
                             <div>
-                              <p className="text-2xl font-bold">{league.pendingRequests}</p>
-                              <p className="text-sm text-muted-foreground">Pending Requests</p>
+                              <p className="text-2xl font-bold">{league.seasonCount || 0}</p>
+                              <p className="text-sm text-muted-foreground">Seasons</p>
                             </div>
                           </div>
                         </CardContent>
@@ -562,7 +461,7 @@ export default function LeagueViewPage() {
                           <div className="space-y-3">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Sport:</span>
-                              <Badge variant="outline">{getSportLabel(league.sport)}</Badge>
+                              <Badge variant="outline">{getSportLabel(league.sportType)}</Badge>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Location:</span>
@@ -577,85 +476,33 @@ export default function LeagueViewPage() {
                               <span>{formatDate(league.createdAt)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Created By:</span>
-                              <span>{league.createdBy}</span>
+                              <span className="text-muted-foreground">Members:</span>
+                              <span>{league.memberCount || 0}</span>
                             </div>
-                            {league.fees && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Entry Fee:</span>
-                                <span>{league.currency} {league.fees}</span>
-                              </div>
-                            )}
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Seasons:</span>
+                              <span>{league.seasonCount || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Categories:</span>
+                              <span>{league.categoryCount || 0}</span>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
 
-                      {/* Registration Progress */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Registration Status</CardTitle>
-                          <CardDescription>
-                            Current player enrollment progress
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Players Registered</span>
-                              <span>{league.playerCount} / {league.maxPlayers}</span>
-                            </div>
-                            <Progress value={registrationProgress} className="h-2" />
-                            <p className="text-xs text-muted-foreground">
-                              {league.maxPlayers - league.playerCount} spots remaining
-                            </p>
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Registration Deadline:</span>
-                              <span>{formatDate(league.registrationDeadline)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span>League Start:</span>
-                              <span>{formatDate(league.startDate)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span>League End:</span>
-                              <span>{formatDate(league.endDate)}</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      {/* Description */}
+                      {league.description && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Description</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-muted-foreground">{league.description}</p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
-
-                    {/* Description and Rules */}
-                    {(league.description || league.rules) && (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {league.description && (
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Description</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm leading-relaxed">{league.description}</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        
-                        {league.rules && (
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>League Rules</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm leading-relaxed">{league.rules}</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-                    )}
                   </TabsContent>
 
                   {/* Players Tab */}
@@ -771,7 +618,7 @@ export default function LeagueViewPage() {
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Sport:</span>
-                                <span>{getSportLabel(league.sport)}</span>
+                                <span>{getSportLabel(league.sportType)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Location:</span>
@@ -785,27 +632,23 @@ export default function LeagueViewPage() {
                           </div>
                           
                           <div className="space-y-4">
-                            <h4 className="font-semibold">Timeline</h4>
+                            <h4 className="font-semibold">League Info</h4>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Created:</span>
                                 <span>{formatDate(league.createdAt)}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Registration Deadline:</span>
-                                <span>{formatDate(league.registrationDeadline)}</span>
+                                <span className="text-muted-foreground">Members:</span>
+                                <span>{league.memberCount || 0}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Start Date:</span>
-                                <span>{formatDate(league.startDate)}</span>
+                                <span className="text-muted-foreground">Seasons:</span>
+                                <span>{league.seasonCount || 0}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">End Date:</span>
-                                <span>{formatDate(league.endDate)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Created By:</span>
-                                <span>{league.createdBy}</span>
+                                <span className="text-muted-foreground">Categories:</span>
+                                <span>{league.categoryCount || 0}</span>
                               </div>
                             </div>
                           </div>

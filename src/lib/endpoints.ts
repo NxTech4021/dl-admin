@@ -70,6 +70,23 @@ export const endpoints = {
   delete: (id: string) => `/api/sponsor/${id}`,
 },
 
+  companies: {
+    create: "/api/company/create",
+    getAll: "/api/company/",
+    getById: (id: string) => `/api/company/${id}`,
+    update: (id: string) => `/api/company/${id}`,
+    delete: (id: string) => `/api/company/${id}`,
+  },
+
+  categories: {
+    create: "/api/category/create",
+    getAll: "/api/category/",
+    getById: (id: string) => `/api/category/${id}`,
+    update: (id: string) => `/api/category/${id}`,
+    delete: (id: string) => `/api/category/${id}`,
+    getByLeague: (leagueId: string) => `/api/category/league/${leagueId}`,
+  },
+
   division: {
     create: "/api/division/create",
     getAll: "/api/division/",
