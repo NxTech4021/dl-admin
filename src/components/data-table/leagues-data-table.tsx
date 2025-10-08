@@ -56,31 +56,14 @@ import {
   IconPlayerPlay,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import z from "zod";
+import { League } from "@/ZodSchema/league-schema";
 
-// League schema based on Prisma schema
-export const leagueSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  location: z.string().nullable(),
-  description: z.string().nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "UPCOMING", "ONGOING", "FINISHED", "CANCELLED"]),
-  sportType: z.enum(["PADDLE", "PICKLEBALL", "TENNIS"]),
-  registrationType: z.enum(["OPEN", "INVITE_ONLY", "MANUAL"]),
-  gameType: z.enum(["SINGLES", "DOUBLES"]),
-  createdById: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  // Computed fields
-  memberCount: z.number().optional(),
-  seasonCount: z.number().optional(),
-  categoryCount: z.number().optional(),
-});
 
-export type League = z.infer<typeof leagueSchema>;
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
+const formatDate = (date: Date | string | null | undefined) => {
+  if (!date) return "N/A";
+  const dateObject = date instanceof Date ? date : new Date(date);
+  return dateObject.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -216,7 +199,7 @@ const columns: ColumnDef<League>[] = [
     accessorKey: "registrationType",
     header: "Registration",
     cell: ({ row }) => {
-      const type = row.original.registrationType;
+      const type = row.original.joinType ?? "OPEN";
       return (
         <Badge variant="outline" className="capitalize">
           {getRegistrationTypeLabel(type)}
@@ -276,7 +259,7 @@ const columns: ColumnDef<League>[] = [
       );
     },
   },
-  {
+ {
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => {

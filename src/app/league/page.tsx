@@ -8,9 +8,8 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { leagueSchema } from "@/components/data-table/leagues-data-table";
-import { League } from "@/components/data-table/leagues-data-table";
-import { IconTrophy, IconPlus, IconDownload, IconStar, IconCurrency, IconUsers, IconTarget, IconCalendar } from "@tabler/icons-react"
+import { League, leagueSchema } from "@/ZodSchema/league-schema";
+import { IconTrophy, IconPlus, IconDownload,IconUsers, IconTarget, IconCalendar } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
@@ -89,6 +88,7 @@ export default function Page() {
 
   const leagues = data;
 
+  console.log("leagues Data", leagues)
   return (
     <SidebarProvider
       style={
