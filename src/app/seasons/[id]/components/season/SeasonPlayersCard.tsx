@@ -1,31 +1,27 @@
-// app/seasons/[id]/components/SeasonPlayersCard.tsx
-// import { SeasonMembership } from '@prisma/client';
+"use client"
+
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { SeasonMembership } from '@/MockData/types';
+import { Membership} from '@/ZodSchema/season-schema';
 import { Button } from '@/components/ui/button';
 
-// Define the type for a member including the user relation
-type MemberWithUser = SeasonMembership & { user: { name: string } };
 
 interface SeasonPlayersCardProps {
-  memberships: MemberWithUser[];
+  memberships: Membership[];
 }
 
 export default function SeasonPlayersCard({ memberships }: SeasonPlayersCardProps) {
-  // Assuming a 'status' field exists on SeasonMembership (or a way to determine waitlist)
-  // For this example, let's mock the division based on an index (you'd use a real field)
-  const activePlayers = memberships.filter((_, i) => i % 3 !== 0); // Mock active
-  const waitlistedPlayers = memberships.filter((_, i) => i % 3 === 0); // Mock waitlisted
+  const activePlayers = memberships.filter(m => m.status === 'ACTIVE');
+  const waitlistedPlayers = memberships.filter(m => m.status === 'WAITLISTED');
 
-  const PlayerTable = ({ players }: { players: MemberWithUser[] }) => (
+   const PlayerTable = ({ players }: { players: Membership[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Player Name</TableHead>
+          <TableHead>Email</TableHead>
           <TableHead>Join Date</TableHead>
-          <TableHead>Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -34,17 +30,17 @@ export default function SeasonPlayersCard({ memberships }: SeasonPlayersCardProp
           players.map((member) => (
             <TableRow key={member.id}>
               <TableCell className="font-medium">{member.user.name}</TableCell>
-              <TableCell>{new Date(member.createdAt).toLocaleDateString()}</TableCell>
-              <TableCell>{/* Add a badge for their status (Paid/Pending) */}</TableCell>
+              <TableCell>{member.user.email}</TableCell>
+              <TableCell>{member.createdAt.toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
-                <Button variant="link" size="sm">View</Button>
+                <Button variant="ghost" size="sm">View Details</Button>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-              No players in this list.
+            <TableCell colSpan={4} className="h-24 text-center">
+              No players found
             </TableCell>
           </TableRow>
         )}
@@ -55,13 +51,17 @@ export default function SeasonPlayersCard({ memberships }: SeasonPlayersCardProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Season Players ({memberships.length} Total)</CardTitle>
+        <CardTitle>Season Players ({memberships.length})</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent>
         <Tabs defaultValue="active">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active">Active Players ({activePlayers.length})</TabsTrigger>
-            <TabsTrigger value="waitlisted">Waitlist ({waitlistedPlayers.length})</TabsTrigger>
+            <TabsTrigger value="active">
+              Active ({activePlayers.length})
+            </TabsTrigger>
+            <TabsTrigger value="waitlisted">
+              Waitlist ({waitlistedPlayers.length})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="active">
             <PlayerTable players={activePlayers} />

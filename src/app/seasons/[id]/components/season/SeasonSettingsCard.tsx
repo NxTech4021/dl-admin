@@ -1,81 +1,92 @@
-// app/seasons/[id]/components/SeasonSettingsCard.tsx
 'use client';
 
 import { useState } from 'react';
-import { FullSeason } from '@/MockData/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Season } from '@/ZodSchema/season-schema';
+import { toast } from 'sonner';
 
 interface SeasonSettingsCardProps {
-  season: FullSeason;
+  season: Season;
 }
 
+type SeasonSettings = {
+  isActive: boolean;
+  registrationOpen: boolean;
+  allowWithdrawals: boolean;
+  requirePayment: boolean;
+};
+
 export default function SeasonSettingsCard({ season }: SeasonSettingsCardProps) {
-  const [settings, setSettings] = useState({
-    isActive: season.isActive,
-    paymentRequired: season.paymentRequired,
-    promoCodeSupported: season.promoCodeSupported,
-    withdrawalEnabled: season.withdrawalEnabled,
+  const [settings, setSettings] = useState<SeasonSettings>({
+    isActive: season.status === 'ACTIVE',
+    registrationOpen: true,
+    allowWithdrawals: true,
+    requirePayment: true,
   });
   
   const [isDirty, setIsDirty] = useState(false);
 
-  const handleSwitchChange = (key: keyof typeof settings, checked: boolean) => {
-    setSettings((prev) => ({ ...prev, [key]: checked }));
+  const handleSwitchChange = (key: keyof SeasonSettings) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
     setIsDirty(true);
   };
 
-  const handleSave = () => {
-    // Implement API call to update settings here
-    console.log('Saving new settings:', settings);
-    setIsDirty(false);
+  const handleSave = async () => {
+    try {
+      // Implement your API call here
+      // await axiosInstance.patch(`/api/seasons/${season.id}/settings`, settings);
+      setIsDirty(false);
+      toast.success('Settings updated successfully');
+    } catch (error) {
+      toast.error('Failed to update settings');
+    }
   };
-
-  const SettingRow = ({ label, keyName }: { label: string; keyName: keyof typeof settings }) => (
-    <div className="flex items-center justify-between p-2 border-b last:border-b-0">
-      <Label htmlFor={keyName} className="flex flex-col space-y-1">
-        <span>{label}</span>
-      </Label>
-      <Switch
-        id={keyName}
-        checked={settings[keyName]}
-        onCheckedChange={(checked) => handleSwitchChange(keyName, checked)}
-      />
-    </div>
-  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Season Settings</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <SettingRow label="Season is Active" keyName="isActive" />
-          <SettingRow label="Payment Required" keyName="paymentRequired" />
-          <SettingRow label="Promo Codes Supported" keyName="promoCodeSupported" />
-          <SettingRow label="Withdrawal Enabled" keyName="withdrawalEnabled" />
+      <CardContent className="space-y-4">
+        <div className="space-y-4">
+          {Object.entries(settings).map(([key, value]) => (
+            <div key={key} className="flex items-center justify-between">
+              <Label htmlFor={key} className="flex flex-col">
+                <span className="capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+              </Label>
+              <Switch
+                id={key}
+                checked={value}
+                onCheckedChange={() => handleSwitchChange(key as keyof SeasonSettings)}
+              />
+            </div>
+          ))}
         </div>
-        
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button className="mt-4 w-full" disabled={!isDirty}>
-              Confirm & Save Changes
+            <Button className="w-full" disabled={!isDirty}>
+              Save Changes
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogTitle>Confirm Settings Update</AlertDialogTitle>
               <AlertDialogDescription>
-                This action will immediately update the season settings. Ensure the changes are correct before proceeding.
+                Are you sure you want to update these settings? This will affect how users interact with this season.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSave}>Confirm</AlertDialogAction>
+              <AlertDialogAction onClick={handleSave}>
+                Update Settings
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

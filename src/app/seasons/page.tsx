@@ -8,12 +8,12 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { seasonSchema } from "@/components/data-table/seasons-data-table";
-import { Season } from "@/components/data-table/seasons-data-table";
+import { Season, seasonSchema } from "@/ZodSchema/season-schema";
 import { IconCalendar, IconPlus, IconDownload, IconStar, IconCurrency, IconUsers } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useRouter } from "next/navigation";
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
 const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
@@ -32,6 +32,7 @@ export default function Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = React.useState<Season[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const router = useRouter();
 
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
@@ -65,6 +66,9 @@ export default function Page() {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleViewSeason = (seasonId: string) => {
+  router.push(`/seasons/${seasonId}`);
+};
   const seasons = data; 
 
   return (
@@ -169,7 +173,7 @@ export default function Page() {
 
               {/* Data Table */}
               <div className="flex-1 mt-10" >
-                <SeasonsDataTable key={refreshKey} data={seasons} isLoading={isLoading} />
+                <SeasonsDataTable key={refreshKey} data={seasons} isLoading={isLoading}  onViewSeason={handleViewSeason}/>
               </div>
             </div>
           </div>
