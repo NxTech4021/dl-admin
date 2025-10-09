@@ -3,14 +3,23 @@ FROM node:18-alpine as development
 
 WORKDIR /app
 
+# Copy package files first for better caching
 COPY package.json package-lock.json ./
 
+# Install dependencies
 RUN npm ci
 
+# Copy source code
 COPY . .
 
+# Expose port
 EXPOSE 3030
 
+# Enable polling for file watching in Docker (fixes hot reload issues)
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+# Start development server with hot reload
 CMD [ "npm", "run", "dev" ]
 
 # Build stage

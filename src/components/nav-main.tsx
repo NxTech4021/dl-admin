@@ -19,6 +19,8 @@ export function NavMain({
     title: string;
     url: string;
     icon?: Icon;
+    hasNotification?: boolean;
+    notificationCount?: number;
   }[];
 }) {
   const pathname = usePathname();
@@ -52,9 +54,22 @@ export function NavMain({
                 asChild
                 isActive={pathname === item.url}
               >
-                <Link href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                <Link 
+                  href={item.url}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-2">
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </div>
+                  
+                  {item.notificationCount ? (
+                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
+                      {item.notificationCount}
+                    </span>
+                  ) : item.hasNotification ? (
+                    <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />
+                  ) : null}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

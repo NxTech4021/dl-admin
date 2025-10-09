@@ -2,6 +2,7 @@
 
 import { IconTax } from "@tabler/icons-react";
 import { IconMessage2Question } from "@tabler/icons-react";
+import { IconBellRinging } from '@tabler/icons-react';
 import * as React from "react";
 import {
   IconDashboard,
@@ -41,6 +42,13 @@ const data = {
       url: "/dashboard",
       icon: IconDashboard,
     },
+     {
+      title: "Notifications",
+      url: "notifications",
+      icon: IconBellRinging,
+      hasNotification: true, 
+      notificationCount: '9',  
+    },
   ],
   navSecondary: [
     {
@@ -48,6 +56,7 @@ const data = {
       url: "#",
       icon: IconSettings,
     },
+    
   ],
   documents: [
     {
@@ -79,8 +88,6 @@ const data = {
       name: "Feedbacks",
       url: "/feedback",
       icon: IconMessage2Question,
-      hasNotification: true, 
-      notificationCount: 3,  
     },
   ],
 };
