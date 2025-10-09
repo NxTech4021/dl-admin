@@ -32,6 +32,8 @@ import {
   Category, 
   Sponsor 
 } from "@/components/league/types";
+import { EditSponsorModal } from "@/components/modal/edit-sponsor-modal";
+import { CreateSponsorModal } from "@/components/modal/sponsor-create-modal";
 
 // Location options for label mapping
 const LOCATION_OPTIONS = [
@@ -78,60 +80,96 @@ export default function LeagueViewPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
+  const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
+  const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch league data from API
-        const response = await axiosInstance.get(endpoints.league.getById(leagueId));
-        
-        if (!response.data || !response.data.data || !response.data.data.league) {
-          toast.error("League not found");
-          return;
-        }
-        
-        const leagueData = response.data.data.league;
-        
-        // Transform the data to match our interface
-        const transformedLeague: League = {
-          id: leagueData.id,
-          name: leagueData.name,
-          sportType: leagueData.sportType,
-          location: leagueData.location,
-          status: leagueData.status,
-          joinType: leagueData.joinType,
-          gameType: leagueData.gameType,
-          createdAt: leagueData.createdAt,
-          updatedAt: leagueData.updatedAt,
-          description: leagueData.description,
-          memberCount: leagueData._count?.memberships || 0,
-          seasonCount: leagueData._count?.seasons || 0,
-          categoryCount: leagueData._count?.categories || 0,
-          createdBy: leagueData.createdBy,
-        };
-        
-        setLeague(transformedLeague);
-        
-        // TODO: Fetch additional data when endpoints are available
-        // For now, set empty arrays
-        setPlayers([]);
-        setDivisions([]);
-        setSeasons([]);
-        setCategories([]);
-        setSponsors([]);
-      } catch (error) {
-        console.error("Error loading league data:", error);
-        toast.error("Failed to load league details");
-      } finally {
-        setIsLoading(false);
+
+  const handleAddSponsor = () => setIsCreateSponsorOpen(true);
+const handleEditSponsor = (sponsor: Sponsor) => {
+  setSelectedSponsor(sponsor);
+  setIsEditSponsorOpen(true);
+};
+
+useEffect(() => {
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
+      const leagueData = apiData?.data?.league;
+
+      if (!leagueData) {
+        toast.error("League not found");
+        return;
       }
-    };
 
-    if (leagueId) {
-      loadData();
+      // Set league
+      const {
+        id,
+        name,
+        sportType,
+        location,
+        status,
+        joinType,
+        gameType,
+        createdAt,
+        updatedAt,
+        description,
+        createdBy,
+        _count: { memberships = 0, seasons = 0, categories = 0 } = {},
+        sponsorships = [], // <- destructure sponsorships
+      } = leagueData;
+
+      setLeague({
+        id,
+        name,
+        sportType,
+        location,
+        status,
+        joinType,
+        gameType,
+        createdAt,
+        updatedAt,
+        description,
+        memberCount: memberships,
+        seasonCount: seasons,
+        categoryCount: categories,
+        createdBy,
+      });
+
+      // Set related arrays
+      setPlayers([]); // can populate when endpoint exists
+      setDivisions([]);
+      setSeasons([]);
+      setCategories([]);
+
+      // Map sponsorships to your Sponsor interface
+      const transformedSponsors = sponsorships.map((s: any) => ({
+        id: s.id,
+        packageTier: s.packageTier,
+        contractAmount: s.contractAmount,
+        sponsorRevenue: s.sponsorRevenue,
+        sponsoredName: s.sponsoredName,
+        isActive: s.isActive,
+        createdById: s.createdById,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+      }));
+
+      setSponsors(transformedSponsors);
+
+    } catch (error) {
+      console.error("Error loading league data:", error);
+      toast.error("Failed to load league details");
+    } finally {
+      setIsLoading(false);
     }
-  }, [leagueId]);
+  };
+
+  if (leagueId) loadData();
+}, [leagueId]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -266,8 +304,30 @@ export default function LeagueViewPage() {
                   formatDate={formatDate}
                   calculateWinRate={calculateWinRate}
                   onSeasonCreated={handleSeasonCreated}
+                  onEditSponsor={handleEditSponsor}
+                  onAddSponsor={handleAddSponsor}
                 />
               </div>
+
+                 <CreateSponsorModal
+        open={isCreateSponsorOpen}
+        onOpenChange={setIsCreateSponsorOpen}
+        leagueId={league?.id!}
+        onSponsorCreated={() => {
+          setIsCreateSponsorOpen(false);
+          // Reload sponsors
+        }}
+      />
+
+      <EditSponsorModal
+        open={isEditSponsorOpen}
+        onOpenChange={setIsEditSponsorOpen}
+        sponsor={selectedSponsor}
+        onSponsorUpdated={() => {
+          setIsEditSponsorOpen(false);
+          // Reload sponsors
+        }}
+      />
             </div>
           </div>
         </div>

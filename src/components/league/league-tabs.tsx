@@ -51,6 +51,8 @@ interface LeagueTabsProps {
   formatDate: FormatDateFunction;
   calculateWinRate: CalculateWinRateFunction;
   onSeasonCreated?: () => void;
+  onAddSponsor?: () => void;
+  onEditSponsor?: (sponsor: Sponsor) => void;
 }
 
 export function LeagueTabs({
@@ -65,7 +67,10 @@ export function LeagueTabs({
   getStatusBadge,
   formatDate,
   calculateWinRate,
-  onSeasonCreated
+  onSeasonCreated,
+  onAddSponsor,
+  onEditSponsor,
+  
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -125,7 +130,10 @@ export function LeagueTabs({
               calculateWinRate={calculateWinRate}
             />
             
-            <SponsorCard sponsors={sponsors} />
+            <SponsorCard
+              sponsors={sponsors}
+              onEditSponsor={onEditSponsor}
+              />
             
             <CategoryCard categories={categories} />
             

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,42 +10,61 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import axiosInstance, { endpoints} from "@/lib/endpoints";
+import { Sponsor } from "../league/types";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 
-interface CreateSponsorModalProps {
+interface EditSponsorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  leagueId: string;
-  onSponsorCreated?: () => void;
+  sponsor: Sponsor | null;
+  onSponsorUpdated?: () => void;
 }
 
-export function CreateSponsorModal({
+const PACKAGE_TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
+
+export function EditSponsorModal({
   open,
   onOpenChange,
-  leagueId,
-  onSponsorCreated,
-}: CreateSponsorModalProps) {
+  sponsor,
+  onSponsorUpdated,
+}: EditSponsorModalProps) {
   const [formData, setFormData] = useState({
     sponsoredName: "",
     packageTier: "BRONZE",
     contractAmount: "",
-    sponsorRevenue: "",
   });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (sponsor) {
+      setFormData({
+        sponsoredName: sponsor.sponsoredName || "",
+        packageTier: sponsor.packageTier || "BRONZE",
+        contractAmount: sponsor.contractAmount?.toString() || "",
+      });
+    }
+  }, [sponsor]);
+
   const handleSubmit = async () => {
+    if (!sponsor) return;
     setLoading(true);
     try {
-      await axiosInstance.post(endpoints.sponsors.create, {
-        ...formData,
-        leagueId,
-      });
-      toast.success("Sponsor created!");
-      onSponsorCreated?.();
+      const payload = {
+        sponsoredName: formData.sponsoredName,
+        packageTier: formData.packageTier,
+        contractAmount:
+          formData.contractAmount.trim() === ""
+            ? undefined
+            : Number(formData.contractAmount),
+      };
+
+      await axiosInstance.put(endpoints.sponsors.update(sponsor.id), payload);
+      toast.success("Sponsor updated!");
+      onSponsorUpdated?.();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create sponsor");
+      toast.error(err.response?.data?.message || "Failed to update sponsor");
     } finally {
       setLoading(false);
     }
@@ -55,8 +74,9 @@ export function CreateSponsorModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Sponsor</DialogTitle>
+          <DialogTitle>Edit Sponsor</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-4">
           <Input
             placeholder="Sponsor Name"
@@ -65,13 +85,21 @@ export function CreateSponsorModal({
               setFormData({ ...formData, sponsoredName: e.target.value })
             }
           />
-          <Input
-            placeholder="Package Tier"
+
+          <select
+            className="w-full p-2 border rounded"
             value={formData.packageTier}
             onChange={(e) =>
               setFormData({ ...formData, packageTier: e.target.value })
             }
-          />
+          >
+            {PACKAGE_TIERS.map((tier) => (
+              <option key={tier} value={tier}>
+                {tier}
+              </option>
+            ))}
+          </select>
+
           <Input
             placeholder="Contract Amount"
             value={formData.contractAmount}
@@ -79,17 +107,11 @@ export function CreateSponsorModal({
               setFormData({ ...formData, contractAmount: e.target.value })
             }
           />
-          <Input
-            placeholder="Sponsor Revenue"
-            value={formData.sponsorRevenue}
-            onChange={(e) =>
-              setFormData({ ...formData, sponsorRevenue: e.target.value })
-            }
-          />
         </div>
+
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Saving..." : "Create Sponsor"}
+            {loading ? "Saving..." : "Update Sponsor"}
           </Button>
         </DialogFooter>
       </DialogContent>
