@@ -1,7 +1,9 @@
 "use client";
 
 import { type Icon } from "@tabler/icons-react";
+
 import Link from "next/link";
+
 import { usePathname } from "next/navigation";
 
 import {
@@ -17,35 +19,55 @@ export function NavMain({
 }: {
   items: {
     title: string;
+
     url: string;
+
     icon?: Icon;
+
     hasNotification?: boolean;
+
     notificationCount?: number;
   }[];
 }) {
   const pathname = usePathname();
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             {/* <SidebarMenuButton
+
               tooltip="Quick Create"
+
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+
             >
+
               <IconCirclePlusFilled />
+
               <span>Quick Create</span>
+
             </SidebarMenuButton> */}
+
             {/* <Button
+
               size="icon"
+
               className="size-8 group-data-[collapsible=icon]:opacity-0"
+
               variant="outline"
+
             >
+
               <IconMail />
+
               <span className="sr-only">Inbox</span>
+
             </Button> */}
           </SidebarMenuItem>
         </SidebarMenu>
+
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
@@ -54,15 +76,16 @@ export function NavMain({
                 asChild
                 isActive={pathname === item.url}
               >
-                <Link 
+                <Link
                   href={item.url}
                   className="flex items-center justify-between w-full"
                 >
                   <div className="flex items-center gap-2">
                     {item.icon && <item.icon />}
+
                     <span>{item.title}</span>
                   </div>
-                  
+
                   {item.notificationCount ? (
                     <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
                       {item.notificationCount}
