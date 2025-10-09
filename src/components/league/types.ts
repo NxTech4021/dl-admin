@@ -23,6 +23,8 @@ export interface League {
   };
 }
 
+export type GenderRestriction = "OPEN" | "MALE" | "FEMALE";
+
 export interface Player {
   id: string;
   name: string;
@@ -78,7 +80,7 @@ export interface Season {
 export interface Category {
   id: string;
   name: string;
-  genderRestriction: string;
+  genderRestriction: GenderRestriction;
   matchFormat?: string;
   maxPlayers?: number;
   maxTeams?: number;

@@ -34,6 +34,8 @@ import {
 } from "@/components/league/types";
 import { EditSponsorModal } from "@/components/modal/edit-sponsor-modal";
 import { CreateSponsorModal } from "@/components/modal/sponsor-create-modal";
+import { CreateCategoryModal } from "@/components/modal/create-category-modal";
+import { EditCategoryModal } from "@/components/modal/update-category-modal";
 
 // Location options for label mapping
 const LOCATION_OPTIONS = [
@@ -80,11 +82,14 @@ export default function LeagueViewPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  //Modals
   const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
   const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
-
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const handleAddSponsor = () => setIsCreateSponsorOpen(true);
 const handleEditSponsor = (sponsor: Sponsor) => {
@@ -306,6 +311,11 @@ useEffect(() => {
                   onSeasonCreated={handleSeasonCreated}
                   onEditSponsor={handleEditSponsor}
                   onAddSponsor={handleAddSponsor}
+                  onAddCategory={() => setIsCreateCategoryOpen(true)}
+                  onEditCategory={(category: Category) => {
+    setSelectedCategory(category);
+    setIsEditCategoryOpen(true);
+  }}
                 />
               </div>
 
@@ -328,6 +338,43 @@ useEffect(() => {
           // Reload sponsors
         }}
       />
+
+   <CreateCategoryModal
+  open={isCreateCategoryOpen}
+  onOpenChange={setIsCreateCategoryOpen}
+  leagueId={league?.id || ""}
+  onCategoryCreated={async () => {
+    // Refetch categories after creation
+    try {
+      const { data: apiData } = await axiosInstance.get(
+        endpoints.categories.getByLeague(league?.id || "")
+      );
+      setCategories(apiData?.data || []);
+      toast.success("Category created!");
+    } catch (err) {
+      toast.error("Failed to fetch categories");
+    }
+  }}
+/>
+
+<EditCategoryModal
+  open={isEditCategoryOpen}
+  onOpenChange={setIsEditCategoryOpen}
+  category={selectedCategory}
+  onCategoryUpdated={async () => {
+    setIsEditCategoryOpen(false);
+    // Refetch categories after update
+    try {
+      const { data: apiData } = await axiosInstance.get(
+        endpoints.categories.getByLeague(league?.id || "")
+      );
+      setCategories(apiData?.data || []);
+      toast.success("Category updated!");
+    } catch (err) {
+      toast.error("Failed to fetch categories");
+    }
+  }}
+/>
             </div>
           </div>
         </div>

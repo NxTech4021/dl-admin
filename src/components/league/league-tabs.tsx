@@ -53,6 +53,9 @@ interface LeagueTabsProps {
   onSeasonCreated?: () => void;
   onAddSponsor?: () => void;
   onEditSponsor?: (sponsor: Sponsor) => void;
+  onAddCategory?: () => void;  
+  onEditCategory?: () => void;
+
 }
 
 export function LeagueTabs({
@@ -70,6 +73,8 @@ export function LeagueTabs({
   onSeasonCreated,
   onAddSponsor,
   onEditSponsor,
+  onAddCategory,
+  onEditCategory
   
 }: LeagueTabsProps) {
   return (
@@ -135,7 +140,22 @@ export function LeagueTabs({
               onEditSponsor={onEditSponsor}
               />
             
-            <CategoryCard categories={categories} />
+            {/* <CategoryCard categories={categories} /> */}
+            <div className="flex flex-col space-y-3">
+  <div className="flex justify-between items-center">
+    <h3 className="text-lg font-semibold">Categories</h3>
+    {onAddCategory && (
+      <Button size="sm" onClick={onAddCategory}>
+        Add Category
+      </Button>
+    )}
+  </div>
+
+  <CategoryCard
+  categories={categories}
+  onEditCategory={onEditCategory}
+/>
+</div>
             
             <SeasonCard seasons={seasons} formatDate={formatDate} onSeasonCreated={onSeasonCreated} />
           </div>
