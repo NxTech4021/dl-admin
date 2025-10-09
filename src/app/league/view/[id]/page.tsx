@@ -156,7 +156,6 @@ const handleEditSponsor = (sponsor: Sponsor) => {
     }
   }, [leagueId]);
 
-  // Then define other callbacks that depend on refreshData
   const handleCategoryCreated = useCallback(async () => {
     setIsCreateCategoryOpen(false);
     await refreshData();
@@ -180,18 +179,6 @@ const handleEditSponsor = (sponsor: Sponsor) => {
     toast.success("Sponsor created successfully!");
   }, [refreshData, setIsCreateSponsorOpen]);
 
-  // Add the fetch categories function
-  const fetchCategories = useCallback(async () => {
-    try {
-      const { data: apiData } = await axiosInstance.get(
-        endpoints.categories.getByLeague(leagueId)
-      );
-      setCategories(apiData?.data || []);
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-      toast.error("Failed to fetch categories");
-    }
-  }, [leagueId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -253,7 +240,11 @@ const handleEditSponsor = (sponsor: Sponsor) => {
             isActive: season.status === 'ACTIVE',
             category: season.category,
             registeredUserCount: season._count?.memberships || 0,
-            _count: season._count
+            _count: season._count,
+            entryFee: season.entryFee ?? 0,
+            paymentRequired: season.paymentRequired ?? false,
+            promoCodeSupported: season.promoCodeSupported ?? false,
+            withdrawalEnabled: season.withdrawalEnabled ?? false,
           }));
           setSeasons(transformedSeasons);
         }
@@ -421,8 +412,9 @@ const handleEditSponsor = (sponsor: Sponsor) => {
                   onAddCategory={() => setIsCreateCategoryOpen(true)}
                   onEditCategory={(category: Category) => {
                   setSelectedCategory(category);
-                  setIsEditCategoryOpen(true);
-                }}
+                  setIsEditCategoryOpen(true); 
+                  }}
+                  onLeagueUpdated={refreshData}
               />
               </div>
 

@@ -61,6 +61,7 @@ interface LeagueTabsProps {
   onEditSponsor?: (sponsor: Sponsor) => void;
   onAddCategory?: () => void;
   onEditCategory: (category: Category) => void;
+  onLeagueUpdated?: () => Promise<void>;
 }
 
 export function LeagueTabs({
@@ -80,6 +81,7 @@ export function LeagueTabs({
   onEditSponsor,
   onAddCategory,
   onEditCategory,
+  onLeagueUpdated
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -121,6 +123,7 @@ export function LeagueTabs({
               getSportLabel={getSportLabel}
               getStatusBadge={getStatusBadge}
               formatDate={formatDate}
+              onLeagueUpdated={onLeagueUpdated}
             />
           </div>
 
