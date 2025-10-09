@@ -54,9 +54,10 @@ interface LeagueTabsProps {
   onAddSponsor?: () => void;
   onEditSponsor?: (sponsor: Sponsor) => void;
   onAddCategory?: () => void;  
-  onEditCategory?: () => void;
+  onEditCategory: (category: Category) => void;
 
 }
+
 
 export function LeagueTabs({
   league,
@@ -122,12 +123,12 @@ export function LeagueTabs({
 
           {/* Right Column: Stats Cards */}
           <div className="md:col-span-2 space-y-6">
-            <StatsGrid
-              memberCount={league.memberCount || 0}
-              categoryCount={league.categoryCount || 0}
-              seasonCount={league.seasonCount || 0}
-              sponsorCount={sponsors.length}
-            />
+              <StatsGrid
+                memberCount={players.length || 0}
+                categoryCount={categories.length  || 0}
+                seasonCount={seasons.length  || 0}
+                sponsorCount={sponsors.length  || 0}
+              />
             
             <MemberCard
               players={players}
@@ -141,7 +142,7 @@ export function LeagueTabs({
               />
             
             {/* <CategoryCard categories={categories} /> */}
-            <div className="flex flex-col space-y-3">
+ <div className="flex flex-col space-y-3">
   <div className="flex justify-between items-center">
     <h3 className="text-lg font-semibold">Categories</h3>
     {onAddCategory && (
@@ -150,14 +151,19 @@ export function LeagueTabs({
       </Button>
     )}
   </div>
-
   <CategoryCard
-  categories={categories}
-  onEditCategory={onEditCategory}
-/>
+    categories={categories} // This is where the list is passed for display
+    onEditCategory={onEditCategory}
+  />
 </div>
             
-            <SeasonCard seasons={seasons} formatDate={formatDate} onSeasonCreated={onSeasonCreated} />
+          <SeasonCard
+  seasons={seasons}
+  leagueId={league?.id!}
+  categories={categories} // Add this
+  formatDate={formatDate}
+  onSeasonCreated={onSeasonCreated}
+/>
           </div>
         </div>
       </TabsContent>

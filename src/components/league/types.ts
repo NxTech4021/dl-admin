@@ -67,9 +67,14 @@ export interface Season {
   regiDeadline: string;
   entryFee: number;
   description?: string;
-  sportType: string;
-  seasonType: string;
-  registeredUserCount: number;
+  category?: {
+    id: string;
+    name: string;
+  };
+  registeredUserCount?: number;
+  _count?: {
+    memberships: number;
+  };
   status: string;
   isActive: boolean;
   paymentRequired: boolean;

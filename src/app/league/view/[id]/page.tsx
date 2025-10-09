@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -90,15 +89,15 @@ export default function LeagueViewPage() {
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-
+  
   const handleAddSponsor = () => setIsCreateSponsorOpen(true);
 const handleEditSponsor = (sponsor: Sponsor) => {
   setSelectedSponsor(sponsor);
   setIsEditSponsorOpen(true);
 };
 
-useEffect(() => {
-  const loadData = async () => {
+ 
+  const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
@@ -109,71 +108,186 @@ useEffect(() => {
         return;
       }
 
-      // Set league
-      const {
-        id,
-        name,
-        sportType,
-        location,
-        status,
-        joinType,
-        gameType,
-        createdAt,
-        updatedAt,
-        description,
-        createdBy,
-        _count: { memberships = 0, seasons = 0, categories = 0 } = {},
-        sponsorships = [], // <- destructure sponsorships
-      } = leagueData;
-
+      // Update league data
       setLeague({
-        id,
-        name,
-        sportType,
-        location,
-        status,
-        joinType,
-        gameType,
-        createdAt,
-        updatedAt,
-        description,
-        memberCount: memberships,
-        seasonCount: seasons,
-        categoryCount: categories,
-        createdBy,
+        id: leagueData.id,
+        name: leagueData.name,
+        sportType: leagueData.sportType,
+        location: leagueData.location,
+        status: leagueData.status,
+        joinType: leagueData.joinType,
+        gameType: leagueData.gameType,
+        createdAt: leagueData.createdAt,
+        updatedAt: leagueData.updatedAt,
+        description: leagueData.description,
+        memberCount: leagueData._count?.memberships || 0,
+        seasonCount: leagueData._count?.seasons || 0,
+        categoryCount: leagueData._count?.categories || 0,
+        createdBy: leagueData.createdBy,
       });
 
-      // Set related arrays
-      setPlayers([]); // can populate when endpoint exists
-      setDivisions([]);
-      setSeasons([]);
-      setCategories([]);
+      // Update seasons
+      if (Array.isArray(leagueData.seasons)) {
+        const transformedSeasons = leagueData.seasons.map((season: any) => ({
+          id: season.id,
+          name: season.name,
+          startDate: season.startDate,
+          endDate: season.endDate,
+          regiDeadline: season.regiDeadline,
+          status: season.status,
+          isActive: season.status === 'ACTIVE',
+          category: season.category,
+          registeredUserCount: season._count?.memberships || 0,
+          _count: season._count
+        }));
+        setSeasons(transformedSeasons);
+      }
 
-      // Map sponsorships to your Sponsor interface
-      const transformedSponsors = sponsorships.map((s: any) => ({
-        id: s.id,
-        packageTier: s.packageTier,
-        contractAmount: s.contractAmount,
-        sponsorRevenue: s.sponsorRevenue,
-        sponsoredName: s.sponsoredName,
-        isActive: s.isActive,
-        createdById: s.createdById,
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-      }));
-
-      setSponsors(transformedSponsors);
+      // Update categories
+      if (leagueData?.categories) {
+        setCategories(leagueData.categories);
+      }
 
     } catch (error) {
-      console.error("Error loading league data:", error);
-      toast.error("Failed to load league details");
+      console.error("Error refreshing data:", error);
+      toast.error("Failed to refresh data");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [leagueId]);
 
-  if (leagueId) loadData();
-}, [leagueId]);
+  // Then define other callbacks that depend on refreshData
+  const handleCategoryCreated = useCallback(async () => {
+    setIsCreateCategoryOpen(false);
+    await refreshData();
+    toast.success("Category created successfully!");
+  }, [refreshData, setIsCreateCategoryOpen]);
+
+  const handleSeasonCreated = useCallback(async () => {
+    await refreshData();
+    toast.success("Season created successfully!");
+  }, [refreshData]);
+
+  const handleCategoryUpdated = useCallback(async () => {
+  setIsEditCategoryOpen(false);
+  await refreshData();
+  toast.success("Category updated successfully!");
+}, [refreshData]);
+
+  const handleSponsorCreated = useCallback(async () => {
+    setIsCreateSponsorOpen(false);
+    await refreshData();
+    toast.success("Sponsor created successfully!");
+  }, [refreshData, setIsCreateSponsorOpen]);
+
+  // Add the fetch categories function
+  const fetchCategories = useCallback(async () => {
+    try {
+      const { data: apiData } = await axiosInstance.get(
+        endpoints.categories.getByLeague(leagueId)
+      );
+      setCategories(apiData?.data || []);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+      toast.error("Failed to fetch categories");
+    }
+  }, [leagueId]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
+        const leagueData = apiData?.data?.league;
+
+        console.log("league data", leagueData);
+        if (!leagueData) {
+          toast.error("League not found");
+          return;
+        }
+
+        // Set league
+        const {
+          id,
+          name,
+          sportType,
+          location,
+          status,
+          joinType,
+          gameType,
+          createdAt,
+          updatedAt,
+          description,
+          createdBy,
+          _count: { memberships = 0, seasons = 0, categories = 0 } = {},
+          sponsorships = [],
+          seasons: leagueSeasons = [], // Extract seasons from league data
+        } = leagueData;
+
+        setLeague({
+          id,
+          name,
+          sportType,
+          location,
+          status,
+          joinType,
+          gameType,
+          createdAt,
+          updatedAt,
+          description,
+          memberCount: memberships,
+          seasonCount: seasons,
+          categoryCount: categories,
+          createdBy,
+        });
+
+        // Set seasons from the league data
+        if (Array.isArray(leagueSeasons)) {
+          const transformedSeasons = leagueSeasons.map((season: any) => ({
+            id: season.id,
+            name: season.name,
+            startDate: season.startDate,
+            endDate: season.endDate,
+            regiDeadline: season.regiDeadline,
+            status: season.status,
+            isActive: season.status === 'ACTIVE',
+            category: season.category,
+            registeredUserCount: season._count?.memberships || 0,
+            _count: season._count
+          }));
+          setSeasons(transformedSeasons);
+        }
+
+        // Set categories from the API response
+        if (leagueData?.categories) {
+          setCategories(leagueData.categories);
+        }
+
+        // Set sponsors
+        const transformedSponsors = sponsorships.map((s: any) => ({
+          id: s.id,
+          packageTier: s.packageTier,
+          contractAmount: s.contractAmount,
+          sponsorRevenue: s.sponsorRevenue,
+          sponsoredName: s.sponsoredName,
+          isActive: s.isActive,
+          createdById: s.createdById,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        }));
+
+        setSponsors(transformedSponsors);
+
+      } catch (error) {
+        console.error("Error loading league data:", error);
+        toast.error("Failed to load league details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (leagueId) loadData();
+  }, [leagueId]);
 
 
   const formatDate = (dateString: string) => {
@@ -216,13 +330,6 @@ useEffect(() => {
   const calculateWinRate = (wins: number, losses: number) => {
     const total = wins + losses;
     return total > 0 ? Math.round((wins / total) * 100) : 0;
-  };
-
-  const handleSeasonCreated = () => {
-    // Refresh the seasons data when a new season is created
-    console.log("Season created, refreshing data...");
-    // TODO: Implement actual data refresh when season endpoints are available
-    // For now, this will just log the event
   };
 
   if (isLoading) {
@@ -343,37 +450,15 @@ useEffect(() => {
   open={isCreateCategoryOpen}
   onOpenChange={setIsCreateCategoryOpen}
   leagueId={league?.id || ""}
-  onCategoryCreated={async () => {
-    // Refetch categories after creation
-    try {
-      const { data: apiData } = await axiosInstance.get(
-        endpoints.categories.getByLeague(league?.id || "")
-      );
-      setCategories(apiData?.data || []);
-      toast.success("Category created!");
-    } catch (err) {
-      toast.error("Failed to fetch categories");
-    }
-  }}
+  onCategoryCreated={handleCategoryCreated}
 />
 
 <EditCategoryModal
   open={isEditCategoryOpen}
   onOpenChange={setIsEditCategoryOpen}
   category={selectedCategory}
-  onCategoryUpdated={async () => {
-    setIsEditCategoryOpen(false);
-    // Refetch categories after update
-    try {
-      const { data: apiData } = await axiosInstance.get(
-        endpoints.categories.getByLeague(league?.id || "")
-      );
-      setCategories(apiData?.data || []);
-      toast.success("Category updated!");
-    } catch (err) {
-      toast.error("Failed to fetch categories");
-    }
-  }}
+  leagueId={leagueId}
+  onCategoryUpdated={handleCategoryUpdated}
 />
             </div>
           </div>
