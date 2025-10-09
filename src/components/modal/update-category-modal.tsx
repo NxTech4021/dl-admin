@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Category } from "../league/types";
@@ -83,46 +84,69 @@ export function EditCategoryModal({
         <DialogHeader>
           <DialogTitle>Edit Category</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-4">
-          <Input
-            placeholder="Category Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
+          <div>
+            <Label htmlFor="categoryName" className="mb-1">Category Name</Label>
+            <Input
+              id="categoryName"
+              placeholder="Enter category name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
 
-          <Select
-            value={formData.genderRestriction}
-            onValueChange={(value) => setFormData({ ...formData, genderRestriction: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Gender Restriction" />
-            </SelectTrigger>
-            <SelectContent>
-              {GENDER_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <Label htmlFor="genderRestriction" className="mb-1">Gender Restriction</Label>
+            <Select
+              value={formData.genderRestriction}
+              onValueChange={(value) => setFormData({ ...formData, genderRestriction: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender restriction" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Input
-            placeholder="Match Format"
-            value={formData.matchFormat}
-            onChange={(e) => setFormData({ ...formData, matchFormat: e.target.value })}
-          />
-          <Input
-            placeholder="Max Players"
-            type="number"
-            value={formData.maxPlayers}
-            onChange={(e) => setFormData({ ...formData, maxPlayers: e.target.value })}
-          />
-          <Input
-            placeholder="Max Teams"
-            type="number"
-            value={formData.maxTeams}
-            onChange={(e) => setFormData({ ...formData, maxTeams: e.target.value })}
-          />
+          <div>
+            <Label htmlFor="matchFormat" className="mb-1">Match Format</Label>
+            <Input
+              id="matchFormat"
+              placeholder="e.g., Best of 3 sets"
+              value={formData.matchFormat}
+              onChange={(e) => setFormData({ ...formData, matchFormat: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="maxPlayers" className="mb-1">Max Players (singles)</Label>
+              <Input
+                id="maxPlayers"
+                type="number"
+                placeholder="Enter max players"
+                value={formData.maxPlayers}
+                onChange={(e) => setFormData({ ...formData, maxPlayers: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="maxTeams" className="mb-1">Max Teams (doubles/team)</Label>
+              <Input
+                id="maxTeams"
+                type="number"
+                placeholder="Enter max teams"
+                value={formData.maxTeams}
+                onChange={(e) => setFormData({ ...formData, maxTeams: e.target.value })}
+              />
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
             <Switch
@@ -132,7 +156,8 @@ export function EditCategoryModal({
             <span>Active</span>
           </div>
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="mt-4">
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Saving..." : "Update Category"}
           </Button>

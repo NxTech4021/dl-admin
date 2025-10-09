@@ -210,28 +210,28 @@ const handleEditSponsor = (sponsor: Sponsor) => {
         const {
           id,
           name,
-          sportType,
+          sportType, 
           location,
           status,
           joinType,
-          gameType,
+          gameType, 
           createdAt,
           updatedAt,
           description,
           createdBy,
           _count: { memberships = 0, seasons = 0, categories = 0 } = {},
           sponsorships = [],
-          seasons: leagueSeasons = [], // Extract seasons from league data
+          seasons: leagueSeasons = [],
         } = leagueData;
 
         setLeague({
           id,
           name,
-          sportType,
+          sportType, 
           location,
           status,
           joinType,
-          gameType,
+          gameType, 
           createdAt,
           updatedAt,
           description,
@@ -420,19 +420,18 @@ const handleEditSponsor = (sponsor: Sponsor) => {
                   onAddSponsor={handleAddSponsor}
                   onAddCategory={() => setIsCreateCategoryOpen(true)}
                   onEditCategory={(category: Category) => {
-    setSelectedCategory(category);
-    setIsEditCategoryOpen(true);
-  }}
-                />
+                  setSelectedCategory(category);
+                  setIsEditCategoryOpen(true);
+                }}
+              />
               </div>
 
-                 <CreateSponsorModal
+      <CreateSponsorModal
         open={isCreateSponsorOpen}
         onOpenChange={setIsCreateSponsorOpen}
         leagueId={league?.id!}
         onSponsorCreated={() => {
           setIsCreateSponsorOpen(false);
-          // Reload sponsors
         }}
       />
 
@@ -441,25 +440,24 @@ const handleEditSponsor = (sponsor: Sponsor) => {
         onOpenChange={setIsEditSponsorOpen}
         sponsor={selectedSponsor}
         onSponsorUpdated={() => {
-          setIsEditSponsorOpen(false);
-          // Reload sponsors
+        setIsEditSponsorOpen(false);
         }}
       />
 
-   <CreateCategoryModal
-  open={isCreateCategoryOpen}
-  onOpenChange={setIsCreateCategoryOpen}
-  leagueId={league?.id || ""}
-  onCategoryCreated={handleCategoryCreated}
-/>
+     <CreateCategoryModal
+      open={isCreateCategoryOpen}
+      onOpenChange={setIsCreateCategoryOpen}
+      leagueId={league?.id || ""}
+      onCategoryCreated={handleCategoryCreated}
+    />
 
-<EditCategoryModal
-  open={isEditCategoryOpen}
-  onOpenChange={setIsEditCategoryOpen}
-  category={selectedCategory}
-  leagueId={leagueId}
-  onCategoryUpdated={handleCategoryUpdated}
-/>
+      <EditCategoryModal
+        open={isEditCategoryOpen}
+        onOpenChange={setIsEditCategoryOpen}
+        category={selectedCategory}
+        leagueId={leagueId}
+        onCategoryUpdated={handleCategoryUpdated}
+      />
             </div>
           </div>
         </div>

@@ -1,18 +1,24 @@
 "use client";
 
-import { 
-  IconTrophy, 
-  IconActivity, 
-  IconTarget, 
-  IconUsers, 
-  IconAward, 
+import {
+  IconTrophy,
+  IconActivity,
+  IconTarget,
+  IconUsers,
+  IconAward,
   IconDatabase,
   IconStar,
-  IconUser
+  IconUser,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Import the individual card components
@@ -24,18 +30,18 @@ import { CategoryCard } from "./category-card";
 import { SeasonCard } from "./season-card";
 
 // Import shared types
-import { 
-  League, 
-  Player, 
-  Division, 
-  Season, 
-  Category, 
+import {
+  League,
+  Player,
+  Division,
+  Season,
+  Category,
   Sponsor,
   GetLocationLabelFunction,
   GetSportLabelFunction,
   GetStatusBadgeFunction,
   FormatDateFunction,
-  CalculateWinRateFunction
+  CalculateWinRateFunction,
 } from "./types";
 
 interface LeagueTabsProps {
@@ -53,11 +59,9 @@ interface LeagueTabsProps {
   onSeasonCreated?: () => void;
   onAddSponsor?: () => void;
   onEditSponsor?: (sponsor: Sponsor) => void;
-  onAddCategory?: () => void;  
+  onAddCategory?: () => void;
   onEditCategory: (category: Category) => void;
-
 }
-
 
 export function LeagueTabs({
   league,
@@ -75,8 +79,7 @@ export function LeagueTabs({
   onAddSponsor,
   onEditSponsor,
   onAddCategory,
-  onEditCategory
-  
+  onEditCategory,
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -123,47 +126,36 @@ export function LeagueTabs({
 
           {/* Right Column: Stats Cards */}
           <div className="md:col-span-2 space-y-6">
-              <StatsGrid
-                memberCount={players.length || 0}
-                categoryCount={categories.length  || 0}
-                seasonCount={seasons.length  || 0}
-                sponsorCount={sponsors.length  || 0}
-              />
-            
+            <StatsGrid
+              memberCount={players.length || 0}
+              categoryCount={categories.length || 0}
+              seasonCount={seasons.length || 0}
+              sponsorCount={sponsors.length || 0}
+            />
+
             <MemberCard
               players={players}
               formatDate={formatDate}
               calculateWinRate={calculateWinRate}
             />
-            
-            <SponsorCard
-              sponsors={sponsors}
-              onEditSponsor={onEditSponsor}
+
+            <SponsorCard sponsors={sponsors} onEditSponsor={onEditSponsor} />
+
+         
+           
+             <CategoryCard
+                categories={categories}
+                onEditCategory={onEditCategory}
+                onAddCategory={onAddCategory}
               />
-            
-            {/* <CategoryCard categories={categories} /> */}
- <div className="flex flex-col space-y-3">
-  <div className="flex justify-between items-center">
-    <h3 className="text-lg font-semibold">Categories</h3>
-    {onAddCategory && (
-      <Button size="sm" onClick={onAddCategory}>
-        Add Category
-      </Button>
-    )}
-  </div>
-  <CategoryCard
-    categories={categories} // This is where the list is passed for display
-    onEditCategory={onEditCategory}
-  />
-</div>
-            
-          <SeasonCard
-  seasons={seasons}
-  leagueId={league?.id!}
-  categories={categories} // Add this
-  formatDate={formatDate}
-  onSeasonCreated={onSeasonCreated}
-/>
+
+            <SeasonCard
+              seasons={seasons}
+              leagueId={league?.id!}
+              categories={categories} 
+              formatDate={formatDate}
+              onSeasonCreated={onSeasonCreated}
+            />
           </div>
         </div>
       </TabsContent>
@@ -197,22 +189,28 @@ export function LeagueTabs({
                 <IconTrophy className="size-5 text-green-600" />
                 League Statistics
               </CardTitle>
-              <CardDescription>
-                Performance metrics and trends
-              </CardDescription>
+              <CardDescription>Performance metrics and trends</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Matches</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Matches
+                  </span>
                   <span className="font-semibold">0</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Active Players</span>
-                  <span className="font-semibold">{league.memberCount || 0}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Active Players
+                  </span>
+                  <span className="font-semibold">
+                    {league.memberCount || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Completion Rate</span>
+                  <span className="text-sm text-muted-foreground">
+                    Completion Rate
+                  </span>
                   <span className="font-semibold">0%</span>
                 </div>
               </div>
@@ -266,20 +264,27 @@ export function LeagueTabs({
             ) : (
               <div className="space-y-4">
                 {players.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={player.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <IconUser className="size-5 text-primary" />
                       </div>
                       <div>
                         <h4 className="font-semibold">{player.name}</h4>
-                        <p className="text-sm text-muted-foreground">{player.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {player.email}
+                        </p>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <IconStar className="size-3" />
-                            {player.rating || 'N/A'} rating
+                            {player.rating || "N/A"} rating
                           </span>
-                          <span>{player.division || 'No division'} Division</span>
+                          <span>
+                            {player.division || "No division"} Division
+                          </span>
                           <span>Joined {formatDate(player.joinedAt)}</span>
                         </div>
                       </div>
@@ -308,11 +313,10 @@ export function LeagueTabs({
               <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-16">
                   <IconAward className="size-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    No Divisions
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-2">No Divisions</h3>
                   <p className="text-muted-foreground text-center max-w-md">
-                    Divisions will appear here once they are created for this league.
+                    Divisions will appear here once they are created for this
+                    league.
                   </p>
                 </CardContent>
               </Card>
@@ -326,18 +330,25 @@ export function LeagueTabs({
                     <Badge variant="outline">{division.status}</Badge>
                   </CardTitle>
                   <CardDescription>
-                    {division.gameType} • {division.genderCategory || 'All genders'}
+                    {division.gameType} •{" "}
+                    {division.genderCategory || "All genders"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span>Singles:</span>
-                      <span>{division.currentSinglesCount || 0} / {division.maxSinglesPlayers || 'N/A'}</span>
+                      <span>
+                        {division.currentSinglesCount || 0} /{" "}
+                        {division.maxSinglesPlayers || "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Doubles:</span>
-                      <span>{division.currentDoublesCount || 0} / {division.maxDoublesTeams || 'N/A'}</span>
+                      <span>
+                        {division.currentDoublesCount || 0} /{" "}
+                        {division.maxDoublesTeams || "N/A"}
+                      </span>
                     </div>
                     {division.season && (
                       <div className="pt-2 border-t">
@@ -393,15 +404,19 @@ export function LeagueTabs({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Join Type:</span>
-                    <span className="capitalize">{league.joinType?.toLowerCase().replace('_', ' ')}</span>
+                    <span className="capitalize">
+                      {league.joinType?.toLowerCase().replace("_", " ")}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Game Type:</span>
-                    <span className="capitalize">{league.gameType.toLowerCase()}</span>
+                    <span className="capitalize">
+                      {league.gameType.toLowerCase()}
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-semibold">League Statistics</h4>
                 <div className="space-y-2 text-sm">
@@ -432,7 +447,7 @@ export function LeagueTabs({
                 </div>
               </div>
             </div>
-            
+
             {league.description && (
               <div className="mt-6 pt-6 border-t">
                 <h4 className="font-semibold mb-3">Description</h4>

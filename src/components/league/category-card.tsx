@@ -1,6 +1,6 @@
 "use client";
 
-import { IconTag, IconEdit } from "@tabler/icons-react";
+import { IconTag, IconEdit, IconPlus } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,17 +13,27 @@ import { Category } from "./types";
 
 interface CategoryCardProps {
   categories: Category[];
-  onEditCategory?: (category: Category) => void; // <-- callback prop
+  onEditCategory?: (category: Category) => void; 
+  onAddCategory?: () => void; // new prop
 }
 
-export function CategoryCard({ categories, onEditCategory }: CategoryCardProps) {
+export function CategoryCard({ categories, onEditCategory, onAddCategory }: CategoryCardProps) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <IconTag className="size-5" />
           Categories
         </CardTitle>
+        {onAddCategory && (
+          <Button 
+          variant="outline"
+          size="sm" 
+          onClick={onAddCategory}>
+            <IconPlus className="size-4 mr-2" />
+            Create Category
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {categories.length > 0 ? (
