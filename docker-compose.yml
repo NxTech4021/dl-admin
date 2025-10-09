@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web-frontend:
     build:
@@ -11,9 +9,12 @@ services:
       - "3030:3030"
     environment:
       - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     volumes:
       - .:/app
       - /app/node_modules
+      - /app/.next
     networks:
       - dlmobile_deuceleague # Use the same network as dl-mobile
 
