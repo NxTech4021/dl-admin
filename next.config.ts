@@ -33,14 +33,6 @@ const nextConfig: NextConfig = {
   },
   // STANDARD: Webpack optimizations that work for both dev and production
   webpack: (config, { dev, isServer }) => {
-    // Enable polling for Docker hot reload
-    if (dev) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-      };
-    }
-
     // Apply optimizations for both development and production
     if (!isServer) {
       config.optimization = {

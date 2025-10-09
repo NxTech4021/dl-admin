@@ -24,34 +24,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// === Generate dynamic mock data based on history range
-const generateChartData = (historyRange: 1 | 3 | 6) => {
-  const data = [];
-  const currentDate = new Date();
-  
-  // Generate data for the specified number of months (going backwards from current month)
-  for (let i = 0; i < historyRange; i++) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (historyRange - 1 - i), 1);
-    const monthStr = date.toISOString().slice(0, 7);
-    
-    // Generate realistic growth patterns with consistent seed for same month
-    const seed = date.getFullYear() * 12 + date.getMonth();
-    const random = (seed * 9301 + 49297) % 233280 / 233280; // Simple seeded random
-    
-    const baseUsers = 150 + i * 15 + Math.floor(random * 30);
-    const baseMembers = Math.floor(baseUsers * (0.45 + random * 0.15));
-    
-    data.push({
-      month: monthStr,
-      totalUsers: baseUsers,
-      payingMembers: baseMembers,
-    });
-  }
-  
-  return data;
-};
+// Static mock data for the last 12 months - realistic fluctuations for 100+ member app
+const chartData = [
+  { month: "2024-01", totalUsers: 145, payingMembers: 68 },
+  { month: "2024-02", totalUsers: 167, payingMembers: 72 },
+  { month: "2024-03", totalUsers: 189, payingMembers: 85 },
+  { month: "2024-04", totalUsers: 203, payingMembers: 91 },
+  { month: "2024-05", totalUsers: 196, payingMembers: 87 },
+  { month: "2024-07", totalUsers: 234, payingMembers: 108 },
+  { month: "2024-08", totalUsers: 229, payingMembers: 104 },
+  { month: "2024-09", totalUsers: 251, payingMembers: 118 },
+  { month: "2024-10", totalUsers: 267, payingMembers: 125 },
+  { month: "2024-11", totalUsers: 259, payingMembers: 121 },
+  { month: "2024-12", totalUsers: 284, payingMembers: 132 },
+];
 
-// === Chart configuration
 const chartConfig = {
   users: {
     label: "User Growth",
@@ -62,82 +49,39 @@ const chartConfig = {
   },
   payingMembers: {
     label: "Paying Members",
-    color: "#FACC15", // changed to yellow
+    color: "#10B981",
   },
 } satisfies ChartConfig;
 
-interface UserGrowthChartProps {
-  chartRange?: "monthly" | "average" | "thisWeek";
-  historyRange?: 1 | 3 | 6;
-}
-
-export function UserGrowthChart({
-  chartRange = "monthly",
-  historyRange = 3,
-}: UserGrowthChartProps) {
-  // Generate data based on history range
-  const chartData = React.useMemo(() => 
-    generateChartData(historyRange), 
-    [historyRange]
-  );
+export function UserGrowthChart() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeChart, setActiveChart] =
+    React.useState<keyof typeof chartConfig>("totalUsers");
+  const [timeRange, setTimeRange] = React.useState("12m");
 
   const formatMonth = (value: string) => {
-    // Handle special cases like "Week X", "Week of...", or other custom labels
-    if (value.includes("Week") || value.includes("This Week")) {
-      return value;
-    }
-    // For regular month strings, format as date
-    try {
-      const date = new Date(value + "-01");
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    } catch (e) {
-      return value; // Fallback to original value
-    }
+    const date = new Date(value + "-01");
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  // === Chart Range logic (monthly, average/week, thisWeek)
-  const transformedData = React.useMemo(() => {
-    if (chartRange === "average") {
-      // Calculate weekly averages (divide monthly data by ~4.3 weeks)
-      return chartData.map((item, index) => ({
-        ...item,
-        totalUsers: Math.round(item.totalUsers / 4.3),
-        payingMembers: Math.round(item.payingMembers / 4.3),
-        month: `Week ${index + 1}`,
-      }));
-    }
+  const filteredData = React.useMemo(() => {
+    let monthsToShow = 12;
 
-    if (chartRange === "thisWeek") {
-      // Show current week data (simulate current week activity)
-      const currentDate = new Date();
-      const weekStr = `Week of ${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-      
-      // Generate current week data based on latest trends
-      const latestMonth = chartData[chartData.length - 1] || { totalUsers: 200, payingMembers: 90 };
-      const weeklyUsers = Math.round(latestMonth.totalUsers / 4.3 * (0.8 + Math.random() * 0.4)); // Some weekly variation
-      const weeklyMembers = Math.round(latestMonth.payingMembers / 4.3 * (0.8 + Math.random() * 0.4));
-      
-      return [{
-        month: weekStr,
-        totalUsers: weeklyUsers,
-        payingMembers: weeklyMembers,
-      }];
-    }
+    if (timeRange === "6m") monthsToShow = 6;
+    if (timeRange === "3m") monthsToShow = 3;
 
-    // Default monthly
-    return chartData;
-  }, [chartRange, chartData]);
+    return chartData.slice(-monthsToShow);
+  }, [timeRange]);
 
   const total = React.useMemo(
     () => ({
-      totalUsers: transformedData[transformedData.length - 1]?.totalUsers ?? 0,
-      payingMembers:
-        transformedData[transformedData.length - 1]?.payingMembers ?? 0,
+      totalUsers: filteredData[filteredData.length - 1].totalUsers,
+      payingMembers: filteredData[filteredData.length - 1].payingMembers,
     }),
-    [transformedData]
+    [filteredData]
   );
 
   return (
@@ -146,24 +90,30 @@ export function UserGrowthChart({
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>User Growth Over Time</CardTitle>
           <CardDescription>
-            Showing {chartRange === "average"
-              ? "average per week"
-              : chartRange === "thisWeek"
-              ? "this week"
-              : "monthly"}{" "}
-            data for the past {historyRange} month
-            {historyRange > 1 ? "s" : ""}
+            Showing growth trends over selected time period
           </CardDescription>
         </div>
-
-        {/* Range info display */}
-        <div className="text-sm text-muted-foreground">
-          {chartRange === "average" ? "Weekly Average" : chartRange === "thisWeek" ? "Current Week" : "Monthly"} • {historyRange} month{historyRange > 1 ? "s" : ""}
-        </div>
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger
+            className="w-[160px] rounded-lg sm:ml-auto"
+            aria-label="Select a time range"
+          >
+            <SelectValue placeholder="Last 12 months" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="12m" className="rounded-lg">
+              Last 12 months
+            </SelectItem>
+            <SelectItem value="6m" className="rounded-lg">
+              Last 6 months
+            </SelectItem>
+            <SelectItem value="3m" className="rounded-lg">
+              Last 3 months
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
-
       <CardContent className="px-4 py-6 sm:px-8 sm:py-8">
-        {/* === Totals === */}
         <div className="grid gap-4 md:grid-cols-2 mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
@@ -176,24 +126,21 @@ export function UserGrowthChart({
           </div>
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4 text-yellow-500" />
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Paying Members</span>
             </div>
-            <div className="text-2xl font-bold text-yellow-500">
+            <div className="text-2xl font-bold">
               {total.payingMembers.toLocaleString()}
             </div>
           </div>
         </div>
-
-        {/* === Chart === */}
         <ChartContainer
-          key={`${chartRange}-${historyRange}`} // Force re-render when props change
           config={chartConfig}
           className="aspect-auto h-[450px] w-full"
         >
           <LineChart
             accessibilityLayer
-            data={transformedData}
+            data={filteredData}
             margin={{
               left: 20,
               right: 20,
@@ -222,29 +169,16 @@ export function UserGrowthChart({
                 <ChartTooltipContent
                   className="w-[180px]"
                   labelFormatter={(value) => {
-                    // Handle special cases like "Week X", "Week of...", or other custom labels
-                    if (value.includes("Week") || value.includes("This Week")) {
-                      return value;
-                    }
-                    // For regular month strings, format as date
-                    try {
-                      return new Date(value + "-01").toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      );
-                    } catch (e) {
-                      return value; // Fallback to original value
-                    }
+                    return new Date(value + "-01").toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    });
                   }}
                   formatter={(value, name) => {
                     const config =
                       chartConfig[name as keyof typeof chartConfig];
-                    const color =
-                      "color" in config ? config.color : "#374F35";
+                    const color = "color" in config ? config.color : "#374F35";
                     return [
                       <div className="flex items-center gap-2" key={name}>
                         <div
