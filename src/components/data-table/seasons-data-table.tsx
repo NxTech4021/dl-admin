@@ -47,8 +47,6 @@ import {
 } from "@/components/ui/table";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-
-
 export type SeasonsDataTableProps = {
   data: Season[];
   isLoading: boolean;
@@ -125,7 +123,10 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 // Define handlers outside of component to avoid scope issues
-const handleViewSeason = (seasonId: string, onViewSeason?: (id: string) => void) => {
+const handleViewSeason = (
+  seasonId: string,
+  onViewSeason?: (id: string) => void
+) => {
   if (onViewSeason) onViewSeason(seasonId);
 };
 
@@ -139,11 +140,9 @@ const handleDeleteSeason = async (seasonId: string) => {
   }
 
   try {
-    await axiosInstance.delete(
-     endpoints.season.delete(seasonId)
-    );
+    await axiosInstance.delete(endpoints.season.delete(seasonId));
     // Refresh the data after successful deletion
-    window.location.reload(); 
+    window.location.reload();
   } catch (error) {
     console.error("Failed to delete season:", error);
   }
@@ -286,9 +285,9 @@ const columns: ColumnDef<Season>[] = [
   },
   {
     id: "actions",
-    cell: ({ row, table  }) => {
+    cell: ({ row, table }) => {
       const season = row.original;
-     const onViewSeason = table.options.meta?.onViewSeason;
+      const onViewSeason = table.options.meta?.onViewSeason;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -332,9 +331,11 @@ const columns: ColumnDef<Season>[] = [
   },
 ];
 
-
-
-export function SeasonsDataTable({ data, isLoading, onViewSeason }: SeasonsDataTableProps) {
+export function SeasonsDataTable({
+  data,
+  isLoading,
+  onViewSeason,
+}: SeasonsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -354,7 +355,7 @@ export function SeasonsDataTable({ data, isLoading, onViewSeason }: SeasonsDataT
       columnFilters,
       globalFilter,
     },
-    meta: { onViewSeason }, 
+    meta: { onViewSeason },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

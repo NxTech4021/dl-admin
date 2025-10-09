@@ -54,7 +54,7 @@ export const endpoints = {
     // getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
   },
  season: {
-    create: "/api/season/create",
+    create: "/api/season/",
     getAll: "/api/season/",
     getById: (id: string) => `/api/season/${id}`,
     update: (id: string) => `/api/season/${id}`,
@@ -69,7 +69,6 @@ export const endpoints = {
   update: (id: string) => `/api/sponsor/${id}`,
   delete: (id: string) => `/api/sponsor/${id}`,
 },
-
   companies: {
     create: "/api/company/create",
     getAll: "/api/company/",
