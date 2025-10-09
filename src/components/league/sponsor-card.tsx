@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBuilding, IconPlus } from "@tabler/icons-react";
+import { IconBuilding, IconPlus, IconEdit } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +12,10 @@ import { Sponsor } from "./types";
 
 interface SponsorCardProps {
   sponsors: Sponsor[];
+  onEditSponsor?: (sponsor: Sponsor) => void; // callback when edit is clicked
 }
 
-export function SponsorCard({ sponsors }: SponsorCardProps) {
+export function SponsorCard({ sponsors, onEditSponsor }: SponsorCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -27,25 +28,44 @@ export function SponsorCard({ sponsors }: SponsorCardProps) {
         {sponsors.length > 0 ? (
           <div className="space-y-3">
             {sponsors.map((sponsor) => (
-              <div key={sponsor.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div
+                key={sponsor.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/20">
                     <IconBuilding className="size-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="font-medium">{sponsor.company?.name || sponsor.sponsoredName}</p>
+                    <p className="font-medium">
+                      {sponsor.company?.name || sponsor.sponsoredName}
+                    </p>
                     <p className="text-sm text-muted-foreground capitalize">
                       {sponsor.packageTier.toLowerCase()} tier
                     </p>
                   </div>
                 </div>
-                {sponsor.contractAmount && (
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      ${sponsor.contractAmount.toLocaleString()}
+
+                <div className="flex items-center gap-4">
+                  {sponsor.contractAmount && (
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        ${sponsor.contractAmount.toLocaleString()}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {onEditSponsor && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEditSponsor(sponsor)}
+                      className="flex items-center gap-1"
+                    >
+                      <IconEdit className="size-4" />
+                      Edit Info
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

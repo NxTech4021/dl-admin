@@ -1,6 +1,6 @@
 "use client";
 
-import { IconTag, IconPlus } from "@tabler/icons-react";
+import { IconTag, IconEdit, IconPlus } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,22 +13,36 @@ import { Category } from "./types";
 
 interface CategoryCardProps {
   categories: Category[];
+  onEditCategory?: (category: Category) => void; 
+  onAddCategory?: () => void; // new prop
 }
 
-export function CategoryCard({ categories }: CategoryCardProps) {
+export function CategoryCard({ categories, onEditCategory, onAddCategory }: CategoryCardProps) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <IconTag className="size-5" />
           Categories
         </CardTitle>
+        {onAddCategory && (
+          <Button 
+          variant="outline"
+          size="sm" 
+          onClick={onAddCategory}>
+            <IconPlus className="size-4 mr-2" />
+            Create Category
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {categories.length > 0 ? (
           <div className="space-y-3">
             {categories.map((category) => (
-              <div key={category.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div
+                key={category.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20">
                     <IconTag className="size-4 text-green-600" />
@@ -40,9 +54,21 @@ export function CategoryCard({ categories }: CategoryCardProps) {
                     </p>
                   </div>
                 </div>
-                <Badge variant={category.isActive ? "default" : "secondary"}>
-                  {category.isActive ? "Active" : "Inactive"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={category.isActive ? "default" : "secondary"}>
+                    {category.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                  {onEditCategory && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEditCategory(category)}
+                    >
+                      <IconEdit className="size-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -52,10 +78,6 @@ export function CategoryCard({ categories }: CategoryCardProps) {
             <p className="text-sm text-muted-foreground mb-4">
               No categories yet
             </p>
-            <Button variant="outline" size="sm">
-              <IconPlus className="size-4 mr-2" />
-              Create Category
-            </Button>
           </div>
         )}
       </CardContent>

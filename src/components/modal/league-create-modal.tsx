@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +49,9 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { SponsorCreateModal } from "./sponsor-create-modal";
+import { useSession } from "@/lib/auth-client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 
 interface LeagueCreateModalProps {
   open: boolean;
@@ -61,9 +63,9 @@ interface LeagueCreateModalProps {
 
 // Available options for dropdowns
 const SPORTS_OPTIONS = [
-  { value: "tennis", label: "Tennis" },
-  { value: "pickleball", label: "Pickleball" },
-  { value: "padel", label: "Padel" },
+  { value: "TENNIS", label: "Tennis" },
+  { value: "PICKLEBALL", label: "Pickleball" },
+  { value: "PADEL", label: "Padel" },
 ];
 
 const LOCATION_OPTIONS = [
@@ -80,55 +82,17 @@ const LOCATION_OPTIONS = [
 ];
 
 const FORMAT_OPTIONS = [
-  { value: "singles", label: "Singles" },
-  { value: "doubles", label: "Doubles" },
-  { value: "mixed", label: "Mixed Doubles" },
+  { value: "SINGLES", label: "Singles" },
+  { value: "DOUBLES", label: "Doubles" },
+  { value: "MIXED", label: "Mixed Doubles" },
 ];
 
 const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "upcoming", label: "Upcoming" },
+  // { value: "DRAFT", label: "Draft" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "UPCOMING", label: "Upcoming" },
 ];
 
-// function SponsorCreateModal({ open, onOpenChange, onSponsorCreated }: { open: boolean, onOpenChange: (open: boolean) => void, onSponsorCreated: (sponsor: any) => void }) {
-//   const [name, setName] = useState("");
-//   const [loading, setLoading] = useState(false);
-
-//   const handleCreate = async () => {
-//     setLoading(true);
-//     try {
-//       const res = await axiosInstance.post("/api/companies", { name });
-//       onSponsorCreated(res.data.company);
-//       onOpenChange(false);
-//       setName("");
-//       toast.success("Sponsor created!");
-//     } catch (err: any) {
-//       toast.error(err.response?.data?.message || "Failed to create sponsor");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <Dialog open={open} onOpenChange={onOpenChange}>
-//       <DialogContent>
-//         <DialogHeader>
-//           <DialogTitle>Create Sponsor</DialogTitle>
-//         </DialogHeader>
-//         <div className="space-y-2">
-//           <Label>Sponsor Name</Label>
-//           <Input value={name} onChange={e => setName(e.target.value)} />
-//         </div>
-//         <DialogFooter>
-//           <Button onClick={handleCreate} disabled={loading || !name}>
-//             {loading ? "Creating..." : "Create"}
-//           </Button>
-//         </DialogFooter>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
 
 
 export default function LeagueCreateModal({
@@ -141,13 +105,12 @@ export default function LeagueCreateModal({
   const [currentStep, setCurrentStep] = useState<"basic" | "details" | "preview">("basic");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sponsorLogoFile, setSponsorLogoFile] = useState<File | null>(null);
-  const [sponsorLogoPreview, setSponsorLogoPreview] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(false);
-  const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
+  const { data} = useSession();
 
+  const userId = data?.user.id;
+ 
   // Form data
   const [formData, setFormData] = useState({
     leagueName: "",
@@ -158,14 +121,6 @@ export default function LeagueCreateModal({
     entryFee: "",
     maxPlayers: "",
     divisions: "",
-    hasSponsor: false,
-    sponsorCompanyId: "",
-    sponsorName: "",
-    sponsorWebsite: "",
-    sponsorEmail: "",
-    sponsorLogo: "",
-    description: "",
-    rules: "",
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
     registrationDeadline: undefined as Date | undefined,
@@ -174,20 +129,35 @@ export default function LeagueCreateModal({
     matchFormat: "",
     maxTeams: "",
     genderRestriction: "OPEN",
+    sponsorOption: "existing" as "existing" | "new", 
+    existingSponsorId: "",                            
+
+    hasSponsor: false,
+    sponsorship: {
+    packageTier: "BRONZE" as TierType,
+    contractAmount: "",
+    sponsorRevenue: "",
+    sponsoredName: "",
+    // companyName: "",
+    // companyEmail: "", 
+    // companyWebsite: "", 
+     }
   });
 
 
 React.useEffect(() => {
+  console.log("hasSponsor value:", formData.hasSponsor);
   if (formData.hasSponsor) {
-    console.log("Attempting to fetch companies..."); // Log the start of the process
+    console.log("Attempting to fetch sponsors..."); // Log the start of the process
     setSponsorsLoading(true);
-    axiosInstance.get(endpoints.companies.getAll)
+    axiosInstance.get(endpoints.sponsors.getAll)
       .then(res => {
-        console.log("Companies fetched successfully, setting state.");
-        setSponsors(res.data.data || []);
+         console.log("response sponsor", res.data);
+  setSponsors(res.data || []);
+  console.log("sponsors length:", res.data?.length);
       })
       .catch((error) => {
-        console.error("Error fetching companies:", error); // Log any errors
+        console.error("Error fetching sponsors:", error); // Log any errors
         setSponsors([]);
       })
       .finally(() => setSponsorsLoading(false));
@@ -203,82 +173,11 @@ React.useEffect(() => {
   }
 }, [sponsors, formData.hasSponsor]);
 
-
-  // Pre-fill form data when template is selected
-  React.useEffect(() => {
-    if (selectedTemplate && open) {
-      setFormData({
-        leagueName: "", // User needs to provide custom name
-        sport: selectedTemplate.sport || "",
-        location: "", // User needs to provide location
-        status: "draft",
-        format: selectedTemplate.format || "",
-        entryFee: selectedTemplate.entryFee?.toString() || "",
-        maxPlayers: selectedTemplate.maxPlayers?.toString() || "",
-        divisions: selectedTemplate.divisions?.length?.toString() || "",
-        hasSponsor: !!selectedTemplate.sponsor,
-        sponsorName: selectedTemplate.sponsor || "",
-        sponsorWebsite: "",
-        sponsorEmail: "",
-        sponsorLogo: "",
-        description: selectedTemplate.description || "",
-        rules: selectedTemplate.rules?.join("\n") || "",
-        startDate: undefined, // User needs to set dates
-        endDate: undefined,
-        registrationDeadline: undefined,
-      });
-      toast.success(`Template "${selectedTemplate.name}" loaded! Please fill in the remaining details.`);
-    }
-  }, [selectedTemplate, open]);
-
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // File upload handlers
-  const handleFileUpload = (file: File) => {
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-    // Validate file type
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.");
-      return;
-    }
-
-    // Validate file size
-    if (file.size > maxFileSize) {
-      toast.error("File size too large. Please upload an image smaller than 5MB.");
-      return;
-    }
-
-    setSponsorLogoFile(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSponsorLogoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    toast.success("Logo uploaded successfully!");
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileUpload(e.target.files[0]);
-    }
-  };
-
-
-  const handleRemoveLogo = () => {
-    setSponsorLogoFile(null);
-    setSponsorLogoPreview("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
+  
   const resetModal = () => {
     setCurrentStep("basic");
     setFormData({
@@ -291,8 +190,7 @@ React.useEffect(() => {
       maxPlayers: "",
       divisions: "",
       hasSponsor: false,
-      sponsorCompanyId: "",
-      sponsorName: "",
+      sponsoredName: "",
       sponsorWebsite: "",
       sponsorEmail: "",
       sponsorLogo: "",
@@ -307,11 +205,6 @@ React.useEffect(() => {
       maxTeams: "",
       genderRestriction: "OPEN",
     });
-    setSponsorLogoFile(null);
-    setSponsorLogoPreview("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
     setError("");
     setLoading(false);
   };
@@ -334,57 +227,14 @@ React.useEffect(() => {
 
   const isBasicStepValid = formData.leagueName && formData.sport && formData.location;
   const isDetailsStepValid = formData.categoryName && formData.format &&
-    (!formData.hasSponsor || (formData.hasSponsor && formData.sponsorCompanyId));
+     (!formData.hasSponsor || (
+    formData.hasSponsor 
+  ));
   const isFormValid = isBasicStepValid && isDetailsStepValid;
 
-  // const handleCreateLeague = async () => {
-  //   if (!isFormValid) return;
-    
-  //   setLoading(true);
-  //   setError("");
+type TierType = "GOLD" | "SILVER" | "BRONZE" | "PLATINUM";
 
-  //   try {
-  //     // Validate dates
-  //     if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
-  //       throw new Error("End date must be after start date");
-  //     }
-
-  //     if (formData.registrationDeadline && formData.startDate && formData.registrationDeadline >= formData.startDate) {
-  //       throw new Error("Registration deadline must be before start date");
-  //     }
-
-  //     // TODO: Replace with actual API call
-  //     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-  //     // Simulate logo upload if file exists
-  //     let logoUrl = "";
-  //     if (sponsorLogoFile) {
-  //       // TODO: Upload file to server and get URL
-  //       logoUrl = `/uploads/sponsors/${Date.now()}-${sponsorLogoFile.name}`;
-  //     }
-      
-  //     const leagueDataWithLogo = {
-  //       ...formData,
-  //       sponsorLogo: logoUrl || formData.sponsorLogo,
-  //       sponsorLogoFile: sponsorLogoFile // Include file for parent component if needed
-  //     };
-      
-  //     console.log("Creating league:", leagueDataWithLogo);
-      
-  //     resetModal();
-  //     onOpenChange(false);
-  //     onLeagueCreated?.(leagueDataWithLogo); // Pass form data with logo to parent
-  //   } catch (err: any) {
-  //     const message = err.message || "Failed to create league";
-  //     toast.error(message);
-  //     setError(message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
- const handleCreateLeague = async () => {
+const handleCreateLeague = async () => {
   if (!isFormValid) return;
 
   setLoading(true);
@@ -402,61 +252,59 @@ React.useEffect(() => {
     const gameTypeMap: { [key: string]: string } = {
       "singles": "SINGLES",
       "doubles": "DOUBLES",
-      "mixed": "DOUBLES" // Mixed doubles is still doubles
+      "mixed": "DOUBLES"
     };
 
-    // Map status values to match backend enum
-    const statusMap: { [key: string]: string } = {
-      "draft": "UPCOMING",
-      "active": "ACTIVE", 
-      "upcoming": "UPCOMING"
-    };
-
-    // Map gender restriction values to match backend enum
-    const genderRestrictionMap: { [key: string]: string } = {
-      "open": "OPEN",
-      "male": "MALE",
-      "female": "FEMALE"
-    };
-
-    // Create league
-    const leagueResponse = await axiosInstance.post(endpoints.league.create, {
+     // Base league data
+    const leagueData: any = {
       name: formData.leagueName,
       location: formData.location,
       description: formData.description,
-      status: statusMap[formData.status] || "UPCOMING",
+      status: formData.status,
       sportType: sportTypeMap[formData.sport] || "TENNIS",
-      registrationType: "OPEN", // Default to open registration
+      registrationType: "OPEN",
       gameType: gameTypeMap[formData.format] || "SINGLES",
-      sponsorships: formData.hasSponsor && formData.sponsorCompanyId ? [{
-        companyId: formData.sponsorCompanyId,
-        packageTier: "BRONZE", // Default tier
-        createdById: null // Will be set by backend from auth
-      }] : []
-    });
+      createdById: userId,
+    };
 
-    const leagueId = leagueResponse.data.data.league.id;
+    // Add sponsorship if applicable
+    if (formData.hasSponsor) {
+      let sponsorName = "";
 
-    // Create category 
-    if (formData.categoryName) {
-      await axiosInstance.post(endpoints.categories.create, {
-        leagueId,
-        name: formData.categoryName,
-        matchFormat: formData.matchFormat || formData.format,
-        maxPlayers: formData.maxPlayers ? Number(formData.maxPlayers) : undefined,
-        maxTeams: formData.maxTeams ? Number(formData.maxTeams) : undefined,
-        genderRestriction: genderRestrictionMap[formData.genderRestriction] || "OPEN"
-      });
+      if (formData.sponsorOption === "existing") {
+        const existingSponsor = sponsors.find(s => s.id === formData.existingSponsorId);
+        sponsorName = existingSponsor?.sponsoredName || "";
+      } else {
+        sponsorName = formData.sponsorship.sponsoredName || "";
+      }
+
+      leagueData.sponsorships = [
+        {
+          packageTier: formData.sponsorship.packageTier,
+          contractAmount: formData.sponsorship.contractAmount || null,
+          sponsorRevenue: formData.sponsorship.sponsorRevenue || null,
+          sponsoredName: sponsorName,
+          isActive: true,
+          createdById: userId,
+        },
+      ];
     }
 
-    toast.success("League and category created successfully!");
-    resetModal();
-    onOpenChange(false);
-    onLeagueCreated?.(leagueResponse.data);
+    console.log("League data being sent to backend:", JSON.stringify(leagueData, null, 2));
+
+   
+    // Send request
+    const response = await axiosInstance.post(endpoints.league.create, leagueData);
+
+    if (response.data) {
+      toast.success("League created successfully!");
+      resetModal();
+      onOpenChange(false);
+      onLeagueCreated?.(response.data);
+    }
 
   } catch (err: any) {
-    const message =
-      err.response?.data?.message || err.message || "Something went wrong";
+    const message = err.response?.data?.message || err.message || "Failed to create league";
     setError(message);
     toast.error(message);
   } finally {
@@ -702,68 +550,164 @@ React.useEffect(() => {
         This league has a sponsor
       </Label>
     </div>
+ {formData.hasSponsor && (
+        <div className="space-y-4 pl-6 border-l-2 border-muted">
+          {/* Choose existing or new sponsor */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Sponsor Source</Label>
+            <RadioGroup
+              defaultValue={formData.sponsorOption || "existing"}
+              onValueChange={(value) => updateFormData("sponsorOption", value)}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="existing" id="existing" />
+                <Label htmlFor="existing">Use Existing Sponsor</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="new" id="new" />
+                <Label htmlFor="new">Create New Sponsor</Label>
+              </div>
+            </RadioGroup>
+          </div>
 
-    {formData.hasSponsor && (
-      <div className="space-y-4 pl-6 border-l-2 border-muted">
-        {sponsorsLoading ? (
-          <div>Loading sponsors...</div>
-        ) : Array.isArray(sponsors) && sponsors.length > 0 ? (
-          <div className="space-y-2">
-            <Label htmlFor="sponsorCompany" className="text-sm font-medium">
-              Select Sponsor *
-            </Label>
-            <Select
-              value={formData.sponsorCompanyId}
-              onValueChange={val => updateFormData("sponsorCompanyId", val)}
-            >
-              <SelectTrigger className="h-11 w-full">
-                <SelectValue placeholder="Select sponsor" />
-              </SelectTrigger>
-            <SelectContent
-  className="w-[var(--radix-select-trigger-width)] max-h-60 overflow-y-auto"
-  position="popper"
->
-                {Array.isArray(sponsors) && sponsors.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-                <div className="p-2 border-t text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-xs"
-                    onClick={() => setSponsorModalOpen(true)}
-                  >
-                    + Create new sponsor
-                  </Button>
-                </div>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div>No sponsors found.</div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSponsorModalOpen(true)}
-              size="sm"
-            >
-              + Create Sponsor
-            </Button>
-          </div>
-        )}
-      </div>
-    )}
-    <SponsorCreateModal
-      open={sponsorModalOpen}
-      onOpenChange={setSponsorModalOpen}
-      onSponsorCreated={sponsor => {
-        setSponsors(s => Array.isArray(s) ? [...s, sponsor] : [sponsor]);
-        updateFormData("sponsorCompanyId", sponsor.id);
-      }}
-    />
+          {/* Existing sponsor selection */}
+          {formData.sponsorOption === "existing" && (
+            <div className="space-y-2">
+              <Label htmlFor="existingSponsor" className="text-sm font-medium">
+                Select Existing Sponsor *
+              </Label>
+              <Select
+                value={formData.existingSponsorId}
+                onValueChange={(value) => updateFormData("existingSponsorId", value)}
+              >
+                <SelectTrigger className="h-11 w-full">
+                  <SelectValue placeholder={sponsorsLoading ? "Loading sponsors..." : "Select a sponsor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sponsors.length > 0 ? (
+                    sponsors.map((sponsor) => (
+                      <SelectItem key={sponsor.id} value={sponsor.id}>
+      {sponsor.sponsoredName}
+    </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem disabled value="none">
+                      {sponsorsLoading ? "Loading..." : "No sponsors found"}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* New sponsor creation form */}
+          {formData.sponsorOption === "new" && (
+            <div className="space-y-4">
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className="text-sm font-medium">
+                  Sponsor Name *
+                </Label>
+                <Input
+                  id="companyName"
+                  value={formData.sponsorship.sponsoredName}
+                  onChange={(e) =>
+                    updateFormData("sponsorship", {
+                      ...formData.sponsorship,
+                      sponsoredName: e.target.value,
+                    })
+                  }
+                  className="h-11"
+                />
+              </div>
+
+              {/* Package Tier */}
+              <div className="space-y-2">
+                <Label htmlFor="packageTier" className="text-sm font-medium">
+                  Sponsorship Tier *
+                </Label>
+                <Select
+                  value={formData.sponsorship.packageTier}
+                  onValueChange={(value) =>
+                    updateFormData("sponsorship", {
+                      ...formData.sponsorship,
+                      packageTier: value as TierType,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-11 w-full">
+                    <SelectValue placeholder="Select tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRONZE">Bronze</SelectItem>
+                    <SelectItem value="SILVER">Silver</SelectItem>
+                    <SelectItem value="GOLD">Gold</SelectItem>
+                    <SelectItem value="PLATINUM">Platinum</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Contract Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="contractAmount" className="text-sm font-medium">
+                  Contract Amount
+                </Label>
+                <Input
+                  id="contractAmount"
+                  type="number"
+                  value={formData.sponsorship.contractAmount}
+                  onChange={(e) =>
+                    updateFormData("sponsorship", {
+                      ...formData.sponsorship,
+                      contractAmount: e.target.value,
+                    })
+                  }
+                  className="h-11"
+                />
+              </div>
+
+            
+              {/* <div className="space-y-2">
+                <Label htmlFor="companyEmail" className="text-sm font-medium">
+                  Company Email
+                </Label>
+                <Input
+                  id="companyEmail"
+                  type="email"
+                  value={formData.sponsorship.companyEmail}
+                  onChange={(e) =>
+                    updateFormData("sponsorship", {
+                      ...formData.sponsorship,
+                      companyEmail: e.target.value,
+                    })
+                  }
+                  className="h-11"
+                />
+              </div>
+
+             
+              <div className="space-y-2">
+                <Label htmlFor="companyWebsite" className="text-sm font-medium">
+                  Company Website
+                </Label>
+                <Input
+                  id="companyWebsite"
+                  type="url"
+                  value={formData.sponsorship.companyWebsite}
+                  onChange={(e) =>
+                    updateFormData("sponsorship", {
+                      ...formData.sponsorship,
+                      companyWebsite: e.target.value,
+                    })
+                  }
+                  className="h-11"
+                />
+              </div> */}
+            </div> 
+          )}
+        </div>
+      )}
   </div>
 
                 {/* Description */}
@@ -942,50 +886,6 @@ React.useEffect(() => {
 </div>
               </div>
 
-              {/* Schedule Section */}
-              {/* <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">
-                    Schedule
-                  </span>
-                  <div className="h-px bg-border flex-1" />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
-                
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Registration Deadline
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-11",
-                            !formData.registrationDeadline && "text-muted-foreground"
-                          )}
-                        >
-                          <IconCalendar className="mr-2 h-4 w-4" />
-                          {formData.registrationDeadline
-                            ? format(formData.registrationDeadline, "MMM dd, yyyy")
-                            : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={formData.registrationDeadline}
-                          onSelect={(date) => updateFormData("registrationDeadline", date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
- 
-                </div>
-              </div> */}
 
               {/* Rules */}
               <div className="space-y-2">
@@ -1059,19 +959,13 @@ React.useEffect(() => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">
-                      Format & Fee
+                      Format
                     </span>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
                         {FORMAT_OPTIONS.find(f => f.value === formData.format)?.label}
                       </Badge>
                       <span className="text-sm text-muted-foreground">•</span>
-                      <div className="flex items-center gap-1">
-                        <IconCurrencyDollar className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm font-medium">
-                          RM {formData.entryFee}
-                        </span>
-                      </div>
                     </div>
                   </div>
 
@@ -1096,7 +990,7 @@ React.useEffect(() => {
                     </div>
                   )}
 
-                  {formData.hasSponsor && formData.sponsorName && (
+                  {formData.hasSponsor && formData.sponsoredName && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
                         Sponsor
@@ -1113,7 +1007,7 @@ React.useEffect(() => {
                         )}
                         <div className="text-right">
                           <Badge variant="secondary" className="text-xs">
-                            {formData.sponsorName}
+                            {formData.sponsoredName}
                           </Badge>
                           {formData.sponsorWebsite && (
                             <div className="text-xs text-muted-foreground mt-1">

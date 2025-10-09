@@ -23,6 +23,8 @@ export interface League {
   };
 }
 
+export type GenderRestriction = "OPEN" | "MALE" | "FEMALE";
+
 export interface Player {
   id: string;
   name: string;
@@ -65,9 +67,14 @@ export interface Season {
   regiDeadline: string;
   entryFee: number;
   description?: string;
-  sportType: string;
-  seasonType: string;
-  registeredUserCount: number;
+  category?: {
+    id: string;
+    name: string;
+  };
+  registeredUserCount?: number;
+  _count?: {
+    memberships: number;
+  };
   status: string;
   isActive: boolean;
   paymentRequired: boolean;
@@ -78,7 +85,7 @@ export interface Season {
 export interface Category {
   id: string;
   name: string;
-  genderRestriction: string;
+  genderRestriction: GenderRestriction;
   matchFormat?: string;
   maxPlayers?: number;
   maxTeams?: number;

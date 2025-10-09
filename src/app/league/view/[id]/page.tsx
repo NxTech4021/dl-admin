@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -32,6 +31,10 @@ import {
   Category, 
   Sponsor 
 } from "@/components/league/types";
+import { EditSponsorModal } from "@/components/modal/edit-sponsor-modal";
+import { CreateSponsorModal } from "@/components/modal/sponsor-create-modal";
+import { CreateCategoryModal } from "@/components/modal/create-category-modal";
+import { EditCategoryModal } from "@/components/modal/update-category-modal";
 
 // Location options for label mapping
 const LOCATION_OPTIONS = [
@@ -79,47 +82,193 @@ export default function LeagueViewPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  //Modals
+  const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
+  const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
+  const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  
+  const handleAddSponsor = () => setIsCreateSponsorOpen(true);
+const handleEditSponsor = (sponsor: Sponsor) => {
+  setSelectedSponsor(sponsor);
+  setIsEditSponsorOpen(true);
+};
+
+ 
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
+      const leagueData = apiData?.data?.league;
+
+      if (!leagueData) {
+        toast.error("League not found");
+        return;
+      }
+
+      // Update league data
+      setLeague({
+        id: leagueData.id,
+        name: leagueData.name,
+        sportType: leagueData.sportType,
+        location: leagueData.location,
+        status: leagueData.status,
+        joinType: leagueData.joinType,
+        gameType: leagueData.gameType,
+        createdAt: leagueData.createdAt,
+        updatedAt: leagueData.updatedAt,
+        description: leagueData.description,
+        memberCount: leagueData._count?.memberships || 0,
+        seasonCount: leagueData._count?.seasons || 0,
+        categoryCount: leagueData._count?.categories || 0,
+        createdBy: leagueData.createdBy,
+      });
+
+      // Update seasons
+      if (Array.isArray(leagueData.seasons)) {
+        const transformedSeasons = leagueData.seasons.map((season: any) => ({
+          id: season.id,
+          name: season.name,
+          startDate: season.startDate,
+          endDate: season.endDate,
+          regiDeadline: season.regiDeadline,
+          status: season.status,
+          isActive: season.status === 'ACTIVE',
+          category: season.category,
+          registeredUserCount: season._count?.memberships || 0,
+          _count: season._count
+        }));
+        setSeasons(transformedSeasons);
+      }
+
+      // Update categories
+      if (leagueData?.categories) {
+        setCategories(leagueData.categories);
+      }
+
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast.error("Failed to refresh data");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [leagueId]);
+
+  const handleCategoryCreated = useCallback(async () => {
+    setIsCreateCategoryOpen(false);
+    await refreshData();
+    toast.success("Category created successfully!");
+  }, [refreshData, setIsCreateCategoryOpen]);
+
+  const handleSeasonCreated = useCallback(async () => {
+    await refreshData();
+    toast.success("Season created successfully!");
+  }, [refreshData]);
+
+  const handleCategoryUpdated = useCallback(async () => {
+  setIsEditCategoryOpen(false);
+  await refreshData();
+  toast.success("Category updated successfully!");
+}, [refreshData]);
+
+  const handleSponsorCreated = useCallback(async () => {
+    setIsCreateSponsorOpen(false);
+    await refreshData();
+    toast.success("Sponsor created successfully!");
+  }, [refreshData, setIsCreateSponsorOpen]);
+
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Fetch league data from API
-        const response = await axiosInstance.get(endpoints.league.getById(leagueId));
-        
-        if (!response.data || !response.data.data || !response.data.data.league) {
+        const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
+        const leagueData = apiData?.data?.league;
+
+        console.log("league data", leagueData);
+        if (!leagueData) {
           toast.error("League not found");
           return;
         }
-        
-        const leagueData = response.data.data.league;
-        
-        // Transform the data to match our interface
-        const transformedLeague: League = {
-          id: leagueData.id,
-          name: leagueData.name,
-          sportType: leagueData.sportType,
-          location: leagueData.location,
-          status: leagueData.status,
-          joinType: leagueData.joinType,
-          gameType: leagueData.gameType,
-          createdAt: leagueData.createdAt,
-          updatedAt: leagueData.updatedAt,
-          description: leagueData.description,
-          memberCount: leagueData._count?.memberships || 0,
-          seasonCount: leagueData._count?.seasons || 0,
-          categoryCount: leagueData._count?.categories || 0,
-          createdBy: leagueData.createdBy,
-        };
-        
-        setLeague(transformedLeague);
-        
-        // TODO: Fetch additional data when endpoints are available
-        // For now, set empty arrays
-        setPlayers([]);
-        setDivisions([]);
-        setSeasons([]);
-        setCategories([]);
-        setSponsors([]);
+
+        // Set league
+        const {
+          id,
+          name,
+          sportType, 
+          location,
+          status,
+          joinType,
+          gameType, 
+          createdAt,
+          updatedAt,
+          description,
+          createdBy,
+          _count: { memberships = 0, seasons = 0, categories = 0 } = {},
+          sponsorships = [],
+          seasons: leagueSeasons = [],
+        } = leagueData;
+
+        setLeague({
+          id,
+          name,
+          sportType, 
+          location,
+          status,
+          joinType,
+          gameType, 
+          createdAt,
+          updatedAt,
+          description,
+          memberCount: memberships,
+          seasonCount: seasons,
+          categoryCount: categories,
+          createdBy,
+        });
+
+        // Set seasons from the league data
+        if (Array.isArray(leagueSeasons)) {
+          const transformedSeasons = leagueSeasons.map((season: any) => ({
+            id: season.id,
+            name: season.name,
+            startDate: season.startDate,
+            endDate: season.endDate,
+            regiDeadline: season.regiDeadline,
+            status: season.status,
+            isActive: season.status === 'ACTIVE',
+            category: season.category,
+            registeredUserCount: season._count?.memberships || 0,
+            _count: season._count,
+            entryFee: season.entryFee ?? 0,
+            paymentRequired: season.paymentRequired ?? false,
+            promoCodeSupported: season.promoCodeSupported ?? false,
+            withdrawalEnabled: season.withdrawalEnabled ?? false,
+          }));
+          setSeasons(transformedSeasons);
+        }
+
+        // Set categories from the API response
+        if (leagueData?.categories) {
+          setCategories(leagueData.categories);
+        }
+
+        // Set sponsors
+        const transformedSponsors = sponsorships.map((s: any) => ({
+          id: s.id,
+          packageTier: s.packageTier,
+          contractAmount: s.contractAmount,
+          sponsorRevenue: s.sponsorRevenue,
+          sponsoredName: s.sponsoredName,
+          isActive: s.isActive,
+          createdById: s.createdById,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        }));
+
+        setSponsors(transformedSponsors);
+
       } catch (error) {
         console.error("Error loading league data:", error);
         toast.error("Failed to load league details");
@@ -128,10 +277,9 @@ export default function LeagueViewPage() {
       }
     };
 
-    if (leagueId) {
-      loadData();
-    }
+    if (leagueId) loadData();
   }, [leagueId]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -173,13 +321,6 @@ export default function LeagueViewPage() {
   const calculateWinRate = (wins: number, losses: number) => {
     const total = wins + losses;
     return total > 0 ? Math.round((wins / total) * 100) : 0;
-  };
-
-  const handleSeasonCreated = () => {
-    // Refresh the seasons data when a new season is created
-    console.log("Season created, refreshing data...");
-    // TODO: Implement actual data refresh when season endpoints are available
-    // For now, this will just log the event
   };
 
   if (isLoading) {
@@ -266,8 +407,49 @@ export default function LeagueViewPage() {
                   formatDate={formatDate}
                   calculateWinRate={calculateWinRate}
                   onSeasonCreated={handleSeasonCreated}
-                />
+                  onEditSponsor={handleEditSponsor}
+                  onAddSponsor={handleAddSponsor}
+                  onAddCategory={() => setIsCreateCategoryOpen(true)}
+                  onEditCategory={(category: Category) => {
+                  setSelectedCategory(category);
+                  setIsEditCategoryOpen(true); 
+                  }}
+                  onLeagueUpdated={refreshData}
+              />
               </div>
+
+      <CreateSponsorModal
+        open={isCreateSponsorOpen}
+        onOpenChange={setIsCreateSponsorOpen}
+        leagueId={league?.id!}
+        onSponsorCreated={() => {
+          setIsCreateSponsorOpen(false);
+        }}
+      />
+
+      <EditSponsorModal
+        open={isEditSponsorOpen}
+        onOpenChange={setIsEditSponsorOpen}
+        sponsor={selectedSponsor}
+        onSponsorUpdated={() => {
+        setIsEditSponsorOpen(false);
+        }}
+      />
+
+     <CreateCategoryModal
+      open={isCreateCategoryOpen}
+      onOpenChange={setIsCreateCategoryOpen}
+      leagueId={league?.id || ""}
+      onCategoryCreated={handleCategoryCreated}
+    />
+
+      <EditCategoryModal
+        open={isEditCategoryOpen}
+        onOpenChange={setIsEditCategoryOpen}
+        category={selectedCategory}
+        leagueId={leagueId}
+        onCategoryUpdated={handleCategoryUpdated}
+      />
             </div>
           </div>
         </div>
