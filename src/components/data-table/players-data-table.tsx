@@ -9,10 +9,6 @@ import {
   IconEye,
   IconEdit,
   IconTrash,
-  IconFilter,
-  IconX,
-  IconChevronDown,
-  IconChevronUp,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -40,13 +36,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -317,63 +306,6 @@ export function PlayersDataTable() {
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  
-  // Filter states
-  const [sportFilter, setSportFilter] = React.useState<string>("all");
-  const [locationFilter, setLocationFilter] = React.useState<string>("all");
-  const [showFilters, setShowFilters] = React.useState<boolean>(false);
-
-  // Get unique sports and locations for filter options
-  const uniqueSports = React.useMemo(() => {
-    const sportsSet = new Set<string>();
-    data.forEach(player => {
-      if (player.sports && player.sports.length > 0) {
-        player.sports.forEach(sport => sportsSet.add(sport));
-      }
-    });
-    return Array.from(sportsSet).sort();
-  }, [data]);
-
-  const uniqueLocations = React.useMemo(() => {
-    const locationsSet = new Set<string>();
-    data.forEach(player => {
-      if (player.area) {
-        locationsSet.add(player.area);
-      }
-    });
-    return Array.from(locationsSet).sort();
-  }, [data]);
-
-  // Filter data based on selected filters
-  const filteredData = React.useMemo(() => {
-    let filtered = data;
-
-    // Apply sport filter
-    if (sportFilter !== "all") {
-      filtered = filtered.filter(player => 
-        player.sports && player.sports.includes(sportFilter)
-      );
-    }
-
-    // Apply location filter
-    if (locationFilter !== "all") {
-      filtered = filtered.filter(player => 
-        player.area === locationFilter
-      );
-    }
-
-    return filtered;
-  }, [data, sportFilter, locationFilter]);
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSportFilter("all");
-    setLocationFilter("all");
-    setGlobalFilter("");
-  };
-
-  // Check if any filters are active
-  const hasActiveFilters = sportFilter !== "all" || locationFilter !== "all" || globalFilter !== "";
 
   React.useEffect(() => {
     const fetchPlayers = async () => {
@@ -400,7 +332,7 @@ export function PlayersDataTable() {
   }, []);
 
   const table = useReactTable({
-    data: filteredData,
+    data,
     columns,
     state: {
       sorting,
@@ -426,118 +358,22 @@ export function PlayersDataTable() {
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="px-4 lg:px-6 space-y-4">
-        {/* Search Bar and Filter Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Search players by name, email, or area..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-80"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`${hasActiveFilters ? "border-primary bg-primary/10" : ""}`}
-            >
-              <IconFilter className="size-4 mr-2" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {(sportFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0)}
-                </Badge>
-              )}
-              {showFilters ? (
-                <IconChevronUp className="size-4 ml-2" />
-              ) : (
-                <IconChevronDown className="size-4 ml-2" />
-              )}
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="text-sm text-muted-foreground">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} player(s) selected
-            </div>
+      {/* Search and Selection Info */}
+      <div className="flex items-center justify-between px-4 lg:px-6">
+        <div className="flex items-center space-x-2">
+          <Input
+            placeholder="Search players by name, email, or area..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="w-80"
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} player(s) selected
           </div>
         </div>
-
-        {/* Filter Controls - Collapsible */}
-        {showFilters && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg border animate-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2">
-            </div>
-            
-            {/* Sport Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sport:</span>
-              <Select value={sportFilter} onValueChange={setSportFilter}>
-                <SelectTrigger className={`w-[140px] ${sportFilter !== "all" ? "border-primary" : ""}`}>
-                  <SelectValue placeholder="All Sports" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sports</SelectItem>
-                  {uniqueSports.map((sport) => (
-                    <SelectItem key={sport} value={sport} className="capitalize">
-                      {sport}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {sportFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs">
-                  {sportFilter}
-                </Badge>
-              )}
-            </div>
-
-            {/* Location Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Location:</span>
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger className={`w-[140px] ${locationFilter !== "all" ? "border-primary" : ""}`}>
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {uniqueLocations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {locationFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs">
-                  {locationFilter}
-                </Badge>
-              )}
-            </div>
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-2 lg:px-3"
-              >
-                <IconX className="size-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
-
-            {/* Active Filters Count */}
-            {hasActiveFilters && (
-              <div className="text-sm text-muted-foreground">
-                Showing {filteredData.length} of {data.length} players
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Table Container */}

@@ -20,8 +20,6 @@ export function NavDocuments({
     name: string;
     url: string;
     icon: Icon;
-    hasNotification?: boolean;    
-    notificationCount?: number;     
   }[];
 }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,26 +33,11 @@ export function NavDocuments({
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild isActive={pathname === item.url}>
-              <Link
-                href={item.url}
-                className="flex items-center justify-between w-full"
-              >
-                <div className="flex items-center gap-2">
-                  <item.icon />
-                  <span>{item.name}</span>
-                </div>
-
-              
-                {item.notificationCount ? (
-                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                    {item.notificationCount}
-                  </span>
-                ) : item.hasNotification ? (
-                  <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />
-                ) : null}
+              <Link href={item.url}>
+                <item.icon />
+                <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>
-
             {/* <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction

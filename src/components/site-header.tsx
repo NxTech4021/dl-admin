@@ -72,7 +72,16 @@ export function SiteHeader({
       </div>
 
       
-     
+      <div className="flex items-center gap-3 pr-4">
+        <Link
+          href="/notifications"
+          className="relative flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors duration-150 hover:bg-accent focus:outline-none"
+        >
+          <IconBell className="h-5 w-5" />
+         
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+        </Link>
+      </div>
     </header>
   );
 }
