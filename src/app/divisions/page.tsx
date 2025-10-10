@@ -26,7 +26,7 @@ export default function Page() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleSeasonCreated = () => {
+  const handleDivisionCreated = () => {
     setRefreshKey(prev => prev + 1);
   };
 
@@ -68,7 +68,7 @@ export default function Page() {
                         <DivisionCreateModal
                           open={isCreateModalOpen}
                           onOpenChange={setIsCreateModalOpen}
-                          onSeasonCreated={handleSeasonCreated}
+                          onDivisionCreated={handleDivisionCreated}
                         >
                           <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                             <IconPlus className="mr-2 size-4" />

@@ -35,11 +35,30 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
+type DivisionBase = {
+  id: string;
+  seasonId: string;
+  name: string;
+  description?: string | null;
+  threshold?: number | null;
+  divisionLevel: "beginner" | "intermediate" | "advanced";
+  gameType: "singles" | "doubles";
+  genderCategory?: "male" | "female" | "mixed" | null;
+  maxSingles?: number | null;
+  maxDoublesTeams?: number | null;
+  autoAssignmentEnabled?: boolean;
+  isActive?: boolean;
+  prizePoolTotal?: number | null;
+  sponsoredDivisionName?: string | null;
+};
+
 type DivisionCreateModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children?: React.ReactNode;
   onDivisionCreated?: () => void;
+  mode?: "create" | "edit";
+  division?: DivisionBase | null;
 };
 
 const divisionSchema = z
@@ -86,6 +105,8 @@ export default function DivisionCreateModal({
   onOpenChange,
   children,
   onDivisionCreated,
+  mode = "create",
+  division,
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
@@ -123,6 +144,7 @@ export default function DivisionCreateModal({
 
   const gameType = watch("gameType");
   const formValues = watch();
+  const isEditMode = mode === "edit";
 
   useEffect(() => {
     // fetch seasons
@@ -147,11 +169,51 @@ export default function DivisionCreateModal({
     if (open) fetchSeasons();
   }, [open]);
 
-  const resetModal = () => {
+  const resetModal = React.useCallback(() => {
     setCurrentStep("form");
     reset();
     setError("");
-  };
+  }, [reset]);
+
+  useEffect(() => {
+    if (open && isEditMode && division) {
+      setCurrentStep("form");
+      reset({
+        name: division.name ?? "",
+        seasonId: division.seasonId ?? "",
+        divisionLevel: division.divisionLevel ?? "beginner",
+        gameType: division.gameType ?? "singles",
+        genderCategory:
+          (division.genderCategory as DivisionFormValues["genderCategory"]) ??
+          "male",
+        maxSinglesPlayers:
+          division.maxSingles !== undefined && division.maxSingles !== null
+            ? division.maxSingles
+            : undefined,
+        maxDoublesTeams:
+          division.maxDoublesTeams !== undefined &&
+          division.maxDoublesTeams !== null
+            ? division.maxDoublesTeams
+            : undefined,
+        autoAssignmentEnabled: Boolean(division.autoAssignmentEnabled),
+        isActive:
+          division.isActive !== undefined ? division.isActive : true,
+        prizePoolTotal:
+          division.prizePoolTotal !== undefined &&
+          division.prizePoolTotal !== null
+            ? Number(division.prizePoolTotal)
+            : undefined,
+        sponsorName: division.sponsoredDivisionName ?? "",
+        description: division.description ?? "",
+        threshold:
+          division.threshold !== undefined && division.threshold !== null
+            ? division.threshold
+            : undefined,
+      });
+    }
+    if (!open) {
+      resetModal();
+    }  }, [open, isEditMode, division, resetModal]);
 
   const handleNextToPreview = async () => {
     const valid = await trigger(); // triggers validation for all fields
@@ -180,19 +242,38 @@ export default function DivisionCreateModal({
         isActive: Boolean(data.isActive),
       };
 
-      if (data.maxSinglesPlayers)
-        payload.maxSinglesPlayers = data.maxSinglesPlayers;
-      if (data.maxDoublesTeams) payload.maxDoublesTeams = data.maxDoublesTeams;
-      if (data.prizePoolTotal !== undefined && data.prizePoolTotal !== null)
-        payload.prizePoolTotal = data.prizePoolTotal;
-      if (data.sponsorName) payload.sponsorName = data.sponsorName;
-      if (data.description) payload.description = data.description;
-      if (data.threshold !== undefined && data.threshold !== null)
-        payload.threshold = data.threshold;
+      const toNumberOrNull = (value: unknown) => {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? null : parsed;
+      };
 
-      const res = await axiosInstance.post(endpoints.division.create, payload);
-      console.log("data", payload);
-      toast.success(res.data?.message ?? "Division created");
+      payload.maxSinglesPlayers = toNumberOrNull(data.maxSinglesPlayers);
+      payload.maxDoublesTeams = toNumberOrNull(data.maxDoublesTeams);
+      payload.prizePoolTotal = toNumberOrNull(data.prizePoolTotal);
+      payload.threshold = toNumberOrNull(data.threshold);
+      payload.sponsorName =
+        data.sponsorName && data.sponsorName.trim().length > 0
+          ? data.sponsorName.trim()
+          : null;
+      payload.description =
+        data.description && data.description.trim().length > 0
+          ? data.description.trim()
+          : null;
+
+      let res;
+      if (isEditMode && division) {
+        res = await axiosInstance.put(
+          endpoints.division.update(division.id),
+          payload
+        );
+        toast.success(res.data?.message ?? "Division updated");
+      } else {
+        res = await axiosInstance.post(endpoints.division.create, payload);
+        toast.success(res.data?.message ?? "Division created");
+      }
       resetModal();
       onOpenChange(false);
       onDivisionCreated?.();
@@ -229,12 +310,20 @@ export default function DivisionCreateModal({
               )}
             </div>
             {currentStep === "form"
-              ? "Create New Division"
+              ? isEditMode
+                ? "Edit Division"
+                : "Create New Division"
+              : isEditMode
+              ? "Confirm Updates"
               : "Confirm Division"}
           </DialogTitle>
           <DialogDescription className="text-base">
             {currentStep === "form"
-              ? "Set up a new division and link it to a season."
+              ? isEditMode
+                ? "Update division settings and linked season."
+                : "Set up a new division and link it to a season."
+              : isEditMode
+              ? "Review the changes before updating this division."
               : "Review division details before creating."}
           </DialogDescription>
         </DialogHeader>
@@ -712,7 +801,7 @@ export default function DivisionCreateModal({
                 className="flex-1 sm:flex-none min-w-[140px]"
               >
                 <IconArrowRight className="mr-2 h-4 w-4" />
-                Review Details
+                {isEditMode ? "Review Changes" : "Review Details"}
               </Button>
             </>
           ) : (
@@ -737,12 +826,12 @@ export default function DivisionCreateModal({
                 {loading ? (
                   <>
                     <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
-                    Creating...
+                    {isEditMode ? "Saving..." : "Creating..."}
                   </>
                 ) : (
                   <>
                     <IconCategory className="mr-2 h-4 w-4" />
-                    Create Division
+                    {isEditMode ? "Save Changes" : "Create Division"}
                   </>
                 )}
               </Button>
