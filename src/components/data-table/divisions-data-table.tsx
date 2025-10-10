@@ -84,6 +84,8 @@ export const divisionSchema = z.object({
   genderCategory: genderCategoryEnum,
   maxSingles: z.number().int().nullable().optional(),
   maxDoublesTeams: z.number().int().nullable().optional(),
+  currentSinglesCount: z.number().int().nullable().optional(),
+  currentDoublesCount: z.number().int().nullable().optional(),
   autoAssignmentEnabled: z.boolean().optional().default(false),
   isActive: z.boolean().default(true),
   prizePoolTotal: z.number().nullable().optional(),
@@ -115,6 +117,9 @@ const formatCurrency = (value?: number | null) =>
 
 const renderValue = (value: unknown) =>
   value === null || value === undefined || value === "" ? "-" : value;
+
+const formatCount = (value?: number | null) =>
+  value === null || value === undefined ? "-" : value;
 
 const DetailRow = ({
   label,
@@ -296,36 +301,25 @@ export function DivisionsDataTable() {
         cell: ({ row }) => <span>{row.original.season.name ?? "-"}</span>,
       },
       {
-        accessorKey: "gameType",
-        header: "Game Type",
-        cell: ({ row }) => (
-          <span className="capitalize">{row.original.gameType}</span>
-        ),
-      },
-      {
-        accessorKey: "genderCategory",
-        header: "Gender",
-        cell: ({ row }) => (
-          <span className="capitalize">
-            {row.original.genderCategory ?? "-"}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "maxSingles",
-        header: "Max Singles Players",
-        cell: ({ row }) =>
-          row.original.gameType === "singles"
-            ? row.original.maxSingles ?? "-"
-            : "-",
-      },
-      {
-        accessorKey: "maxDoublesTeams",
-        header: "Max Doubles Teams",
-        cell: ({ row }) =>
-          row.original.gameType === "doubles"
-            ? row.original.maxDoublesTeams ?? "-"
-            : "-",
+        id: "composition",
+        header: "Division Details",
+        cell: ({ row }) => {
+          const division = row.original;
+          return (
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="font-medium capitalize">
+                {division.divisionLevel}
+              </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="capitalize">{division.gameType}</span>
+                <span>•</span>
+                <span className="capitalize">
+                  {division.genderCategory ?? "Any gender"}
+                </span>
+              </div>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "threshold",
@@ -333,15 +327,68 @@ export function DivisionsDataTable() {
         cell: ({ row }) => row.original.threshold ?? "-",
       },
       {
-        accessorKey: "isActive",
-        header: "Active",
+        id: "capacity",
+        header: "Capacity",
+        cell: ({ row }) => {
+          const division = row.original;
+          const singlesInfo =
+            division.gameType !== "doubles" ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Singles</span>
+                <span className="text-sm font-medium">
+                  {formatCount(division.currentSinglesCount)} /{" "}
+                  {renderValue(division.maxSingles)}
+                </span>
+              </div>
+            ) : null;
+          const doublesInfo =
+            division.gameType !== "singles" ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Doubles</span>
+                <span className="text-sm font-medium">
+                  {formatCount(division.currentDoublesCount)} /{" "}
+                  {renderValue(division.maxDoublesTeams)}
+                </span>
+              </div>
+            ) : null;
+
+          return (
+            <div className="flex flex-col gap-1">
+              {singlesInfo}
+              {doublesInfo}
+            </div>
+          );
+        },
+      },
+      {
+        id: "sponsor",
+        header: "Sponsor & Prize",
         cell: ({ row }) => (
-          <Badge
-            variant={row.original.isActive ? "outline" : "default"}
-            className="capitalize"
-          >
-            {row.original.isActive ? "Yes" : "No"}
-          </Badge>
+          <div className="flex flex-col gap-1 text-sm">
+            <span>{renderValue(row.original.sponsoredDivisionName)}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatCurrency(row.original.prizePoolTotal)}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant={row.original.isActive ? "outline" : "default"}
+              className="capitalize"
+            >
+              {row.original.isActive ? "Active" : "Inactive"}
+            </Badge>
+            <Badge
+              variant={row.original.autoAssignmentEnabled ? "secondary" : "outline"}
+            >
+              {row.original.autoAssignmentEnabled ? "Auto assign" : "Manual"}
+            </Badge>
+          </div>
         ),
       },
       {
@@ -579,6 +626,22 @@ export function DivisionsDataTable() {
                     viewDivision.gameType === "singles"
                       ? `${renderValue(viewDivision.maxSingles)} players`
                       : `${renderValue(viewDivision.maxDoublesTeams)} teams`
+                  }
+                />
+                <DetailRow
+                  label="Current singles"
+                  value={
+                    viewDivision.gameType === "singles"
+                      ? formatCount(viewDivision.currentSinglesCount)
+                      : "-"
+                  }
+                />
+                <DetailRow
+                  label="Current doubles"
+                  value={
+                    viewDivision.gameType === "doubles"
+                      ? formatCount(viewDivision.currentDoublesCount)
+                      : "-"
                   }
                 />
                 <DetailRow
