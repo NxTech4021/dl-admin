@@ -31,8 +31,8 @@ export const seasonSchema = z.object({
   sportType: z.string().nullable().optional(),
   seasonType: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
+  startDate: z.coerce.date().nullable().optional(),
+  endDate: z.coerce.date().nullable().optional(),
   regiDeadline: z.coerce.date().nullable().optional(),
   status: z
     .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"])
