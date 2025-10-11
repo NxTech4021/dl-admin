@@ -95,9 +95,11 @@ export interface Category {
   updatedAt: string;
 }
 
+export type TierType = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
+
 export interface Sponsor {
   id: string;
-  packageTier: string;
+  packageTier: TierType;
   contractAmount?: number;
   sponsorRevenue?: number;
   sponsoredName?: string;

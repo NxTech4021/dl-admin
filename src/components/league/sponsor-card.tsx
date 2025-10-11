@@ -25,20 +25,32 @@ interface SponsorCardProps {
   sponsors: Sponsor[];
   onEditSponsor?: (sponsor: Sponsor) => void; 
   onDeleteSponsor?: (sponsorId: string) => void;
+  onAddSponsor?: () => void; 
 }
 
 export function SponsorCard({ 
   sponsors, 
   onEditSponsor, 
   onDeleteSponsor,
+  onAddSponsor, 
 }: SponsorCardProps) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <IconBuilding className="size-5" />
           Sponsors
         </CardTitle>
+        {onAddSponsor && (
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={onAddSponsor}
+          >
+            <IconPlus className="size-4 mr-2" />
+            Create Sponsor
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {sponsors.length > 0 ? (
@@ -118,10 +130,6 @@ export function SponsorCard({
             <p className="text-sm text-muted-foreground mb-4">
               No sponsors yet
             </p>
-            <Button variant="outline" size="sm">
-              <IconPlus className="size-4 mr-2" />
-              Add Sponsor
-            </Button>
           </div>
         )}
       </CardContent>

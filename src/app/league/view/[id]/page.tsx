@@ -104,7 +104,6 @@ const handleEditSponsor = (sponsor: Sponsor) => {
       const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
       const leagueData = apiData?.data?.league;
 
-      console.log("League data", leagueData)
       if (!leagueData) {
         toast.error("League not found");
         return;
@@ -148,6 +147,22 @@ const handleEditSponsor = (sponsor: Sponsor) => {
       // Update categories
       if (leagueData?.categories) {
         setCategories(leagueData.categories);
+      }
+
+      // Update sponsors
+      if (Array.isArray(leagueData.sponsorships)) {
+        const transformedSponsors = leagueData.sponsorships.map((s: any) => ({
+          id: s.id,
+          packageTier: s.packageTier,
+          contractAmount: s.contractAmount,
+          sponsorRevenue: s.sponsorRevenue,
+          sponsoredName: s.sponsoredName,
+          isActive: s.isActive,
+          createdById: s.createdById,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        }));
+        setSponsors(transformedSponsors);
       }
 
     } catch (error) {
@@ -503,9 +518,7 @@ const handleDeleteCategory = async (categoryId: string) => {
         open={isCreateSponsorOpen}
         onOpenChange={setIsCreateSponsorOpen}
         leagueId={league?.id!}
-        onSponsorCreated={() => {
-          setIsCreateSponsorOpen(false);
-        }}
+        onSponsorCreated={handleSponsorCreated} 
       />
 
       <EditSponsorModal

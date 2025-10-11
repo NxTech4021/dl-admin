@@ -150,6 +150,7 @@ export function LeagueTabs({
 
             <SponsorCard 
             sponsors={sponsors} 
+            onAddSponsor={onAddSponsor} 
             onEditSponsor={onEditSponsor} 
             onDeleteSponsor={onDeleteSponsor}
             />
