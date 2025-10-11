@@ -281,6 +281,32 @@ const handleEditSponsor = (sponsor: Sponsor) => {
   }, [leagueId]);
 
 
+const handleDeleteSponsor = async (sponsorId: string) => {
+  try {
+    await axiosInstance.delete(
+      endpoints.sponsors.delete(sponsorId)
+    );
+    toast.success("Sponsor removed");
+    setSponsors((prev) => prev.filter((s) => s.id !== sponsorId));
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete sponsor");
+  }
+};
+
+const handleDeleteCategory = async (categoryId: string) => {
+  try {
+    await axiosInstance.delete(endpoints.categories.delete(categoryId));
+    toast.success("Category deleted successfully");
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete category");
+  }
+};
+
+
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -409,6 +435,8 @@ const handleEditSponsor = (sponsor: Sponsor) => {
                   onSeasonCreated={handleSeasonCreated}
                   onEditSponsor={handleEditSponsor}
                   onAddSponsor={handleAddSponsor}
+                  onDeleteCategory={handleDeleteCategory} 
+                  onDeleteSponsor={handleDeleteSponsor} 
                   onAddCategory={() => setIsCreateCategoryOpen(true)}
                   onEditCategory={(category: Category) => {
                   setSelectedCategory(category);

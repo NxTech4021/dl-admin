@@ -58,6 +58,9 @@ interface LeagueTabsProps {
   calculateWinRate: CalculateWinRateFunction;
   onSeasonCreated?: () => void;
   onAddSponsor?: () => void;
+  onDeleteCategory?: (categoryId: string) => void; 
+  onDeleteSeason?: (seasonId: string) => void;    
+  onDeleteSponsor?: (sponsorId: string) => void; 
   onEditSponsor?: (sponsor: Sponsor) => void;
   onAddCategory?: () => void;
   onEditCategory: (category: Category) => void;
@@ -81,7 +84,10 @@ export function LeagueTabs({
   onEditSponsor,
   onAddCategory,
   onEditCategory,
-  onLeagueUpdated
+  onLeagueUpdated,
+  onDeleteCategory,
+  onDeleteSeason,
+  onDeleteSponsor
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -142,7 +148,11 @@ export function LeagueTabs({
               calculateWinRate={calculateWinRate}
             />
 
-            <SponsorCard sponsors={sponsors} onEditSponsor={onEditSponsor} />
+            <SponsorCard 
+            sponsors={sponsors} 
+            onEditSponsor={onEditSponsor} 
+            onDeleteSponsor={onDeleteSponsor}
+            />
 
          
            
@@ -150,6 +160,7 @@ export function LeagueTabs({
                 categories={categories}
                 onEditCategory={onEditCategory}
                 onAddCategory={onAddCategory}
+                onDeleteCategory={onDeleteCategory}
               />
 
             <SeasonCard
@@ -158,6 +169,7 @@ export function LeagueTabs({
               categories={categories} 
               formatDate={formatDate}
               onSeasonCreated={onSeasonCreated}
+              onDeleteSeason={onDeleteSponsor}
             />
           </div>
         </div>

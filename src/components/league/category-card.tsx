@@ -1,6 +1,6 @@
 "use client";
 
-import { IconTag, IconEdit, IconPlus } from "@tabler/icons-react";
+import { IconTag, IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,15 +9,32 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Category } from "./types";
 
 interface CategoryCardProps {
   categories: Category[];
   onEditCategory?: (category: Category) => void; 
   onAddCategory?: () => void; // new prop
+  onDeleteCategory?: (categoryId: string) => void;
 }
 
-export function CategoryCard({ categories, onEditCategory, onAddCategory }: CategoryCardProps) {
+export function CategoryCard({
+  categories,
+  onEditCategory,
+  onAddCategory,
+  onDeleteCategory,
+}: CategoryCardProps) {
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
@@ -67,6 +84,32 @@ export function CategoryCard({ categories, onEditCategory, onAddCategory }: Cate
                       <IconEdit className="size-4 mr-1" />
                       Edit
                     </Button>
+                  )}
+                  {onDeleteCategory && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                          <IconTrash className="size-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this category? This will also affect any seasons using this category.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground"
+                            onClick={() => onDeleteCategory(category.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>
