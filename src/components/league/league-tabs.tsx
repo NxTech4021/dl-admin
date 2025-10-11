@@ -59,7 +59,7 @@ interface LeagueTabsProps {
   onSeasonCreated?: () => void;
   onAddSponsor?: () => void;
   onDeleteCategory?: (categoryId: string) => void; 
-  onDeleteSeason?: (seasonId: string) => void;    
+  onDeleteSeason?: (seasonId: string) => Promise<void>;
   onDeleteSponsor?: (sponsorId: string) => void; 
   onEditSponsor?: (sponsor: Sponsor) => void;
   onAddCategory?: () => void;
@@ -165,11 +165,11 @@ export function LeagueTabs({
 
             <SeasonCard
               seasons={seasons}
-              leagueId={league?.id!}
+              leagueId={league.id}
               categories={categories} 
               formatDate={formatDate}
               onSeasonCreated={onSeasonCreated}
-              onDeleteSeason={onDeleteSponsor}
+              onDeleteSeason={onDeleteSeason}  // Pass the handler down
             />
           </div>
         </div>

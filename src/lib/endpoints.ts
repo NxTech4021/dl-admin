@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_HOST_URL,
@@ -6,10 +6,13 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.response.use(
   (res) => res,
-  (error) =>
-    Promise.reject(
-      (error.response && error.response.data) || "Something went wrong"
-    )
+  // (error) =>
+  //   Promise.reject(
+  //     (error.response && error.response.data) || "Something went wrong"
+  //   )
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
 );
 
 export default axiosInstance;
