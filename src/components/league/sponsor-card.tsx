@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBuilding, IconPlus, IconEdit } from "@tabler/icons-react";
+import { IconBuilding, IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,21 +8,49 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Sponsor } from "./types";
 
 interface SponsorCardProps {
   sponsors: Sponsor[];
-  onEditSponsor?: (sponsor: Sponsor) => void; // callback when edit is clicked
+  onEditSponsor?: (sponsor: Sponsor) => void; 
+  onDeleteSponsor?: (sponsorId: string) => void;
+  onAddSponsor?: () => void; 
 }
 
-export function SponsorCard({ sponsors, onEditSponsor }: SponsorCardProps) {
+export function SponsorCard({ 
+  sponsors, 
+  onEditSponsor, 
+  onDeleteSponsor,
+  onAddSponsor, 
+}: SponsorCardProps) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <IconBuilding className="size-5" />
           Sponsors
         </CardTitle>
+        {onAddSponsor && (
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={onAddSponsor}
+          >
+            <IconPlus className="size-4 mr-2" />
+            Create Sponsor
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {sponsors.length > 0 ? (
@@ -65,6 +93,33 @@ export function SponsorCard({ sponsors, onEditSponsor }: SponsorCardProps) {
                       Edit Info
                     </Button>
                   )}
+
+                    {onDeleteSponsor && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                          <IconTrash className="size-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Sponsor</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this sponsor? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground"
+                            onClick={() => onDeleteSponsor(sponsor.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </div>
             ))}
@@ -75,10 +130,6 @@ export function SponsorCard({ sponsors, onEditSponsor }: SponsorCardProps) {
             <p className="text-sm text-muted-foreground mb-4">
               No sponsors yet
             </p>
-            <Button variant="outline" size="sm">
-              <IconPlus className="size-4 mr-2" />
-              Add Sponsor
-            </Button>
           </div>
         )}
       </CardContent>

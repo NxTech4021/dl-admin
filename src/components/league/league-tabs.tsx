@@ -58,10 +58,15 @@ interface LeagueTabsProps {
   calculateWinRate: CalculateWinRateFunction;
   onSeasonCreated?: () => void;
   onAddSponsor?: () => void;
+  onDeleteCategory?: (categoryId: string) => void; 
+  onDeleteSeason?: (seasonId: string) => Promise<void>;
+  onDeleteSponsor?: (sponsorId: string) => void; 
   onEditSponsor?: (sponsor: Sponsor) => void;
   onAddCategory?: () => void;
   onEditCategory: (category: Category) => void;
   onLeagueUpdated?: () => Promise<void>;
+  onViewSeason?: (season: Season) => void;
+  onEditSeason?: (season: Season) => void
 }
 
 export function LeagueTabs({
@@ -81,7 +86,12 @@ export function LeagueTabs({
   onEditSponsor,
   onAddCategory,
   onEditCategory,
-  onLeagueUpdated
+  onLeagueUpdated,
+  onDeleteCategory,
+  onDeleteSeason,
+  onDeleteSponsor,
+  onEditSeason,
+  onViewSeason
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -142,7 +152,12 @@ export function LeagueTabs({
               calculateWinRate={calculateWinRate}
             />
 
-            <SponsorCard sponsors={sponsors} onEditSponsor={onEditSponsor} />
+            <SponsorCard 
+            sponsors={sponsors} 
+            onAddSponsor={onAddSponsor} 
+            onEditSponsor={onEditSponsor} 
+            onDeleteSponsor={onDeleteSponsor}
+            />
 
          
            
@@ -150,14 +165,25 @@ export function LeagueTabs({
                 categories={categories}
                 onEditCategory={onEditCategory}
                 onAddCategory={onAddCategory}
+                onDeleteCategory={onDeleteCategory}
               />
 
             <SeasonCard
               seasons={seasons}
-              leagueId={league?.id!}
+              leagueId={league.id}
               categories={categories} 
               formatDate={formatDate}
               onSeasonCreated={onSeasonCreated}
+              onDeleteSeason={onDeleteSeason}  
+              onViewSeason={
+                onViewSeason
+                  ? (seasonId: string) => {
+                      const season = seasons.find(s => s.id === seasonId);
+                      if (season) onViewSeason(season);
+                    }
+                  : undefined
+              }
+              onEditSeason={onEditSeason}
             />
           </div>
         </div>

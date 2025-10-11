@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconCalendar, IconPlus } from "@tabler/icons-react";
+import { IconCalendar, IconPlus, IconTrash, IconEdit, IconEye } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,17 @@ import {
 } from "@/components/ui/card";
 import { Season, FormatDateFunction } from "./types";
 import dynamic from "next/dynamic";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SeasonCreateModal = dynamic(
   () =>
@@ -29,6 +40,9 @@ interface SeasonCardProps {
   categories: { id: string; name: string }[];
   formatDate: FormatDateFunction;
   onSeasonCreated?: () => void;
+  onDeleteSeason?: (seasonId: string) => void;
+  onViewSeason?: (seasonId: string) => void;
+  onEditSeason?: (season: Season) => void;
 }
 
 export function SeasonCard({
@@ -37,10 +51,13 @@ export function SeasonCard({
   categories, 
   formatDate,
   onSeasonCreated,
+  onDeleteSeason,
+  onViewSeason,
+  onEditSeason,
 }: SeasonCardProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleSeasonCreated = () => {
+  const handleSeasonCreated = async () => {
     setIsCreateModalOpen(false);
     onSeasonCreated?.();
   };
@@ -71,7 +88,7 @@ export function SeasonCard({
             {seasons.map((season) => (
               <div
                 key={season.id}
-                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/20">
@@ -85,13 +102,62 @@ export function SeasonCard({
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="flex items-center gap-2">
                   <Badge variant={season.isActive ? "default" : "secondary"}>
                     {season.status}
                   </Badge>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {season.registeredUserCount} registered
-                  </div>
+                  
+                  {/* View Button */}
+                  {onViewSeason && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onViewSeason(season.id)}
+                    >
+                      <IconEye className="size-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
+                  {/* Edit Button */}
+                  {onEditSeason && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEditSeason(season)}
+                    >
+                      <IconEdit className="size-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
+                  {/* Existing Delete Button */}
+                  {onDeleteSeason && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                          <IconTrash className="size-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Season</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this season? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground"
+                            onClick={() => onDeleteSeason(season.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </div>
             ))}
@@ -109,7 +175,7 @@ export function SeasonCard({
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         leagueId={leagueId}
-        categories={categories} // Pass categories here
+        categories={categories} 
         onSeasonCreated={handleSeasonCreated}
       />
     </Card>

@@ -18,6 +18,7 @@ import {
 import { IconArrowLeft } from "@tabler/icons-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { AxiosError } from "axios";
 
 // Import the LeagueTabs component
 import { LeagueTabs } from "@/components/league/league-tabs";
@@ -81,10 +82,12 @@ export default function LeagueViewPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
 
   //Modals
   const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
   const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
+  const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
@@ -148,6 +151,22 @@ const handleEditSponsor = (sponsor: Sponsor) => {
         setCategories(leagueData.categories);
       }
 
+      // Update sponsors
+      if (Array.isArray(leagueData.sponsorships)) {
+        const transformedSponsors = leagueData.sponsorships.map((s: any) => ({
+          id: s.id,
+          packageTier: s.packageTier,
+          contractAmount: s.contractAmount,
+          sponsorRevenue: s.sponsorRevenue,
+          sponsoredName: s.sponsoredName,
+          isActive: s.isActive,
+          createdById: s.createdById,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        }));
+        setSponsors(transformedSponsors);
+      }
+
     } catch (error) {
       console.error("Error refreshing data:", error);
       toast.error("Failed to refresh data");
@@ -180,6 +199,16 @@ const handleEditSponsor = (sponsor: Sponsor) => {
   }, [refreshData, setIsCreateSponsorOpen]);
 
 
+const handleViewSeason = (season: Season) => {
+  router.push(`/seasons/${season.id}`);
+};
+
+const handleEditSeason = (id: Season) => {
+  setSelectedSeason(id);
+  setIsEditSeasonOpen(true);
+};
+
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -206,7 +235,7 @@ const handleEditSponsor = (sponsor: Sponsor) => {
           updatedAt,
           description,
           createdBy,
-          _count: { memberships = 0, seasons = 0, categories = 0 } = {},
+          memberships = [],
           sponsorships = [],
           seasons: leagueSeasons = [],
         } = leagueData;
@@ -223,10 +252,25 @@ const handleEditSponsor = (sponsor: Sponsor) => {
           updatedAt,
           description,
           memberCount: memberships,
-          seasonCount: seasons,
-          categoryCount: categories,
+          seasonCount: leagueSeasons.length,
+          categoryCount: categories.length,
           createdBy,
         });
+
+        // Transform memberships data
+        const transformedPlayers = memberships.map((membership: any) => ({
+          id: membership.user.id,
+          name: membership.user.name,
+          username: membership.user.username || membership.user.email.split('@')[0],
+          email: membership.user.email,
+          status: membership.status,
+          joinDate: membership.createdAt,
+          wins: membership.stats?.wins || 0,
+          losses: membership.stats?.losses || 0,
+          matches: membership.stats?.matches || [],
+        }));
+
+        setPlayers(transformedPlayers);
 
         // Set seasons from the league data
         if (Array.isArray(leagueSeasons)) {
@@ -279,6 +323,67 @@ const handleEditSponsor = (sponsor: Sponsor) => {
 
     if (leagueId) loadData();
   }, [leagueId]);
+
+
+const handleDeleteSeason = async (seasonId: string) => {
+  try {
+    await axiosInstance.delete(endpoints.season.delete(seasonId));
+    toast.success("Season deleted successfully");
+    // Update local state to remove the deleted season
+    setSeasons((prev) => prev.filter((s) => s.id !== seasonId));
+  } catch (error: any) {
+    console.error("Delete error:", error);
+    const message =
+      error?.response?.data?.message ||   
+      error?.response?.data?.error ||     
+      error?.message ||                   
+      "Failed to delete season";        
+    
+    toast.error(message);
+  }
+};
+
+const handleDeleteSponsor = async (sponsorId: string) => {
+  try {
+    await axiosInstance.delete(
+      endpoints.sponsors.delete(sponsorId)
+    );
+    toast.success("Sponsor removed");
+    setSponsors((prev) => prev.filter((s) => s.id !== sponsorId));
+  } catch (error: any) {
+    console.error(error);
+
+   const message =
+      error?.response?.data?.message ||   
+      error?.response?.data?.error ||     
+      error?.message ||                   
+      "Failed to delete sponsor";        
+
+    
+    toast.error(message);
+  }
+};
+
+const handleDeleteCategory = async (categoryId: string) => {
+  try {
+    await axiosInstance.delete(endpoints.categories.delete(categoryId));
+
+    toast.success("Category deleted successfully");
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+  } catch (error: any) {
+    console.error("Delete error:", error);
+
+    const message =
+      error?.response?.data?.message ||   
+      error?.response?.data?.error ||     
+      error?.message ||                   
+      "Failed to delete category";        
+
+    
+    toast.error(message);
+  }
+};
+
 
 
   const formatDate = (dateString: string) => {
@@ -409,12 +514,17 @@ const handleEditSponsor = (sponsor: Sponsor) => {
                   onSeasonCreated={handleSeasonCreated}
                   onEditSponsor={handleEditSponsor}
                   onAddSponsor={handleAddSponsor}
+                  onDeleteCategory={handleDeleteCategory} 
+                  onDeleteSponsor={handleDeleteSponsor} 
+                  onDeleteSeason={handleDeleteSeason} 
                   onAddCategory={() => setIsCreateCategoryOpen(true)}
                   onEditCategory={(category: Category) => {
                   setSelectedCategory(category);
                   setIsEditCategoryOpen(true); 
                   }}
                   onLeagueUpdated={refreshData}
+                  onViewSeason={handleViewSeason}
+                  onEditSeason={handleEditSeason}
               />
               </div>
 
@@ -422,9 +532,7 @@ const handleEditSponsor = (sponsor: Sponsor) => {
         open={isCreateSponsorOpen}
         onOpenChange={setIsCreateSponsorOpen}
         leagueId={league?.id!}
-        onSponsorCreated={() => {
-          setIsCreateSponsorOpen(false);
-        }}
+        onSponsorCreated={handleSponsorCreated} 
       />
 
       <EditSponsorModal
