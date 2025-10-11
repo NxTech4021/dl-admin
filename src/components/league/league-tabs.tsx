@@ -65,6 +65,8 @@ interface LeagueTabsProps {
   onAddCategory?: () => void;
   onEditCategory: (category: Category) => void;
   onLeagueUpdated?: () => Promise<void>;
+  onViewSeason?: (season: Season) => void;
+  onEditSeason?: (season: Season) => void
 }
 
 export function LeagueTabs({
@@ -87,7 +89,9 @@ export function LeagueTabs({
   onLeagueUpdated,
   onDeleteCategory,
   onDeleteSeason,
-  onDeleteSponsor
+  onDeleteSponsor,
+  onEditSeason,
+  onViewSeason
 }: LeagueTabsProps) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -170,7 +174,16 @@ export function LeagueTabs({
               categories={categories} 
               formatDate={formatDate}
               onSeasonCreated={onSeasonCreated}
-              onDeleteSeason={onDeleteSeason}  // Pass the handler down
+              onDeleteSeason={onDeleteSeason}  
+              onViewSeason={
+                onViewSeason
+                  ? (seasonId: string) => {
+                      const season = seasons.find(s => s.id === seasonId);
+                      if (season) onViewSeason(season);
+                    }
+                  : undefined
+              }
+              onEditSeason={onEditSeason}
             />
           </div>
         </div>

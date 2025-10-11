@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconCalendar, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconCalendar, IconPlus, IconTrash, IconEdit, IconEye } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,8 @@ interface SeasonCardProps {
   formatDate: FormatDateFunction;
   onSeasonCreated?: () => void;
   onDeleteSeason?: (seasonId: string) => void;
+  onViewSeason?: (seasonId: string) => void;
+  onEditSeason?: (season: Season) => void;
 }
 
 export function SeasonCard({
@@ -50,6 +52,8 @@ export function SeasonCard({
   formatDate,
   onSeasonCreated,
   onDeleteSeason,
+  onViewSeason,
+  onEditSeason,
 }: SeasonCardProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -84,7 +88,7 @@ export function SeasonCard({
             {seasons.map((season) => (
               <div
                 key={season.id}
-                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/20">
@@ -102,6 +106,32 @@ export function SeasonCard({
                   <Badge variant={season.isActive ? "default" : "secondary"}>
                     {season.status}
                   </Badge>
+                  
+                  {/* View Button */}
+                  {onViewSeason && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onViewSeason(season.id)}
+                    >
+                      <IconEye className="size-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
+                  {/* Edit Button */}
+                  {onEditSeason && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEditSeason(season)}
+                    >
+                      <IconEdit className="size-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
+                  {/* Existing Delete Button */}
                   {onDeleteSeason && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

@@ -82,10 +82,12 @@ export default function LeagueViewPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
 
   //Modals
   const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
   const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
+  const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
@@ -195,6 +197,16 @@ const handleEditSponsor = (sponsor: Sponsor) => {
     await refreshData();
     toast.success("Sponsor created successfully!");
   }, [refreshData, setIsCreateSponsorOpen]);
+
+
+const handleViewSeason = (season: Season) => {
+  router.push(`/seasons/${season.id}`);
+};
+
+const handleEditSeason = (id: Season) => {
+  setSelectedSeason(id);
+  setIsEditSeasonOpen(true);
+};
 
 
   useEffect(() => {
@@ -511,6 +523,8 @@ const handleDeleteCategory = async (categoryId: string) => {
                   setIsEditCategoryOpen(true); 
                   }}
                   onLeagueUpdated={refreshData}
+                  onViewSeason={handleViewSeason}
+                  onEditSeason={handleEditSeason}
               />
               </div>
 
