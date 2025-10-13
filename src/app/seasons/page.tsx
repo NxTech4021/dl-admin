@@ -106,16 +106,17 @@ export default function Page() {
                           <IconDownload className="mr-2 size-4" />
                           Export
                         </Button>
-                        {/* <SeasonCreateModal
+                        <SeasonCreateModal
                           open={isCreateModalOpen}
                           onOpenChange={setIsCreateModalOpen}
                           onSeasonCreated={handleSeasonCreated}
+                          leagueId={""}
                         >
                           <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                             <IconPlus className="mr-2 size-4" />
                             Create Season
                           </Button>
-                        </SeasonCreateModal> */}
+                        </SeasonCreateModal>
                       </div>
                     </div>
                   </div>

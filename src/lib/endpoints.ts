@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_HOST_URL,
+  baseURL: "", // Empty because Next.js rewrites will handle proxying /api/* to backend
 });
 
 axiosInstance.interceptors.response.use(
@@ -54,7 +54,11 @@ export const endpoints = {
     create: "/api/league/create",
     update: (id: string) => `/api/league/${id}`,
     delete: (id: string) => `/api/league/${id}`,
-    // getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
+    getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
+  },
+  leagueType: {
+    getAll: "/api/leaguetype/",
+    getById: (id: string) => `/api/leaguetype/${id}`,
   },
  season: {
     create: "/api/season/",
@@ -66,14 +70,14 @@ export const endpoints = {
   },
 
   sponsors: {
-  create: "/api/sponsor/create",
+  create: "/api/sponsor/",
   getAll: "/api/sponsor/",
   getById: (id: string) => `/api/sponsor/${id}`,
   update: (id: string) => `/api/sponsor/${id}`,
   delete: (id: string) => `/api/sponsor/${id}`,
 },
   companies: {
-    create: "/api/company/create",
+    create: "/api/company/create/",
     getAll: "/api/company/",
     getById: (id: string) => `/api/company/${id}`,
     update: (id: string) => `/api/company/${id}`,
@@ -81,7 +85,7 @@ export const endpoints = {
   },
 
   categories: {
-    create: "/api/category/create",
+    create: "/api/category/create/",
     getAll: "/api/category/",
     getById: (id: string) => `/api/category/${id}`,
     update: (id: string) => `/api/category/${id}`,
@@ -90,18 +94,18 @@ export const endpoints = {
   },
 
   division: {
-    create: "/api/division/create",
+    create: "/api/division/create/",
     getAll: "/api/division/",
     getById: (id: string) => `/api/division/${id}`,
     update: (id: string) => `/api/division/${id}`,
-    delete: (id: string) => `/api/division/delete/${id}`,
+    delete: (id: string) => `/api/division/${id}`,
   },
 
   match: {
-    create: "/api/match/create",
-    getAll: "/api/match",
+    create: "/api/match/",
+    getAll: "/api/match/",
     getById: (id: string) => `/api/match/${id}`,
     update: (id: string) => `/api/match/${id}`,
-    delete: (id: string) => `/api/match/delete/${id}`,
+    delete: (id: string) => `/api/match/${id}`,
   },
 };

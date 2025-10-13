@@ -41,7 +41,7 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
       setIsLoading(true);
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/profile/${adminId}`
+          `${process.env.NEXT_PUBLIC_HOST_URL}/admin/profile/${adminId}`
         );
         const data = res.data;
 

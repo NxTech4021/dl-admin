@@ -69,8 +69,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import Link from "next/link";
-
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 // Player schema based on the database structure and onboarding data
 
@@ -487,21 +486,23 @@ export function PlayersDataTable() {
       setIsLoading(true);
 
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/`
-        );
-
+        const response = await axiosInstance.get(endpoints.player.getAll);
         if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
+        // Backend returns: { success, status, data: [...], message }
+        // Players are returned directly in data array, not wrapped
+        const players = response.data.data;
 
-        const result = await response.data;
-
-        const parsedData = z.array(playerSchema).parse(result.data);
-
-        setData(parsedData);
+        if (Array.isArray(players)) {
+          const parsedData = z.array(playerSchema).parse(players);
+          setData(parsedData);
+        } else {
+          setData([]);
+        }
       } catch (error) {
         console.error("Failed to fetch players:", error);
+        setData([]);
       } finally {
         setIsLoading(false);
       }

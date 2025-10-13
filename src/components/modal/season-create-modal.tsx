@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,7 +41,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import axiosInstance, { endpoints } from "@/lib/endpoints";
+// duplicate import removed below
 
 type SeasonStatus = "UPCOMING" | "ACTIVE" | "FINISHED" | "CANCELLED";
 
@@ -71,6 +72,7 @@ interface SeasonCreateModalProps {
   leagueName?: string;
   categories: Category[];
   onSeasonCreated?: () => Promise<void>;
+  children?: ReactNode;
 }
 
 type ToggleFields = Extract<
@@ -89,10 +91,14 @@ export default function SeasonCreateModal({
   leagueName,
   categories = [],
   onSeasonCreated,
+  children,
 }: SeasonCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [availableLeagues, setAvailableLeagues] = useState<{ id: string; name: string }[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>(categories ?? []);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | undefined>(leagueId);
 
   const [form, setForm] = useState<SeasonFormData>({
     name: "",
@@ -128,6 +134,8 @@ export default function SeasonCreateModal({
       withdrawalEnabled: false,
     });
     setError("");
+    setSelectedLeagueId(leagueId);
+    setAvailableCategories(categories ?? []);
   };
 
   const handleChange = <K extends keyof SeasonFormData>(
@@ -168,7 +176,7 @@ export default function SeasonCreateModal({
 
     try {
       // Validate required fields
-      if (!form.name || !form.categoryId || !form.entryFee) {
+      if (!form.name || !form.categoryId || !form.entryFee || !(selectedLeagueId ?? leagueId)) {
         throw new Error("Please fill in all required fields");
       }
 
@@ -191,7 +199,7 @@ export default function SeasonCreateModal({
         regiDeadline: form.regiDeadline!.toISOString(),
         status: form.status,
         categoryId: form.categoryId,
-        leagueId,
+        leagueId: selectedLeagueId ?? leagueId!,
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,
         promoCodeSupported: form.promoCodeSupported,
@@ -221,6 +229,7 @@ export default function SeasonCreateModal({
   const isFormValid = useMemo(() => {
     return Boolean(
       form.name &&
+        (selectedLeagueId ?? leagueId) &&
         form.categoryId &&
         form.startDate &&
         form.endDate &&
@@ -228,7 +237,48 @@ export default function SeasonCreateModal({
         form.entryFee &&
         !validateDates(form.startDate, form.endDate, form.regiDeadline)
     );
-  }, [form]);
+  }, [form, selectedLeagueId, leagueId]);
+
+  // Load leagues if not provided
+  useEffect(() => {
+    if (!open) return;
+    const loadLeagues = async () => {
+      try {
+        if (!leagueId) {
+          const res = await axiosInstance.get(endpoints.league.getAll);
+          const list = Array.isArray(res.data.data)
+            ? res.data.data
+            : res.data.data?.leagues ?? [];
+          setAvailableLeagues(list);
+        }
+      } catch (_) {
+        setAvailableLeagues([]);
+      }
+    };
+    loadLeagues();
+  }, [open]);
+
+  // Load categories when selected league changes (if categories not provided)
+  useEffect(() => {
+    const loadCategories = async (lid: string) => {
+      try {
+        const res = await axiosInstance.get(
+          endpoints.categories.getByLeague(lid)
+        );
+        const list: Category[] = Array.isArray(res.data.data)
+          ? res.data.data
+          : res.data.data?.categories ?? [];
+        setAvailableCategories(list);
+      } catch (_) {
+        setAvailableCategories([]);
+      }
+    };
+    if (!leagueId && selectedLeagueId) {
+      loadCategories(selectedLeagueId);
+    } else if (leagueId) {
+      setAvailableCategories(categories ?? []);
+    }
+  }, [selectedLeagueId]);
 
   return (
     <Dialog
@@ -238,6 +288,7 @@ export default function SeasonCreateModal({
         onOpenChange(isOpen);
       }}
     >
+      {children}
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-3 text-2xl">
@@ -321,6 +372,35 @@ export default function SeasonCreateModal({
               />
             </div>
 
+            
+            {!leagueId && (
+              <div>
+                <Label>League *</Label>
+                <Select
+                  value={selectedLeagueId}
+                  onValueChange={(val) => {
+                    setSelectedLeagueId(val);
+                    handleChange("categoryId", "");
+                  }}
+                >
+                  <SelectTrigger className="h-11 w-full">
+                    <SelectValue placeholder="Select league" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLeagues.length > 0 ? (
+                      availableLeagues.map((lg) => (
+                        <SelectItem key={lg.id} value={lg.id}>
+                          {lg.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <p className="p-2 text-sm text-muted-foreground">No leagues available</p>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Category */}
             <div>
               <Label>Category *</Label>
@@ -332,8 +412,8 @@ export default function SeasonCreateModal({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.length > 0 ? (
-                    categories.map((cat) => (
+                  {(leagueId ? categories : availableCategories)?.length > 0 ? (
+                    (leagueId ? categories : availableCategories)!.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
                       </SelectItem>

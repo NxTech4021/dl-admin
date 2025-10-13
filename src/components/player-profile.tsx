@@ -166,7 +166,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/${playerId}`
+          `${process.env.NEXT_PUBLIC_HOST_URL}/player/${playerId}`
         );
         if (response.status !== 200) {
           throw new Error("Failed to fetch profile");

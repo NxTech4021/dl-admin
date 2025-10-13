@@ -44,7 +44,7 @@ export default function AdminInviteModal({
         email.split("@")[0] + Math.floor(Math.random() * 1000);
 
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/invite`,
+        `${process.env.NEXT_PUBLIC_HOST_URL}/admin/invite`,
         {
           email,
           name,

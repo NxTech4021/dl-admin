@@ -31,7 +31,7 @@ export function useAdminSession(): UseAdminSessionReturn {
       setError(null);
 
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/session`,
+        `${process.env.NEXT_PUBLIC_HOST_URL}/admin/session`,
         {
           withCredentials: true,
         }
@@ -61,7 +61,7 @@ export function useAdminSession(): UseAdminSessionReturn {
   const logout = async () => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/logout`,
+        `${process.env.NEXT_PUBLIC_HOST_URL}/admin/logout`,
         {},
         {
           withCredentials: true,

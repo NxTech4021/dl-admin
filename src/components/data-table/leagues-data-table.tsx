@@ -57,6 +57,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { League } from "@/ZodSchema/league-schema";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 
 
@@ -369,6 +370,7 @@ export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTablePr
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+
 
   const table = useReactTable({
     data,
