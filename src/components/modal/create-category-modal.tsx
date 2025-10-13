@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,9 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { IconLoader2 } from "@tabler/icons-react";
 
 interface CreateCategoryModalProps {
   open: boolean;
@@ -22,16 +29,12 @@ interface CreateCategoryModalProps {
   onCategoryCreated?: () => void;
 }
 
-// Enum options from your Prisma GenderRestriction enum
-const genderOptions = ["OPEN", "MALE", "FEMALE"] as const;
-
-type GameType = "SINGLES" | "DOUBLES" | "MIXED";
+type GameType = "SINGLES" | "DOUBLES";
 type GenderType = "MEN" | "WOMEN" | "MIXED";
 
 const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
   { value: "SINGLES", label: "Singles" },
   { value: "DOUBLES", label: "Doubles" },
-  { value: "MIXED", label: "Mixed" },
 ];
 
 const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
@@ -40,7 +43,6 @@ const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
   { value: "MIXED", label: "Mixed" },
 ];
 
-// Update the form data interface
 interface CategoryFormData {
   name: string;
   matchFormat: string;
@@ -62,9 +64,43 @@ export function CreateCategoryModal({
     maxPlayers: "",
     maxTeams: "",
     game_type: "SINGLES",
-    gender_category: "MIXED"
+    gender_category: "MIXED",
   });
   const [loading, setLoading] = useState(false);
+
+  const generateCategoryName = useCallback(
+    (gender: GenderType, gameType: GameType) => {
+      let genderPrefix;
+      if (gender === "MIXED") {
+        genderPrefix = "Mixed";
+      } else {
+        genderPrefix = `${gender.charAt(0)}${gender.slice(1).toLowerCase()}'s`;
+      }
+      const gameTypeSuffix =
+        gameType.charAt(0) + gameType.slice(1).toLowerCase();
+      return `${genderPrefix} ${gameTypeSuffix}`;
+    },
+    []
+  );
+
+  const handleGameTypeChange = (value: GameType) => {
+    setFormData((prev) => ({
+      ...prev,
+      game_type: value,
+      name: generateCategoryName(prev.gender_category, value),
+      maxPlayers: value === "SINGLES" ? prev.maxPlayers : "",
+      maxTeams: value !== "SINGLES" ? prev.maxTeams : "",
+      matchFormat: prev.matchFormat,
+    }));
+  };
+
+  const handleGenderChange = (value: GenderType) => {
+    setFormData((prev) => ({
+      ...prev,
+      gender_category: value,
+      name: generateCategoryName(value, prev.game_type),
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!leagueId) {
@@ -74,18 +110,24 @@ export function CreateCategoryModal({
     setLoading(true);
     try {
       // Map gender_category to genderRestriction
-      const genderRestriction = formData.gender_category === "MIXED" ? "OPEN" : 
-                               formData.gender_category === "MEN" ? "MALE" : "FEMALE";
+      const genderRestriction =
+        formData.gender_category === "MIXED"
+          ? "OPEN"
+          : formData.gender_category === "MEN"
+          ? "MALE"
+          : "FEMALE";
 
       await axiosInstance.post(endpoints.categories.create, {
         leagueId,
         name: formData.name,
         genderRestriction,
         matchFormat: formData.matchFormat,
-        maxPlayers: formData.maxPlayers ? parseInt(formData.maxPlayers) : undefined,
+        maxPlayers: formData.maxPlayers
+          ? parseInt(formData.maxPlayers)
+          : undefined,
         maxTeams: formData.maxTeams ? parseInt(formData.maxTeams) : undefined,
         game_type: formData.game_type,
-        gender_category: formData.gender_category
+        gender_category: formData.gender_category,
       });
 
       toast.success("Category created!");
@@ -97,7 +139,7 @@ export function CreateCategoryModal({
         maxPlayers: "",
         maxTeams: "",
         game_type: "SINGLES",
-        gender_category: "MIXED"
+        gender_category: "MIXED",
       });
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to create category");
@@ -113,100 +155,141 @@ export function CreateCategoryModal({
           <DialogTitle>Create Category</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="categoryName" className=" mb-2">Category Name</Label>
-            <Input
-              id="categoryName"
-              placeholder="Enter category name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
+        <div className="grid gap-6">
+          {/* Preview Card */}
+          <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+            <h3 className="font-semibold text-lg mb-2">
+              {formData.name || "Select options below"}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {formData.matchFormat || "Match format will be set automatically"}
+            </p>
           </div>
 
-          {/* Game Type Selection */}
-          <div>
-            <Label htmlFor="gameType" className=" mb-2">Game Type</Label>
-            <Select
-              value={formData.game_type}
-              onValueChange={(value: GameType) => 
-                setFormData({ ...formData, game_type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select game type" className=" mb-2" />
-              </SelectTrigger>
-              <SelectContent>
-                {GAME_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Gender Category Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="genderCategory">Gender Category</Label>
+              <Select
+                value={formData.gender_category}
+                onValueChange={handleGenderChange}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Select gender category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Game Type Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="gameType">Game Type</Label>
+              <Select
+                value={formData.game_type}
+                onValueChange={handleGameTypeChange}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Select game type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GAME_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Gender Category Selection */}
-          <div>
-            <Label htmlFor="genderCategory" className=" mb-2">Gender Category</Label>
-            <Select
-              value={formData.gender_category}
-              onValueChange={(value: GenderType) => 
-                setFormData({ ...formData, gender_category: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select gender category" className=" mb-2" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENDER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="matchFormat" className=" mb-2">Match Format</Label>
-            <Input
-              id="matchFormat"
-              placeholder="e.g., Best of 3 sets"
-              value={formData.matchFormat}
-              onChange={(e) => setFormData({ ...formData, matchFormat: e.target.value })}
-            />
-          </div>
-
-          {/* Conditional rendering based on game type */}
-          {formData.game_type === "SINGLES" ? (
-            <div>
-              <Label htmlFor="maxPlayers" className=" mb-2">Maximum Players</Label>
+          {/* Capacity Section */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Max Players Field */}
+            <div className="space-y-2">
+              <Label htmlFor="maxPlayers">Maximum Players</Label>
               <Input
                 id="maxPlayers"
                 type="number"
                 placeholder="Enter max players"
                 value={formData.maxPlayers}
-                onChange={(e) => setFormData({ ...formData, maxPlayers: e.target.value })}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    maxPlayers: e.target.value,
+                  }))
+                }
+                className="h-11"
               />
+              <p className="text-sm text-muted-foreground">
+                Recommended: 8-32 players
+              </p>
             </div>
-          ) : (
-            <div>
-              <Label htmlFor="maxTeams" className=" mb-2" >Maximum Teams</Label>
+
+            {/* Max Teams Field */}
+            <div className="space-y-2">
+              <Label htmlFor="maxTeams">Maximum Teams</Label>
               <Input
                 id="maxTeams"
                 type="number"
                 placeholder="Enter max teams"
                 value={formData.maxTeams}
-                onChange={(e) => setFormData({ ...formData, maxTeams: e.target.value })}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    maxTeams: e.target.value,
+                  }))
+                }
+                className="h-11"
               />
+              <p className="text-sm text-muted-foreground">
+                Recommended: 4-16 teams
+              </p>
             </div>
-          )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Match Format *</Label>
+            <Input
+              value={formData.matchFormat}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  matchFormat: e.target.value,
+                }))
+              }
+              placeholder="e.g., Best of 3 Sets, Pro Sets, etc."
+              className="h-11"
+            />
+            <p className="text-sm text-muted-foreground">
+              Specify the match format for this category
+            </p>
+          </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Creating..." : "Create Category"}
+        <DialogFooter className="mt-6">
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              loading ||
+              !formData.name ||
+              (!formData.maxPlayers && !formData.maxTeams)
+            }
+            className="w-full sm:w-auto"
+          >
+            {loading ? (
+              <>
+                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create Category"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
