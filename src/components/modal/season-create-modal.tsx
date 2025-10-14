@@ -191,7 +191,7 @@ export default function SeasonCreateModal({
         regiDeadline: form.regiDeadline!.toISOString(),
         status: form.status,
         categoryId: form.categoryId,
-        leagueId,
+        leagueIds: leagueId ? [leagueId] : [],
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,
         promoCodeSupported: form.promoCodeSupported,
