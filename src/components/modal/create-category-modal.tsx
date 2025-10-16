@@ -88,8 +88,9 @@ export function CreateCategoryModal({
       ...prev,
       game_type: value,
       name: generateCategoryName(prev.gender_category, value),
+      // Clear maxTeams for singles, clear maxPlayers for doubles
       maxPlayers: value === "SINGLES" ? prev.maxPlayers : "",
-      maxTeams: value !== "SINGLES" ? prev.maxTeams : "",
+      maxTeams: value === "DOUBLES" ? prev.maxTeams : "",
       matchFormat: prev.matchFormat,
     }));
   };
@@ -122,10 +123,13 @@ export function CreateCategoryModal({
         name: formData.name,
         genderRestriction,
         matchFormat: formData.matchFormat,
-        maxPlayers: formData.maxPlayers
+        // Only send maxPlayers for singles, maxTeams for doubles
+        maxPlayers: formData.game_type === "SINGLES" && formData.maxPlayers
           ? parseInt(formData.maxPlayers)
           : undefined,
-        maxTeams: formData.maxTeams ? parseInt(formData.maxTeams) : undefined,
+        maxTeams: formData.game_type === "DOUBLES" && formData.maxTeams
+          ? parseInt(formData.maxTeams)
+          : undefined,
         game_type: formData.game_type,
         gender_category: formData.gender_category,
       });
@@ -161,9 +165,27 @@ export function CreateCategoryModal({
             <h3 className="font-semibold text-lg mb-2">
               {formData.name || "Select options below"}
             </h3>
-            <p className="text-sm text-muted-foreground">
-              {formData.matchFormat || "Match format will be set automatically"}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {formData.matchFormat || "Match format will be set automatically"}
+              </p>
+              {formData.game_type === "SINGLES" && formData.maxPlayers && (
+                <p className="text-sm text-muted-foreground">
+                  Max Players: {formData.maxPlayers}
+                </p>
+              )}
+              {formData.game_type === "DOUBLES" && formData.maxTeams && (
+                <p className="text-sm text-muted-foreground">
+                  Max Teams: {formData.maxTeams}
+                </p>
+              )}
+              {((formData.game_type === "SINGLES" && !formData.maxPlayers) || 
+                (formData.game_type === "DOUBLES" && !formData.maxTeams)) && (
+                <p className="text-sm text-muted-foreground">
+                  No player/team limit
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -209,48 +231,52 @@ export function CreateCategoryModal({
           </div>
 
           {/* Capacity Section */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Max Players Field */}
-            <div className="space-y-2">
-              <Label htmlFor="maxPlayers">Maximum Players</Label>
-              <Input
-                id="maxPlayers"
-                type="number"
-                placeholder="Enter max players"
-                value={formData.maxPlayers}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxPlayers: e.target.value,
-                  }))
-                }
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Recommended: 8-32 players
-              </p>
-            </div>
+          <div className="space-y-4">
+            {/* Max Players Field - Only for Singles */}
+            {formData.game_type === "SINGLES" && (
+              <div className="space-y-2">
+                <Label htmlFor="maxPlayers">Maximum Players (Optional)</Label>
+                <Input
+                  id="maxPlayers"
+                  type="number"
+                  placeholder="Enter max players (leave empty for no limit)"
+                  value={formData.maxPlayers}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maxPlayers: e.target.value,
+                    }))
+                  }
+                  className="h-11"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Recommended: 8-32 players. Leave empty for unlimited players.
+                </p>
+              </div>
+            )}
 
-            {/* Max Teams Field */}
-            <div className="space-y-2">
-              <Label htmlFor="maxTeams">Maximum Teams</Label>
-              <Input
-                id="maxTeams"
-                type="number"
-                placeholder="Enter max teams"
-                value={formData.maxTeams}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxTeams: e.target.value,
-                  }))
-                }
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Recommended: 4-16 teams
-              </p>
-            </div>
+            {/* Max Teams Field - Only for Doubles */}
+            {formData.game_type === "DOUBLES" && (
+              <div className="space-y-2">
+                <Label htmlFor="maxTeams">Maximum Teams (Optional)</Label>
+                <Input
+                  id="maxTeams"
+                  type="number"
+                  placeholder="Enter max teams (leave empty for no limit)"
+                  value={formData.maxTeams}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maxTeams: e.target.value,
+                    }))
+                  }
+                  className="h-11"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Recommended: 4-16 teams. Leave empty for unlimited teams.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -278,7 +304,7 @@ export function CreateCategoryModal({
             disabled={
               loading ||
               !formData.name ||
-              (!formData.maxPlayers && !formData.maxTeams)
+              !formData.matchFormat
             }
             className="w-full sm:w-auto"
           >

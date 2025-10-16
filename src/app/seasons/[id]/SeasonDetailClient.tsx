@@ -10,12 +10,30 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+
+import {
+  IconUserCircle,
+  IconUsers,
+  IconTrophy,
+  IconTarget,
+  IconSettings,
+  IconCreditCard,
+  IconCalendar
+} from '@tabler/icons-react';
+
 import SeasonMetricsCard from './components/season/SeasonMetrics';
 import SeasonInfoCard from './components/season/SeasonInfoCard';
-
 import SeasonPlayersCard from './components/season/SeasonPlayersCard';
+import SeasonDivisionsCard from './components/season/SeasonDivisionsCard';
+import SeasonLeaderboardCard from './components/season/SeasonLeaderboardCard';
 import WithdrawalRequestsCard from './components/season/WithdrawalRequestsCard';
 import SeasonSettingsCard from './components/season/SeasonSettingsCard';
+import SeasonOverviewStats from './components/season/SeasonOverviewStats';
+import SeasonDetailsSection from './components/season/SeasonDetailsSection';
 
 
 
@@ -47,7 +65,53 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   }, [seasonId, fetchSeasonData]);
 
   if (isLoading || !season) {
-    return <div className="min-h-screen p-8 text-center text-lg text-gray-500">Loading Season {seasonId}...</div>;
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="space-y-6 p-8">
+            {/* Season Header Skeleton */}
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              
+              {/* Content Skeleton */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardHeader>
+                        <Skeleton className="h-5 w-32" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-8 w-16" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
   }
 
     return (
@@ -63,40 +127,172 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
       <SidebarInset>
         <SiteHeader />
         <div className="space-y-6 p-8">
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold tracking-tight">{season.name} Details</h1>
-            {/* Potentially Add Action Buttons Here */}
-        </div>
+        </div> */}
         
-        {/* 2-column layout for main content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left Column (Spanning 2/3) */}
-            <div className="lg:col-span-2 space-y-6">
-            <SeasonInfoCard season={season} />
-            <SeasonPlayersCard memberships={season.memberships} />
-            </div>
-            
-            {/* Right Column (Spanning 1/3) */}
-            <div className="lg:col-span-1 space-y-6">
-            <SeasonSettingsCard season={season} />
-            <WithdrawalRequestsCard requests={season.withdrawalRequests} />
-            </div>
-        </div>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <IconUserCircle className="size-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="players" className="flex items-center gap-2">
+              <IconUsers className="size-4" />
+              Players
+            </TabsTrigger>
+            <TabsTrigger value="divisions" className="flex items-center gap-2">
+              <IconTrophy className="size-4" />
+              Divisions
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex items-center gap-2">
+              <IconTarget className="size-4" />
+              Leaderboard
+            </TabsTrigger>
+            <TabsTrigger value="withdrawal_requests" className="flex items-center gap-2">
+              <IconCalendar className="size-4" />
+              Withdrawal Requests
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <IconSettings className="size-4" />
+              Settings
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="flex items-center gap-2">
+              <IconCreditCard className="size-4" />
+              Payment
+            </TabsTrigger>
+          </TabsList>
 
-             <SeasonMetricsCard season={season} />
-        
-        {/* Fifth Card (Optional: Promo Codes, Waitlist, or a separate full-width section) */}
-        {/* <Card>
-            <CardHeader>
-            <CardTitle>Season Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-            Example: A list of related Promo Codes or Waitlist management 
-        
-            
-            </CardContent>
-        </Card> */}
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <div className="space-y-6">
+              {/* Stats Cards Row */}
+              <SeasonOverviewStats season={season} />
+              
+              {/* Season Details and Additional Info */}
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Main Details - spans 2 columns */}
+                <div className="lg:col-span-2">
+                  <SeasonDetailsSection season={season} />
+                </div>
+                
+                {/* Quick Info Sidebar - spans 1 column */}
+                <div className="space-y-6">
+                  {/* Settings & Details Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <IconSettings className="size-4" />
+                        Settings & Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Season Status */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-foreground">Season Status</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Status</span>
+                            <Badge 
+                              variant="outline" 
+                              className={season.isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-800 border-gray-200"}
+                            >
+                              {season.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Registered Players</span>
+                            <span className="font-medium text-sm">{season.registeredUserCount}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Configuration */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-foreground">Configuration</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Payment Required</span>
+                            <Badge variant={season.paymentRequired ? "default" : "secondary"}>
+                              {season.paymentRequired ? "Yes" : "No"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Withdrawals Allowed</span>
+                            <Badge variant={season.withdrawalEnabled ? "default" : "secondary"}>
+                              {season.withdrawalEnabled ? "Yes" : "No"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Promo Codes</span>
+                            <Badge variant={season.promoCodeSupported ? "default" : "secondary"}>
+                              {season.promoCodeSupported ? "Enabled" : "Disabled"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Linked Leagues */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-foreground">Linked Leagues</h4>
+                        <div className="text-sm font-medium">
+                          {season.leagues && season.leagues.length > 0 ? (
+                            <div className="space-y-1">
+                              {season.leagues.map((league: any) => (
+                                <Badge key={league.id} variant="outline" className="text-xs">
+                                  {league.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">No leagues linked</span>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+           {/* Players Tab */}
+           <TabsContent value="players">
+             <SeasonPlayersCard memberships={season.memberships} sportType={season.sportType} />
+           </TabsContent>
+
+          {/* Divisions Tab */}
+          <TabsContent value="divisions">
+            <SeasonDivisionsCard seasonId={seasonId} />
+          </TabsContent>
+
+          {/* Leaderboard Tab */}
+          <TabsContent value="leaderboard">
+            <SeasonLeaderboardCard seasonId={seasonId} />
+          </TabsContent>
+
+          {/* Withdrawal Requests Tab */}
+          <TabsContent value="withdrawal_requests">
+            <WithdrawalRequestsCard requests={season.withdrawalRequests} />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <SeasonSettingsCard season={season} />
+          </TabsContent>
+
+          {/* Payment Tab */}
+          <TabsContent value="payment">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">TODO</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
         </div>
     </SidebarInset>
     </SidebarProvider>

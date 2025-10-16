@@ -15,8 +15,10 @@ interface SeasonDetailPageProps {
 }
 
 // Server Component
-export default function SeasonDetailPage({ params }: SeasonDetailPageProps) {
+export default async function SeasonDetailPage({ params }: SeasonDetailPageProps) {
+  // Await params before accessing its properties (Next.js 15 requirement)
+  const { id } = await params;
   
   // Pass the season ID down as a prop to the Client Component
-  return <SeasonDetailClient seasonId={params.id} />;
+  return <SeasonDetailClient seasonId={id} />;
 }

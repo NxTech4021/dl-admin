@@ -59,6 +59,7 @@ type DivisionCreateModalProps = {
   onDivisionCreated?: () => void;
   mode?: "create" | "edit";
   division?: DivisionBase | null;
+  seasonId?: string;
 };
 
 const divisionSchema = z
@@ -107,6 +108,7 @@ export default function DivisionCreateModal({
   onDivisionCreated,
   mode = "create",
   division,
+  seasonId,
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
@@ -127,7 +129,7 @@ export default function DivisionCreateModal({
     mode: "onChange",
     defaultValues: {
       name: "",
-      seasonId: "",
+      seasonId: seasonId || "",
       divisionLevel: "beginner",
       gameType: "singles",
       genderCategory: "male",
@@ -171,9 +173,23 @@ export default function DivisionCreateModal({
 
   const resetModal = React.useCallback(() => {
     setCurrentStep("form");
-    reset();
+    reset({
+      name: "",
+      seasonId: seasonId || "",
+      divisionLevel: "beginner",
+      gameType: "singles",
+      genderCategory: "male",
+      maxSinglesPlayers: undefined,
+      maxDoublesTeams: undefined,
+      autoAssignmentEnabled: false,
+      isActive: true,
+      prizePoolTotal: undefined,
+      sponsorName: "",
+      description: "",
+      threshold: undefined,
+    });
     setError("");
-  }, [reset]);
+  }, [reset, seasonId]);
 
   useEffect(() => {
     if (open && isEditMode && division) {
