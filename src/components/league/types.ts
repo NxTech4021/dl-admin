@@ -83,6 +83,7 @@ export interface Season {
 }
 
 export interface Category {
+  game_type: string;
   id: string;
   name: string;
   genderRestriction: GenderRestriction;

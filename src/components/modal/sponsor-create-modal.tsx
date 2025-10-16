@@ -75,7 +75,7 @@ export function CreateSponsorModal({
     try {
       await axiosInstance.post(endpoints.sponsors.create, {
         ...formData,
-        leagueId,
+        leagueIds: [leagueId],
         contractAmount:
           formData.contractAmount !== ""
             ? Number(formData.contractAmount)
