@@ -68,7 +68,7 @@ const data = {
 
       hasNotification: true,
 
-      notificationCount: "9",
+      notificationCount: "1",
     },
   ],
 
