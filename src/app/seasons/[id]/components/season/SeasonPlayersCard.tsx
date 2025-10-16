@@ -2,55 +2,35 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Membership} from '@/ZodSchema/season-schema';
+import { Membership } from '@/ZodSchema/season-schema';
 import { Button } from '@/components/ui/button';
 import { IconUser, IconStar, IconCalendar, IconTarget } from '@tabler/icons-react';
 
-
 interface SeasonPlayersCardProps {
   memberships: Membership[];
+  divisions?: { id: string; name: string }[];
   sportType?: string | null;
 }
 
-export default function SeasonPlayersCard({ memberships, sportType }: SeasonPlayersCardProps) {
-  // Add mock data for demonstration
-  const mockMemberships: Membership[] = [
-    {
-      id: 'mock-1',
-      userId: 'user-1',
-      seasonId: 'season-1',
-      status: 'ACTIVE',
-      createdAt: new Date('2024-01-15'),
-      user: {
-        name: 'John Smith',
-        email: 'john.smith@example.com',
-      }
-    },
-    ...memberships
-  ];
+export default function SeasonPlayersCard({ memberships, divisions = [], sportType }: SeasonPlayersCardProps) {
+  const activePlayers = memberships.filter(m => m.status === 'ACTIVE' || m.status === 'PENDING');
+  const waitlistedPlayers = memberships.filter(m => m.status === 'WAITLISTED');
 
-  const activePlayers = mockMemberships.filter(m => m.status === 'ACTIVE');
-  const waitlistedPlayers = mockMemberships.filter(m => m.status === 'WAITLISTED');
-
-  // Helper function to get sport-specific rating display
-  const getSportRating = (member: Membership) => {
-    // Mock rating data for demonstration - using 1000+ scale
-    if (member.id === 'mock-1') {
-      return {
-        display: '1420'
-      };
-    }
-    
-    // For real data, we'll show a placeholder since ratings aren't in the current schema
-    // This would be enhanced when the API provides rating data
-    return {
-      display: 'N/A'
-    };
+  console.log("mebers", memberships)
+  const getDivisionName = (divisionId: string | null) => {
+    if (!divisionId) return 'Unassigned';
+    const division = divisions.find(d => d.id === divisionId);
+    return division ? division.name : 'Unassigned';
   };
 
-   const PlayerTable = ({ players }: { players: Membership[] }) => (
+  const getSportRating = (member: Membership) => {
+    // Placeholder rating logic
+    return { display: '1420' };
+  };
+
+  const PlayerTable = ({ players }: { players: Membership[] }) => (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
@@ -89,61 +69,39 @@ export default function SeasonPlayersCard({ memberships, sportType }: SeasonPlay
               const rating = getSportRating(member);
               return (
                 <TableRow key={member.id} className="hover:bg-muted/50">
-                  {/* Player name and username */}
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium text-sm">{member.user.name}</div>
+                      <div className="font-medium text-sm">{member.user?.name || 'Unknown'}</div>
                       <div className="text-xs text-muted-foreground">
-                        @{member.user.email.split('@')[0]}
+                        @{member.user?.email?.split('@')[0] || 'unknown'}
                       </div>
                     </div>
                   </TableCell>
-                  
-                  {/* Division assignment status */}
                   <TableCell>
                     <div className="text-sm">
                       <Badge variant="outline" className="text-xs">
-                        Unassigned
+                        {getDivisionName(member.divisionId ?? null)}
                       </Badge>
                     </div>
                   </TableCell>
-                  
-                  {/* Sport-specific skill rating */}
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={rating.display !== 'N/A' ? 'default' : 'outline'}
-                      className={`text-xs font-mono ${
-                        rating.display !== 'N/A' 
-                          ? 'bg-green-100 text-green-800 border-green-200' 
-                          : ''
-                      }`}
+                      className={`text-xs font-mono ${rating.display !== 'N/A' ? 'bg-green-100 text-green-800 border-green-200' : ''}`}
                     >
                       {rating.display}
                     </Badge>
                   </TableCell>
-                  
-                  {/* When player joined the season */}
                   <TableCell>
                     <div className="text-sm">
-                      {member.createdAt.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
+                      {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
                     </div>
                   </TableCell>
-                  
-                  {/* Active/Waitlist membership status */}
                   <TableCell>
-                    <Badge 
-                      variant={member.status === 'ACTIVE' ? 'default' : 'secondary'}
-                      className="capitalize text-xs"
-                    >
+                    <Badge variant={member.status === 'ACTIVE' ? 'default' : 'secondary'} className="capitalize text-xs">
                       {member.status.toLowerCase()}
                     </Badge>
                   </TableCell>
-                  
-                  {/* Division assignment action button */}
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
                       Assign to Division
@@ -173,17 +131,13 @@ export default function SeasonPlayersCard({ memberships, sportType }: SeasonPlay
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Season Players ({mockMemberships.length})</CardTitle>
+        <CardTitle>Season Players ({memberships.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="active">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active">
-              Active ({activePlayers.length})
-            </TabsTrigger>
-            <TabsTrigger value="waitlisted">
-              Waitlist ({waitlistedPlayers.length})
-            </TabsTrigger>
+            <TabsTrigger value="active">Active ({activePlayers.length})</TabsTrigger>
+            <TabsTrigger value="waitlisted">Waitlist ({waitlistedPlayers.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
             <PlayerTable players={activePlayers} />
