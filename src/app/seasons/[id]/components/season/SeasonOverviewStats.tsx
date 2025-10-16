@@ -6,7 +6,7 @@ import {
   IconUsers, 
   IconTrophy, 
   IconCalendar, 
-  IconTrendingUp 
+  IconTrendingUp,
 } from '@tabler/icons-react';
 
 interface SeasonOverviewStatsProps {
@@ -15,7 +15,7 @@ interface SeasonOverviewStatsProps {
 
 export default function SeasonOverviewStats({ season }: SeasonOverviewStatsProps) {
   // Calculate player statistics
-  const totalPlayers = season.memberships.length;
+  const totalRegisteredUsers = season.registeredUserCount || 0;
   const activePlayers = season.memberships.filter(m => m.status === 'ACTIVE').length;
   const waitlistedPlayers = season.memberships.filter(m => m.status === 'WAITLISTED').length;
   const pendingPlayers = season.memberships.filter(m => m.status === 'PENDING').length;
@@ -42,7 +42,7 @@ export default function SeasonOverviewStats({ season }: SeasonOverviewStatsProps
           <IconUsers className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalPlayers}</div>
+         <div className="text-2xl font-bold">{totalRegisteredUsers}</div>
           <p className="text-xs text-muted-foreground">
             {activePlayers} active, {waitlistedPlayers} waitlisted
           </p>
