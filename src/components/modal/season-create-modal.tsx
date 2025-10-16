@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,14 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -37,12 +36,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-
-type SeasonStatus = "UPCOMING" | "ACTIVE" | "FINISHED" | "CANCELLED";
+import { Badge } from "../ui/badge";
 
 interface SeasonFormData {
   name: string;
@@ -51,8 +51,7 @@ interface SeasonFormData {
   regiDeadline: Date | undefined;
   entryFee: string;
   description: string;
-  status: SeasonStatus;
-  categoryId: string;
+  categoryIds: string[];
   isActive: boolean;
   paymentRequired: boolean;
   promoCodeSupported: boolean;
@@ -62,6 +61,12 @@ interface SeasonFormData {
 interface Category {
   id: string;
   name: string;
+}
+
+interface DateErrors {
+  startDate?: string;
+  endDate?: string;
+  regiDeadline?: string;
 }
 
 interface SeasonCreateModalProps {
@@ -101,9 +106,7 @@ export default function SeasonCreateModal({
     regiDeadline: undefined,
     entryFee: "",
     description: "",
-
-    status: "UPCOMING",
-    categoryId: "",
+    categoryIds: [],
     isActive: false,
     paymentRequired: false,
     promoCodeSupported: false,
@@ -119,9 +122,7 @@ export default function SeasonCreateModal({
       regiDeadline: undefined,
       entryFee: "",
       description: "",
-
-      status: "UPCOMING",
-      categoryId: "",
+      categoryIds: [],
       isActive: false,
       paymentRequired: false,
       promoCodeSupported: false,
@@ -143,43 +144,52 @@ export default function SeasonCreateModal({
 
   const handleBackToForm = () => setCurrentStep("form");
 
-  // Add this validation utility
   const validateDates = (
     startDate: Date | undefined,
     endDate: Date | undefined,
     regiDeadline: Date | undefined
-  ): string | null => {
-    if (!startDate || !endDate || !regiDeadline) {
-      return "All dates are required";
+  ): DateErrors => {
+    const errors: DateErrors = {};
+
+    if (!startDate) errors.startDate = "Start date is required";
+    if (!endDate) errors.endDate = "End date is required";
+    if (!regiDeadline)
+      errors.regiDeadline = "Registration deadline is required";
+
+    if (startDate && endDate && startDate >= endDate) {
+      errors.endDate = "End date must be after start date";
     }
-    if (startDate >= endDate) {
-      return "End date must be after start date";
+
+    if (regiDeadline && startDate && regiDeadline >= startDate) {
+      errors.regiDeadline = "Registration deadline must be before start date";
     }
-    if (regiDeadline >= startDate) {
-      return "Registration deadline must be before start date";
-    }
-    return null;
+
+    return errors;
   };
 
-  // Update the handleCreateSeason function
+  const dateErrors = useMemo(() => {
+    return validateDates(form.startDate, form.endDate, form.regiDeadline);
+  }, [form.startDate, form.endDate, form.regiDeadline]);
+
   const handleCreateSeason = async (): Promise<void> => {
     setLoading(true);
     setError("");
 
     try {
       // Validate required fields
-      if (!form.name || !form.categoryId || !form.entryFee) {
+      if (!form.name || !form.categoryIds.length || !form.entryFee) {
         throw new Error("Please fill in all required fields");
       }
 
-      // Validate dates
-      const dateError = validateDates(
+      const dateErrors = validateDates(
         form.startDate,
         form.endDate,
         form.regiDeadline
       );
-      if (dateError) {
-        throw new Error(dateError);
+
+      if (Object.keys(dateErrors).length > 0) {
+        const errorMessage = Object.values(dateErrors).join(". ");
+        throw new Error(errorMessage);
       }
 
       const seasonData = {
@@ -189,9 +199,8 @@ export default function SeasonCreateModal({
         startDate: form.startDate!.toISOString(),
         endDate: form.endDate!.toISOString(),
         regiDeadline: form.regiDeadline!.toISOString(),
-        status: form.status,
-        categoryId: form.categoryId,
-        leagueIds: leagueId ? [leagueId] : [],
+        categoryIds: form.categoryIds,
+        leagueIds: [leagueId],
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,
         promoCodeSupported: form.promoCodeSupported,
@@ -207,9 +216,12 @@ export default function SeasonCreateModal({
       resetModal();
       onOpenChange(false);
       await onSeasonCreated?.();
-    } catch (error) {
+    } catch (error: any) {
+      // Enhanced error handling
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create season";
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to create season";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -221,14 +233,14 @@ export default function SeasonCreateModal({
   const isFormValid = useMemo(() => {
     return Boolean(
       form.name &&
-        form.categoryId &&
+        form.categoryIds.length > 0 &&
         form.startDate &&
         form.endDate &&
         form.regiDeadline &&
         form.entryFee &&
-        !validateDates(form.startDate, form.endDate, form.regiDeadline)
+        Object.keys(dateErrors).length === 0
     );
-  }, [form]);
+  }, [form, dateErrors]);
 
   return (
     <Dialog
@@ -321,30 +333,93 @@ export default function SeasonCreateModal({
               />
             </div>
 
-            {/* Category */}
-            <div>
-              <Label>Category *</Label>
-              <Select
-                value={form.categoryId}
-                onValueChange={(val) => handleChange("categoryId", val)}
-              >
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.length > 0 ? (
-                    categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <p className="p-2 text-sm text-muted-foreground">
-                      No categories available
-                    </p>
-                  )}
-                </SelectContent>
-              </Select>
+            {/* Category Selection */}
+            <div className="space-y-2">
+              <Label>Categories *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      "w-full justify-between h-11",
+                      !form.categoryIds.length && "text-muted-foreground"
+                    )}
+                  >
+                    {form.categoryIds.length > 0
+                      ? `${form.categoryIds.length} categories selected`
+                      : "Select categories"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search categories..." />
+                    <CommandEmpty>No categories found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {categories.map((category) => (
+                        <CommandItem
+                          key={category.id}
+                          onSelect={() => {
+                            setForm((prev) => {
+                              const selected = new Set(prev.categoryIds);
+                              if (selected.has(category.id)) {
+                                selected.delete(category.id);
+                              } else {
+                                selected.add(category.id);
+                              }
+                              return {
+                                ...prev,
+                                categoryIds: Array.from(selected),
+                              };
+                            });
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              form.categoryIds.includes(category.id)
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {category.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {categories.length > 0 && form.categoryIds.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {form.categoryIds.map((id) => {
+                    const category = categories.find((c) => c.id === id);
+                    return category ? (
+                      <Badge
+                        key={id}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {category.name}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              categoryIds: prev.categoryIds.filter(
+                                (cid) => cid !== id
+                              ),
+                            }));
+                          }}
+                        />
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Select one or more categories for this season
+              </p>
             </div>
 
             {/* Schedule */}
@@ -382,9 +457,16 @@ export default function SeasonCreateModal({
                       />
                     </PopoverContent>
                   </Popover>
+                  {/* Field-specific error */}
+                  {dateErrors[field.key] && (
+                    <p className="text-sm text-destructive mt-1">
+                      {dateErrors[field.key]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
+
             {/* Toggles */}
             <div className="grid grid-cols-2 gap-4">
               {(
@@ -438,8 +520,11 @@ export default function SeasonCreateModal({
                 <strong>Entry Fee:</strong> MYR {form.entryFee}
               </p>
               <p>
-                <strong>Category:</strong>{" "}
-                {categories.find((c) => c.id === form.categoryId)?.name}
+                <strong>Categories:</strong>{" "}
+                {form.categoryIds
+                  .map((id) => categories.find((c) => c.id === id)?.name)
+                  .filter(Boolean)
+                  .join(", ")}
               </p>
               <p>
                 <strong>Dates:</strong> {format(form.startDate!, "MMM dd")} -{" "}
