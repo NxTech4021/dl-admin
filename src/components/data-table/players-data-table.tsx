@@ -574,9 +574,8 @@ export function PlayersDataTable() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className={`${
-                hasActiveFilters ? "border-primary bg-primary/10" : ""
-              }`}
+              className={`${hasActiveFilters ? "border-primary bg-primary/10" : ""
+                }`}
             >
               <IconFilter className="size-4 mr-2" />
               Filters
@@ -615,9 +614,8 @@ export function PlayersDataTable() {
 
               <Select value={sportFilter} onValueChange={setSportFilter}>
                 <SelectTrigger
-                  className={`w-[140px] ${
-                    sportFilter !== "all" ? "border-primary" : ""
-                  }`}
+                  className={`w-[140px] ${sportFilter !== "all" ? "border-primary" : ""
+                    }`}
                 >
                   <SelectValue placeholder="All Sports" />
                 </SelectTrigger>
@@ -651,9 +649,8 @@ export function PlayersDataTable() {
 
               <Select value={locationFilter} onValueChange={setLocationFilter}>
                 <SelectTrigger
-                  className={`w-[140px] ${
-                    locationFilter !== "all" ? "border-primary" : ""
-                  }`}
+                  className={`w-[140px] ${locationFilter !== "all" ? "border-primary" : ""
+                    }`}
                 >
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
@@ -714,10 +711,10 @@ export function PlayersDataTable() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
+                          header.column.columnDef.header,
 
-                            header.getContext()
-                          )}
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}

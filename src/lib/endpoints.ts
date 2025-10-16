@@ -39,6 +39,12 @@ export const endpoints = {
     getStats: "/api/player/stats",
     getById: (id: string) => `/api/player/${id}`,
 
+    // Player history endpoints
+    getLeagueHistory: (id: string) => `/api/player/${id}/leagues`,
+    getSeasonHistory: (id: string) => `/api/player/${id}/seasons`,
+    getDivisionHistory: (id: string) => `/api/player/${id}/divisions`,
+    getMatchHistoryAdmin: (id: string) => `/api/player/${id}/matches`,
+
     // authenticated player profile
     getProfile: "/api/player/profile/me",
     updateProfile: "/api/player/profile/me",
