@@ -46,10 +46,10 @@ const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
 interface CategoryFormData {
   name: string;
   matchFormat: string;
-  maxPlayers: string;
-  maxTeams: string;
   game_type: GameType;
   gender_category: GenderType;
+  isActive: boolean;
+  categoryOrder: number;
 }
 
 export function CreateCategoryModal({
@@ -61,10 +61,10 @@ export function CreateCategoryModal({
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     matchFormat: "",
-    maxPlayers: "",
-    maxTeams: "",
     game_type: "SINGLES",
     gender_category: "MIXED",
+    isActive: true,
+    categoryOrder: 0,
   });
   const [loading, setLoading] = useState(false);
 
@@ -88,9 +88,7 @@ export function CreateCategoryModal({
       ...prev,
       game_type: value,
       name: generateCategoryName(prev.gender_category, value),
-      // Clear maxTeams for singles, clear maxPlayers for doubles
-      maxPlayers: value === "SINGLES" ? prev.maxPlayers : "",
-      maxTeams: value === "DOUBLES" ? prev.maxTeams : "",
+      
       matchFormat: prev.matchFormat,
     }));
   };
@@ -119,19 +117,14 @@ export function CreateCategoryModal({
           : "FEMALE";
 
       await axiosInstance.post(endpoints.categories.create, {
-        leagueId,
+        leagueIds: [leagueId],
         name: formData.name,
         genderRestriction,
         matchFormat: formData.matchFormat,
-        // Only send maxPlayers for singles, maxTeams for doubles
-        maxPlayers: formData.game_type === "SINGLES" && formData.maxPlayers
-          ? parseInt(formData.maxPlayers)
-          : undefined,
-        maxTeams: formData.game_type === "DOUBLES" && formData.maxTeams
-          ? parseInt(formData.maxTeams)
-          : undefined,
         game_type: formData.game_type,
         gender_category: formData.gender_category,
+        isActive: formData.isActive,
+        categoryOrder: formData.categoryOrder,
       });
 
       toast.success("Category created!");
@@ -140,10 +133,10 @@ export function CreateCategoryModal({
       setFormData({
         name: "",
         matchFormat: "",
-        maxPlayers: "",
-        maxTeams: "",
         game_type: "SINGLES",
         gender_category: "MIXED",
+        isActive: true,
+        categoryOrder: 0,
       });
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to create category");
@@ -169,22 +162,6 @@ export function CreateCategoryModal({
               <p className="text-sm text-muted-foreground">
                 {formData.matchFormat || "Match format will be set automatically"}
               </p>
-              {formData.game_type === "SINGLES" && formData.maxPlayers && (
-                <p className="text-sm text-muted-foreground">
-                  Max Players: {formData.maxPlayers}
-                </p>
-              )}
-              {formData.game_type === "DOUBLES" && formData.maxTeams && (
-                <p className="text-sm text-muted-foreground">
-                  Max Teams: {formData.maxTeams}
-                </p>
-              )}
-              {((formData.game_type === "SINGLES" && !formData.maxPlayers) || 
-                (formData.game_type === "DOUBLES" && !formData.maxTeams)) && (
-                <p className="text-sm text-muted-foreground">
-                  No player/team limit
-                </p>
-              )}
             </div>
           </div>
 
@@ -228,55 +205,6 @@ export function CreateCategoryModal({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {/* Capacity Section */}
-          <div className="space-y-4">
-            {/* Max Players Field - Only for Singles */}
-            {formData.game_type === "SINGLES" && (
-              <div className="space-y-2">
-                <Label htmlFor="maxPlayers">Maximum Players (Optional)</Label>
-                <Input
-                  id="maxPlayers"
-                  type="number"
-                  placeholder="Enter max players (leave empty for no limit)"
-                  value={formData.maxPlayers}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      maxPlayers: e.target.value,
-                    }))
-                  }
-                  className="h-11"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Recommended: 8-32 players. Leave empty for unlimited players.
-                </p>
-              </div>
-            )}
-
-            {/* Max Teams Field - Only for Doubles */}
-            {formData.game_type === "DOUBLES" && (
-              <div className="space-y-2">
-                <Label htmlFor="maxTeams">Maximum Teams (Optional)</Label>
-                <Input
-                  id="maxTeams"
-                  type="number"
-                  placeholder="Enter max teams (leave empty for no limit)"
-                  value={formData.maxTeams}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      maxTeams: e.target.value,
-                    }))
-                  }
-                  className="h-11"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Recommended: 4-16 teams. Leave empty for unlimited teams.
-                </p>
-              </div>
-            )}
           </div>
 
           <div className="space-y-2">

@@ -35,10 +35,10 @@ const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
 interface CategoryFormData {
   name: string;
   matchFormat: string;
-  maxPlayers: string;
-  maxTeams: string;
   game_type: GameType;
   gender_category: GenderType;
+  isActive: boolean;
+  categoryOrder: number;
 }
 
 interface EditCategoryModalProps {
@@ -59,10 +59,10 @@ export function EditCategoryModal({
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     matchFormat: "",
-    maxPlayers: "",
-    maxTeams: "",
     game_type: "SINGLES",
     gender_category: "MIXED",
+    isActive: true,
+    categoryOrder: 0,
   });
   const [loading, setLoading] = useState(false);
 
@@ -82,7 +82,6 @@ export function EditCategoryModal({
 
   useEffect(() => {
     if (category) {
-      // Map the category data to the new form structure
       const gender_category = category.genderRestriction === "OPEN" 
         ? "MIXED" 
         : category.genderRestriction === "MALE" 
@@ -92,12 +91,12 @@ export function EditCategoryModal({
       setFormData({
         name: category.name || "",
         matchFormat: category.matchFormat || "",
-        maxPlayers: category.maxPlayers?.toString() || "",
-        maxTeams: category.maxTeams?.toString() || "",
         game_type: category.game_type === "SINGLES" || category.game_type === "DOUBLES"
           ? category.game_type
           : "SINGLES",
         gender_category,
+        isActive: category.isActive ?? true,
+        categoryOrder: category.categoryOrder ?? 0,
       });
     }
   }, [category]);
@@ -107,8 +106,6 @@ export function EditCategoryModal({
       ...prev,
       game_type: value,
       name: generateCategoryName(prev.gender_category, value),
-      maxPlayers: value === "SINGLES" ? prev.maxPlayers : "",
-      maxTeams: value !== "SINGLES" ? prev.maxTeams : "",
       matchFormat: prev.matchFormat,
     }));
   };
@@ -133,14 +130,14 @@ export function EditCategoryModal({
           : "FEMALE";
 
       await axiosInstance.put(endpoints.categories.update(category.id), {
-        leagueId,
+        leagueIds: [leagueId],
         name: formData.name,
         genderRestriction,
         matchFormat: formData.matchFormat,
-        maxPlayers: formData.maxPlayers ? parseInt(formData.maxPlayers) : null,
-        maxTeams: formData.maxTeams ? parseInt(formData.maxTeams) : null,
         game_type: formData.game_type,
         gender_category: formData.gender_category,
+        isActive: formData.isActive,
+        categoryOrder: formData.categoryOrder,
       });
       
       toast.success("Category updated!");
@@ -214,51 +211,7 @@ export function EditCategoryModal({
             </div>
           </div>
 
-          {/* Capacity Section */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Max Players Field */}
-            <div className="space-y-2">
-              <Label htmlFor="maxPlayers">Maximum Players</Label>
-              <Input
-                id="maxPlayers"
-                type="number"
-                placeholder="Enter max players"
-                value={formData.maxPlayers}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxPlayers: e.target.value,
-                  }))
-                }
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Recommended: 8-32 players
-              </p>
-            </div>
-
-            {/* Max Teams Field */}
-            <div className="space-y-2">
-              <Label htmlFor="maxTeams">Maximum Teams</Label>
-              <Input
-                id="maxTeams"
-                type="number"
-                placeholder="Enter max teams"
-                value={formData.maxTeams}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxTeams: e.target.value,
-                  }))
-                }
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Recommended: 4-16 teams
-              </p>
-            </div>
-          </div>
-
+          {/* Match Format */}
           <div className="space-y-2">
             <Label>Match Format *</Label>
             <Input
@@ -276,16 +229,46 @@ export function EditCategoryModal({
               Specify the match format for this category
             </p>
           </div>
+
+          {/* Category Order and Status */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Category Order</Label>
+              <Input
+                type="number"
+                value={formData.categoryOrder}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    categoryOrder: parseInt(e.target.value) || 0,
+                  }))
+                }
+                className="h-11"
+                min={0}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <span className="text-sm">Active</span>
+                <Switch
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isActive: checked,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="mt-6">
           <Button
             onClick={handleSubmit}
-            disabled={
-              loading ||
-              !formData.name ||
-              (!formData.maxPlayers && !formData.maxTeams)
-            }
+            disabled={loading || !formData.name || !formData.matchFormat}
             className="w-full sm:w-auto"
           >
             {loading ? (

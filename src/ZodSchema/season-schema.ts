@@ -4,8 +4,9 @@ export const membershipSchema = z.object({
   id: z.string(),
   userId: z.string(),
   seasonId: z.string(),
+  divisionId: z.string().optional(),
   status: z.enum(['ACTIVE', 'WAITLISTED', 'PENDING', 'WITHDRAWN']),
-  createdAt: z.coerce.date(),
+  joinedAt: z.coerce.date(),
   user: z.object({
     name: z.string(),
     email: z.string().email(),
