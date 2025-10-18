@@ -194,52 +194,17 @@ const columns: ColumnDef<Season>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "sportType",
-    header: "Sports",
-    cell: ({ row }) => {
-      const sportType = row.original.sportType;
-      if (!sportType)
-        return <span className="text-muted-foreground">No sport</span>;
-
-      return (
-        <Badge
-          variant={getLeagueTypeBadgeVariant(sportType)}
-          className="capitalize"
-          style={{
-            backgroundColor: getSportColor(sportType),
-            color: "white",
-            borderColor: getSportColor(sportType),
-          }}
-        >
-          {sportType}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "seasonType",
-    header: "League Type",
+    accessorKey: "league",
+    header: "Leagues",
     cell: ({ row }) => {
       const seasonType = row.original.seasonType;
       if (!seasonType)
-        return <span className="text-muted-foreground">No type</span>;
+        return <span className="text-muted-foreground">to be done today</span>;
 
       return (
         <Badge variant="outline" className="capitalize">
           {seasonType}
         </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "description", // TODO: change description to 'Leagues' later when module has been implemented
-    header: "Description",
-    cell: ({ row }) => {
-      const description = row.original.description;
-      return (
-        <div className="max-w-[200px] truncate">
-          {description || "No description"}
-        </div>
       );
     },
   },
@@ -277,8 +242,13 @@ const columns: ColumnDef<Season>[] = [
       <div className="flex items-center gap-2">
         <IconCalendar className="size-4 text-muted-foreground" />
         <span>
-          {formatDate(row.original.startDate)} –{" "}
-          {formatDate(row.original.endDate)}
+          {row.original.startDate
+            ? formatDate(row.original.startDate)
+            : "No start date"}{" "}
+          –{" "}
+          {row.original.endDate
+            ? formatDate(row.original.endDate)
+            : "No end date"}
         </span>
       </div>
     ),
