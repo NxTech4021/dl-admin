@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -72,11 +72,21 @@ export type Division = z.infer<typeof divisionSchema>;
 
 interface SeasonDivisionsCardProps {
   seasonId: string;
+  divisions: Division[]; // Receive divisions as props
+  isLoading?: boolean;   // Receive loading state as props
+  onDivisionCreated?: () => Promise<void>;
+  onDivisionUpdated?: () => Promise<void>;
+  onDivisionDeleted?: () => Promise<void>;
 }
 
-export default function SeasonDivisionsCard({ seasonId }: SeasonDivisionsCardProps) {
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function SeasonDivisionsCard({ 
+  seasonId, 
+  divisions, 
+  isLoading = false,
+  onDivisionCreated,
+  onDivisionUpdated,
+  onDivisionDeleted
+}: SeasonDivisionsCardProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingDivision, setEditingDivision] = useState<Division | null>(null);
@@ -84,38 +94,19 @@ export default function SeasonDivisionsCard({ seasonId }: SeasonDivisionsCardPro
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchDivisions = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
-      if (!response.data || !Array.isArray(response.data)) {
-        setDivisions([]);
-        return;
-      }
-      const parsed = z.array(divisionSchema).parse(response.data);
-      setDivisions(parsed);
-    } catch (error) {
-      console.error('Failed to fetch divisions:', error);
-      setDivisions([]);
-      toast.error('Unable to load divisions.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (seasonId) {
-      fetchDivisions();
-    }
-  }, [seasonId]);
-
   const handleDivisionCreated = () => {
-    fetchDivisions();
+    onDivisionCreated?.();
   };
 
   const handleEditDivision = (division: Division) => {
     setEditingDivision(division);
     setIsEditModalOpen(true);
+  };
+
+  const handleDivisionUpdated = () => {
+    onDivisionUpdated?.();
+    setIsEditModalOpen(false);
+    setEditingDivision(null);
   };
 
   const handleDeleteRequest = (division: Division) => {
@@ -130,7 +121,7 @@ export default function SeasonDivisionsCard({ seasonId }: SeasonDivisionsCardPro
     try {
       await axiosInstance.delete(`${endpoints.division.delete}/${deleteDivision.id}`);
       toast.success('Division deleted successfully');
-      await fetchDivisions();
+      onDivisionDeleted?.(); // Call parent's refresh function
     } catch (error) {
       console.error('Failed to delete division:', error);
       toast.error('Failed to delete division');
@@ -340,7 +331,7 @@ export default function SeasonDivisionsCard({ seasonId }: SeasonDivisionsCardPro
         mode="edit"
         division={editingDivision}
         seasonId={seasonId}
-        onDivisionCreated={handleDivisionCreated}
+        onDivisionCreated={handleDivisionUpdated} // Use updated handler
       />
 
       {/* Delete Confirmation Dialog */}
