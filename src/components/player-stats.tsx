@@ -3,7 +3,7 @@
 import * as React from "react";
 import { IconUsers } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 interface PlayerStatsData {
   total: number;
@@ -19,8 +19,9 @@ export function PlayerStats() {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/stats`
+        const response = await axiosInstance.get(
+          endpoints.player.getStats
+          // `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/stats`
         );
         if (response.status !== 200) {
           throw new Error("Failed to fetch stats");
@@ -53,13 +54,22 @@ export function PlayerStats() {
           <p className="text-sm text-muted-foreground">Total Players</p>
         </div>
       </div>
-      <div className="flex items-center gap-3 rounded-lg border p-4">
+      {/* <div className="flex items-center gap-3 rounded-lg border p-4">
         <div className="rounded-full bg-green-500/10 p-2">
           <div className="size-4 rounded-full bg-green-500"></div>
         </div>
         <div>
           <p className="text-2xl font-bold">{stats?.active ?? 0}</p>
           <p className="text-sm text-muted-foreground">Active</p>
+        </div>
+      </div> */}
+      <div className="flex items-center gap-3 rounded-lg border p-4">
+        <div className="rounded-full bg-green-500/10 p-2">
+          <div className="size-4 rounded-full bg-green-500"></div>
+        </div>
+        <div>
+          <p className="text-2xl font-bold">{stats?.verified ?? 0}</p>
+          <p className="text-sm text-muted-foreground">Verified</p>
         </div>
       </div>
       <div className="flex items-center gap-3 rounded-lg border p-4">
@@ -69,15 +79,6 @@ export function PlayerStats() {
         <div>
           <p className="text-2xl font-bold">{stats?.inactive ?? 0}</p>
           <p className="text-sm text-muted-foreground">Inactive</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 rounded-lg border p-4">
-        <div className="rounded-full bg-blue-500/10 p-2">
-          <div className="size-4 rounded-full bg-blue-500"></div>
-        </div>
-        <div>
-          <p className="text-2xl font-bold">{stats?.verified ?? 0}</p>
-          <p className="text-sm text-muted-foreground">Verified</p>
         </div>
       </div>
     </div>

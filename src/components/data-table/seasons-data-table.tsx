@@ -1,15 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import * as React from "react";
 import {
   IconDotsVertical,
-  IconMail,
-  IconMapPin,
   IconCalendar,
-  IconTrophy,
   IconEye,
   IconEdit,
   IconTrash,
+  IconTrophy,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -25,7 +24,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { z } from "zod";
+import { Season } from "@/ZodSchema/season-schema";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,47 +45,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-// Player schema based on the database structure and onboarding data
-export const playerSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  displayUsername: z.string().nullable(),
-  email: z.string().email(),
-  emailVerified: z.boolean(),
-  image: z.string().nullable(),
-  area: z.string().nullish(), // Updated to handle null or undefined
-  gender: z.enum(["male", "female"]).nullable(),
-  // Use z.coerce.date() to automatically convert date strings from the API
-  dateOfBirth: z.coerce.date().nullable(),
-  registeredDate: z.coerce.date(),
-  lastLoginDate: z.coerce.date().nullish(), // Updated to handle null or undefined
-  sports: z.array(z.enum(["pickleball", "tennis", "padel"])),
-  skillRatings: z
-    .record(
-      z.string(),
-      z.object({
-        rating: z.number(),
-        confidence: z.string(),
-        rd: z.number(),
-      })
-    )
-    .nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).nullish(), // Updated to handle null or undefined
-  completedOnboarding: z.boolean().default(false), // Updated to handle undefined with a default
-});
-
-export type Player = z.infer<typeof playerSchema>;
-
-const getInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+export type SeasonsDataTableProps = {
+  data: Season[];
+  isLoading: boolean;
+  onViewSeason?: (seasonId: string) => void;
 };
 
 const formatDate = (date: Date) => {
@@ -97,41 +61,94 @@ const formatDate = (date: Date) => {
   });
 };
 
-const getStatusBadgeVariant = (status: Player["status"]) => {
-  switch (status) {
-    case "active":
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-MY", {
+    style: "currency",
+    currency: "MYR",
+  }).format(amount);
+};
+
+const getLeagueTypeBadgeVariant = (leagueType: string) => {
+  switch (leagueType) {
+    case "Pickleball":
       return "default";
-    case "inactive":
+    case "Tennis":
       return "secondary";
-    case "suspended":
-      return "destructive";
+    case "Padel":
+      return "outline";
     default:
-      return "secondary";
+      return "outline";
   }
 };
 
-const getSportsDisplay = (sports: Player["sports"]) => {
-  return sports.map((sport) => (
-    <Badge key={sport} variant="outline" className="text-xs capitalize">
-      {sport}
-    </Badge>
-  ));
+const getSportColor = (leagueType: string) => {
+  switch (leagueType) {
+    case "PICKLEBALL":
+      return "#8e41e6ff";
+    case "TENNIS":
+      return "#518516ff";
+    case "PADEL":
+      return "#3880c0ff";
+    default:
+      return "#6B7280";
+  }
 };
 
-const getHighestRating = (skillRatings: Player["skillRatings"]) => {
-  if (!skillRatings) return null;
+// const getCompetitionTypeBadgeVariant = (competitionType: string) => {
+//   switch (competitionType) {
+//     case "Men's Singles":
+//       return "default";
+//     case "Men's Doubles":
+//       return "secondary";
+//     case "Mixed Doubles":
+//       return "outline";
+//     default:
+//       return "outline";
+//   }
+// };
 
-  const ratings = Object.values(skillRatings);
-  if (ratings.length === 0) return null;
-
-  const highest = ratings.reduce((max, current) =>
-    current.rating > max.rating ? current : max
-  );
-
-  return highest.rating.toFixed(1);
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case "UPCOMING":
+      return "secondary";
+    case "ACTIVE":
+      return "default";
+    case "FINISHED":
+      return "outline";
+    case "CANCELLED":
+      return "destructive";
+    default:
+      return "outline";
+  }
 };
 
-const columns: ColumnDef<Player>[] = [
+// Define handlers outside of component to avoid scope issues
+const handleViewSeason = (
+  seasonId: string,
+  onViewSeason?: (id: string) => void
+) => {
+  if (onViewSeason) onViewSeason(seasonId);
+};
+
+const handleEditSeason = (seasonId: string) => {
+  // TODO: Open edit modal or navigate to edit page
+};
+
+const handleDeleteSeason = async (seasonId: string) => {
+  if (!confirm("Are you sure you want to delete this season?")) {
+    return;
+  }
+
+  try {
+    await axiosInstance.delete(endpoints.season.delete(seasonId));
+    // Refresh the data after successful deletion
+    window.location.reload();
+  } catch (error) {
+    console.error("Failed to delete season:", error);
+  }
+};
+
+const columns: ColumnDef<Season>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -160,24 +177,16 @@ const columns: ColumnDef<Player>[] = [
   },
   {
     accessorKey: "name",
-    header: "Player",
+    header: "Season Name",
     cell: ({ row }) => {
-      const player = row.original;
+      const season = row.original;
       return (
         <div className="flex items-center gap-3">
-          <Avatar className="size-8">
-            <AvatarImage src={player.image || undefined} alt={player.name} />
-            <AvatarFallback className="text-xs">
-              {getInitials(player.name)}
-            </AvatarFallback>
-          </Avatar>
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+            <IconTrophy className="size-4 text-primary" />
+          </div>
           <div className="flex flex-col">
-            <div className="font-medium">{player.name}</div>
-            {player.displayUsername && (
-              <div className="text-sm text-muted-foreground">
-                @{player.displayUsername}
-              </div>
-            )}
+            <div className="font-medium">{season.name}</div>
           </div>
         </div>
       );
@@ -185,125 +194,135 @@ const columns: ColumnDef<Player>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => {
-      const player = row.original;
-      return (
-        <div className="flex items-center gap-2">
-          <IconMail className="size-4 text-muted-foreground" />
-          <span>{player.email}</span>
-          {!player.emailVerified && (
-            <Badge variant="destructive" className="text-xs">
-              Unverified
-            </Badge>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "area",
-    header: "Area",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconMapPin className="size-4 text-muted-foreground" />
-        <span>{row.original.area}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "gender",
-    header: "Gender",
-    cell: ({ row }) => {
-      const gender = row.original.gender;
-      return gender ? (
-        <Badge variant="outline" className="capitalize">
-          {gender}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">-</span>
-      );
-    },
-  },
-  {
-    accessorKey: "sports",
+    accessorKey: "sportType",
     header: "Sports",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {getSportsDisplay(row.original.sports)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "skillRating",
-    header: "Top Rating",
     cell: ({ row }) => {
-      const rating = getHighestRating(row.original.skillRatings);
-      return rating ? (
-        <div className="flex items-center gap-2">
-          <IconTrophy className="size-4 text-muted-foreground" />
-          <span className="font-medium">{rating}</span>
-        </div>
-      ) : (
-        <span className="text-muted-foreground">-</span>
+      const sportType = row.original.sportType;
+      if (!sportType)
+        return <span className="text-muted-foreground">No sport</span>;
+
+      return (
+        <Badge
+          variant={getLeagueTypeBadgeVariant(sportType)}
+          className="capitalize"
+          style={{
+            backgroundColor: getSportColor(sportType),
+            color: "white",
+            borderColor: getSportColor(sportType),
+          }}
+        >
+          {sportType}
+        </Badge>
       );
     },
   },
   {
-    accessorKey: "registeredDate",
-    header: "Registered",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconCalendar className="size-4 text-muted-foreground" />
-        <span>{formatDate(row.original.registeredDate)}</span>
-      </div>
-    ),
+    accessorKey: "seasonType",
+    header: "League Type",
+    cell: ({ row }) => {
+      const seasonType = row.original.seasonType;
+      if (!seasonType)
+        return <span className="text-muted-foreground">No type</span>;
+
+      return (
+        <Badge variant="outline" className="capitalize">
+          {seasonType}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "description", // TODO: change description to 'Leagues' later when module has been implemented
+    header: "Description",
+    cell: ({ row }) => {
+      const description = row.original.description;
+      return (
+        <div className="max-w-[200px] truncate">
+          {description || "No description"}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
     header: "Status",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return (
+        <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
+          {status}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "regiDeadline",
+    header: "Registration Deadline",
+    cell: ({ row }) => {
+      const regiDeadline = row.original.regiDeadline;
+      if (!regiDeadline)
+        return <span className="text-muted-foreground">No deadline</span>;
+
+      return (
+        <div className="flex items-center gap-2">
+          <span>{formatDate(regiDeadline)}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "duration",
+    header: "Duration",
     cell: ({ row }) => (
-      <Badge
-        variant={getStatusBadgeVariant(row.original.status)}
-        className="capitalize"
-      >
-        {row.original.status}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <IconCalendar className="size-4 text-muted-foreground" />
+        <span>
+          {formatDate(row.original.startDate)} –{" "}
+          {formatDate(row.original.endDate)}
+        </span>
+      </div>
     ),
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const player = row.original;
-
+    cell: ({ row, table }) => {
+      const season = row.original;
+      const onViewSeason = table.options.meta?.onViewSeason;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+              className="hover:bg-muted hover:text-foreground transition-colors flex size-8"
               size="icon"
             >
               <IconDotsVertical className="size-4" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <Link href={`/players/${player.id}`}>
-              <DropdownMenuItem>
-                <IconEye className="mr-2 size-4" />
-                View Profile
-              </DropdownMenuItem>
-            </Link>
-            <DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem
+              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+              onClick={() => handleViewSeason(season.id, onViewSeason)}
+            >
+              <IconEye className="mr-2 size-4" />
+              View Season
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+              onClick={() => handleEditSeason(season.id)}
+            >
               <IconEdit className="mr-2 size-4" />
-              Edit Player
+              Edit Season
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem
+              variant="destructive"
+              className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
+              onClick={() => handleDeleteSeason(season.id)}
+            >
               <IconTrash className="mr-2 size-4" />
-              Delete Player
+              Delete Season
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -312,9 +331,11 @@ const columns: ColumnDef<Player>[] = [
   },
 ];
 
-export function PlayersDataTable() {
-  const [data, setData] = React.useState<Player[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+export function SeasonsDataTable({
+  data,
+  isLoading,
+  onViewSeason,
+}: SeasonsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -323,30 +344,6 @@ export function PlayersDataTable() {
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-
-  React.useEffect(() => {
-    const fetchPlayers = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/`
-        );
-        if (response.status !== 200) {
-          throw new Error("Network response was not ok");
-        }
-        const result = await response.data;
-
-        const parsedData = z.array(playerSchema).parse(result.data);
-        setData(parsedData);
-      } catch (error) {
-        console.error("Failed to fetch players:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlayers();
-  }, []);
 
   const table = useReactTable({
     data,
@@ -358,6 +355,7 @@ export function PlayersDataTable() {
       columnFilters,
       globalFilter,
     },
+    meta: { onViewSeason },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -375,10 +373,11 @@ export function PlayersDataTable() {
 
   return (
     <div className="space-y-4">
+      {/* Search and Selection Info */}
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search players by name, email, or area..."
+            placeholder="Search seasons by name, league type..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
@@ -387,12 +386,13 @@ export function PlayersDataTable() {
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} player(s) selected
+            {table.getFilteredRowModel().rows.length} season(s) selected
           </div>
         </div>
       </div>
 
-      <div className="rounded-md border mx-4 lg:mx-6">
+      {/* Table Container */}
+      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -417,9 +417,12 @@ export function PlayersDataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
-                  Loading players...
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Loading seasons...
+                  </div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -427,6 +430,7 @@ export function PlayersDataTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -442,9 +446,9 @@ export function PlayersDataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
-                  No players found.
+                  No seasons found.
                 </TableCell>
               </TableRow>
             )}
@@ -452,10 +456,11 @@ export function PlayersDataTable() {
         </Table>
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} player(s)
+          {table.getFilteredRowModel().rows.length} season(s)
         </div>
         <div className="flex items-center space-x-2">
           <Button

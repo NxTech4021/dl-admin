@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, UserCircle } from "lucide-react";
@@ -22,10 +16,15 @@ interface ProfileCardProps {
     image?: string | null;
     status?: string | null;
   } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (data: any) => void;
   saving: boolean;
 }
-export function ProfileCard({ profile, onSave, saving = false }: ProfileCardProps) {
+export function ProfileCard({
+  profile,
+  onSave,
+  saving = false,
+}: ProfileCardProps) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: profile?.name ?? "",
@@ -56,7 +55,7 @@ export function ProfileCard({ profile, onSave, saving = false }: ProfileCardProp
   const displayEmail = profile?.email ?? "No email";
   const displayArea = profile?.area ?? "Location not set";
   const displayGender = profile?.gender ?? "Gender not set";
-//   const displayStatus = profile?.status ?? "inactive";
+  //   const displayStatus = profile?.status ?? "inactive";
 
   return (
     <Card>
