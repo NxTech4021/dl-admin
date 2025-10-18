@@ -95,6 +95,17 @@ export const endpoints = {
     getById: (id: string) => `/api/division/${id}`,
     update: (id: string) => `/api/division/${id}`,
     delete: (id: string) => `/api/division/delete/${id}`,
+    
+    //Player Assign to Division 
+    assignPlayer: "/api/division/assign",
+    removePlayer: (divisionId: string, userId: string) =>
+    `/api/division/${divisionId}/users/${userId}`,
+    getDivisionAssignments: (divisionId: string) =>
+    `/api/division/divisions/${divisionId}`,
+    getUserDivisionAssignments: (userId: string) =>
+    `/api/division/users/${userId}`,
+    autoAssign: "/api/division/auto-assign",
+    transferPlayer: "/api/division/transfer",
   },
 
   match: {

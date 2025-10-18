@@ -153,8 +153,6 @@ export default function DivisionCreateModal({
     const fetchSeasons = async () => {
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
-        // assume array of { id, name, startDate? }
-        console.log("seasons", res.data);
         setSeasons(
           Array.isArray(res.data) ? res.data : res.data?.seasons ?? []
         );
@@ -258,6 +256,7 @@ export default function DivisionCreateModal({
         isActive: Boolean(data.isActive),
       };
 
+      console.log("payload", payload)
       const toNumberOrNull = (value: unknown) => {
         if (value === undefined || value === null || value === "") {
           return null;
@@ -290,9 +289,9 @@ export default function DivisionCreateModal({
         res = await axiosInstance.post(endpoints.division.create, payload);
         toast.success(res.data?.message ?? "Division created");
       }
+      onDivisionCreated?.();
       resetModal();
       onOpenChange(false);
-      onDivisionCreated?.();
     } catch (err: any) {
       const message =
         err.response?.data?.error ||
