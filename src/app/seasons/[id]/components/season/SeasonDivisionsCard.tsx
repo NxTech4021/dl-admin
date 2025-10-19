@@ -72,8 +72,8 @@ export type Division = z.infer<typeof divisionSchema>;
 
 interface SeasonDivisionsCardProps {
   seasonId: string;
-  divisions: Division[]; // Receive divisions as props
-  isLoading?: boolean;   // Receive loading state as props
+  divisions: Division[]; 
+  isLoading?: boolean; 
   onDivisionCreated?: () => Promise<void>;
   onDivisionUpdated?: () => Promise<void>;
   onDivisionDeleted?: () => Promise<void>;
@@ -119,9 +119,9 @@ export default function SeasonDivisionsCard({
     
     setIsDeleting(true);
     try {
-      await axiosInstance.delete(`${endpoints.division.delete}/${deleteDivision.id}`);
+      await axiosInstance.delete(endpoints.division.delete(deleteDivision.id));
       toast.success('Division deleted successfully');
-      onDivisionDeleted?.(); // Call parent's refresh function
+      onDivisionDeleted?.();
     } catch (error) {
       console.error('Failed to delete division:', error);
       toast.error('Failed to delete division');
