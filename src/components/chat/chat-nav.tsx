@@ -54,7 +54,7 @@ const paths = {
   },
 };
 
-export default function ChatNav({ loading, user, contacts, conversations, selectedConversationId }) {
+export default function ChatNav({ loading, user, contacts, conversations, selectedConversationId }: any) {
   const router = useRouter();
   const mdUp = useResponsive();
   const { collapseDesktop, onCollapseDesktop, openMobile, onOpenMobile, onCloseMobile } = useCollapseNav();
@@ -68,7 +68,7 @@ export default function ChatNav({ loading, user, contacts, conversations, select
   console.log("contacts mock", contacts)
 
   console.log("id mock", selectedConversationId)
-  console.log(" mock user", user)
+  console.log(" Chat nav user", user)
   console.log("contacts mock", contacts)
 
 
@@ -103,7 +103,7 @@ export default function ChatNav({ loading, user, contacts, conversations, select
 
       if (inputValue) {
         // Assuming contacts have a 'name' property
-        const results = contacts.filter((contact) =>
+        const results = contacts.filter((contact : any) =>
           contact.displayName.toLowerCase().includes(inputValue.toLowerCase())
         );
         setSearchContacts((prevState) => ({
@@ -169,14 +169,14 @@ export default function ChatNav({ loading, user, contacts, conversations, select
     </>
   );
 
-  // Work tomorrow 
+  
   const renderContent = (
     <>
       <div className="flex flex-row items-center justify-between ">
         {!collapseDesktop && (
           <div className="flex-start">
           
-            <ChatNavAccount />
+            <ChatNavAccount user ={user}/>
           </div>
         )}
 

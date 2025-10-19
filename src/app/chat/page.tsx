@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { _mockContacts, _mockConversation, _mockConversations, _mockUser } from "./hooks/_mockData";
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import { useSession } from '@/lib/auth-client';
 import ChatNav from '@/components/chat/chat-nav';
 import ChatHeaderDetail from '@/components/chat/chat-header-detail';
 import ChatHeaderCompose from '@/components/chat/chat-header-compose';
@@ -22,7 +22,8 @@ import ChatRoom from '@/components/chat/chat-room';
 export default function ChatView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const user = _mockUser;
+  const { data: session } = useSession();
+  const user = session?.user;
 
   const contacts = _mockContacts;
   const conversations = _mockConversations;

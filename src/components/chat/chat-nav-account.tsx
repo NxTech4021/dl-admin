@@ -3,19 +3,12 @@
 import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { LogOut, User, Settings } from "lucide-react";
-
-// Assuming this hook is available
-import { useMockedUser } from '@/app/chat/hooks/use-mocked-user';
-
-export default function ChatNavAccount() {
-  const { user } = useMockedUser();
+export default function ChatNavAccount( { user }: any ) {
   const [status, setStatus] = useState('online');
 
   const statusOptions = ['online', 'away', 'busy', 'offline'];
@@ -29,7 +22,7 @@ export default function ChatNavAccount() {
               <div className="relative">
                 <Avatar className="w-12 h-12 cursor-pointer">
                   <AvatarImage src={user?.photoURL} alt={user?.displayName} />
-                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()} </AvatarFallback>
                 </Avatar>
                 {/* Status Badge */}
                 <span className={`absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-background 
@@ -42,7 +35,7 @@ export default function ChatNavAccount() {
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{user?.displayName}</p>
+            <p>{user?.displayUsername}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -50,21 +43,9 @@ export default function ChatNavAccount() {
       <PopoverContent className="w-64 p-0">
         <div className="flex flex-row items-center space-x-2 py-2 pr-1 pl-2.5">
           <div className="flex-grow">
-            <div className="font-semibold text-sm">{user?.displayName}</div>
+            <div className="font-semibold text-sm">{user?.name}</div>
             <div className="text-xs text-muted-foreground">{user?.email}</div>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipContent asChild>
-                <Button variant="ghost" className="text-red-500">
-                  <LogOut className="w-5 h-5" />
-                </Button>
-              </TooltipContent>
-              <TooltipContent>
-                <p>Log out</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
 
         <Separator className="border-dashed my-0" />
@@ -93,16 +74,6 @@ export default function ChatNavAccount() {
               </SelectContent>
             </Select>
           </div>
-
-          <Button variant="ghost" className="justify-start space-x-2">
-            <User className="w-5 h-5" />
-            <span>Profile</span>
-          </Button>
-
-          <Button variant="ghost" className="justify-start space-x-2">
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </Button>
         </div>
       </PopoverContent>
     </Popover>
