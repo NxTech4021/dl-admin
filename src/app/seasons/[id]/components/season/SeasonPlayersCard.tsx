@@ -1,33 +1,73 @@
 "use client"
 
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Membership } from '@/ZodSchema/season-schema';
 import { Button } from '@/components/ui/button';
-import { IconUser, IconStar, IconCalendar, IconTarget } from '@tabler/icons-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Membership } from '@/ZodSchema/season-schema';
+import { IconUser, IconStar, IconCalendar, IconTarget, IconLoader2 } from '@tabler/icons-react';
+import { toast } from 'sonner';
+import AssignDivisionModal from '@/components/modal/assign-playerToDivision';
 
 interface SeasonPlayersCardProps {
   memberships: Membership[];
-  divisions?: { id: string; name: string }[];
+  divisions: Division[]; // Now using the Division type from parent
   sportType?: string | null;
+  seasonId: string;
+  onMembershipUpdated?: () => Promise<void>;
+  adminId?: string;
 }
 
-export default function SeasonPlayersCard({ memberships, divisions = [], sportType }: SeasonPlayersCardProps) {
+export default function SeasonPlayersCard({ 
+  memberships, 
+  divisions = [], 
+  sportType, 
+  seasonId,
+  onMembershipUpdated,
+  adminId
+}: SeasonPlayersCardProps) {
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Membership | null>(null);
+  const [selectedDivisionId, setSelectedDivisionId] = useState<string>('');
+  const [isAssigning, setIsAssigning] = useState(false);
+
   const activePlayers = memberships.filter(m => m.status === 'ACTIVE' || m.status === 'PENDING');
   const waitlistedPlayers = memberships.filter(m => m.status === 'WAITLISTED');
 
-  console.log("mebers", memberships)
+
   const getDivisionName = (divisionId: string | null) => {
     if (!divisionId) return 'Unassigned';
     const division = divisions.find(d => d.id === divisionId);
     return division ? division.name : 'Unassigned';
   };
 
+  console.log(" admin in Player card", adminId)
   const getSportRating = (member: Membership) => {
     // Placeholder rating logic
     return { display: '1420' };
+  };
+
+  const handleAssignToDivision = (member: Membership) => {
+    setSelectedMember(member);
+    setIsAssignModalOpen(true);
   };
 
   const PlayerTable = ({ players }: { players: Membership[] }) => (
@@ -99,11 +139,16 @@ export default function SeasonPlayersCard({ memberships, divisions = [], sportTy
                   </TableCell>
                   <TableCell>
                     <Badge variant={member.status === 'ACTIVE' ? 'default' : 'secondary'} className="capitalize text-xs">
-                      {member.status.toLowerCase()}
+                      {member?.status?.toLowerCase()}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 px-3 text-xs"
+                      onClick={() => handleAssignToDivision(member)}
+                    >
                       Assign to Division
                     </Button>
                   </TableCell>
@@ -129,24 +174,36 @@ export default function SeasonPlayersCard({ memberships, divisions = [], sportTy
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Season Players ({memberships.length})</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="active">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active">Active ({activePlayers.length})</TabsTrigger>
-            <TabsTrigger value="waitlisted">Waitlist ({waitlistedPlayers.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="active">
-            <PlayerTable players={activePlayers} />
-          </TabsContent>
-          <TabsContent value="waitlisted">
-            <PlayerTable players={waitlistedPlayers} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Season Players ({memberships.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="active">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="active">Active ({activePlayers.length})</TabsTrigger>
+              <TabsTrigger value="waitlisted">Waitlist ({waitlistedPlayers.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="active">
+              <PlayerTable players={activePlayers} />
+            </TabsContent>
+            <TabsContent value="waitlisted">
+              <PlayerTable players={waitlistedPlayers} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+     <AssignDivisionModal
+        isOpen={isAssignModalOpen}  
+        onOpenChange={setIsAssignModalOpen}
+        member={selectedMember}
+        divisions={divisions}
+        seasonId={seasonId}
+        onAssigned={onMembershipUpdated}
+        adminId={adminId}
+      />
+    </>
   );
 }

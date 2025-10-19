@@ -14,6 +14,7 @@ import dynamic from "next/dynamic"
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useRouter } from "next/navigation";
+import { useSocket } from "@/context/socket-context";
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
 const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
@@ -34,6 +35,33 @@ export default function Page() {
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
+
+   const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    console.log("✅ Socket instance:", socket);
+
+    // Identify the user
+    // TEST SOCKET EMIT
+    socket.emit("set_user_id", "hello Zawad"); 
+
+    // Listen for events
+    socket.on("logic_activity", (data) => {
+      console.log("🟣 Logic Activity:", data);
+    });
+
+    socket.on("user_status_change", ({ userId, isOnline }) => {
+      console.log(`👤 ${userId} is ${isOnline ? "Online" : "Offline"}`);
+    });
+
+    return () => {
+      socket.off("logic_activity");
+      socket.off("user_status_change");
+    };
+  }, [socket]);
+  
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
     let response;
