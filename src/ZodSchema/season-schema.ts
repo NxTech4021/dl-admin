@@ -1,16 +1,18 @@
 import { z } from 'zod';
 
 export const membershipSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  seasonId: z.string(),
-  divisionId: z.string().optional(),
-  status: z.enum(['ACTIVE', 'WAITLISTED', 'PENDING', 'WITHDRAWN']),
-  joinedAt: z.coerce.date(),
+  id: z.string().optional(),         
+  userId: z.string().optional(),
+  seasonId: z.string().optional(),
+  divisionId: z.string().nullable().optional(),
+  status: z.enum(['PENDING','ACTIVE','INACTIVE','FLAGGED','REMOVED']).optional(),
+  joinedAt: z.coerce.date().optional(),
+  withdrawalReason: z.string().nullable().optional(),
+  paymentStatus: z.enum(['PENDING','PAID','FAILED']).optional(),
   user: z.object({
-    name: z.string(),
-    email: z.string().email(),
-  }),
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+  }).optional(),
 });
 
 export const withdrawalRequestSchema = z.object({
