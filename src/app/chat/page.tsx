@@ -12,80 +12,29 @@ import { _mockContacts, _mockConversation, _mockConversations, _mockUser } from 
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import ChatNav from '@/components/chat/chat-nav';
-// import Stack from '@mui/material/Stack';
-// import Container from '@mui/material/Container';
-// import Typography from '@mui/material/Typography';
+import ChatHeaderDetail from '@/components/chat/chat-header-detail';
+import ChatHeaderCompose from '@/components/chat/chat-header-compose';
+import ChatMessageList from '@/components/chat/chat-message-list';
+import ChatMessageInput from '@/components/chat/chat-message-input';
+import ChatRoom from '@/components/chat/chat-room';
 
-
-// import { useRouter, useSearchParams } from 'src/routes/hooks';
-
-// import { useMockedUser } from './hooks/use-mocked-user';
-
-
-// ----------------------------------------------------------------------
 
 export default function ChatView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = _mockUser;
 
-//   const settings = useSettingsContext();
-
-//   const searchParams = useSearchParams();
-
-//   const selectedConversationId = searchParams.get('id') || '';
-
-//   const [recipients, setRecipients] = useState([]);
-
-//   const { contacts } = useGetContacts();
-
-//   const { conversations, conversationsLoading } = useGetConversations();
-
-//   const { conversation, conversationError } = useGetConversation(`${selectedConversationId}`);
-
-//   const participants = conversation
-//     ? conversation.participants.filter((participant) => participant.id !== `${user.id}`)
-//     : [];
-
-//   useEffect(() => {
-//     if (conversationError || !selectedConversationId) {
-//       router.push(paths.dashboard.chat);
-//     }
-//   }, [conversationError, router, selectedConversationId]);
-
-//   const handleAddRecipients = useCallback((selected) => {
-//     setRecipients(selected);
-//   }, []);
-
-//   const details = !!conversation;
-
-//   const renderHead = (
-//     <Stack
-//       direction="row"
-//       alignItems="center"
-//       flexShrink={0}
-//       sx={{ pr: 1, pl: 2.5, py: 1, minHeight: 72 }}
-//     >
-//       {selectedConversationId ? (
-//         <>{details && <ChatHeaderDetail participants={participants} />}</>
-//       ) : (
-//         <ChatHeaderCompose contacts={contacts} onAddRecipients={handleAddRecipients} />
-//       )}
-//     </Stack>
-//   );
-
- // --- MOCK DATA INTEGRATION ---
   const contacts = _mockContacts;
   const conversations = _mockConversations;
   const conversationsLoading = false;
 
   const selectedConversationId = searchParams.get('id') || '';
-
-  const conversation = _mockConversations.find(conv => conv.id === selectedConversationId) || _mockConversation;
-  const conversationError = !conversation;
-
-  // --- STATE MANAGEMENT ---
   const [recipients, setRecipients] = useState([]);
+  
+  // Get current conversation or use mock conversation
+  const conversation = selectedConversationId 
+    ? conversations.find(conv => conv.id === selectedConversationId) 
+    : null;
   
   const participants = conversation
     ? conversation.participants.filter((participant) => participant.id !== user.id)
@@ -93,18 +42,19 @@ export default function ChatView() {
   
   const details = !!conversation;
 
-//   useEffect(() => {
-//     // Redirect if conversation is not found or no ID is provided
-//     // if (conversationError || !selectedConversationId) {
-//     //   router.push(paths.dashboard.chat);
-//     // }
-//   }, [conversationError, router, selectedConversationId]);
-
-  const handleAddRecipients = useCallback((selected :any) => {
+  const handleAddRecipients = useCallback((selected: any) => {
     setRecipients(selected);
   }, []);
 
-
+  const renderHead = (
+    <div className="flex items-center px-4 py-3 min-h-[72px]">
+      {selectedConversationId && conversation ? (
+        <ChatHeaderDetail participants={participants} />
+      ) : (
+        <ChatHeaderCompose contacts={contacts} onAddRecipients={handleAddRecipients} />
+      )}
+    </div>
+  );
 
   const renderNav = (
     <ChatNav
@@ -112,77 +62,60 @@ export default function ChatView() {
       conversations={conversations}
       loading={conversationsLoading}
       selectedConversationId={selectedConversationId}
-       user={_mockUser}
+      user={user}
     />
-    // <p> hi </p>
   );
 
-//   const renderMessages = (
-//     <Stack
-//       sx={{
-//         width: 1,
-//         height: 1,
-//         overflow: 'hidden',
-//       }}
-//     >
-//       <ChatMessageList messages={conversation?.messages} participants={participants} />
-
-//       <ChatMessageInput
-//         recipients={recipients}
-//         onAddRecipients={handleAddRecipients}
-//         //
-//         selectedConversationId={selectedConversationId}
-//         disabled={!recipients.length && !selectedConversationId}
-//       />
-//     </Stack>
-//   );
+  const renderMessages = (
+    <div className="flex flex-col w-full h-full overflow-hidden">
+      <ChatMessageList 
+        messages={conversation?.messages || []} 
+        participants={participants} 
+      />
+      <ChatMessageInput
+        recipients={recipients}
+        onAddRecipients={handleAddRecipients}
+        selectedConversationId={selectedConversationId}
+        disabled={!recipients.length && !selectedConversationId}
+      />
+    </div>
+  );
 
   return (
-  
+    <SidebarProvider
+      style={{
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)",
+      } as React.CSSProperties}
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">
+            Chat
+          </h4>
 
-     <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
-        >
-          <AppSidebar variant="inset" />
-          <SidebarInset>
-            <SiteHeader />
-
-    
-     <div className="mt-20  mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-      <h4 className="text-2xl  mt-6 font-bold mb-6 md:mb-10">
-        Chat
-      </h4>
-
-      <Card className="flex flex-row h-[72vh]">
-        {/* renderNav corresponds to the navigation/sidebar */}
-        {renderNav}
-        {/* <p> render navigation </p> */}
-
-        <div className="w-full h-full overflow-hidden flex flex-col">
-          {/* renderHead corresponds to the chat header */}
-          {/* {renderHead} */}
-          <p> render head </p>
-
-          <Separator className="bg-border" />
-
-          <div className="flex flex-row w-full h-full overflow-hidden">
-            {/* renderMessages corresponds to the main chat message area */}
-            {/* {renderMessages} */}
-            <p> place where messages will be rendered </p>
-
-            {/* ChatRoom corresponds to the detailed view or side panel */}
-            {/* {details && <ChatRoom conversation={conversation} participants={participants} />} */}
-            <p> place for chat room </p>
-          </div>
+          <Card className="flex flex-row h-[72vh]">
+            {renderNav}
+            
+            <div className="w-full h-full overflow-hidden flex flex-col">
+              {renderHead}
+              <Separator className="bg-border" />
+              
+              <div className="flex flex-row w-full h-full overflow-hidden">
+                {renderMessages}
+                {details && (
+                  <ChatRoom 
+                    conversation={conversation} 
+                    participants={participants} 
+                  />
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
-      </Card>
-    </div>
-       </SidebarInset>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

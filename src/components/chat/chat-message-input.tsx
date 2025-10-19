@@ -1,3 +1,5 @@
+'use client';
+
 import { sub } from "date-fns";
 import PropTypes from "prop-types";
 import { useRef, useMemo, useState, useCallback } from "react";
@@ -11,7 +13,7 @@ import { _mockContacts, _mockUser } from "@/app/chat/hooks/_mockData";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Smile, ImagePlus, Paperclip, Mic } from "lucide-react";
+import { Smile, ImagePlus, Paperclip, Mic, Send } from "lucide-react";
 import { uuidv4 } from "zod";
 
 export default function ChatMessageInput({
@@ -98,33 +100,45 @@ export default function ChatMessageInput({
     [conversationData, message, messageData, onAddRecipients, router, selectedConversationId]
   );
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      // handleSendMessage();
+    }
+  };
+
   return (
-    <div className="border-t border-border flex items-center gap-2 px-2 h-14 flex-shrink-0">
-      {/* Left icon (emoji) */}
-      <Button variant="ghost" size="icon">
-        <Smile className="h-5 w-5" />
-      </Button>
-
-      {/* Input field */}
-      <Input
-        value={message}
-        onKeyUp={handleSendMessage}
-        onChange={handleChangeMessage}
-        placeholder="Type a message"
-        disabled={disabled}
-        className="flex-1 border-none focus-visible:ring-0 shadow-none"
-      />
-
-      {/* Right side actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={handleAttach}>
-          <ImagePlus className="h-5 w-5" />
+    <div className="p-4 border-t bg-background">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
+          <Paperclip className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={handleAttach}>
-          <Paperclip className="h-5 w-5" />
+        
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
+          <ImagePlus className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon">
-          <Mic className="h-5 w-5" />
+
+        <div className="flex-1">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={disabled ? "Select a conversation to start messaging" : "Type a message..."}
+            disabled={disabled}
+            className="w-full"
+          />
+        </div>
+
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
+          <Smile className="h-4 w-4" />
+        </Button>
+
+        <Button 
+          // onClick={handleSendMessage}
+          disabled={disabled || !message.trim()}
+          size="icon"
+        >
+          <Send className="h-4 w-4" />
         </Button>
       </div>
 
