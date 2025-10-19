@@ -112,4 +112,16 @@ export const endpoints = {
     update: (id: string) => `/api/match/${id}`,
     delete: (id: string) => `/api/match/delete/${id}`,
   },
+
+  chat: {
+   
+    createThread: "/api/chat/threads",
+    getThreads: (userId: string) => `/api/chat/threads/${userId}`,
+    getThreadMembers: (threadId: string) => `/api/chat/threads/${threadId}/members`,
+  
+    sendMessage: (threadId: string) => `/api/chat/threads/${threadId}/messages`,
+    getMessages: (threadId: string) => `/api/chat/threads/${threadId}/messages`,
+    markAsRead: (messageId: string) => `/api/chat/messages/${messageId}/read`,
+  },
+  
 };

@@ -109,6 +109,7 @@ export default function DivisionCreateModal({
   mode = "create",
   division,
   seasonId,
+  adminId
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);

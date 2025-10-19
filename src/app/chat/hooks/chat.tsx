@@ -1,206 +1,148 @@
-// import { useMemo } from 'react';
-// // import keyBy from 'lodash/keyBy';
-// import useSWR, { mutate } from 'swr';
+import { useState, useEffect, useCallback } from 'react';
+import axiosInstance, { endpoints } from '@/lib/endpoints';
+import { toast } from 'sonner';
 
-// import axios, { fetcher, endpoints } from 'src/utils/axios';
+export interface ChatUser {
+  id: string;
+  name: string;
+  username?: string;
+  image?: string;
+}
 
-// // ----------------------------------------------------------------------
+export interface ThreadMember {
+  userId: string;
+  role?: string;
+  user: ChatUser;
+}
 
-// const options = {
-//   revalidateIfStale: false,
-//   revalidateOnFocus: false,
-//   revalidateOnReconnect: false,
-// };
+export interface Message {
+  id: string;
+  threadId: string;
+  senderId: string;
+  content: string;
+  messageType: string;
+  createdAt: string;
+  sender: ChatUser;
+  readBy?: any[];
+}
 
-// export function useGetContacts() {
-//   const URL = [endpoints.chat, { params: { endpoint: 'contacts' } }];
+export interface Thread {
+  id: string;
+  name?: string;
+  isGroup: boolean;
+  createdAt: string;
+  updatedAt: string;
+  members: ThreadMember[];
+  messages: Message[];
+  _count: {
+    messages: number;
+  };
+}
 
-//   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher, options);
+export function useChatData(userId?: string) {
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-//   const memoizedValue = useMemo(
-//     () => ({
-//       contacts: data?.contacts || [],
-//       contactsLoading: isLoading,
-//       contactsError: error,
-//       contactsValidating: isValidating,
-//       contactsEmpty: !isLoading && !data?.contacts.length,
-//     }),
-//     [data?.contacts, error, isLoading, isValidating]
-//   );
+  const fetchThreads = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
-//   return memoizedValue;
-// }
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axiosInstance.get(endpoints.chat.getThreads(userId));
+      
+      if (response.data.success) {
+        setThreads(response.data.data || []);
+      } else {
+        setError('Failed to fetch threads');
+      }
+    } catch (err: any) {
+      console.error('Error fetching threads:', err);
+      setError(err.response?.data?.error || 'Failed to fetch threads');
+      toast.error('Failed to load chat threads');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
 
-// // ----------------------------------------------------------------------
+  useEffect(() => {
+    fetchThreads();
+  }, [fetchThreads]);
 
-// export function useGetConversations() {
-//   const URL = [endpoints.chat, { params: { endpoint: 'conversations' } }];
+  return {
+    threads,
+    loading,
+    error,
+    refetch: fetchThreads,
+  };
+}
 
-//   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher, options);
+export function useMessages(threadId?: string) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-//   const memoizedValue = useMemo(() => {
-//     const byId = keyBy(data?.conversations, 'id') || {};
-//     const allIds = Object.keys(byId) || [];
+  const fetchMessages = useCallback(async () => {
+    if (!threadId) {
+      setMessages([]);
+      return;
+    }
 
-//     return {
-//       conversations: {
-//         byId,
-//         allIds,
-//       },
-//       conversationsLoading: isLoading,
-//       conversationsError: error,
-//       conversationsValidating: isValidating,
-//       conversationsEmpty: !isLoading && !allIds.length,
-//     };
-//   }, [data?.conversations, error, isLoading, isValidating]);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axiosInstance.get(endpoints.chat.getMessages(threadId));
+      
+      if (response.data.success) {
+        setMessages(response.data.data || []);
+      } else {
+        setError('Failed to fetch messages');
+      }
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
+      setError(err.response?.data?.error || 'Failed to fetch messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [threadId]);
 
-//   return memoizedValue;
-// }
+  const sendMessage = useCallback(async (content: string, senderId: string) => {
+    if (!threadId) return;
 
-// // ----------------------------------------------------------------------
+    try {
+      const response = await axiosInstance.post(endpoints.chat.sendMessage(threadId), {
+        senderId,
+        content,
+        messageType: 'text',
+      });
 
-// export function useGetConversation(conversationId :any) {
-//   const URL = conversationId
-//     ? [endpoints.chat, { params: { conversationId, endpoint: 'conversation' } }]
-//     : '';
+      if (response.data.success) {
+        // Add the new message to the list
+        setMessages(prev => [...prev, response.data.data]);
+        return response.data.data;
+      }
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      toast.error('Failed to send message');
+      throw err;
+    }
+  }, [threadId]);
 
-//   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher, options);
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
-//   const memoizedValue = useMemo(
-//     () => ({
-//       conversation: data?.conversation,
-//       conversationLoading: isLoading,
-//       conversationError: error,
-//       conversationValidating: isValidating,
-//     }),
-//     [data?.conversation, error, isLoading, isValidating]
-//   );
-
-//   return memoizedValue;
-// }
-
-// // ----------------------------------------------------------------------
-
-// export async function sendMessage(conversationId : any, messageData : any) {
-//   const CONVERSATIONS_URL = [endpoints.chat, { params: { endpoint: 'conversations' } }];
-
-//   const CONVERSATION_URL = [
-//     endpoints.chat,
-//     {
-//       params: { conversationId, endpoint: 'conversation' },
-//     },
-//   ];
-
-//   /**
-//    * Work on server
-//    */
-//   // const data = { conversationId, messageData };
-//   // await axios.put(endpoints.chat, data);
-
-//   /**
-//    * Work in local
-//    */
-//   mutate(
-//     CONVERSATION_URL,
-//     (currentData : any) => {
-//       const { conversation: currentConversation } = currentData;
-
-//       const conversation = {
-//         ...currentConversation,
-//         messages: [...currentConversation.messages, messageData],
-//       };
-
-//       return {
-//         conversation,
-//       };
-//     },
-//     false
-//   );
-
-//   /**
-//    * Work in local
-//    */
-//   mutate(
-//     CONVERSATIONS_URL,
-//     (currentData : any) => {
-//       const { conversations: currentConversations } = currentData;
-
-//       const conversations = currentConversations.map((conversation : any) =>
-//         conversation.id === conversationId
-//           ? {
-//               ...conversation,
-//               messages: [...conversation.messages, messageData],
-//             }
-//           : conversation
-//       );
-
-//       return {
-//         conversations,
-//       };
-//     },
-//     false
-//   );
-// }
-
-// // ----------------------------------------------------------------------
-
-// export async function createConversation(conversationData : any) {
-//   const URL = [endpoints.chat, { params: { endpoint: 'conversations' } }];
-
-//   /**
-//    * Work on server
-//    */
-//   const data = { conversationData };
-//   const res = await axios.post(endpoints.chat, data);
-
-//   /**
-//    * Work in local
-//    */
-//   mutate(
-//     URL,
-//     (currentData : any) => {
-//       const conversations = [...currentData.conversations, conversationData];
-//       return {
-//         ...currentData,
-//         conversations,
-//       };
-//     },
-//     false
-//   );
-
-//   return res.data;
-// }
-
-// // ----------------------------------------------------------------------
-
-// export async function clickConversation(conversationId : any) {
-//   const URL = endpoints.chat;
-
-//   /**
-//    * Work on server
-//    */
-//   // await axios.get(URL, { params: { conversationId, endpoint: 'mark-as-seen' } });
-
-//   /**
-//    * Work in local
-//    */
-//   mutate(
-//     [
-//       URL,
-//       {
-//         params: { endpoint: 'conversations' },
-//       },
-//     ],
-//     (currentData : any) => {
-//       const conversations = currentData.conversations.map((conversation : any) =>
-//         conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation
-//       );
-
-//       return {
-//         ...currentData,
-//         conversations,
-//       };
-//     },
-//     false
-//   );
-// }
+  return {
+    messages,
+    loading,
+    error,
+    sendMessage,
+    refetch: fetchMessages,
+  };
+}
