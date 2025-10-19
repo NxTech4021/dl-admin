@@ -60,6 +60,7 @@ type DivisionCreateModalProps = {
   mode?: "create" | "edit";
   division?: DivisionBase | null;
   seasonId?: string;
+  adminId?: string; 
 };
 
 const divisionSchema = z
@@ -109,6 +110,7 @@ export default function DivisionCreateModal({
   mode = "create",
   division,
   seasonId,
+  adminId
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
@@ -249,6 +251,7 @@ export default function DivisionCreateModal({
       const payload: any = {
         name: data.name,
         seasonId: data.seasonId,
+        adminId: adminId,
         divisionLevel: data.divisionLevel,
         gameType: data.gameType,
         genderCategory: data.genderCategory,

@@ -45,8 +45,9 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   const [isDivisionsLoading, setIsDivisionsLoading] = useState(false);
   const { data: session } = useSession();
 
-  const adminId = session?.user.id;
+  const userId = session?.user.id;
 
+  console.log(" suer ", userId)
   // Fetch divisions data
   const fetchDivisions = useCallback(async () => {
     setIsDivisionsLoading(true);
@@ -230,7 +231,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
             <TabsContent value="overview">
               <div className="space-y-6">
                 {/* Stats Cards Row */}
-                <SeasonOverviewStats season={season}  />
+                <SeasonOverviewStats season={season} />
 
                 {/* Season Details and Additional Info */}
                 <div className="grid gap-6 lg:grid-cols-3">
@@ -372,10 +373,10 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
               <SeasonPlayersCard
                 memberships={season.memberships}
                 sportType={season.sportType}
-                divisions={divisions} // Pass divisions from parent
+                divisions={divisions} 
                 seasonId={season.id} 
-                adminId={adminId}
-                onMembershipUpdated={handleMembershipUpdated} // Pass refresh handler
+                adminId={userId}
+                onMembershipUpdated={handleMembershipUpdated} 
               />
             </TabsContent>
 
@@ -385,6 +386,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 seasonId={seasonId}
                 divisions={divisions}
                 isLoading={isDivisionsLoading} 
+                adminId={userId as string} 
                 onDivisionCreated={handleDivisionCreated}
                 onDivisionUpdated={handleDivisionUpdated}
                 onDivisionDeleted={handleDivisionDeleted}
@@ -395,6 +397,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
             <TabsContent value="leaderboard">
               <SeasonLeaderboardCard 
                 seasonId={seasonId} 
+                // adminId={userId}
                 // divisions={divisions} TO-DO FUTURE
               />
             </TabsContent>
