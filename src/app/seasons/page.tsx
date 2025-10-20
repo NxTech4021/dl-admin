@@ -1,29 +1,51 @@
 "use client";
-import React, {useEffect, useState} from "react";
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
 import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { Season, seasonSchema } from "@/ZodSchema/season-schema";
-import { IconCalendar, IconPlus, IconDownload, IconStar, IconCurrency, IconUsers } from "@tabler/icons-react"
-import dynamic from "next/dynamic"
+import {
+  IconCalendar,
+  IconPlus,
+  IconDownload,
+  IconStar,
+  IconCurrency,
+  IconUsers,
+} from "@tabler/icons-react";
+import dynamic from "next/dynamic";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useRouter } from "next/navigation";
 import { useSocket } from "@/context/socket-context";
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
-const SeasonsDataTable = dynamic(() => import("@/components/data-table/seasons-data-table").then(mod => ({ default: mod.SeasonsDataTable })), {
-  loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
-})
+const SeasonsDataTable = dynamic(
+  () =>
+    import("@/components/data-table/seasons-data-table").then((mod) => ({
+      default: mod.SeasonsDataTable,
+    })),
+  {
+    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
+  }
+);
 
-const SeasonCreateModal = dynamic(() => import("@/components/modal/season-create-modal").then(mod => ({ default: mod.default })), {
-  loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
-})
+const SeasonCreateModal = dynamic(
+  () =>
+    import("@/components/modal/season-create-modal").then((mod) => ({
+      default: mod.default,
+    })),
+  {
+    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
+  }
+);
 
 // Note: Metadata and revalidate are not available in client components
 // These would need to be moved to a layout.tsx file if needed
@@ -35,8 +57,7 @@ export default function Page() {
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
-
-   const { socket } = useSocket();
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (!socket) return;
@@ -45,7 +66,7 @@ export default function Page() {
 
     // Identify the user
     // TEST SOCKET EMIT
-    socket.emit("set_user_id", "hello Zawad"); 
+    socket.emit("set_user_id", "hello Zawad");
 
     // Listen for events
     socket.on("logic_activity", (data) => {
@@ -61,16 +82,15 @@ export default function Page() {
       socket.off("user_status_change");
     };
   }, [socket]);
-  
+
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
     let response;
     try {
-      response = await axiosInstance.get(endpoints.season.getAll
-      );
+      response = await axiosInstance.get(endpoints.season.getAll);
 
-      console.log("seasons ", response.data)
-  
+      console.log("seasons ", response.data);
+
       if (!response.data || !Array.isArray(response.data)) {
         setData([]);
         return;
@@ -87,18 +107,19 @@ export default function Page() {
   }, []);
 
   React.useEffect(() => {
-      fetchSeasons();
-    }, [fetchSeasons]);
+    fetchSeasons();
+  }, [fetchSeasons]);
 
   const handleSeasonCreated = () => {
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   const handleViewSeason = (seasonId: string) => {
-  router.push(`/seasons/${seasonId}`);
-};
-  const seasons = data; 
+    router.push(`/seasons/${seasonId}`);
+  };
+  const seasons = data;
 
+  console.log(seasons);
   return (
     <SidebarProvider
       style={
@@ -123,7 +144,9 @@ export default function Page() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <IconCalendar className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">Seasons Management</h1>
+                          <h1 className="text-3xl font-bold tracking-tight">
+                            Seasons Management
+                          </h1>
                         </div>
                         <p className="text-muted-foreground">
                           Manage league seasons and tournaments
@@ -149,65 +172,113 @@ export default function Page() {
                   </div>
                 </div>
               </div>
-              
-               <div className="flex-1 px-4 lg:px-6 py-6">
+
+              <div className="flex-1 px-4 lg:px-6 py-6">
                 <div className="space-y-6">
                   {/* League Overview Cards */}
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Seasons</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Seasons
+                        </CardTitle>
                         {/* <IconTrophy className="h-4 w-4 text-muted-foreground" /> */}
                       </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{seasons.length}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {seasons.filter(s => s.status === "ACTIVE").length} currently active
-                      </p>
-                    </CardContent>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {seasons.length}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {seasons.filter((s) => s.status === "ACTIVE").length}{" "}
+                          currently active
+                        </p>
+                      </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Participants
+                        </CardTitle>
                         <IconUsers className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold"> TO DO </div>
-                        <p className="text-xs text-muted-foreground">Across all seasons</p>
+                        <div className="text-2xl font-bold">
+                          {" "}
+                          {seasons.reduce(
+                            (total, season) =>
+                              total + (season.memberships?.length || 0),
+                            0
+                          )}{" "}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Across all seasons
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Total Revenue
+                        </CardTitle>
                         <IconCurrency className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">TO DO</div>
-                        <p className="text-xs text-muted-foreground">From all season entry fees</p>
+                        <div className="text-2xl font-bold">
+                          {" "}
+                          {seasons.reduce((total, season) => {
+                            const fee = parseFloat(season?.entryFee || '0') || 0;
+                            const participants =
+                              season.memberships?.length || 0;
+                            return total + fee * participants;
+                          }, 0)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          From all season entry fees
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Average per Season</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Average per Season
+                        </CardTitle>
                         <IconStar className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold"> TO DO </div>
-                        <p className="text-xs text-muted-foreground">Players per season</p>
+                        <div className="text-2xl font-bold">
+                          {" "}
+                          {seasons.length > 0
+                            ? Math.round(
+                                seasons.reduce(
+                                  (total, season) =>
+                                    total + (season.memberships?.length || 0),
+                                  0
+                                ) / seasons.length
+                              )
+                            : 0}{" "}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Players per season
+                        </p>
                       </CardContent>
                     </Card>
                   </div>
-              </div>
+                </div>
 
-              {/* Data Table */}
-              <div className="flex-1 mt-10" >
-                <SeasonsDataTable key={refreshKey} data={seasons} isLoading={isLoading}  onViewSeason={handleViewSeason}/>
+                {/* Data Table */}
+                <div className="flex-1 mt-10">
+                  <SeasonsDataTable
+                    key={refreshKey}
+                    data={seasons}
+                    isLoading={isLoading}
+                    onViewSeason={handleViewSeason}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
