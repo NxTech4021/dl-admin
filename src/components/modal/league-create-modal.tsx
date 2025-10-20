@@ -91,6 +91,9 @@ export default function LeagueCreateModal({
   const [error, setError] = useState("");
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(false);
+  const [sponsorInputValue, setSponsorInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSponsors, setFilteredSponsors] = useState<any[]>([]);
   const { data} = useSession();
 
   const userId = data?.user.id;
@@ -103,14 +106,7 @@ export default function LeagueCreateModal({
     status: "UPCOMING",
     description: "",
     hasSponsor: false,
-    sponsorOption: "existing" as "existing" | "new", 
-    existingSponsorId: "",                            
-    sponsorship: {
-      packageTier: "BRONZE" as TierType,
-      contractAmount: "",
-      sponsorRevenue: "",
-      sponsoredName: "",
-    }
+    existingSponsorId: "",
   });
 
 
@@ -122,8 +118,15 @@ React.useEffect(() => {
     axiosInstance.get(endpoints.sponsors.getAll)
       .then(res => {
          console.log("response sponsor", res.data);
-  setSponsors(res.data || []);
-  console.log("sponsors length:", res.data?.length);
+         const api = res.data;
+         const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as any[];
+         // map to simple shape for autocomplete
+         const mapped = sponsorships.map((s: any) => ({
+           id: s.id,
+           name: s.sponsoredName || "Unnamed Sponsor",
+         }));
+         setSponsors(mapped);
+         console.log("sponsors length:", mapped.length);
       })
       .catch((error) => {
         console.error("Error fetching sponsors:", error); // Log any errors
@@ -146,6 +149,39 @@ React.useEffect(() => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Handle sponsor input change
+  const handleSponsorInputChange = (value: string) => {
+    setSponsorInputValue(value);
+    
+    if (value.trim() === "") {
+      setFilteredSponsors([]);
+      setShowSuggestions(false);
+      updateFormData("existingSponsorId", "");
+      return;
+    }
+
+    // Filter sponsors based on input
+    const filtered = sponsors.filter(sponsor =>
+      sponsor.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredSponsors(filtered);
+    setShowSuggestions(true);
+  };
+
+  // Handle sponsor selection
+  const handleSponsorSelect = (sponsor: any) => {
+    setSponsorInputValue(sponsor.name);
+    updateFormData("existingSponsorId", sponsor.id);
+    setShowSuggestions(false);
+  };
+
+  // Handle input blur (hide suggestions after a delay)
+  const handleSponsorInputBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
   
   const resetModal = () => {
     setFormData({
@@ -155,17 +191,13 @@ React.useEffect(() => {
       status: "UPCOMING",
       description: "",
       hasSponsor: false,
-      sponsorOption: "existing",
       existingSponsorId: "",
-      sponsorship: {
-        packageTier: "BRONZE" as TierType,
-        contractAmount: "",
-        sponsorRevenue: "",
-        sponsoredName: "",
-      }
     });
     setError("");
     setLoading(false);
+    setSponsorInputValue("");
+    setShowSuggestions(false);
+    setFilteredSponsors([]);
   };
 
   const isFormValid = formData.leagueName && formData.sport && formData.location;
@@ -190,7 +222,6 @@ const handleCreateLeague = async () => {
     const leagueData: any = {
       name: formData.leagueName,
       location: formData.location,
-      description: formData.description,
       status: formData.status,
       sportType: sportTypeMap[formData.sport] || "TENNIS",
       registrationType: "OPEN",
@@ -199,26 +230,9 @@ const handleCreateLeague = async () => {
     };
 
     // Add sponsorship if applicable
-    if (formData.hasSponsor) {
-      let sponsorName = "";
-
-      if (formData.sponsorOption === "existing") {
-        const existingSponsor = sponsors.find(s => s.id === formData.existingSponsorId);
-        sponsorName = existingSponsor?.sponsoredName || "";
-      } else {
-        sponsorName = formData.sponsorship.sponsoredName || "";
-      }
-
-      leagueData.sponsorships = [
-        {
-          packageTier: formData.sponsorship.packageTier,
-          contractAmount: formData.sponsorship.contractAmount || null,
-          sponsorRevenue: formData.sponsorship.sponsorRevenue || null,
-          sponsoredName: sponsorName,
-          isActive: true,
-          createdById: userId,
-        },
-      ];
+    if (formData.hasSponsor && formData.existingSponsorId) {
+      // connect existing sponsorship by id
+      leagueData.existingSponsorshipIds = [formData.existingSponsorId];
     }
 
     console.log("League data being sent to backend:", JSON.stringify(leagueData, null, 2));
@@ -384,126 +398,49 @@ const handleCreateLeague = async () => {
               
               {formData.hasSponsor && (
                 <div className="space-y-4 pl-6 border-l-2 border-primary/20 bg-muted/30 p-4 rounded-lg">
-                  {/* Choose existing or new sponsor */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Sponsor Source</Label>
-                    <RadioGroup
-                      defaultValue={formData.sponsorOption || "existing"}
-                      onValueChange={(value) => updateFormData("sponsorOption", value)}
-                      className="flex space-x-6"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="existing" id="existing" />
-                        <Label htmlFor="existing">Use Existing Sponsor</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="new" id="new" />
-                        <Label htmlFor="new">Create New Sponsor</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
                   {/* Existing sponsor selection */}
-                  {formData.sponsorOption === "existing" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="existingSponsor" className="text-sm font-medium">
-                        Select Existing Sponsor *
-                      </Label>
-                      <Select
-                        value={formData.existingSponsorId}
-                        onValueChange={(value) => updateFormData("existingSponsorId", value)}
-                      >
-                        <SelectTrigger className="h-11 w-full">
-                          <SelectValue placeholder={sponsorsLoading ? "Loading sponsors..." : "Select a sponsor"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sponsors.length > 0 ? (
-                            sponsors.map((sponsor) => (
-                              <SelectItem key={sponsor.id} value={sponsor.id}>
-                                {sponsor.sponsoredName}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem disabled value="none">
-                              {sponsorsLoading ? "Loading..." : "No sponsors found"}
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* New sponsor creation form */}
-                  {formData.sponsorOption === "new" && (
-                    <div className="space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {/* Sponsor Name */}
-                        <div className="space-y-2">
-                          <Label htmlFor="companyName" className="text-sm font-medium">
-                            Sponsor Name *
-                          </Label>
-                          <Input
-                            id="companyName"
-                            value={formData.sponsorship.sponsoredName}
-                            onChange={(e) =>
-                              updateFormData("sponsorship", {
-                                ...formData.sponsorship,
-                                sponsoredName: e.target.value,
-                              })
-                            }
-                            className="h-11"
-                            placeholder="Enter sponsor name"
-                          />
-                        </div>
-
-                        {/* Package Tier */}
-                        <div className="space-y-2">
-                          <Label htmlFor="packageTier" className="text-sm font-medium">
-                            Sponsorship Tier *
-                          </Label>
-                          <Select
-                            value={formData.sponsorship.packageTier}
-                            onValueChange={(value) =>
-                              updateFormData("sponsorship", {
-                                ...formData.sponsorship,
-                                packageTier: value as TierType,
-                              })
-                            }
+                  <div className="space-y-2 relative">
+                    <Label htmlFor="existingSponsor" className="text-sm font-medium">
+                      Select Existing Sponsor *
+                    </Label>
+                    <Input
+                      id="existingSponsor"
+                      placeholder="Type to search sponsors..."
+                      value={sponsorInputValue}
+                      onChange={(e) => handleSponsorInputChange(e.target.value)}
+                      onFocus={() => {
+                        if (sponsorInputValue.trim() !== "") {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      onBlur={handleSponsorInputBlur}
+                      className="h-11"
+                    />
+                    
+                    {/* Suggestions dropdown */}
+                    {showSuggestions && filteredSponsors.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {filteredSponsors.map((sponsor) => (
+                          <div
+                            key={sponsor.id}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            onClick={() => handleSponsorSelect(sponsor)}
                           >
-                            <SelectTrigger className="h-11 w-full">
-                              <SelectValue placeholder="Select tier" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="BRONZE">Bronze</SelectItem>
-                              <SelectItem value="SILVER">Silver</SelectItem>
-                              <SelectItem value="GOLD">Gold</SelectItem>
-                              <SelectItem value="PLATINUM">Platinum</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {sponsor.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* No results message */}
+                    {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          No sponsors found
                         </div>
                       </div>
-
-                      {/* Contract Amount */}
-                      <div className="space-y-2">
-                        <Label htmlFor="contractAmount" className="text-sm font-medium">
-                          Contract Amount (Optional)
-                        </Label>
-                        <Input
-                          id="contractAmount"
-                          type="number"
-                          value={formData.sponsorship.contractAmount}
-                          onChange={(e) =>
-                            updateFormData("sponsorship", {
-                              ...formData.sponsorship,
-                              contractAmount: e.target.value,
-                            })
-                          }
-                          className="h-11"
-                          placeholder="Enter amount"
-                        />
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

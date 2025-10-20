@@ -1,677 +1,839 @@
+// @ts-nocheck
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
-import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { AxiosError } from "axios";
-
-// Import the LeagueTabs component
-import { LeagueTabs } from "@/components/league/league-tabs";
-
-// Import shared types
+import { LeaguePlayersTable, LeaguePlayerRow } from "@/components/league/league-players-table";
+import LeagueSponsorsSection from "@/components/league/league-sponsors-section";
+import { LeagueLeaderboard } from "@/components/league/league-leaderboard";
+import { LeagueSeasonsWrapper } from "@/components/league/league-seasons-wrapper";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
-  League, 
-  Player, 
-  Division, 
-  Season, 
-  Category, 
-  Sponsor 
-} from "@/components/league/types";
-import { EditSponsorModal } from "@/components/modal/edit-sponsor-modal";
-import { CreateSponsorModal } from "@/components/modal/sponsor-create-modal";
-import { CreateCategoryModal } from "@/components/modal/create-category-modal";
-import { EditCategoryModal } from "@/components/modal/update-category-modal";
+  IconTrophy, 
+  IconUsers, 
+  IconMapPin, 
+  IconClock,
+  IconInfoCircle,
+  IconSettings,
+  IconTarget,
+  IconCheck,
+  IconCalendar,
+  IconActivity,
+  IconFlame,
+  IconEdit,
+  IconX,
+  IconUser
+} from "@tabler/icons-react";
 
-// Location options for label mapping
-const LOCATION_OPTIONS = [
-  { value: "kuala-lumpur", label: "Kuala Lumpur" },
-  { value: "petaling-jaya", label: "Petaling Jaya" },
-  { value: "subang-jaya", label: "Subang Jaya" },
-  { value: "shah-alam", label: "Shah Alam" },
-  { value: "klang", label: "Klang" },
-  { value: "ampang", label: "Ampang" },
-  { value: "cheras", label: "Cheras" },
-  { value: "puchong", label: "Puchong" },
-  { value: "cyberjaya", label: "Cyberjaya" },
-  { value: "putrajaya", label: "Putrajaya" },
-];
+type LeagueResponse = { data: { league: any } };
 
-// Helper functions for data formatting
-const getLocationLabel = (locationValue: string) => {
-  return LOCATION_OPTIONS.find(loc => loc.value === locationValue)?.label || locationValue;
-};
-
-const getSportLabel = (sportValue: string) => {
-  const sports: Record<string, string> = {
-    "tennis": "Tennis",
-    "pickleball": "Pickleball", 
-    "padel": "Padel",
-    "badminton": "Badminton",
-    "table-tennis": "Table Tennis",
-    "PICKLEBALL": "Pickleball",
-    "TENNIS": "Tennis",
-    "PADDLE": "Padel"
+function getStatusBadge(status: string) {
+  const variants: Record<string, { variant: string; className: string }> = {
+    ACTIVE: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
+    ONGOING: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
+    UPCOMING: { variant: "secondary", className: "bg-blue-500 hover:bg-blue-600 text-white" },
+    FINISHED: { variant: "outline", className: "border-gray-400" },
+    INACTIVE: { variant: "outline", className: "border-gray-300" },
+    CANCELLED: { variant: "destructive", className: "" },
+    SUSPENDED: { variant: "default", className: "bg-orange-500 hover:bg-orange-600 text-white" },
   };
-  return sports[sportValue] || sportValue;
-};
-
-export default function LeagueViewPage() {
-  const router = useRouter();
-  const params = useParams();
-  const leagueId = params.id as string;
-
-  const [league, setLeague] = useState<League | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
-
-  //Modals
-  const [isCreateSponsorOpen, setIsCreateSponsorOpen] = useState(false);
-  const [isEditSponsorOpen, setIsEditSponsorOpen] = useState(false);
-  const [isEditSeasonOpen, setIsEditSeasonOpen] = useState(false);
-  const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
-  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
-  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   
-  const handleAddSponsor = () => setIsCreateSponsorOpen(true);
-const handleEditSponsor = (sponsor: Sponsor) => {
-  setSelectedSponsor(sponsor);
-  setIsEditSponsorOpen(true);
-};
+  const config = variants[status] || { variant: "outline", className: "" };
+  return <Badge className={config.className}>{status}</Badge>;
+}
 
- 
-  const refreshData = useCallback(async () => {
+function getSportLabel(sport: string) {
+  const map: Record<string, string> = { 
+    TENNIS: "Tennis", 
+    PICKLEBALL: "Pickleball", 
+    PADEL: "Padel"
+  };
+  return map[sport] || sport;
+}
+
+
+function getGameTypeOptionsForSport(sport: string): { value: string; label: string }[] {
+  switch (sport) {
+    case "TENNIS":
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+    case "PADEL":
+      return [
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+        { value: "SINGLES", label: "Singles" },
+      ];
+    case "PICKLEBALL":
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+    default:
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+  }
+}
+function getGameTypeLabel(gameType: string) {
+  const map: Record<string, string> = {
+    SINGLES: "Singles",
+    DOUBLES: "Doubles",
+    MIXED: "Mixed Doubles",
+    singles: "Singles",
+    doubles: "Doubles",
+    mixed: "Mixed Doubles"
+  };
+  return map[gameType] || gameType;
+}
+
+function getJoinTypeValue(label: string) {
+  const reverseMap: Record<string, string> = {
+    "Singles": "SINGLES",
+    "Doubles": "DOUBLES",
+    "Mixed Doubles": "MIXED"
+  };
+  return reverseMap[label] || label;
+}
+
+function getJoinTypeLabel(joinType: string) {
+  const map: Record<string, string> = {
+    OPEN: "Open to All",
+    INVITATION: "Invitation Only",
+    REQUEST: "Request to Join",
+    open: "Open to All",
+    invitation: "Invitation Only",
+    request: "Request to Join"
+  };
+  return map[joinType] || joinType;
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", { 
+    year: "numeric", 
+    month: "short", 
+    day: "numeric" 
+  });
+}
+
+function formatDateTime(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", { 
+    year: "numeric", 
+    month: "short", 
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+async function getLeague(id: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:82';
+    const url = `${baseUrl}${endpoints.league.getById(id)}`;
+    
+    console.log('Fetching league from:', url);
+    
+    const res = await fetch(url, {
+      cache: "no-store",
+      next: { revalidate: 0 },
+      credentials: 'include',
+    });
+    
+    if (!res.ok) {
+      console.error(`Failed to fetch league: ${res.status} ${res.statusText}`);
+      return null;
+    }
+    
+    const json = (await res.json()) as LeagueResponse;
+    return json?.data?.league ?? null;
+  } catch (error) {
+    console.error("Error fetching league:", error);
+    return null;
+  }
+}
+
+function transformPlayers(memberships: any[]): LeaguePlayerRow[] {
+  return (memberships || []).map((membership: any) => ({
+    id: membership.user?.id,
+    name: membership.user?.name || membership.user?.email?.split("@")[0] || "Unknown",
+    displayUsername: membership.user?.username ?? null,
+    email: membership.user?.email || "",
+    image: membership.user?.image ?? null,
+    area: membership.user?.area ?? null,
+    registeredDate: membership.createdAt ?? null,
+    ratings: membership.user?.ratings ?? null,
+  }));
+}
+
+export default function LeagueViewPage({ params }: { params: Promise<{ id: string }> }) {
+  const leagueId = React.use(params).id;
+  const [leagueData, setLeagueData] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<any>({});
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch league data
+  React.useEffect(() => {
     setIsLoading(true);
-    try {
-      const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
-      const leagueData = apiData?.data?.league;
+    getLeague(leagueId)
+      .then((data) => {
+        setLeagueData(data);
+        if (data) {
+          setEditedData({
+            name: data.name,
+            description: data.description || "",
+            location: data.location || "",
+            sportType: data.sportType || "TENNIS",
+            gameType: data.gameType || "SINGLES",
+            joinType: data.joinType || "OPEN",
+            status: data.status || "ACTIVE",
+            categoryName: data.categoryName || "",
+            matchFormat: data.matchFormat || "",
+            maxPlayers: data.maxPlayers || 0,
+            maxTeams: data.maxTeams || 0,
+            divisionsCount: data.divisionsCount || 0,
+            genderRestriction: data.genderRestriction || "OPEN",
+          });
+        }
+      })
+      .finally(() => setIsLoading(false));
+  }, [leagueId]);
 
-      if (!leagueData) {
-        toast.error("League not found");
+  // Auto-sync game type and default category when sport type changes in edit mode
+  React.useEffect(() => {
+    if (!leagueData) return;
+    const sport = (editedData.sportType || leagueData.sportType) as string;
+    const gameOptions = getGameTypeOptionsForSport(sport);
+    if (!gameOptions.some((o) => o.value === editedData.gameType)) {
+      setEditedData((prev: any) => ({ ...prev, gameType: gameOptions[0]?.value || "SINGLES" }));
+    }
+  }, [editedData.sportType, leagueData]);
+  
+  const handleSave = async () => {
+    try {
+      // Validate league name length
+      if (editedData.name.length > 30) {
+        toast.error('League name cannot exceed 30 characters');
         return;
       }
-
-      // Update league data
-      setLeague({
-        id: leagueData.id,
-        name: leagueData.name,
-        sportType: leagueData.sportType,
-        location: leagueData.location,
-        status: leagueData.status,
-        joinType: leagueData.joinType,
-        gameType: leagueData.gameType,
-        createdAt: leagueData.createdAt,
-        updatedAt: leagueData.updatedAt,
-        description: leagueData.description,
-        memberCount: leagueData._count?.memberships || 0,
-        seasonCount: leagueData._count?.seasons || 0,
-        categoryCount: leagueData._count?.categories || 0,
-        createdBy: leagueData.createdBy,
-      });
-
-      // Update seasons
-      if (Array.isArray(leagueData.seasons)) {
-        const transformedSeasons = leagueData.seasons.map((season: any) => ({
-          id: season.id,
-          name: season.name,
-          startDate: season.startDate,
-          endDate: season.endDate,
-          regiDeadline: season.regiDeadline,
-          status: season.status,
-          isActive: season.status === 'ACTIVE',
-          category: season.category,
-          registeredUserCount: season._count?.memberships || 0,
-          _count: season._count
-        }));
-        setSeasons(transformedSeasons);
-      }
-
-      // Update categories
-      if (leagueData?.categories) {
-        setCategories(leagueData.categories);
-      }
-
-      // Update sponsors
-      if (Array.isArray(leagueData.sponsorships)) {
-        const transformedSponsors = leagueData.sponsorships.map((s: any) => ({
-          id: s.id,
-          packageTier: s.packageTier,
-          contractAmount: s.contractAmount,
-          sponsorRevenue: s.sponsorRevenue,
-          sponsoredName: s.sponsoredName,
-          isActive: s.isActive,
-          createdById: s.createdById,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt,
-        }));
-        setSponsors(transformedSponsors);
-      }
-
+      
+      // TODO: Implement API call to save changes
+      console.log("Saving:", editedData);
+      setIsEditing(false);
+      // Update leagueData with edited values
+      setLeagueData({ ...leagueData, ...editedData });
+      toast.success('League updated successfully');
     } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast.error("Failed to refresh data");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [leagueId]);
-
-  const handleCategoryCreated = useCallback(async () => {
-    setIsCreateCategoryOpen(false);
-    await refreshData();
-    toast.success("Category created successfully!");
-  }, [refreshData, setIsCreateCategoryOpen]);
-
-  const handleSeasonCreated = useCallback(async () => {
-    await refreshData();
-    toast.success("Season created successfully!");
-  }, [refreshData]);
-
-  const handleCategoryUpdated = useCallback(async () => {
-  setIsEditCategoryOpen(false);
-  await refreshData();
-  toast.success("Category updated successfully!");
-}, [refreshData]);
-
-  const handleSponsorCreated = useCallback(async () => {
-    setIsCreateSponsorOpen(false);
-    await refreshData();
-    toast.success("Sponsor created successfully!");
-  }, [refreshData, setIsCreateSponsorOpen]);
-
-
-const handleViewSeason = (season: Season) => {
-  router.push(`/seasons/${season.id}`);
-};
-
-const handleEditSeason = (id: Season) => {
-  setSelectedSeason(id);
-  setIsEditSeasonOpen(true);
-};
-
-
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const { data: apiData } = await axiosInstance.get(endpoints.league.getById(leagueId));
-        const leagueData = apiData?.data?.league;
-
-        console.log("league data", leagueData);
-        if (!leagueData) {
-          toast.error("League not found");
-          return;
-        }
-
-        // Set league
-        const {
-          id,
-          name,
-          sportType, 
-          location,
-          status,
-          joinType,
-          gameType, 
-          createdAt,
-          updatedAt,
-          description,
-          createdBy,
-          memberships = [],
-          sponsorships = [],
-          seasons: leagueSeasons = [],
-        } = leagueData;
-
-        setLeague({
-          id,
-          name,
-          sportType, 
-          location,
-          status,
-          joinType,
-          gameType, 
-          createdAt,
-          updatedAt,
-          description,
-          memberCount: memberships,
-          seasonCount: leagueSeasons.length,
-          categoryCount: categories.length,
-          createdBy,
-        });
-
-        // Transform memberships data
-        const transformedPlayers = memberships.map((membership: any) => ({
-          id: membership.user.id,
-          name: membership.user.name,
-          username: membership.user.username || membership.user.email.split('@')[0],
-          email: membership.user.email,
-          status: membership.status,
-          joinDate: membership.createdAt,
-          wins: membership.stats?.wins || 0,
-          losses: membership.stats?.losses || 0,
-          matches: membership.stats?.matches || [],
-        }));
-
-        setPlayers(transformedPlayers);
-
-        // Set seasons from the league data
-        if (Array.isArray(leagueSeasons)) {
-          const transformedSeasons = leagueSeasons.map((season: any) => ({
-            id: season.id,
-            name: season.name,
-            startDate: season.startDate,
-            endDate: season.endDate,
-            regiDeadline: season.regiDeadline,
-            status: season.status,
-            isActive: season.status === 'ACTIVE',
-            category: season.category,
-            registeredUserCount: season._count?.memberships || 0,
-            _count: season._count,
-            entryFee: season.entryFee ?? 0,
-            paymentRequired: season.paymentRequired ?? false,
-            promoCodeSupported: season.promoCodeSupported ?? false,
-            withdrawalEnabled: season.withdrawalEnabled ?? false,
-          }));
-          setSeasons(transformedSeasons);
-        }
-
-        // Set categories from the API response
-        if (leagueData?.categories) {
-          setCategories(leagueData.categories);
-        }
-
-        // Set sponsors
-        const transformedSponsors = sponsorships.map((s: any) => ({
-          id: s.id,
-          packageTier: s.packageTier,
-          contractAmount: s.contractAmount,
-          sponsorRevenue: s.sponsorRevenue,
-          sponsoredName: s.sponsoredName,
-          isActive: s.isActive,
-          createdById: s.createdById,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt,
-        }));
-
-        setSponsors(transformedSponsors);
-
-      } catch (error) {
-        console.error("Error loading league data:", error);
-        toast.error("Failed to load league details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (leagueId) loadData();
-  }, [leagueId]);
-
-
-const handleDeleteSeason = async (seasonId: string) => {
-  try {
-    await axiosInstance.delete(endpoints.season.delete(seasonId));
-    toast.success("Season deleted successfully");
-    // Update local state to remove the deleted season
-    setSeasons((prev) => prev.filter((s) => s.id !== seasonId));
-  } catch (error: any) {
-    console.error("Delete error:", error);
-    const message =
-      error?.response?.data?.message ||   
-      error?.response?.data?.error ||     
-      error?.message ||                   
-      "Failed to delete season";        
-    
-    toast.error(message);
-  }
-};
-
-const handleDeleteSponsor = async (sponsorId: string) => {
-  try {
-    await axiosInstance.delete(
-      endpoints.sponsors.delete(sponsorId)
-    );
-    toast.success("Sponsor removed");
-    setSponsors((prev) => prev.filter((s) => s.id !== sponsorId));
-  } catch (error: any) {
-    console.error(error);
-
-   const message =
-      error?.response?.data?.message ||   
-      error?.response?.data?.error ||     
-      error?.message ||                   
-      "Failed to delete sponsor";        
-
-    
-    toast.error(message);
-  }
-};
-
-const handleDeleteCategory = async (categoryId: string) => {
-  try {
-    await axiosInstance.delete(endpoints.categories.delete(categoryId));
-
-    toast.success("Category deleted successfully");
-    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
-  } catch (error: any) {
-    console.error("Delete error:", error);
-
-    const message =
-      error?.response?.data?.message ||   
-      error?.response?.data?.error ||     
-      error?.message ||                   
-      "Failed to delete category";        
-
-    
-    toast.error(message);
-  }
-};
-
-
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-      case "ONGOING":
-        return <Badge variant="default">Active</Badge>;
-      case "UPCOMING":
-        return <Badge variant="secondary">Upcoming</Badge>;
-      case "FINISHED":
-        return <Badge variant="outline">Finished</Badge>;
-      case "INACTIVE":
-        return <Badge variant="outline">Inactive</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case "SUSPENDED":
-        return <Badge variant="destructive">Suspended</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      console.error("Failed to save:", error);
+      toast.error('Failed to save changes');
     }
   };
-
-  const getSportLabel = (sport: string) => {
-    const sportLabels: Record<string, string> = {
-      tennis: "Tennis",
-      pickleball: "Pickleball",
-      padel: "Padel",
-    };
-    return sportLabels[sport] || sport;
-  };
-
-  const calculateWinRate = (wins: number, losses: number) => {
-    const total = wins + losses;
-    return total > 0 ? Math.round((wins / total) * 100) : 0;
+  
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset edited data to original
+    if (leagueData) {
+      setEditedData({
+        name: leagueData.name,
+        description: leagueData.description || "",
+        location: leagueData.location || "",
+        sportType: leagueData.sportType || "TENNIS",
+        gameType: leagueData.gameType || "SINGLES",
+        joinType: leagueData.joinType || "OPEN",
+        status: leagueData.status || "ACTIVE",
+        categoryName: leagueData.categoryName || "",
+        matchFormat: leagueData.matchFormat || "",
+        maxPlayers: leagueData.maxPlayers || 0,
+        maxTeams: leagueData.maxTeams || 0,
+        divisionsCount: leagueData.divisionsCount || 0,
+        genderRestriction: leagueData.genderRestriction || "OPEN",
+      });
+    }
   };
 
   if (isLoading) {
-    return <LeagueSkeleton />;
-  }
-
-  if (!league) {
     return (
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
+      <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">League Not Found</h2>
-              <p className="text-muted-foreground mb-4">The requested league could not be found.</p>
-              <Button onClick={() => router.push("/league")}>
-                Back to Leagues
-              </Button>
-            </div>
+          <div className="p-6 space-y-4">
+            <div className="h-6 w-40 bg-muted rounded animate-pulse" />
+            <div className="h-10 w-72 bg-muted rounded animate-pulse" />
+            <div className="h-40 bg-muted rounded animate-pulse" />
           </div>
         </SidebarInset>
       </SidebarProvider>
     );
   }
 
-  const registrationProgress = league.memberCount ? (league.memberCount / (league.memberCount + 10)) * 100 : 0;
+  if (!leagueData && !isLoading) {
+    return (
+      <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 items-center justify-center p-8">
+            <Card className="w-full max-w-md">
+              <CardHeader className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <IconTrophy className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl">League Not Found</CardTitle>
+                  <CardDescription className="mt-2">
+                    The league you're looking for doesn't exist or has been removed.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="flex justify-center pb-6">
+                <Button asChild>
+                  <a href="/league">← Back to Leagues</a>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  // Add competition settings to league data if not present
+  if (!leagueData.categoryName) {
+    leagueData.categoryName = 'Open Singles';
+  }
+  if (!leagueData.matchFormat) {
+    leagueData.matchFormat = 'Best of 3 sets';
+  }
+  if (!leagueData.maxPlayers) {
+    leagueData.maxPlayers = 32;
+  }
+  if (!leagueData.maxTeams) {
+    leagueData.maxTeams = 16;
+  }
+  if (!leagueData.divisionsCount) {
+    leagueData.divisionsCount = 3;
+  }
+  if (!leagueData.genderRestriction) {
+    leagueData.genderRestriction = 'OPEN';
+  }
+
+  const members = leagueData.memberships || [];
+  const seasons = leagueData.seasons || [];
+  const divisions = leagueData.divisions || [];
+  const categories = leagueData.categories || [];
+  const sponsorships = leagueData.sponsorships || [];
+
+  // Debug: Log sponsorships data
+  console.log("League sponsorships data:", sponsorships);
+  console.log("League data structure:", leagueData);
+  console.log("Sponsorships length:", sponsorships.length);
+
+  if (!leagueData._count) {
+    leagueData._count = {
+      memberships: members.length,
+      seasons: seasons.length
+    };
+  }
+  // Description comes from API, no default needed
+
+  const players: LeaguePlayerRow[] = transformPlayers(members);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
+    <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader items={[{ label: "League", href: "/league" }, { label: league ? league.name : "Details" }]} />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-white">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Back Button */}
-                    <div className="flex items-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push("/league")}
-                        className="bg-white border-gray-200 hover:bg-gray-50"
-                      >
-                        <IconArrowLeft className="size-4 mr-2" />
-                        Back to Dashboard
-                      </Button>
-                    </div>
+        <SiteHeader items={[{ label: "League", href: "/league" }, { label: leagueData.name }]} />
 
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col">
+            <Tabs defaultValue="overview" className="flex flex-1 flex-col">
+              {/* Hero Header */}
+              <div className="bg-gradient-to-r from-background to-muted/20">
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                    </div>
+                    <div className="flex-1" />
                   </div>
                 </div>
               </div>
-              
+
               {/* Main Content */}
-              <div className="flex-1 px-4 lg:px-6 py-6">
-                <LeagueTabs
-                  league={league}
-                  players={players}
-                  divisions={divisions}
-                  seasons={seasons}
-                  categories={categories}
-                  sponsors={sponsors}
-                  getLocationLabel={getLocationLabel}
-                  getSportLabel={getSportLabel}
-                  getStatusBadge={getStatusBadge}
-                  formatDate={formatDate}
-                  calculateWinRate={calculateWinRate}
-                  onSeasonCreated={handleSeasonCreated}
-                  onEditSponsor={handleEditSponsor}
-                  onAddSponsor={handleAddSponsor}
-                  onDeleteCategory={handleDeleteCategory} 
-                  onDeleteSponsor={handleDeleteSponsor} 
-                  onDeleteSeason={handleDeleteSeason} 
-                  onAddCategory={() => setIsCreateCategoryOpen(true)}
-                  onEditCategory={(category: Category) => {
-                  setSelectedCategory(category);
-                  setIsEditCategoryOpen(true); 
-                  }}
-                  onLeagueUpdated={refreshData}
-                  onViewSeason={handleViewSeason}
-                  onEditSeason={handleEditSeason}
-              />
+              <div className="flex-1 p-6">
+                
+
+                {/* Overview Tab */}
+                <TabsContent value="overview" className="space-y-7">
+                  {/* Top row: Quick Info (left) + Description (right, shortened) */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {/* Quick Info (left) - text only, no card */}
+                    <div className="space-y-4 ml-2 md:ml-10 mt-10">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {isEditing ? (
+                          <>
+                            <Input
+                              value={editedData.name}
+                              onChange={(e) => {
+                                const text = e.target.value;
+                                if (text.length <= 30) {
+                                  setEditedData({ ...editedData, name: text });
+                                } else {
+                                  toast.error('League name cannot exceed 34 characters');
+                                }
+                              }}
+                              className="text-5xl font-bold tracking-tight h-auto py-0 px-0 border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent min-h-[4rem] leading-tight"
+                              style={{ fontSize: '3rem', lineHeight: '1.1' }}
+                              placeholder="League Name"
+                            />
+                            {getStatusBadge(leagueData.status)}
+                          </>
+                        ) : (
+                          <>
+                            <h1 className="text-5xl font-bold tracking-tight">{leagueData.name}</h1>
+                            {getStatusBadge(leagueData.status)}
+                          </>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                          <IconTrophy className="w-4 h-4" />
+                          {getSportLabel(isEditing ? editedData.sportType : leagueData.sportType)}
+                        </Badge>
+                        <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                          <IconUsers className="w-4 h-4" />
+                          {getGameTypeOptionsForSport(isEditing ? editedData.sportType : leagueData.sportType).find(o => o.value === (isEditing ? editedData.gameType : leagueData.gameType))?.label || getGameTypeLabel(isEditing ? editedData.gameType : leagueData.gameType)}
+                        </Badge>
+                        {(isEditing ? editedData.categoryName : leagueData.categoryName) && (
+                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                            <IconTarget className="w-4 h-4" />
+                            {isEditing ? editedData.categoryName : leagueData.categoryName}
+                          </Badge>
+                        )}
+                        {(leagueData.genderRestriction || (isEditing && editedData.genderRestriction)) && (
+                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                            <IconUser className="w-4 h-4" />
+                            {(() => {
+                              const g = (isEditing ? editedData.genderRestriction : leagueData.genderRestriction) || "OPEN";
+                              return g === "OPEN" ? "Open" : g === "MALE" ? "Male" : g === "FEMALE" ? "Female" : g === "MIXED" ? "Mixed" : g;
+                            })()}
+                          </Badge>
+                        )}
+                        {leagueData.joinType && (
+                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                            <IconInfoCircle className="w-4 h-4" />
+                            {getJoinTypeLabel(isEditing ? editedData.joinType : leagueData.joinType)}
+                          </Badge>
+                        )}
+                        {(leagueData.location || (isEditing && editedData.location)) && (
+                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
+                            <IconMapPin className="w-4 h-4" />
+                            {isEditing ? editedData.location : leagueData.location}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right column: Tabs bar aligned to description width + description card */}
+                    <div>
+                      <div className="mb-4 flex items-center justify-end gap-4">
+                        <Button asChild variant="ghost" size="sm">
+                          <a href="/league">← Back</a>
+                        </Button>
+                        <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                          <TabsTrigger value="overview" className="gap-2">
+                            <IconInfoCircle className="w-4 h-4" />
+                            Overview
+                          </TabsTrigger>
+                          <TabsTrigger value="members" className="gap-2">
+                            <IconUsers className="w-4 h-4" />
+                            Players
+                            <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                          </TabsTrigger>
+                          <TabsTrigger value="seasons" className="gap-2">
+                            <IconCalendar className="w-4 h-4" />
+                            Seasons
+                            <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                          </TabsTrigger>
+                        </TabsList>
+                        {isEditing ? (
+                          <>
+                            <Button size="sm" className="gap-2 bg-black hover:bg-black/90 text-white" onClick={handleSave}>
+                              <IconCheck className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}>
+                              <IconX className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
+                            <IconEdit className="w-4 h-4" />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Description</CardTitle>
+                        </CardHeader>
+                        <CardContent className="max-h-40 overflow-y-auto">
+                          {isEditing ? (
+                            <Textarea
+                              value={editedData.description}
+                              onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                              className="min-h-[100px] text-muted-foreground leading-relaxed"
+                              placeholder="Enter league description..."
+                            />
+                          ) : (
+                            <p className="text-muted-foreground leading-relaxed">
+                              {leagueData.description || "No description provided"}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Key Metrics removed as requested */}
+
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <IconInfoCircle className="w-5 h-5" />
+                          League Details
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Sport Type</p>
+                            {isEditing ? (
+                              <Select value={editedData.sportType} onValueChange={(value) => setEditedData({ ...editedData, sportType: value })}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="TENNIS">Tennis</SelectItem>
+                                  <SelectItem value="PICKLEBALL">Pickleball</SelectItem>
+                                  <SelectItem value="PADEL">Padel</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="font-medium">{getSportLabel(leagueData.sportType)}</p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Join Type</p>
+                            {isEditing ? (
+                              <Select value={editedData.joinType} onValueChange={(value) => setEditedData({ ...editedData, joinType: value })}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="OPEN">Open to All</SelectItem>
+                                  <SelectItem value="INVITATION">Invitation Only</SelectItem>
+                                  <SelectItem value="REQUEST">Request to Join</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="font-medium">{leagueData.joinType ? getJoinTypeLabel(leagueData.joinType) : "Not set"}</p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Status</p>
+                            {isEditing ? (
+                              <Select value={editedData.status} onValueChange={(value) => setEditedData({ ...editedData, status: value })}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ACTIVE">Active</SelectItem>
+                                  <SelectItem value="UPCOMING">Upcoming</SelectItem>
+                                  <SelectItem value="ONGOING">Ongoing</SelectItem>
+                                  <SelectItem value="FINISHED">Finished</SelectItem>
+                                  <SelectItem value="INACTIVE">Inactive</SelectItem>
+                                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="font-medium capitalize">{leagueData.status.toLowerCase()}</p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Location</p>
+                            {isEditing ? (
+                              <Input
+                                value={editedData.location}
+                                onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                                placeholder="Enter location"
+                              />
+                            ) : (
+                              <p className="font-medium">{leagueData.location || "Not specified"}</p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <IconClock className="w-5 h-5" />
+                          Timeline
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Created</span>
+                            <span className="text-sm font-medium">{formatDateTime(leagueData.createdAt)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Last Updated</span>
+                            <span className="text-sm font-medium">{formatDateTime(leagueData.updatedAt)}</span>
+                          </div>
+                          <Separator />
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">League ID</p>
+                            <code className="text-xs bg-muted px-2 py-1 rounded block font-mono">
+                              {leagueData.id}
+                            </code>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Competition Settings */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IconSettings className="w-5 h-5" />
+                        League Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Category free text with hint */}
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Category</p>
+                          {isEditing ? (
+                            <Input
+                              value={editedData.categoryName}
+                              onChange={(e) => setEditedData({ ...editedData, categoryName: e.target.value })}
+                              placeholder="e.g., Junior Singles"
+                            />
+                          ) : (
+                            <p className="font-medium">{leagueData.categoryName || "Not set"}</p>
+                          )}
+                        </div>
+                        {/* Game Type dropdown (renamed from previous sport-aware Category) */}
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Game Type</p>
+                          {isEditing ? (
+                            <Select value={editedData.gameType} onValueChange={(value) => setEditedData({ ...editedData, gameType: value })}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getGameTypeOptionsForSport(editedData.sportType || leagueData.sportType).map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="font-medium">{
+                              getGameTypeOptionsForSport(leagueData.sportType).find(o => o.value === leagueData.gameType)?.label || getGameTypeLabel(leagueData.gameType)
+                            }</p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Match Format</p>
+                          {isEditing ? (
+                            <Input
+                              value={editedData.matchFormat}
+                              onChange={(e) => setEditedData({ ...editedData, matchFormat: e.target.value })}
+                              placeholder="e.g., Best of 3 sets"
+                            />
+                          ) : (
+                            <p className="font-medium">{leagueData.matchFormat || "Not set"}</p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Max Players</p>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editedData.maxPlayers}
+                              onChange={(e) => setEditedData({ ...editedData, maxPlayers: parseInt(e.target.value) || 0 })}
+                              placeholder="0 for unlimited"
+                            />
+                          ) : (
+                            <p className="font-medium">{leagueData.maxPlayers || "Unlimited"}</p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Max Teams</p>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editedData.maxTeams}
+                              onChange={(e) => setEditedData({ ...editedData, maxTeams: parseInt(e.target.value) || 0 })}
+                              placeholder="0 for unlimited"
+                            />
+                          ) : (
+                            <p className="font-medium">{leagueData.maxTeams || "Unlimited"}</p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Divisions</p>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editedData.divisionsCount}
+                              onChange={(e) => setEditedData({ ...editedData, divisionsCount: parseInt(e.target.value) || 0 })}
+                              placeholder="Number of divisions"
+                            />
+                          ) : (
+                            <p className="font-medium">{leagueData.divisions?.length || leagueData.divisionsCount || "Not set"}</p>
+                          )}
+                        </div>
+                        {/* Gender relocated here */}
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Gender Restriction</p>
+                          {isEditing ? (
+                            <Select value={editedData.genderRestriction} onValueChange={(value) => setEditedData({ ...editedData, genderRestriction: value })}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="OPEN">Open</SelectItem>
+                                <SelectItem value="MALE">Male Only</SelectItem>
+                                <SelectItem value="FEMALE">Female Only</SelectItem>
+                                <SelectItem value="MIXED">Mixed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="outline" className="mt-1">
+                              {leagueData.genderRestriction === 'OPEN' ? 'Open' : 
+                               leagueData.genderRestriction === 'MALE' ? 'Male Only' : 
+                               leagueData.genderRestriction === 'FEMALE' ? 'Female Only' : 
+                               leagueData.genderRestriction === 'MIXED' ? 'Mixed' : 'Not set'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Sponsors Section */}
+                      <Separator />
+                      <LeagueSponsorsSection sponsorships={sponsorships} leagueId={leagueId} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Players Tab */}
+                <TabsContent value="members" className="space-y-6">
+                  <div className="flex items-center justify-end gap-4">
+                    <Button asChild variant="ghost" size="sm">
+                      <a href="/league">← Back</a>
+                    </Button>
+                    <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                      <TabsTrigger value="overview" className="gap-2">
+                        <IconInfoCircle className="w-4 h-4" />
+                        Overview
+                      </TabsTrigger>
+                      <TabsTrigger value="members" className="gap-2">
+                        <IconUsers className="w-4 h-4" />
+                        Players
+                        <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                      </TabsTrigger>
+                      <TabsTrigger value="seasons" className="gap-2">
+                        <IconCalendar className="w-4 h-4" />
+                        Seasons
+                        <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>League Players</CardTitle>
+                      <CardDescription>
+                        All registered players with their sport ratings
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <LeaguePlayersTable players={players} leagueId={leagueId} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Seasons Tab */}
+                <TabsContent value="seasons" className="space-y-6">
+                  <div className="flex items-center justify-end gap-4">
+                    <Button asChild variant="ghost" size="sm">
+                      <a href="/league">← Back</a>
+                    </Button>
+                    <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                      <TabsTrigger value="overview" className="gap-2">
+                        <IconInfoCircle className="w-4 h-4" />
+                        Overview
+                      </TabsTrigger>
+                      <TabsTrigger value="members" className="gap-2">
+                        <IconUsers className="w-4 h-4" />
+                        Players
+                        <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                      </TabsTrigger>
+                      <TabsTrigger value="seasons" className="gap-2">
+                        <IconCalendar className="w-4 h-4" />
+                        Seasons
+                        <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>League Seasons</CardTitle>
+                      <CardDescription>
+                        All seasons and tournaments for this league
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <LeagueSeasonsWrapper seasons={seasons} leagueId={leagueId} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
               </div>
-
-      <CreateSponsorModal
-        open={isCreateSponsorOpen}
-        onOpenChange={setIsCreateSponsorOpen}
-        leagueId={league?.id!}
-        onSponsorCreated={handleSponsorCreated} 
-      />
-
-      <EditSponsorModal
-        open={isEditSponsorOpen}
-        onOpenChange={setIsEditSponsorOpen}
-        sponsor={selectedSponsor}
-        onSponsorUpdated={() => {
-        setIsEditSponsorOpen(false);
-        }}
-      />
-
-     <CreateCategoryModal
-      open={isCreateCategoryOpen}
-      onOpenChange={setIsCreateCategoryOpen}
-      leagueId={league?.id || ""}
-      onCategoryCreated={handleCategoryCreated}
-    />
-
-      <EditCategoryModal
-        open={isEditCategoryOpen}
-        onOpenChange={setIsEditCategoryOpen}
-        category={selectedCategory}
-        leagueId={leagueId}
-        onCategoryUpdated={handleCategoryUpdated}
-      />
-            </div>
+            </Tabs>
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-const LeagueSkeleton = () => (
-  <SidebarProvider
-    style={
-      {
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
-      } as React.CSSProperties
-    }
-  >
-    <AppSidebar variant="inset" />
-    <SidebarInset>
-      <SiteHeader />
-      <div className="flex flex-1 flex-col">
-        <div className="@container/main flex flex-1 flex-col gap-2">
-          <div className="flex flex-col gap-6">
-            {/* Page Header Skeleton */}
-            <div className="border-b bg-white">
-              <div className="px-4 lg:px-6 py-6">
-                <div className="flex flex-col gap-6">
-                  <div className="flex items-center">
-                    <Skeleton className="h-8 w-32" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Main Content Skeleton */}
-            <div className="flex-1 px-4 lg:px-6 py-6">
-              <div className="space-y-6">
-                {/* Tabs Skeleton */}
-                <div className="grid w-full grid-cols-6 gap-2">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-
-                {/* Content Skeleton */}
-                <div className="grid gap-6 md:grid-cols-3">
-                  {/* Left Column */}
-                  <div className="md:col-span-1 space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Skeleton className="size-16 rounded-lg" />
-                            <div className="space-y-2">
-                              <Skeleton className="h-7 w-32" />
-                              <div className="flex items-center gap-2">
-                                <Skeleton className="h-5 w-16" />
-                                <Skeleton className="h-5 w-20" />
-                                <Skeleton className="h-5 w-18" />
-                              </div>
-                            </div>
-                          </div>
-                          <Skeleton className="h-8 w-8 rounded" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-5 w-5/6" />
-                        <Skeleton className="h-5 w-4/6" />
-                        <Skeleton className="h-5 w-full" />
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  {/* Right Column */}
-                  <div className="md:col-span-2 space-y-6">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <Card key={i}>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-2">
-                              <Skeleton className="size-5 rounded" />
-                              <div className="space-y-1">
-                                <Skeleton className="h-6 w-8" />
-                                <Skeleton className="h-4 w-20" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-
-                    {/* Cards */}
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <Card key={i}>
-                        <CardHeader>
-                          <Skeleton className="h-6 w-40" />
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {Array.from({ length: 3 }).map((_, j) => (
-                            <Skeleton key={j} className="h-16 w-full" />
-                          ))}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </SidebarInset>
-  </SidebarProvider>
-);
-

@@ -15,6 +15,7 @@ import {
   IconTrophy,
   IconCalendar,
   IconCategory,
+  IconBuilding,
 } from "@tabler/icons-react";
 
 import Image from "next/image";
@@ -131,6 +132,14 @@ const data = {
       hasNotification: true,
 
       notificationCount: 3,
+    },
+
+    {
+      name: "Sponsors",
+
+      url: "/sponsors",
+
+      icon: IconBuilding,
     },
   ],
 };
