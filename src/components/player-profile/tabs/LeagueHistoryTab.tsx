@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { LeagueHistory } from "../types";
+import { LeagueHistory } from "../utils/types";
 
 interface LeagueHistoryTabProps {
   leagueHistory: LeagueHistory[] | null;

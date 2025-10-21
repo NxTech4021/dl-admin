@@ -14,8 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlayerProfileData } from "../types";
-import { formatDate } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { formatDate } from "../utils/utils";
 
 interface QuestionnaireHistoryCardProps {
   profile: PlayerProfileData;

@@ -12,8 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayerProfileData } from "../types";
-import { getInitials, formatDate } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { getInitials, formatDate } from "../utils/utils";
 
 interface ProfileCardProps {
   profile: PlayerProfileData;

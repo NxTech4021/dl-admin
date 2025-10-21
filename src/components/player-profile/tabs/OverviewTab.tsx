@@ -1,5 +1,5 @@
 import { TabsContent } from "@/components/ui/tabs";
-import { PlayerProfileData } from "../types";
+import { PlayerProfileData } from "../utils/types";
 import { ProfileCard } from "../sections/ProfileCard";
 import { SkillRatingsCard } from "../sections/SkillRatingsCard";
 import { QuestionnaireHistoryCard } from "../sections/QuestionnaireHistoryCard";

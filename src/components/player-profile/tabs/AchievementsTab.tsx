@@ -2,8 +2,8 @@ import { IconStar } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { PlayerProfileData } from "../types";
-import { formatDate } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { formatDate } from "../utils/utils";
 
 interface AchievementsTabProps {
   profile: PlayerProfileData;
@@ -38,7 +38,9 @@ export function AchievementsTab({ profile }: AchievementsTabProps) {
                       <Badge variant="secondary" className="capitalize">
                         {achievement.category}
                       </Badge>
-                      <span>Unlocked: {formatDate(achievement.unlockedAt)}</span>
+                      <span>
+                        Unlocked: {formatDate(achievement.unlockedAt)}
+                      </span>
                     </div>
                   </div>
                 </Card>

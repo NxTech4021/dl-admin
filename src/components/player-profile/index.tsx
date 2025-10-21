@@ -8,12 +8,14 @@ import {
   IconCalendar,
   IconStar,
   IconDatabase,
+  IconMessage,
 } from "@tabler/icons-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlayerProfileProps } from "./types";
 import { usePlayerProfile } from "./hooks/use-player-profile";
 import { usePlayerHistory } from "./hooks/use-player-history";
+import { usePlayerPairingRequests } from "./hooks/use-player-pairing-requests";
 import { ProfileSkeleton } from "./ProfileSkeleton";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { ActivityTab } from "./tabs/ActivityTab";
@@ -22,6 +24,7 @@ import { LeagueHistoryTab } from "./tabs/LeagueHistoryTab";
 import { SeasonHistoryTab } from "./tabs/SeasonHistoryTab";
 import { AchievementsTab } from "./tabs/AchievementsTab";
 import { RawDataTab } from "./tabs/RawDataTab";
+import { PairingRequestsTab } from "./tabs/PairingRequestsTab";
 
 export function PlayerProfile({ playerId }: PlayerProfileProps) {
   const { profile, isLoading } = usePlayerProfile(playerId);
@@ -32,6 +35,14 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
     fetchLeagueHistory,
     fetchSeasonHistory,
   } = usePlayerHistory(playerId);
+  const {
+    pairingRequests,
+    pairingLoading,
+    fetchPairingRequests,
+    handleAcceptRequest,
+    handleDenyRequest,
+    handleCancelRequest,
+  } = usePlayerPairingRequests(playerId);
 
   if (isLoading) {
     return <ProfileSkeleton />;
@@ -63,9 +74,12 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         if (value === "season_history") {
           fetchSeasonHistory();
         }
+        if (value === "pairing_requests") {
+          fetchPairingRequests();
+        }
       }}
     >
-      <TabsList className="grid w-full grid-cols-7">
+      <TabsList className="grid w-full grid-cols-8">
         <TabsTrigger value="overview" className="flex items-center gap-2">
           <IconUserCircle className="size-4" />
           Overview
@@ -90,6 +104,10 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
           <IconStar className="size-4" />
           Achievements
         </TabsTrigger>
+        <TabsTrigger value="pairing_requests" className="flex items-center gap-2">
+          <IconMessage className="size-4" />
+          Pairings
+        </TabsTrigger>
         <TabsTrigger value="raw_data" className="flex items-center gap-2">
           <IconDatabase className="size-4" />
           Raw Data
@@ -110,6 +128,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         onFocus={fetchSeasonHistory}
       />
       <AchievementsTab profile={profile} />
+      <PairingRequestsTab
+        pairingRequests={pairingRequests}
+        pairingLoading={pairingLoading}
+        handleAcceptRequest={handleAcceptRequest}
+        handleDenyRequest={handleDenyRequest}
+        handleCancelRequest={handleCancelRequest}
+      />
       <RawDataTab profile={profile} />
     </Tabs>
   );

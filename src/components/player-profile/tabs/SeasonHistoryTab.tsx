@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { SeasonHistory } from "../types";
+import { SeasonHistory } from "../utils/types";
 
 interface SeasonHistoryTabProps {
   seasonHistory: SeasonHistory[] | null;

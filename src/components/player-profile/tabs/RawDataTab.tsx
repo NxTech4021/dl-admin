@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { IconDatabase, IconUserCheck, IconChevronDown } from "@tabler/icons-react";
+import React from "react";
+import {
+  IconChevronDown,
+  IconDatabase,
+  IconUserCheck,
+} from "@tabler/icons-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -13,8 +19,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { TabsContent } from "@/components/ui/tabs";
-import { PlayerProfileData } from "../types";
-import { formatDate, formatQuestionKey, formatAnswerValue } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { formatDate, formatQuestionKey, formatAnswerValue } from "../utils/utils";
 
 interface RawDataTabProps {
   profile: PlayerProfileData;

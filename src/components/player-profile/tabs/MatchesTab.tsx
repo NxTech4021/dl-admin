@@ -10,8 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TabsContent } from "@/components/ui/tabs";
-import { PlayerProfileData } from "../types";
-import { formatDate } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { formatDate } from "../utils/utils";
 
 interface MatchesTabProps {
   profile: PlayerProfileData;

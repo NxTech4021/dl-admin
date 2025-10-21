@@ -1,8 +1,8 @@
 import { IconTrophy, IconTarget, IconUserCheck } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayerProfileData } from "../types";
-import { formatDate } from "../utils";
+import { PlayerProfileData } from "../utils/types";
+import { formatDate } from "../utils/utils";
 
 interface SkillRatingsCardProps {
   profile: PlayerProfileData;
