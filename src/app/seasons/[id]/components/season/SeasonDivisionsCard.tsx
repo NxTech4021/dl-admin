@@ -181,7 +181,7 @@ export default function SeasonDivisionsCard({
                     <TableHead className="w-[110px]">
                       <div className="flex items-center gap-2">
                         <IconTarget className="size-4" />
-                        Points Threshold
+                        Rating Threshold
                       </div>
                     </TableHead>
                     <TableHead className="w-[100px]">
