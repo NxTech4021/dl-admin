@@ -241,7 +241,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 <div className="grid gap-6 lg:grid-cols-3">
                   {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
-                    <SeasonDetailsSection season={season} />
+                    <SeasonDetailsSection season={season} onSeasonUpdated={fetchSeasonData} />
                   </div>
 
                   {/* Quick Info Sidebar - spans 1 column */}
