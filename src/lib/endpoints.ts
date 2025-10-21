@@ -95,7 +95,8 @@ export const endpoints = {
     getById: (id: string) => `/api/division/${id}`,
     update: (id: string) => `/api/division/${id}`,
     delete: (id: string) => `/api/division/delete/${id}`,
-    
+    getbySeasionId : (seasonId: string)    =>  `/api/division/season/${seasonId}`,
+   
     //Player Assign to Division 
     assignPlayer: "/api/division/assign",
     removePlayer: (divisionId: string, userId: string) => `/api/division/${divisionId}/users/${userId}`,

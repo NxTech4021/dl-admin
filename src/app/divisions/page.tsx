@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { IconCalendar, IconPlus, IconDownload } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
+import { useSession } from "@/lib/auth-client";
 // import { DivisionsDataTable } from "@/components/data-table/divisions-data-table";
  
 
@@ -25,6 +26,9 @@ const DivisionCreateModal = dynamic(() => import("@/components/modal/division-cr
 export default function Page() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { data: session} = useSession();
+
+  const adminId = session?.user.id;
 
   const handleDivisionCreated = () => {
     setRefreshKey(prev => prev + 1);
@@ -69,6 +73,7 @@ export default function Page() {
                           open={isCreateModalOpen}
                           onOpenChange={setIsCreateModalOpen}
                           onDivisionCreated={handleDivisionCreated}
+                          adminId= {adminId}
                         >
                           <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                             <IconPlus className="mr-2 size-4" />
