@@ -47,17 +47,19 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
 
   const userId = session?.user.id;
 
-  console.log(" suer ", userId)
+   console.log("season ", seasonId)
   // Fetch divisions data
   const fetchDivisions = useCallback(async () => {
     setIsDivisionsLoading(true);
     try {
-      const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
-      if (!response.data || !Array.isArray(response.data)) {
+      // const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
+      const response = await axiosInstance.get(endpoints.division.getbySeasionId(seasonId))
+      if (!response.data || !Array.isArray(response.data.data)) {
         setDivisions([]);
         return;
       }
-      const parsed = z.array(divisionSchema).parse(response.data);
+      const parsed = z.array(divisionSchema).parse(response.data.data);
+       console.log ("divison pasrsed ", parsed)
       setDivisions(parsed);
     } catch (error) {
       console.error('Failed to fetch divisions:', error);
@@ -68,6 +70,8 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     }
   }, [seasonId]);
 
+
+ 
   // Fetch season data
   const fetchSeasonData = useCallback(async () => {
     setIsLoading(true);
