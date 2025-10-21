@@ -36,6 +36,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -122,6 +127,34 @@ const getStatusBadgeVariant = (status: string) => {
   }
 };
 
+const getLeaguesDisplay = (season: Season): React.ReactNode => {
+  if (!season.leagues || season.leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
+  }
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger>
+        <Badge variant="secondary" className="cursor-pointer">
+          {season.leagues.length} League{season.leagues.length !== 1 ? 's' : ''}
+        </Badge>
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
+          <div className="flex flex-wrap gap-1">
+            {season.leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 // Define handlers outside of component to avoid scope issues
 const handleViewSeason = (
   seasonId: string,
@@ -194,19 +227,13 @@ const columns: ColumnDef<Season>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "league",
+    accessorKey: "leagues",
     header: "Leagues",
-    cell: ({ row }) => {
-      const seasonType = row.original.seasonType;
-      if (!seasonType)
-        return <span className="text-muted-foreground">to be done today</span>;
-
-      return (
-        <Badge variant="outline" className="capitalize">
-          {seasonType}
-        </Badge>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-1">
+        {getLeaguesDisplay(row.original)}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -257,7 +284,7 @@ const columns: ColumnDef<Season>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const season = row.original;
-      const onViewSeason = table.options.meta?.onViewSeason;
+      const onViewSeason = (table.options.meta as any)?.onViewSeason;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -325,7 +352,7 @@ export function SeasonsDataTable({
       columnFilters,
       globalFilter,
     },
-    meta: { onViewSeason },
+    meta: { onViewSeason } as any,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

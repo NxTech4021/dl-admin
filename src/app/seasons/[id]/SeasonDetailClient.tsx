@@ -365,6 +365,33 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                             )}
                           </div>
                         </div>
+
+                        {/* Linked Categories */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">
+                            Linked Categories
+                          </h4>
+                          <div className="text-sm font-medium">
+                            {season.categories && season.categories.length > 0 ? (
+                              <div className="space-y-1">
+                                {season.categories.map((category: any) => (
+                                  <div key={category.id} className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {category.name || 'Unnamed Category'}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                No categories linked
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>

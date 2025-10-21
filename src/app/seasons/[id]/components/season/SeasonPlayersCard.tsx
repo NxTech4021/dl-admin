@@ -44,8 +44,9 @@ interface SeasonPlayersCardProps {
     }>;
     categories?: Array<{
       id: string;
-      name: string;
-      game_type?: string;
+      name: string | null;
+      genderRestriction?: string;
+      matchFormat?: string | null;
     }>;
   };
 }
@@ -82,8 +83,8 @@ export default function SeasonPlayersCard({
       return { display: 'N/A' };
     }
 
-    // Determine category (singles/doubles) from league gameType or category game_type
-    const gameType = season?.leagues?.[0]?.gameType || season?.categories?.[0]?.game_type;
+    // Determine category (singles/doubles) from league gameType
+    const gameType = season?.leagues?.[0]?.gameType;
     const isDoubles = gameType === 'DOUBLES';
 
     // Find player's questionnaire response for this sport
