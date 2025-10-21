@@ -12,6 +12,19 @@ export const membershipSchema = z.object({
   user: z.object({
     name: z.string().optional(),
     email: z.string().email().optional(),
+    questionnaireResponses: z.array(z.object({
+      id: z.number(),
+      sport: z.string(),
+      completedAt: z.coerce.date().nullable(),
+      result: z.object({
+        id: z.number(),
+        singles: z.number().nullable(),
+        doubles: z.number().nullable(),
+        rd: z.number().nullable(),
+        confidence: z.string().nullable(),
+        source: z.string(),
+      }).nullable(),
+    })).optional(),
   }).optional(),
 });
 
@@ -62,6 +75,8 @@ export const seasonSchema = z.object({
   leagues: z.array(z.object({
     id: z.string(),
     name: z.string(),
+    sportType: z.string().optional(),
+    gameType: z.string().optional(),
   })).default([]),
 });
 
