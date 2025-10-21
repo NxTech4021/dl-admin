@@ -34,6 +34,7 @@ export const endpoints = {
     updatepassword: "/api/admin/updatepassword",
     sendInvite: "/api/admin/invite",
   },
+
   player: {
     getAll: "/api/player/",
     getStats: "/api/player/stats",
@@ -53,37 +54,30 @@ export const endpoints = {
     getAchievements: "/api/player/profile/achievements",
     getMatchDetails: (matchId: string) => `/api/player/matches/${matchId}`,
   },
+
   league: {
     getAll: "/api/league/",
-    // getBySport: (sportId: string) => `/api/league/sport/${sportId}`,
     getById: (id: string) => `/api/league/${id}`,
     create: "/api/league/create",
     update: (id: string) => `/api/league/${id}`,
     delete: (id: string) => `/api/league/${id}`,
-    // getSportsAtLeague: (leagueId: string) => `/api/league/${leagueId}/sport`,
   },
- season: {
+
+  season: {
     create: "/api/season/",
     getAll: "/api/season/",
     getById: (id: string) => `/api/season/${id}`,
     update: (id: string) => `/api/season/${id}`,
     updateStatus: (id: string) => `/api/season/${id}/status`,
-    delete: (id: string) => `/api/season/${id}`, 
+    delete: (id: string) => `/api/season/${id}`,
   },
 
   sponsors: {
-  create: "/api/sponsor/create",
-  getAll: "/api/sponsor/",
-  getById: (id: string) => `/api/sponsor/${id}`,
-  update: (id: string) => `/api/sponsor/${id}`,
-  delete: (id: string) => `/api/sponsor/${id}`,
-},
-  companies: {
-    create: "/api/company/create",
-    getAll: "/api/company/",
-    getById: (id: string) => `/api/company/${id}`,
-    update: (id: string) => `/api/company/${id}`,
-    delete: (id: string) => `/api/company/${id}`,
+    create: "/api/sponsor/create",
+    getAll: "/api/sponsor/",
+    getById: (id: string) => `/api/sponsor/${id}`,
+    update: (id: string) => `/api/sponsor/${id}`,
+    delete: (id: string) => `/api/sponsor/${id}`,
   },
 
   categories: {
@@ -101,6 +95,15 @@ export const endpoints = {
     getById: (id: string) => `/api/division/${id}`,
     update: (id: string) => `/api/division/${id}`,
     delete: (id: string) => `/api/division/delete/${id}`,
+    getbySeasionId : (seasonId: string)    =>  `/api/division/season/${seasonId}`,
+   
+    //Player Assign to Division 
+    assignPlayer: "/api/division/assign",
+    removePlayer: (divisionId: string, userId: string) => `/api/division/${divisionId}/users/${userId}`,
+    getDivisionAssignments: (divisionId: string) => `/api/division/divisions/${divisionId}`,
+    getUserDivisionAssignments: (userId: string) => `/api/division/users/${userId}`,
+    autoAssign: "/api/division/auto-assign",
+    transferPlayer: "/api/division/transfer",
   },
 
   match: {
