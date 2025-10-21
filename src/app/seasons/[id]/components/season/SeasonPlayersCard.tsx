@@ -192,7 +192,7 @@ export default function SeasonPlayersCard({
                       className="h-8 px-3 text-xs"
                       onClick={() => handleAssignToDivision(member)}
                     >
-                      Assign to Division
+                      {member.divisionId ? 'Reassign Division' : 'Assign to Division'}
                     </Button>
                   </TableCell>
                 </TableRow>
