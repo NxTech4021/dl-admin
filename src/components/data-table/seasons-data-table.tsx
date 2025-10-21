@@ -248,6 +248,49 @@ const columns: ColumnDef<Season>[] = [
     },
   },
   {
+    accessorKey: "entryFee",
+    header: "Entry Fee",
+    cell: ({ row }) => {
+      const entryFee = row.original.entryFee;
+      if (!entryFee) {
+        return <span className="text-muted-foreground">Free</span>;
+      }
+      
+      // Try to parse as number for currency formatting
+      const feeAmount = parseFloat(entryFee);
+      if (!isNaN(feeAmount)) {
+        return <span className="font-medium">{formatCurrency(feeAmount)}</span>;
+      }
+      
+      // If not a number, display as-is
+      return <span className="font-medium">{entryFee}</span>;
+    },
+  },
+  {
+    accessorKey: "divisions",
+    header: "Divisions",
+    cell: ({ row }) => {
+      const divisionsCount = row.original.divisions?.length || 0;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{divisionsCount}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "memberships",
+    header: "Players",
+    cell: ({ row }) => {
+      const membershipsCount = row.original.memberships?.length || 0;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{membershipsCount}</span>
+        </div>
+      );
+    },
+  },
+    {
     accessorKey: "regiDeadline",
     header: "Registration Deadline",
     cell: ({ row }) => {
@@ -374,7 +417,7 @@ export function SeasonsDataTable({
       <div className="flex items-center justify-between px-1 lg:px-2">
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search seasons by name, league type..."
+            placeholder="Search seasons by name, league type, entry fee..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
