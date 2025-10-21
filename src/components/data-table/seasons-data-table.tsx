@@ -344,7 +344,7 @@ export function SeasonsDataTable({
   return (
     <div className="space-y-4">
       {/* Search and Selection Info */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between px-1 lg:px-2">
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Search seasons by name, league type..."
@@ -362,7 +362,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Table Container */}
-      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
+      <div className="rounded-md border mx-1 lg:mx-2 bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -427,7 +427,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between px-1 lg:px-2">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} season(s)
