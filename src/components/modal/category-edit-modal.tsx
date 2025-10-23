@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,22 +41,44 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Category } from "@/ZodSchema/category-schema";
 
 type GameType = "SINGLES" | "DOUBLES";
-type GenderType = "MEN" | "WOMEN" | "MIXED";
+type GenderType = "MALE" | "FEMALE" | "MIXED";
+type GenderRestriction = "MALE" | "FEMALE" | "MIXED" | "OPEN";
 
 const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
   { value: "SINGLES", label: "Singles" },
   { value: "DOUBLES", label: "Doubles" },
 ];
 
-const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
-  { value: "MEN", label: "Men" },
-  { value: "WOMEN", label: "Women" },
+const GENDER_TYPE_OPTIONS: { value: GenderType; label: string }[] = [
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
   { value: "MIXED", label: "Mixed" },
 ];
+
+const GENDER_RESTRICTION_OPTIONS: { value: GenderRestriction; label: string }[] = [
+  { value: "OPEN", label: "Open" },
+  { value: "MALE", label: "Male Only" },
+  { value: "FEMALE", label: "Female Only" },
+  { value: "MIXED", label: "Mixed" },
+];
+
+const getSportTypeBadgeVariant = (sportType: string) => {
+  switch (sportType?.toUpperCase()) {
+    case "PADEL":
+      return "default";
+    case "PICKLEBALL":
+      return "secondary";
+    case "TENNIS":
+      return "outline";
+    default:
+      return "outline";
+  }
+};
 
 interface League {
   id: string;
   name: string;
+  sportType: string;
 }
 
 interface CategoryFormData {
@@ -64,6 +86,9 @@ interface CategoryFormData {
   matchFormat: string;
   game_type: GameType;
   gender_category: GenderType;
+  genderRestriction: GenderRestriction;
+  maxPlayers: number | null;
+  maxTeams: number | null;
   isActive: boolean;
   categoryOrder: number;
   leagueIds: string[];
@@ -88,6 +113,8 @@ export default function CategoryEditModal({
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState(false);
   const [leagueSelectOpen, setLeagueSelectOpen] = useState(false);
+  const [leagueSearchTerm, setLeagueSearchTerm] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState<Category | null>(null);
 
   // Form data
@@ -95,7 +122,10 @@ export default function CategoryEditModal({
     name: "",
     matchFormat: "",
     game_type: "SINGLES",
-    gender_category: "MIXED",
+    gender_category: "MALE",
+    genderRestriction: "OPEN",
+    maxPlayers: null,
+    maxTeams: null,
     categoryOrder: 0,
     leagueIds: [],
     isActive: true,
@@ -153,6 +183,13 @@ export default function CategoryEditModal({
   const selectedLeagues = useMemo(() => {
     return leagues.filter((league) => formData.leagueIds.includes(league.id));
   }, [leagues, formData.leagueIds]);
+  
+  // Filter leagues based on search term
+  const filteredLeagues = useMemo(() => {
+    return leagues.filter((league) =>
+      league.name.toLowerCase().includes(leagueSearchTerm.toLowerCase())
+    );
+  }, [leagues, leagueSearchTerm]);
 
   // Fetch category data and leagues on mount
   useEffect(() => {
@@ -184,6 +221,9 @@ export default function CategoryEditModal({
               matchFormat: categoryData.matchFormat || "",
               game_type: categoryData.game_type || "SINGLES",
               gender_category: mappedGenderCategory,
+              genderRestriction: categoryData.genderRestriction || "OPEN",
+              maxPlayers: categoryData.maxPlayers || null,
+              maxTeams: categoryData.maxTeams || null,
               categoryOrder: categoryData.categoryOrder || 0,
               leagueIds: categoryData.leagues?.map((league: any) => league.id) || [],
               isActive: categoryData.isActive ?? true,
@@ -229,7 +269,10 @@ export default function CategoryEditModal({
       name: "",
       matchFormat: "",
       game_type: "SINGLES",
-      gender_category: "MIXED",
+      gender_category: "MALE",
+      genderRestriction: "OPEN",
+      maxPlayers: null,
+      maxTeams: null,
       categoryOrder: 0,
       leagueIds: [],
       isActive: true,
@@ -417,32 +460,70 @@ export default function CategoryEditModal({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Search leagues..." />
-                  <CommandEmpty>
-                    {leaguesLoading ? "Loading leagues..." : "No leagues found."}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {leagues.map((league) => (
-                      <CommandItem
-                        key={league.id}
-                        value={league.name}
-                        onSelect={() => toggleLeague(league.id)}
-                      >
-                        <Check
+              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
+                <div className="p-2">
+                  <Input 
+                    placeholder="Search leagues..." 
+                    className="mb-2"
+                    value={leagueSearchTerm}
+                    onChange={(e) => setLeagueSearchTerm(e.target.value)}
+                  />
+                  <div 
+                    ref={scrollContainerRef}
+                    className="max-h-64 overflow-y-auto overflow-x-hidden"
+                    style={{ 
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#d1d5db #f3f4f6',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTop += e.deltaY;
+                      }
+                    }}
+                  >
+                    {leaguesLoading ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Loading leagues...
+                      </div>
+                    ) : filteredLeagues.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
+                      </div>
+                    ) : (
+                      filteredLeagues.map((league) => (
+                        <div
+                          key={league.id}
+                          onClick={() => toggleLeague(league.id)}
                           className={cn(
-                            "mr-2 h-4 w-4",
-                            formData.leagueIds.includes(league.id)
-                              ? "opacity-100"
-                              : "opacity-0"
+                            "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
+                            formData.leagueIds.includes(league.id) && "bg-accent text-accent-foreground"
                           )}
-                        />
-                        {league.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
+                        >
+                          <div className="flex items-center">
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.leagueIds.includes(league.id)
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            <span className="font-medium">{league.name}</span>
+                          </div>
+                          <Badge 
+                            variant={getSportTypeBadgeVariant(league.sportType)} 
+                            className="text-xs capitalize"
+                          >
+                            {league.sportType?.toLowerCase() || "Unknown"}
+                          </Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </PopoverContent>
             </Popover>
 

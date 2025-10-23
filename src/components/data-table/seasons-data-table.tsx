@@ -9,6 +9,9 @@ import {
   IconEdit,
   IconTrash,
   IconTrophy,
+  IconChevronDown,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -23,6 +26,8 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
+  type Row,
+  type Cell,
 } from "@tanstack/react-table";
 import { Season } from "@/ZodSchema/season-schema";
 
@@ -58,12 +63,22 @@ export type SeasonsDataTableProps = {
   onViewSeason?: (seasonId: string) => void;
 };
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("en-MY", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+const formatDate = (date: Date | string | null | undefined) => {
+  if (!date) return "Not set";
+  
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return "Invalid date";
+    
+    return dateObj.toLocaleDateString("en-MY", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error, "Input:", date);
+    return "Invalid date";
+  }
 };
 
 const formatCurrency = (amount: number) => {
@@ -220,6 +235,13 @@ const columns: ColumnDef<Season>[] = [
           </div>
           <div className="flex flex-col">
             <div className="font-medium">{season.name}</div>
+            {season.category && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                <Badge variant="outline" className="text-xs">
+                  {season.category.name || "Unnamed Category"}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -384,6 +406,7 @@ export function SeasonsDataTable({
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
 
   const table = useReactTable({
     data,
@@ -411,6 +434,44 @@ export function SeasonsDataTable({
     globalFilterFn: "includesString",
   });
 
+  // Group the CURRENT row model (after filters/sorts/pagination) by season name
+  const groupedRows = React.useMemo(() => {
+    const groups = new Map<string, { name: string; rows: Row<Season>[] }>();
+    table.getRowModel().rows.forEach((row: Row<Season>) => {
+      const name: string = row.original?.name ?? "Untitled";
+      const key = name.trim().toLowerCase();
+      if (!groups.has(key)) groups.set(key, { name, rows: [] });
+      groups.get(key)!.rows.push(row);
+    });
+    return Array.from(groups.values());
+  }, [table.getRowModel().rows]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Compute keys for groups that actually have multiple seasons
+  const multiGroupKeys = React.useMemo(
+    () =>
+      groupedRows
+        .filter((g) => g.rows.length > 1)
+        .map((g) => g.name.trim().toLowerCase()),
+    [groupedRows]
+  );
+
+  const allExpanded = React.useMemo(() => {
+    if (!multiGroupKeys.length) return true;
+    return multiGroupKeys.every((k) => (expandedGroups[k] ?? true) === true);
+  }, [multiGroupKeys, expandedGroups]);
+
+  const toggleAllGroups = (expand: boolean) => {
+    const next: Record<string, boolean> = {};
+    multiGroupKeys.forEach((k) => {
+      next[k] = expand;
+    });
+    setExpandedGroups((prev) => ({ ...prev, ...next }));
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Selection Info */}
@@ -422,6 +483,21 @@ export function SeasonsDataTable({
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
           />
+          
+          {/* Expand/Collapse all seasons groups (icon) */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toggleAllGroups(!allExpanded)}
+            disabled={!multiGroupKeys.length}
+            aria-label={allExpanded ? "Collapse all season groups" : "Expand all season groups"}
+          >
+            {allExpanded ? (
+              <IconArrowsMinimize className="h-4 w-4" />
+            ) : (
+              <IconArrowsMaximize className="h-4 w-4" />
+            )}
+          </Button>
         </div>
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
@@ -466,22 +542,82 @@ export function SeasonsDataTable({
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              // Render grouped rows: for names with multiple entries, show a collapsible parent row
+              groupedRows.map((group) => {
+                const key = group.name.trim().toLowerCase();
+                const isMulti = group.rows.length > 1;
+                const isExpanded = expandedGroups[key] ?? true; // default expanded for multi
+
+                if (!isMulti) {
+                  const single = group.rows[0];
+                  return (
+                    <TableRow
+                      key={single.id}
+                      data-state={single.getIsSelected() && "selected"}
+                      className="hover:bg-muted/50"
+                    >
+                      {single.getVisibleCells().map((cell: Cell<Season, unknown>) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                }
+
+                return (
+                  <React.Fragment key={key}>
+                    {/* Group header row */}
+                    <TableRow className="bg-muted/30">
+                      <TableCell colSpan={columns.length}>
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(key)}
+                          className="flex items-center gap-2 font-semibold"
+                        >
+                          <IconChevronDown
+                            className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                          />
+                          {group.name}
+                          <span className="ml-2 text-xs text-muted-foreground">{group.rows.length} seasons</span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Child rows */}
+                    {isExpanded &&
+                      group.rows.map((row: Row<Season>) => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                          className="hover:bg-muted/50"
+                        >
+                          {row.getVisibleCells().map((cell: Cell<Season, unknown>) => (
+                            <TableCell key={cell.id}>
+                              {/* Indent first column content for hierarchy visual */}
+                              {cell.column.id === "name" ? (
+                                <div className="pl-6">
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </div>
+                              ) : (
+                                flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                  </React.Fragment>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell

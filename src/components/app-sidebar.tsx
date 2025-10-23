@@ -15,7 +15,8 @@ import {
   IconTrophy,
   IconCalendar,
   IconCategory,
-  IconMessage 
+  IconBuilding,
+  IconShield,
 } from "@tabler/icons-react";
 
 import { Settings, Tags, CreditCard } from "lucide-react";

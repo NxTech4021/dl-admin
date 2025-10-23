@@ -8,7 +8,7 @@ export const leagueSchema = z.object({
   description: z.string().nullable().optional(),
 
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "UPCOMING", "ONGOING", "FINISHED", "CANCELLED"]),
-  sportType: z.enum(["PADDLE", "PICKLEBALL", "TENNIS"]),
+  sportType: z.enum(["PADEL", "PICKLEBALL", "TENNIS"]),
   joinType: z.enum(["OPEN", "INVITE_ONLY", "MANUAL"]).nullable().optional(),
   gameType: z.enum(["SINGLES", "DOUBLES"]),
 

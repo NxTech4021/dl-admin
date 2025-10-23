@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_HOST_URL,
+  withCredentials: true, // Include credentials (cookies) for all requests
 });
 
 axiosInstance.interceptors.response.use(
@@ -61,6 +62,8 @@ export const endpoints = {
     create: "/api/league/create",
     update: (id: string) => `/api/league/${id}`,
     delete: (id: string) => `/api/league/${id}`,
+    addPlayer: "/api/league/add-player",
+    removePlayer: "/api/league/remove-player",
   },
 
   season: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,9 +48,23 @@ const PACKAGE_TIER_OPTIONS: { value: PackageTier; label: string }[] = [
   { value: "PLATINUM", label: "Platinum" },
 ];
 
+const getSportTypeBadgeVariant = (sportType: string) => {
+  switch (sportType?.toUpperCase()) {
+    case "PADEL":
+      return "default";
+    case "PICKLEBALL":
+      return "secondary";
+    case "TENNIS":
+      return "outline";
+    default:
+      return "outline";
+  }
+};
+
 interface League {
   id: string;
   name: string;
+  sportType: string;
 }
 
 interface SponsorFormData {
@@ -86,6 +100,8 @@ export function SponsorEditModal({
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState(false);
   const [leagueSelectOpen, setLeagueSelectOpen] = useState(false);
+  const [leagueSearchTerm, setLeagueSearchTerm] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
 
   // Fetch sponsor data and leagues on mount
@@ -153,6 +169,11 @@ export function SponsorEditModal({
   };
 
   const selectedLeagues = leagues.filter((league) => formData.leagueIds.includes(league.id));
+  
+  // Filter leagues based on search term
+  const filteredLeagues = leagues.filter((league) =>
+    league.name.toLowerCase().includes(leagueSearchTerm.toLowerCase())
+  );
 
   const handleSubmit = async () => {
     if (!formData.sponsoredName || !formData.packageTier || formData.leagueIds.length === 0) {
@@ -325,32 +346,70 @@ export function SponsorEditModal({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Search leagues..." />
-                  <CommandEmpty>
-                    {leaguesLoading ? "Loading leagues..." : "No leagues found."}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {leagues.map((league) => (
-                      <CommandItem
-                        key={league.id}
-                        value={league.name}
-                        onSelect={() => toggleLeague(league.id)}
-                      >
-                        <Check
+              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
+                <div className="p-2">
+                  <Input 
+                    placeholder="Search leagues..." 
+                    className="mb-2"
+                    value={leagueSearchTerm}
+                    onChange={(e) => setLeagueSearchTerm(e.target.value)}
+                  />
+                  <div 
+                    ref={scrollContainerRef}
+                    className="max-h-64 overflow-y-auto overflow-x-hidden"
+                    style={{ 
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#d1d5db #f3f4f6',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTop += e.deltaY;
+                      }
+                    }}
+                  >
+                    {leaguesLoading ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Loading leagues...
+                      </div>
+                    ) : filteredLeagues.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
+                      </div>
+                    ) : (
+                      filteredLeagues.map((league) => (
+                        <div
+                          key={league.id}
+                          onClick={() => toggleLeague(league.id)}
                           className={cn(
-                            "mr-2 h-4 w-4",
-                            formData.leagueIds.includes(league.id)
-                              ? "opacity-100"
-                              : "opacity-0"
+                            "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
+                            formData.leagueIds.includes(league.id) && "bg-accent text-accent-foreground"
                           )}
-                        />
-                        {league.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
+                        >
+                          <div className="flex items-center">
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.leagueIds.includes(league.id)
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            <span className="font-medium">{league.name}</span>
+                          </div>
+                          <Badge 
+                            variant={getSportTypeBadgeVariant(league.sportType)} 
+                            className="text-xs capitalize"
+                          >
+                            {league.sportType?.toLowerCase() || "Unknown"}
+                          </Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </PopoverContent>
             </Popover>
 

@@ -13,6 +13,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Row,
+  type Cell,
 } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -36,29 +37,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  IconDotsVertical,
-  IconEye,
-  IconEdit,
-  IconTrash,
-  IconCopy,
-  IconUsers,
-  IconMapPin,
-  IconCalendar,
-  IconTrophy,
-  IconSettings,
+  IconInfoCircle,
   IconChevronDown,
   IconSearch,
   IconFilter,
-  IconDownload,
-  IconPlus,
-  IconArchive,
-  IconTarget,
+  IconTrophy,
+  IconMapPin,
   IconPlayerPlay,
+  IconUsers,
+  IconUser,
+  IconCalendar,
+  IconTrash,
+  IconAdjustments,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
+  IconCheck,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { League } from "@/ZodSchema/league-schema";
 
+// View Details button component
+const ViewDetailsButton = ({ league }: { league: League }) => {
+  const router = useRouter();
 
+  return (
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={() => router.push(`/league/view/${league.id}`)}
+      className="flex items-center justify-center"
+    >
+      <IconInfoCircle className="h-4 w-4" />
+    </Button>
+  );
+};
 
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return "N/A";
@@ -90,29 +102,67 @@ const getStatusBadgeVariant = (status: string) => {
 };
 
 const getSportLabel = (sport: string) => {
-  const sportLabels: Record<string, string> = {
-    TENNIS: "Tennis",
-    PICKLEBALL: "Pickleball",
-    PADDLE: "Padel",
+  const map: Record<string, string> = { 
+    TENNIS: "Tennis", 
+    PICKLEBALL: "Pickleball", 
+    PADEL: "Padel"
   };
-  return sportLabels[sport] || sport;
+  return map[sport] || sport;
 };
 
-const getRegistrationTypeLabel = (type: string) => {
-  const typeLabels: Record<string, string> = {
-    OPEN: "Open",
-    INVITE_ONLY: "Invite Only",
-    MANUAL: "Manual",
-  };
-  return typeLabels[type] || type;
-};
-
-const getGameTypeLabel = (type: string) => {
-  const typeLabels: Record<string, string> = {
+const getGameTypeLabel = (gameType: string) => {
+  const map: Record<string, string> = {
     SINGLES: "Singles",
     DOUBLES: "Doubles",
+    MIXED: "Mixed Doubles",
+    singles: "Singles",
+    doubles: "Doubles",
+    mixed: "Mixed Doubles",
   };
-  return typeLabels[type] || type;
+  return map[gameType] || gameType;
+};
+
+
+const getGameTypeOptionsForSport = (sport: string): { value: string; label: string }[] => {
+  switch (sport) {
+    case "TENNIS":
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+    case "PADEL":
+      return [
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+        { value: "SINGLES", label: "Singles" },
+      ];
+    case "PICKLEBALL":
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+    default:
+      return [
+        { value: "SINGLES", label: "Singles" },
+        { value: "DOUBLES", label: "Doubles" },
+        { value: "MIXED", label: "Mixed Doubles" },
+      ];
+  }
+};
+
+const getJoinTypeLabel = (joinType: string) => {
+  const map: Record<string, string> = {
+    OPEN: "Open to All",
+    INVITE_ONLY: "Invitation Only", 
+    MANUAL: "Manual Approval",
+    // Legacy support for lowercase values
+    open: "Open to All",
+    invite_only: "Invitation Only",
+    manual: "Manual Approval"
+  };
+  return map[joinType] || joinType;
 };
 
 const formatLocation = (location: string | null | undefined): string => {
@@ -125,29 +175,38 @@ const formatLocation = (location: string | null | undefined): string => {
     .join(' ');
 };
 
-const columns: ColumnDef<League>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+// Dynamic columns based on selection state
+const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
+  const baseColumns: ColumnDef<League>[] = [];
+  
+  // Add selection column only when enabled
+  if (enableRowSelection) {
+    baseColumns.push({
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    });
+  }
+  
+  // Add all other columns
+  baseColumns.push(
   {
     accessorKey: "name",
     header: "League Name",
@@ -174,9 +233,9 @@ const columns: ColumnDef<League>[] = [
     cell: ({ row }) => {
       const sport = row.original.sportType;
       return (
-        <Badge variant="outline" className="capitalize">
+        <span className="capitalize text-sm">
           {getSportLabel(sport)}
-        </Badge>
+        </span>
       );
     },
   },
@@ -206,30 +265,33 @@ const columns: ColumnDef<League>[] = [
     },
   },
   {
-    accessorKey: "registrationType",
-    header: "Registration",
+    accessorKey: "joinType",
+    header: "Join Type",
     cell: ({ row }) => {
-      const type = row.original.joinType ?? "OPEN";
+      const type = row.original.joinType;
+      console.log("League joinType from database:", type, "for league:", row.original.name);
       return (
-        <Badge variant="outline" className="capitalize">
-          {getRegistrationTypeLabel(type)}
+        <Badge variant="outline" className="text-xs">
+          {type ? getJoinTypeLabel(type) : "Not Set"}
         </Badge>
       );
     },
   },
-  // {
-  //   accessorKey: "gameType",
-  //   header: "Game Type",
-  //   cell: ({ row }) => {
-  //     const type = row.original.gameType;
-  //     return (
-  //       <div className="flex items-center gap-2">
-  //         <IconPlayerPlay className="size-4 text-muted-foreground" />
-  //         <span>{getGameTypeLabel(type)}</span>
-  //       </div>
-  //     );
-  //   },
-  // },
+  {
+    accessorKey: "gameType",
+    header: "Game Type",
+    cell: ({ row }) => {
+      const sport = row.original.sportType;
+      const gameType = row.original.gameType;
+      const label = getGameTypeOptionsForSport(sport).find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
+      return (
+        <div className="flex items-center gap-2">
+          <IconUsers className="size-4 text-muted-foreground" />
+          <span>{label}</span>
+        </div>
+      );
+    },
+  },
   {
     accessorKey: "memberCount",
     header: "Members",
@@ -256,19 +318,6 @@ const columns: ColumnDef<League>[] = [
       );
     },
   },
-  {
-    accessorKey: "categoryCount",
-    header: "Categories",
-    cell: ({ row }) => {
-      const categoryCount = row.original.categoryCount || 0;
-      return (
-        <div className="flex items-center gap-2">
-          <IconTarget className="size-4 text-muted-foreground" />
-          <span>{categoryCount}</span>
-        </div>
-      );
-    },
-  },
  {
     accessorKey: "createdAt",
     header: "Created",
@@ -284,102 +333,40 @@ const columns: ColumnDef<League>[] = [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-center">League Details</div>,
     cell: ({ row }) => {
       const league = row.original;
-      const router = useRouter();
-
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <IconDotsVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => router.push(`/league/view/${league.id}`)}
-            >
-              <IconEye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => router.push(`/league/edit/${league.id}`)}
-            >
-              <IconEdit className="mr-2 h-4 w-4" />
-              Edit League
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => router.push(`/league/settings?leagueId=${league.id}`)}
-            >
-              <IconSettings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => router.push(`/seasons?leagueId=${league.id}`)}
-            >
-              <IconCalendar className="mr-2 h-4 w-4" />
-              Manage Seasons
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => router.push(`/league/members/${league.id}`)}
-            >
-              <IconUsers className="mr-2 h-4 w-4" />
-              Manage Members
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(league.id);
-                toast.success("League ID copied to clipboard");
-              }}
-            >
-              <IconCopy className="mr-2 h-4 w-4" />
-              Copy ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                // TODO: Implement archive functionality
-                toast.info("Archive functionality coming soon");
-              }}
-            >
-              <IconArchive className="mr-2 h-4 w-4" />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                // TODO: Implement delete functionality
-                toast.error("Delete functionality requires confirmation");
-              }}
-              className="text-red-600"
-            >
-              <IconTrash className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center justify-center">
+          <ViewDetailsButton league={league} />
+        </div>
       );
     },
   },
-];
+  );
+  
+  return baseColumns;
+};
 
 interface LeaguesDataTableProps {
   data: League[];
   isLoading?: boolean;
+  createLeagueButton?: React.ReactNode;
 }
 
-export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTableProps) {
+export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }: LeaguesDataTableProps) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
+  const [enableRowSelection, setEnableRowSelection] = React.useState(false);
+  const [showTools, setShowTools] = React.useState(false);
 
+  const columns = getColumns(enableRowSelection);
+  
   const table = useReactTable({
     data,
     columns,
@@ -404,17 +391,49 @@ export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTablePr
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
 
+  // Group the CURRENT row model (after filters/sorts/pagination) by league name
+  const groupedRows = React.useMemo(() => {
+    const groups = new Map<string, { name: string; rows: Row<League>[] }>();
+    table.getRowModel().rows.forEach((row: Row<League>) => {
+      const name: string = row.original?.name ?? "Untitled";
+      const key = name.trim().toLowerCase();
+      if (!groups.has(key)) groups.set(key, { name, rows: [] });
+      groups.get(key)!.rows.push(row);
+    });
+    return Array.from(groups.values());
+  }, [table.getRowModel().rows]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Compute keys for groups that actually have multiple sports
+  const multiGroupKeys = React.useMemo(
+    () =>
+      groupedRows
+        .filter((g) => g.rows.length > 1)
+        .map((g) => g.name.trim().toLowerCase()),
+    [groupedRows]
+  );
+
+  const allExpanded = React.useMemo(() => {
+    if (!multiGroupKeys.length) return true;
+    return multiGroupKeys.every((k) => (expandedGroups[k] ?? true) === true);
+  }, [multiGroupKeys, expandedGroups]);
+
+  const toggleAllGroups = (expand: boolean) => {
+    const next: Record<string, boolean> = {};
+    multiGroupKeys.forEach((k) => {
+      next[k] = expand;
+    });
+    setExpandedGroups((prev) => ({ ...prev, ...next }));
+  };
+
   const handleBulkAction = (action: string) => {
     const selectedIds = selectedRows.map(row => row.original.id);
     switch (action) {
-      case "archive":
-        toast.info(`Archiving ${selectedIds.length} leagues...`);
-        break;
       case "delete":
         toast.error(`Delete ${selectedIds.length} leagues requires confirmation`);
-        break;
-      case "export":
-        toast.success(`Exporting ${selectedIds.length} leagues...`);
         break;
       default:
         break;
@@ -435,82 +454,117 @@ export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTablePr
               className="pl-8 max-w-sm"
             />
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <IconFilter className="mr-2 h-4 w-4" />
-                Filter
-                <IconChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {["ACTIVE", "UPCOMING", "ONGOING", "FINISHED", "INACTIVE", "CANCELLED", "SUSPENDED"].map((status) => (
-                <DropdownMenuCheckboxItem
-                  key={status}
-                  className="capitalize"
-                  checked={
-                    table.getColumn("status")?.getFilterValue() === status
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTools((s) => !s)}
+          >
+            <IconAdjustments className="mr-2 h-4 w-4" />
+            Tools
+          </Button>
+
+          {showTools && (
+            <>
+              {/* Row Selection Toggle */}
+              <Button
+                variant={enableRowSelection ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setEnableRowSelection(!enableRowSelection);
+                  if (enableRowSelection) {
+                    setRowSelection({}); // Clear selections when disabling
                   }
-                  onCheckedChange={(checked) =>
-                    table.getColumn("status")?.setFilterValue(checked ? status : "")
-                  }
-                >
-                  {status.toLowerCase()}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                Columns <IconChevronDown className="ml-2 h-4 w-4" />
+                }}
+              >
+                <IconCheck className="mr-2 h-4 w-4" />
+                {enableRowSelection ? "Disable Selection" : "Enable Selection"}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
+
+              {/* Expand/Collapse all sports groups (icon) */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleAllGroups(!allExpanded)}
+                disabled={!multiGroupKeys.length}
+                aria-label={allExpanded ? "Collapse all sports groups" : "Expand all sports groups"}
+              >
+                {allExpanded ? (
+                  <IconArrowsMinimize className="h-4 w-4" />
+                ) : (
+                  <IconArrowsMaximize className="h-4 w-4" />
+                )}
+              </Button>
+
+              {/* Filter dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <IconFilter className="mr-2 h-4 w-4" />
+                    Filter
+                    <IconChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {["ACTIVE", "UPCOMING", "ONGOING", "FINISHED", "INACTIVE", "CANCELLED", "SUSPENDED"].map((status) => (
                     <DropdownMenuCheckboxItem
-                      key={column.id}
+                      key={status}
                       className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
+                      checked={
+                        table.getColumn("status")?.getFilterValue() === status
+                      }
+                      onCheckedChange={(checked) =>
+                        table.getColumn("status")?.setFilterValue(checked ? status : "")
                       }
                     >
-                      {column.id}
+                      {status.toLowerCase()}
                     </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Columns dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Columns <IconChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
         </div>
         <div className="flex items-center space-x-2">
-          {selectedRows.length > 0 && (
+          {/* Create League Button */}
+          {!selectedRows.length && createLeagueButton && (
+            <div>{createLeagueButton}</div>
+          )}
+          
+          {enableRowSelection && selectedRows.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
                 {selectedRows.length} selected
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction("export")}
-              >
-                <IconDownload className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction("archive")}
-              >
-                <IconArchive className="mr-2 h-4 w-4" />
-                Archive
-              </Button>
               <Button
                 variant="destructive"
                 size="sm"
@@ -547,21 +601,80 @@ export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTablePr
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              // Render grouped rows: for names with multiple entries, show a collapsible parent row
+              groupedRows.map((group) => {
+                const key = group.name.trim().toLowerCase();
+                const isMulti = group.rows.length > 1;
+                const isExpanded = expandedGroups[key] ?? true; // default expanded for multi
+
+                if (!isMulti) {
+                  const single = group.rows[0];
+                  return (
+                    <TableRow
+                      key={single.id}
+                      data-state={single.getIsSelected() && "selected"}
+                    >
+                      {single.getVisibleCells().map((cell: Cell<League, unknown>) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                }
+
+                return (
+                  <React.Fragment key={key}>
+                    {/* Group header row */}
+                    <TableRow className="bg-muted/30">
+                      <TableCell colSpan={columns.length}>
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(key)}
+                          className="flex items-center gap-2 font-semibold"
+                        >
+                          <IconChevronDown
+                            className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                          />
+                          {group.name}
+                          <span className="ml-2 text-xs text-muted-foreground">{group.rows.length} sports</span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Child rows */}
+                    {isExpanded &&
+                      group.rows.map((row: Row<League>) => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                        >
+                          {row.getVisibleCells().map((cell: Cell<League, unknown>) => (
+                            <TableCell key={cell.id}>
+                              {/* Indent first column content for hierarchy visual */}
+                              {cell.column.id === "name" ? (
+                                <div className="pl-6">
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </div>
+                              ) : (
+                                flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                  </React.Fragment>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell
@@ -589,8 +702,16 @@ export function LeaguesDataTable({ data, isLoading = false }: LeaguesDataTablePr
       {/* Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {enableRowSelection ? (
+            <>
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
+            </>
+          ) : (
+            <>
+              Showing {table.getFilteredRowModel().rows.length} row(s).
+            </>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">

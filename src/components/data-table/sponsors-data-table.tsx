@@ -1,7 +1,37 @@
 "use client";
 
 import * as React from "react";
-
+import { useRouter } from "next/navigation";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+} from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   IconDotsVertical,
   IconEye,
@@ -14,40 +44,6 @@ import {
   IconCalendar,
   IconTrophy,
 } from "@tabler/icons-react";
-
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -61,10 +57,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-
-import axios from "axios";
+import { toast } from "sonner";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { sponsorSchema, Sponsor } from "@/ZodSchema/sponsor-schema";
-import { endpoints } from "@/lib/endpoints";
 import dynamic from "next/dynamic";
 
 const SponsorEditModal = dynamic(
@@ -77,8 +72,10 @@ const SponsorEditModal = dynamic(
   }
 );
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("en-MY", {
+const formatDate = (date: Date | string | null | undefined) => {
+  if (!date) return "N/A";
+  const dateObject = date instanceof Date ? date : new Date(date);
+  return dateObject.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -94,41 +91,39 @@ const formatCurrency = (amount: number | null) => {
 };
 
 const getPackageTierBadgeVariant = (tier: string) => {
-  switch (tier) {
-    case "BRONZE":
-      return "default";
-    case "SILVER":
-      return "secondary";
-    case "GOLD":
-      return "warning";
-    case "PLATINUM":
-      return "premium";
+  switch (tier?.toUpperCase()) {
+    case 'PLATINUM':
+      return 'default';
+    case 'GOLD':
+      return 'secondary';
+    case 'SILVER':
+      return 'outline';
+    case 'BRONZE':
+      return 'destructive';
     default:
-      return "outline";
+      return 'outline';
   }
 };
 
-const getLeaguesDisplay = (sponsor: Sponsor): React.ReactNode => {
-  if (!sponsor.leagues || sponsor.leagues.length === 0) {
-    return <span className="text-muted-foreground text-xs">No leagues</span>;
+const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
+  if (!sponsor.league) {
+    return <span className="text-muted-foreground text-xs">No league</span>;
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {sponsor.leagues.length} League{sponsor.leagues.length !== 1 ? 's' : ''}
+          {sponsor.league.name}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Leagues</h4>
+          <h4 className="text-sm font-medium">Linked League</h4>
           <div className="flex flex-wrap gap-1">
-            {sponsor.leagues.map((league) => (
-              <Badge key={league.id} variant="outline" className="text-xs">
-                {league.name}
-              </Badge>
-            ))}
+            <Badge variant="outline" className="text-xs">
+              {sponsor.league.name}
+            </Badge>
           </div>
         </div>
       </HoverCardContent>
@@ -204,11 +199,11 @@ const createColumns = (
     ),
   },
   {
-    accessorKey: "leagues",
-    header: "Leagues",
+    accessorKey: "league",
+    header: "League",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
-        {getLeaguesDisplay(row.original)}
+        {getLeagueDisplay(row.original)}
       </div>
     ),
   },
@@ -339,7 +334,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
     const fetchSponsors = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(endpoints.sponsors.getAll);
+        const response = await axiosInstance.get(endpoints.sponsors.getAll);
         if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
@@ -376,7 +371,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
     // Refresh the data
     setIsLoading(true);
     try {
-      const response = await axios.get(endpoints.sponsors.getAll);
+      const response = await axiosInstance.get(endpoints.sponsors.getAll);
       if (response.status === 200) {
         const result = await response.data;
         console.log("Sponsors refresh response:", result);

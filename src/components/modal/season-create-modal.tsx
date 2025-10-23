@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,13 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -51,7 +44,7 @@ interface SeasonFormData {
   regiDeadline: Date | undefined;
   entryFee: string;
   description: string;
-  categoryIds: string[];
+  categoryId: string;
   isActive: boolean;
   paymentRequired: boolean;
   promoCodeSupported: boolean;
@@ -60,7 +53,19 @@ interface SeasonFormData {
 
 interface Category {
   id: string;
-  name: string;
+  name: string | null;
+  genderRestriction: string;
+  matchFormat: string | null;
+  game_type: string | null;
+  league: {
+    id: string;
+    name: string;
+    sportType: string;
+  } | null;
+  seasons: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 interface DateErrors {
@@ -98,6 +103,11 @@ export default function SeasonCreateModal({
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Category selection state
+  const [categorySearch, setCategorySearch] = useState("");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   const [form, setForm] = useState<SeasonFormData>({
     name: "",
@@ -106,12 +116,40 @@ export default function SeasonCreateModal({
     regiDeadline: undefined,
     entryFee: "",
     description: "",
-    categoryIds: [],
+    categoryId: "",
     isActive: false,
     paymentRequired: false,
     promoCodeSupported: false,
     withdrawalEnabled: false,
   });
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (isCategoryDropdownOpen) {
+      const fetchCategories = async () => {
+        try {
+          const response = await axiosInstance.get(endpoints.categories.getAll);
+          if (response.status === 200) {
+            const result = response.data;
+            const categoriesData = result.data || [];
+            setAllCategories(categoriesData);
+          }
+        } catch (error) {
+          console.error("Failed to fetch categories:", error);
+        }
+      };
+      fetchCategories();
+    }
+  }, [isCategoryDropdownOpen]);
+
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!categorySearch) return allCategories;
+    return allCategories.filter(category =>
+      category.name?.toLowerCase().includes(categorySearch.toLowerCase()) ||
+      category.league?.name.toLowerCase().includes(categorySearch.toLowerCase())
+    );
+  }, [allCategories, categorySearch]);
 
   const resetModal = () => {
     setCurrentStep("form");
@@ -122,13 +160,37 @@ export default function SeasonCreateModal({
       regiDeadline: undefined,
       entryFee: "",
       description: "",
-      categoryIds: [],
+      categoryId: "",
       isActive: false,
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
     });
     setError("");
+    setCategorySearch("");
+    setIsCategoryDropdownOpen(false);
+  };
+
+  // Helper function to get sport type badge variant
+  const getSportTypeBadgeVariant = (sportType: string) => {
+    switch (sportType?.toLowerCase()) {
+      case "tennis":
+        return "default";
+      case "pickleball":
+        return "secondary";
+      case "padel":
+        return "outline";
+      default:
+        return "outline";
+    }
+  };
+
+  // Helper function to handle category selection
+  const handleCategorySelect = (categoryId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      categoryId: prev.categoryId === categoryId ? "" : categoryId,
+    }));
   };
 
   const handleChange = <K extends keyof SeasonFormData>(
@@ -177,7 +239,7 @@ export default function SeasonCreateModal({
 
     try {
       // Validate required fields
-      if (!form.name || !form.categoryIds.length || !form.entryFee) {
+      if (!form.name || !form.categoryId || !form.entryFee) {
         throw new Error("Please fill in all required fields");
       }
 
@@ -199,7 +261,7 @@ export default function SeasonCreateModal({
         startDate: form.startDate!.toISOString(),
         endDate: form.endDate!.toISOString(),
         regiDeadline: form.regiDeadline!.toISOString(),
-        categoryIds: form.categoryIds,
+        categoryId: form.categoryId,
         leagueIds: [leagueId],
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,
@@ -233,7 +295,7 @@ export default function SeasonCreateModal({
   const isFormValid = useMemo(() => {
     return Boolean(
       form.name &&
-        form.categoryIds.length > 0 &&
+        form.categoryId &&
         form.startDate &&
         form.endDate &&
         form.regiDeadline &&
@@ -336,89 +398,123 @@ export default function SeasonCreateModal({
             {/* Category Selection */}
             <div className="space-y-2">
               <Label>Categories *</Label>
-              <Popover>
+              <Popover open={isCategoryDropdownOpen} onOpenChange={setIsCategoryDropdownOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     className={cn(
                       "w-full justify-between h-11",
-                      !form.categoryIds.length && "text-muted-foreground"
+                      !form.categoryId && "text-muted-foreground"
                     )}
                   >
-                    {form.categoryIds.length > 0
-                      ? `${form.categoryIds.length} categories selected`
-                      : "Select categories"}
+                    {form.categoryId
+                      ? allCategories.find(c => c.id === form.categoryId)?.name || "Selected category"
+                      : "Select category"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search categories..." />
-                    <CommandEmpty>No categories found.</CommandEmpty>
-                    <CommandGroup className="max-h-64 overflow-auto">
-                      {categories.map((category) => (
-                        <CommandItem
-                          key={category.id}
-                          onSelect={() => {
-                            setForm((prev) => {
-                              const selected = new Set(prev.categoryIds);
-                              if (selected.has(category.id)) {
-                                selected.delete(category.id);
-                              } else {
-                                selected.add(category.id);
-                              }
-                              return {
-                                ...prev,
-                                categoryIds: Array.from(selected),
-                              };
-                            });
-                          }}
-                        >
-                          <Check
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="p-3 border-b">
+                    <Input
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div 
+                    className="max-h-64 overflow-y-auto overflow-x-hidden"
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'hsl(var(--border)) transparent',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                    onWheel={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const container = e.currentTarget;
+                      container.scrollTop += e.deltaY;
+                    }}
+                  >
+                    {filteredCategories.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No categories found.
+                      </div>
+                    ) : (
+                      <div className="p-1">
+                        {filteredCategories.map((category) => (
+                          <div
+                            key={category.id}
                             className={cn(
-                              "mr-2 h-4 w-4",
-                              form.categoryIds.includes(category.id)
-                                ? "opacity-100"
-                                : "opacity-0"
+                              "flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors hover:bg-accent",
+                              form.categoryId === category.id && "bg-accent"
                             )}
-                          />
-                          {category.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
+                            onClick={() => handleCategorySelect(category.id)}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className={cn(
+                                "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                                form.categoryId === category.id
+                                  ? "bg-primary border-primary"
+                                  : "border-muted-foreground"
+                              )}>
+                                {form.categoryId === category.id && (
+                                  <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">
+                                  {category.name || "Unnamed Category"}
+                                </div>
+                                {category.league && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">
+                                      {category.league.name}
+                                    </span>
+                                    <Badge 
+                                      variant={getSportTypeBadgeVariant(category.league.sportType)}
+                                      className="text-xs"
+                                    >
+                                      {category.league.sportType}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
-              {categories.length > 0 && form.categoryIds.length > 0 && (
+              {form.categoryId && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {form.categoryIds.map((id) => {
-                    const category = categories.find((c) => c.id === id);
+                  {(() => {
+                    const category = allCategories.find((c) => c.id === form.categoryId);
                     return category ? (
                       <Badge
-                        key={id}
                         variant="secondary"
                         className="flex items-center gap-1"
                       >
-                        {category.name}
+                        {category.name || "Unnamed Category"}
                         <X
                           className="h-3 w-3 cursor-pointer"
                           onClick={() => {
                             setForm((prev) => ({
                               ...prev,
-                              categoryIds: prev.categoryIds.filter(
-                                (cid) => cid !== id
-                              ),
+                              categoryId: "",
                             }));
                           }}
                         />
                       </Badge>
                     ) : null;
-                  })}
+                  })()}
                 </div>
               )}
               <p className="text-sm text-muted-foreground">
-                Select one or more categories for this season
+                Select one category for this season
               </p>
             </div>
 
@@ -520,11 +616,8 @@ export default function SeasonCreateModal({
                 <strong>Entry Fee:</strong> MYR {form.entryFee}
               </p>
               <p>
-                <strong>Categories:</strong>{" "}
-                {form.categoryIds
-                  .map((id) => categories.find((c) => c.id === id)?.name)
-                  .filter(Boolean)
-                  .join(", ")}
+                <strong>Category:</strong>{" "}
+                {allCategories.find((c) => c.id === form.categoryId)?.name || "None selected"}
               </p>
               <p>
                 <strong>Dates:</strong> {format(form.startDate!, "MMM dd")} -{" "}

@@ -356,7 +356,9 @@ export function LeagueTabs({
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     {division.name}
-                    <Badge variant="outline">{division.status}</Badge>
+                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                      {division.status}
+                    </span>
                   </CardTitle>
                   <CardDescription>
                     {division.gameType} •{" "}
