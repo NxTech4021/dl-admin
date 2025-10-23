@@ -1,6 +1,6 @@
 "use client";
 
-import { IconTax } from "@tabler/icons-react";
+import { IconMessage, IconTax } from "@tabler/icons-react";
 
 import { IconMessage2Question } from "@tabler/icons-react";
 
@@ -15,7 +15,6 @@ import {
   IconTrophy,
   IconCalendar,
   IconCategory,
-  IconBuilding,
   IconShield,
 } from "@tabler/icons-react";
 
@@ -137,10 +136,38 @@ const data = {
 
       notificationCount: 3,
     },
-     {
-      name: "Chat",
+
+    {
+      name: "Chats",
       url: "/chat",
       icon:  IconMessage ,
+    },
+    
+    {
+      name: "Admins",
+
+      url: "/admin",
+
+      icon: IconShield,
+    },
+  ],
+
+  utilities: [
+    {
+      title: "Utilities",
+      icon: Settings,
+      items: [
+        {
+          title: "Categories",
+          url: "/utilities/categories",
+          icon: Tags,
+        },
+        {
+          title: "Sponsors",
+          url: "/utilities/sponsors",
+          icon: CreditCard,
+        },
+      ],
     },
   ],
 };
