@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/ZodSchema/season-schema";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
@@ -14,16 +14,60 @@ import {
   IconTrophy
 } from "@tabler/icons-react";
 
+interface Category {
+  id: string;
+  name: string | null;
+  genderRestriction: string;
+  matchFormat: string | null;
+  game_type: string | null;
+  league: {
+    id: string;
+    name: string;
+    sportType: string;
+  } | null;
+  seasons: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
 interface LeagueSeasonsWrapperProps {
   seasons: Season[];
   leagueId: string;
+  leagueName?: string;
+  onRefresh?: () => void;
 }
 
-export function LeagueSeasonsWrapper({ seasons, leagueId }: LeagueSeasonsWrapperProps) {
+export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh }: LeagueSeasonsWrapperProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // Fetch categories for the league
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const response = await axiosInstance.get(endpoints.categories.getAll, {
+          params: { leagueId }
+        });
+        const categoriesData = response.data?.data || response.data || [];
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    if (leagueId) {
+      fetchCategories();
+    }
+  }, [leagueId]);
 
   const handleViewSeason = (seasonId: string) => {
     window.location.href = `/seasons/${seasonId}`;
@@ -34,6 +78,15 @@ export function LeagueSeasonsWrapper({ seasons, leagueId }: LeagueSeasonsWrapper
     console.log("Current isCreateModalOpen state:", isCreateModalOpen);
     setIsCreateModalOpen(true);
     console.log("Set isCreateModalOpen to true");
+  };
+
+  const handleSeasonCreated = async () => {
+    // Call the refresh callback if provided, otherwise fallback to page reload
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      window.location.reload();
+    }
   };
 
   const handleEditSeason = (seasonId: string) => {
@@ -59,90 +112,6 @@ export function LeagueSeasonsWrapper({ seasons, leagueId }: LeagueSeasonsWrapper
     }
   };
 
-  const handleCreateSubmit = async (seasonData: any) => {
-    console.log("Creating season:", seasonData);
-    console.log("League ID:", leagueId);
-
-    if (!seasonData.categoryId) {
-      toast.error("Please select a category");
-      return;
-    }
-
-    if (isCreating) {
-      console.log("Already creating, ignoring duplicate submission");
-      return;
-    }
-
-    setIsCreating(true);
-
-    try {
-      // Prepare the data for the API (backend expects leagueIds array and specific status enum)
-      const normalizedStatus = seasonData.status === 'DRAFT' ? 'UPCOMING' : seasonData.status;
-
-      // TODO: Auto-create category logic commented out for now
-      // This was implemented to automatically create a category when user types a name instead of selecting from dropdown
-      // The logic would:
-      // 1. Check if categoryId is a valid UUID
-      // 2. If not, create a new category with the typed name
-      // 3. Use the created category's ID for the season
-      // 
-      // let effectiveCategoryId: string = seasonData.categoryId;
-      // const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      // if (effectiveCategoryId && !uuidLike.test(effectiveCategoryId)) {
-      //   console.log("No valid categoryId provided, creating category with name:", effectiveCategoryId);
-      //   try {
-      //     const createCatRes = await axiosInstance.post(endpoints.categories.create, {
-      //       leagueId,
-      //       name: effectiveCategoryId,
-      //     });
-      //     const created = createCatRes.data?.data || createCatRes.data;
-      //     effectiveCategoryId = created?.id || created?.data?.id || created?.category?.id;
-      //     if (!effectiveCategoryId) throw new Error("Category create did not return an ID");
-      //     console.log("Created category id:", effectiveCategoryId);
-      //   } catch (catErr) {
-      //     console.error("Failed to create category:", catErr);
-      //     toast.error("Failed to create category. Please provide a valid category or try again.");
-      //     return;
-      //   }
-      // }
-
-      // Use the selected categoryId from the dropdown
-      const effectiveCategoryId = seasonData.categoryId;
-
-      const apiData = {
-        name: seasonData.name,
-        description: seasonData.description,
-        status: normalizedStatus,
-        startDate: seasonData.startDate?.toISOString(),
-        endDate: seasonData.endDate?.toISOString(),
-        regiDeadline: seasonData.regiDeadline?.toISOString(),
-        entryFee: seasonData.entryFee?.toString?.() ?? String(seasonData.entryFee ?? 0),
-        isActive: !!seasonData.isActive,
-        paymentRequired: !!seasonData.paymentRequired,
-        promoCodeSupported: !!seasonData.promoCodeSupported,
-        withdrawalEnabled: !!seasonData.withdrawalEnabled,
-        categoryId: effectiveCategoryId,
-        leagueIds: [leagueId],
-      };
-
-      console.log("API Data:", apiData);
-
-      const response = await axiosInstance.post(endpoints.season.create, apiData);
-      console.log("Season created successfully:", response.data);
-
-      toast.success("Season created successfully!");
-      setIsCreateModalOpen(false);
-
-      // Refresh the page to show the new season
-      window.location.reload();
-    } catch (error: any) {
-      console.error("Error creating season:", error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.message || "Failed to create season";
-      toast.error(errorMessage);
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const handleEditSubmit = (seasonData: any) => {
     // TODO: Implement actual API call to update season
@@ -160,7 +129,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId }: LeagueSeasonsWrapper
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Seasons Management</h3>
-          <Badge variant="secondary">{seasons.length} season(s)</Badge>
+          <span className="text-sm text-muted-foreground">({seasons.length} season(s))</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -207,28 +176,16 @@ export function LeagueSeasonsWrapper({ seasons, leagueId }: LeagueSeasonsWrapper
         data={seasons} 
         isLoading={false}
         onViewSeason={handleViewSeason}
-        onEditSeason={handleEditSeason}
-        onDeleteSeason={handleDeleteSeason}
       />
 
       {/* Modals */}
       <SeasonCreateModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateSubmit}
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
         leagueId={leagueId}
-        isLoading={isCreating}
-      />
-
-      <SeasonCreateModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setEditingSeason(null);
-        }}
-        onSubmit={handleEditSubmit}
-        leagueId={leagueId}
-        season={editingSeason}
+        leagueName={leagueName}
+        categories={categories}
+        onSeasonCreated={handleSeasonCreated}
       />
     </div>
   );

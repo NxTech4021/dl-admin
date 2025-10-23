@@ -112,14 +112,14 @@ export function LeagueInfoCard({
             ) : (
               <div className="space-y-2">
                 <CardTitle className="text-2xl">{league.name}</CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   {getStatusBadge(league.status)}
-                  <Badge variant="outline" className="capitalize">
+                  <span className="capitalize">
                     {getSportLabel(league.sportType)}
-                  </Badge>
-                  <Badge variant="outline" className="capitalize">
+                  </span>
+                  <span className="capitalize">
                     {league.joinType?.toLowerCase().replace('_', ' ')}
-                  </Badge>
+                  </span>
                 </div>
               </div>
             )}

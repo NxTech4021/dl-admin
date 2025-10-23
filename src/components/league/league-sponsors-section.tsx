@@ -16,9 +16,10 @@ interface LeagueSponsorsSectionProps {
   sponsorships: Array<any>;
   leagueId?: string;
   onAssignSponsor?: () => void;
+  onSponsorDeleted?: () => void;
 }
 
-export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor }: LeagueSponsorsSectionProps) {
+export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor, onSponsorDeleted }: LeagueSponsorsSectionProps) {
   const router = useRouter();
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
   const [available, setAvailable] = React.useState<Array<{ id: string; label: string }>>([]);
@@ -54,7 +55,28 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
 
   const handleViewSponsor = (sponsorId?: string) => {
     if (!sponsorId) return;
-    router.push(`/sponsors/view/${sponsorId}`);
+    router.push(`/utilities/sponsors/view/${sponsorId}`);
+  };
+
+  const handleDeleteSponsor = async (sponsorshipId: string, sponsorName: string) => {
+    if (!confirm(`Are you sure you want to remove "${sponsorName}" from this league?`)) {
+      return;
+    }
+
+    try {
+      await axiosInstance.delete(endpoints.sponsors.delete(sponsorshipId));
+      toast.success(`"${sponsorName}" has been removed from the league`);
+      
+      // Call the refresh callback if provided, otherwise fallback to page reload
+      if (onSponsorDeleted) {
+        onSponsorDeleted();
+      } else {
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error("Error deleting sponsorship:", error);
+      toast.error(error.response?.data?.message || "Failed to remove sponsor from league");
+    }
   };
 
   const getTierBadgeVariant = (tier: string) => {
@@ -122,19 +144,9 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
         </Button>
       </div>
 
-      {/* Debug: Log rendering condition */}
-      {console.log("Rendering condition check:", { 
-        hasSponsorships: !!sponsorships, 
-        isArray: Array.isArray(sponsorships), 
-        length: sponsorships?.length,
-        condition: sponsorships && sponsorships.length > 0
-      })}
-      
       {sponsorships && sponsorships.length > 0 ? (
         <div className="space-y-2">
-          {console.log("Rendering sponsorships list:", sponsorships)}
           {sponsorships.map((s: any, index: number) => {
-            console.log(`Sponsorship ${index}:`, s);
             return (
               <div
                 key={s.id}
@@ -150,12 +162,11 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
                       <h4 className="font-medium text-sm truncate">
                         {s.company?.name || s.sponsoredName || "Sponsor"}
                       </h4>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs px-1.5 py-0.5 ${getTierColor(s.tier || s.packageTier)}`}
+                      <span 
+                        className={`text-xs px-1.5 py-0.5 rounded ${getTierColor(s.tier || s.packageTier)}`}
                       >
                         {s.tier || s.packageTier || "Standard"}
-                      </Badge>
+                      </span>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       {(s.amount || s.contractAmount) && (
@@ -175,7 +186,8 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toast.info("Remove sponsor functionality");
+                    const sponsorName = s.company?.name || s.sponsoredName || "Sponsor";
+                    handleDeleteSponsor(s.id, sponsorName);
                   }}
                 >
                   <IconTrash className="w-3 h-3" />
@@ -185,9 +197,7 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
           })}
         </div>
       ) : (
-        <>
-          {console.log("Rendering no sponsors fallback")}
-          <div className="text-center py-6">
+        <div className="text-center py-6">
             <div className="w-8 h-8 rounded-md bg-muted mx-auto mb-2 flex items-center justify-center">
               <IconBuilding className="w-4 h-4 text-muted-foreground" />
             </div>
@@ -196,7 +206,6 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor 
               Click "Add" to assign sponsors
             </p>
           </div>
-        </>
       )}
 
       {/* Assign Sponsor Modal */}

@@ -49,6 +49,10 @@ export default function Page() {
 
       const leaguesData = response.data.data.leagues;
       
+      // Debug: Log raw league data to see joinType values
+      console.log("Raw leagues data from API:", leaguesData);
+      console.log("First league joinType:", leaguesData[0]?.joinType);
+      
       // Transform the data to match our schema
       const transformedData = leaguesData.map((league: any) => ({
         id: league.id,
@@ -57,6 +61,7 @@ export default function Page() {
         description: league.description,
         status: league.status,
         sportType: league.sportType,
+        joinType: league.joinType,
         registrationType: league.registrationType,
         gameType: league.gameType,
         createdById: league.createdById,
@@ -81,6 +86,31 @@ export default function Page() {
   React.useEffect(() => {
       fetchLeagues();
     }, [fetchLeagues]);
+
+  // Refresh data when user returns to the page (e.g., after editing a league)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh if we're not already loading
+      if (!isLoading) {
+        fetchLeagues();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // Refresh when page becomes visible again
+      if (!document.hidden && !isLoading) {
+        fetchLeagues();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchLeagues, isLoading]);
 
   const handleLeagueCreated = async () => {
     // Immediately refetch leagues to show the new one

@@ -82,6 +82,8 @@ export interface LeaguePlayerRow {
   area?: string | null;
   registeredDate?: string | Date | null;
   ratings?: { [sport: string]: number } | null;
+  status?: string | null;
+  joinType?: string | null;
 }
 
 function getInitials(name: string) {
@@ -121,6 +123,35 @@ function getRatingLevel(rating: number) {
   return "Novice";
 }
 
+function getStatusBadge(status: string) {
+  const variants: Record<string, { variant: string; className: string }> = {
+    ACTIVE: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
+    ONGOING: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
+    UPCOMING: { variant: "secondary", className: "bg-blue-500 hover:bg-blue-600 text-white" },
+    FINISHED: { variant: "outline", className: "border-gray-400" },
+    INACTIVE: { variant: "outline", className: "border-gray-300" },
+    CANCELLED: { variant: "destructive", className: "" },
+    SUSPENDED: { variant: "default", className: "bg-orange-500 hover:bg-orange-600 text-white" },
+  };
+  
+  const config = variants[status] || { variant: "outline", className: "" };
+  return <Badge className={config.className}>{status}</Badge>;
+}
+
+function getJoinTypeLabel(joinType: string) {
+  const map: Record<string, string> = {
+    OPEN: "Open to All",
+    INVITE_ONLY: "Invitation Only", 
+    MANUAL: "Manual Approval",
+    // Legacy support for lowercase values
+    open: "Open to All",
+    invite_only: "Invitation Only",
+    manual: "Manual Approval"
+  };
+  return map[joinType] || joinType;
+}
+
+
 interface PlayerActionsProps {
   player: LeaguePlayerRow;
   onRemove?: (playerId: string) => void;
@@ -138,7 +169,6 @@ function PlayerActions({ player, onRemove }: PlayerActionsProps) {
   const handleRemove = () => {
     if (confirm(`Are you sure you want to remove ${player.name} from this league?`)) {
       onRemove?.(player.id);
-      toast.success(`${player.name} has been removed from the league`);
     }
   };
 
@@ -222,10 +252,10 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
     cell: ({ row }) => {
       const area = row.original.area;
       return area ? (
-        <Badge variant="secondary" className="gap-1">
+        <div className="flex items-center gap-1 text-sm">
           <IconMapPin className="size-3" />
           {area}
-        </Badge>
+        </div>
       ) : (
         <span className="text-muted-foreground text-sm">-</span>
       );
@@ -263,12 +293,11 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
               <TooltipProvider key={idx}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge 
-                      variant="secondary"
-                      className="rounded-full px-2.5 py-0.5 text-xs font-medium cursor-help"
+                    <span 
+                      className="rounded-full px-2.5 py-0.5 text-xs font-medium cursor-help bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                     >
                       {getSportLabel(sport)}: {ratingValue.toFixed(1)}
-                    </Badge>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="bg-popover text-popover-foreground">
                     <div className="flex flex-col gap-1">
@@ -287,12 +316,11 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge 
-                    variant="outline" 
-                    className="rounded-full px-2.5 py-0.5 text-xs font-normal border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 cursor-help"
+                  <span 
+                    className="rounded-full px-2.5 py-0.5 text-xs font-normal border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 cursor-help"
                   >
                     +{remainingCount}
-                  </Badge>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs bg-popover text-popover-foreground">
                   <div className="flex flex-col gap-1">
@@ -301,13 +329,12 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
                       {ratingEntries.map(([sport, rating], idx) => {
                         const ratingValue = typeof rating === 'number' ? rating : 0;
                         return (
-                          <Badge 
+                          <span 
                             key={idx} 
-                            variant="secondary"
-                            className="rounded-full px-2 py-0.5 text-xs font-medium"
+                            className="rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                           >
                             {getSportLabel(sport)}: {ratingValue.toFixed(1)}
-                          </Badge>
+                          </span>
                         );
                       })}
                     </div>
@@ -317,6 +344,30 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
             </TooltipProvider>
           )}
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return status ? getStatusBadge(status) : <span className="text-muted-foreground text-sm">-</span>;
+    },
+  },
+  {
+    accessorKey: "joinType",
+    header: "Join Type",
+    cell: ({ row }) => {
+      const joinType = row.original.joinType;
+      return joinType ? (
+        <span className="text-sm">
+          {getJoinTypeLabel(joinType)}
+        </span>
+      ) : (
+        <span className="text-sm text-muted-foreground">
+          Open to All
+        </span>
       );
     },
   },
@@ -348,10 +399,25 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
     return Array.from(areas).sort();
   }, [players]);
 
-  const handleRemovePlayer = React.useCallback((playerId: string) => {
-    // This would call an API to remove the player
-    console.log("Removing player:", playerId);
-  }, []);
+  const handleRemovePlayer = React.useCallback(async (playerId: string) => {
+    try {
+      await axiosInstance.delete(endpoints.league.removePlayer, {
+        data: {
+          leagueId: leagueId,
+          playerId: playerId
+        }
+      });
+      
+      toast.success("Player removed from the league successfully");
+      
+      // Refresh the page to show updated player list
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error removing player from league:", error);
+      const errorMessage = error.response?.data?.message || "Failed to remove player from league";
+      toast.error(errorMessage);
+    }
+  }, [leagueId]);
 
 
   const filtered = React.useMemo(() => {
@@ -745,10 +811,10 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
                           </div>
                         </div>
                         {player.area && (
-                          <Badge variant="secondary" className="gap-1">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <IconMapPin className="size-3" />
                             {player.area}
-                          </Badge>
+                          </div>
                         )}
                       </div>
                     );

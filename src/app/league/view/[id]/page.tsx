@@ -32,14 +32,14 @@ import {
   IconClock,
   IconInfoCircle,
   IconSettings,
-  IconTarget,
   IconCheck,
   IconCalendar,
   IconActivity,
   IconFlame,
   IconEdit,
   IconX,
-  IconUser
+  IconUser,
+  IconBuilding
 } from "@tabler/icons-react";
 
 type LeagueResponse = { data: { league: any } };
@@ -69,54 +69,7 @@ function getSportLabel(sport: string) {
 }
 
 
-function getGameTypeOptionsForSport(sport: string): { value: string; label: string }[] {
-  switch (sport) {
-    case "TENNIS":
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-    case "PADEL":
-      return [
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-        { value: "SINGLES", label: "Singles" },
-      ];
-    case "PICKLEBALL":
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-    default:
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-  }
-}
-function getGameTypeLabel(gameType: string) {
-  const map: Record<string, string> = {
-    SINGLES: "Singles",
-    DOUBLES: "Doubles",
-    MIXED: "Mixed Doubles",
-    singles: "Singles",
-    doubles: "Doubles",
-    mixed: "Mixed Doubles"
-  };
-  return map[gameType] || gameType;
-}
 
-function getJoinTypeValue(label: string) {
-  const reverseMap: Record<string, string> = {
-    "Singles": "SINGLES",
-    "Doubles": "DOUBLES",
-    "Mixed Doubles": "MIXED"
-  };
-  return reverseMap[label] || label;
-}
 
 function getJoinTypeLabel(joinType: string) {
   const map: Record<string, string> = {
@@ -174,7 +127,7 @@ async function getLeague(id: string) {
   }
 }
 
-function transformPlayers(memberships: any[]): LeaguePlayerRow[] {
+function transformPlayers(memberships: any[], leagueData: any): LeaguePlayerRow[] {
   return (memberships || []).map((membership: any) => ({
     id: membership.user?.id,
     name: membership.user?.name || membership.user?.email?.split("@")[0] || "Unknown",
@@ -182,8 +135,10 @@ function transformPlayers(memberships: any[]): LeaguePlayerRow[] {
     email: membership.user?.email || "",
     image: membership.user?.image ?? null,
     area: membership.user?.area ?? null,
-    registeredDate: membership.createdAt ?? null,
+    registeredDate: membership.joinedAt ?? null, // Fixed: use joinedAt instead of createdAt
     ratings: membership.user?.ratings ?? null,
+    status: leagueData?.status ?? null,
+    joinType: leagueData?.joinType ?? null,
   }));
 }
 
@@ -192,7 +147,10 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   const [leagueData, setLeagueData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>({});
+  // Removed selectedCategoryData state since all fields are now read-only
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Fetch league data
   React.useEffect(() => {
@@ -206,30 +164,23 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
             description: data.description || "",
             location: data.location || "",
             sportType: data.sportType || "TENNIS",
-            gameType: data.gameType || "SINGLES",
+            gameType: data.gameType,
             joinType: data.joinType || "OPEN",
             status: data.status || "ACTIVE",
             categoryName: data.categoryName || "",
             matchFormat: data.matchFormat || "",
-            maxPlayers: data.maxPlayers || 0,
-            maxTeams: data.maxTeams || 0,
-            divisionsCount: data.divisionsCount || 0,
-            genderRestriction: data.genderRestriction || "OPEN",
+            maxPlayers: data.maxPlayers,
+            maxTeams: data.maxTeams,
+            divisionsCount: data.divisionsCount,
+            genderRestriction: data.genderRestriction,
           });
         }
       })
       .finally(() => setIsLoading(false));
-  }, [leagueId]);
+  }, [leagueId, refreshTrigger]);
 
-  // Auto-sync game type and default category when sport type changes in edit mode
-  React.useEffect(() => {
-    if (!leagueData) return;
-    const sport = (editedData.sportType || leagueData.sportType) as string;
-    const gameOptions = getGameTypeOptionsForSport(sport);
-    if (!gameOptions.some((o) => o.value === editedData.gameType)) {
-      setEditedData((prev: any) => ({ ...prev, gameType: gameOptions[0]?.value || "SINGLES" }));
-    }
-  }, [editedData.sportType, leagueData]);
+  // Removed auto-sync game type to prevent default values when data is not set
+  
   
   const handleSave = async () => {
     try {
@@ -239,15 +190,41 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
         return;
       }
       
-      // TODO: Implement API call to save changes
-      console.log("Saving:", editedData);
+      // Make API call to save changes
+      const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:82';
+      const url = `${baseUrl}${endpoints.league.update(leagueId)}`;
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: editedData.name,
+          location: editedData.location,
+          description: editedData.description,
+          status: editedData.status,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update league');
+      }
+
+      const result = await response.json();
+      console.log("League updated successfully:", result);
+      
       setIsEditing(false);
       // Update leagueData with edited values
       setLeagueData({ ...leagueData, ...editedData });
+      // Trigger refresh to fetch updated data
+      setRefreshTrigger(prev => prev + 1);
       toast.success('League updated successfully');
     } catch (error) {
       console.error("Failed to save:", error);
-      toast.error('Failed to save changes');
+      toast.error(error instanceof Error ? error.message : 'Failed to save changes');
     }
   };
   
@@ -260,15 +237,15 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
         description: leagueData.description || "",
         location: leagueData.location || "",
         sportType: leagueData.sportType || "TENNIS",
-        gameType: leagueData.gameType || "SINGLES",
+        gameType: leagueData.gameType,
         joinType: leagueData.joinType || "OPEN",
         status: leagueData.status || "ACTIVE",
         categoryName: leagueData.categoryName || "",
         matchFormat: leagueData.matchFormat || "",
-        maxPlayers: leagueData.maxPlayers || 0,
-        maxTeams: leagueData.maxTeams || 0,
-        divisionsCount: leagueData.divisionsCount || 0,
-        genderRestriction: leagueData.genderRestriction || "OPEN",
+        maxPlayers: leagueData.maxPlayers,
+        maxTeams: leagueData.maxTeams,
+        divisionsCount: leagueData.divisionsCount,
+        genderRestriction: leagueData.genderRestriction,
       });
     }
   };
@@ -320,25 +297,7 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // Add competition settings to league data if not present
-  if (!leagueData.categoryName) {
-    leagueData.categoryName = 'Open Singles';
-  }
-  if (!leagueData.matchFormat) {
-    leagueData.matchFormat = 'Best of 3 sets';
-  }
-  if (!leagueData.maxPlayers) {
-    leagueData.maxPlayers = 32;
-  }
-  if (!leagueData.maxTeams) {
-    leagueData.maxTeams = 16;
-  }
-  if (!leagueData.divisionsCount) {
-    leagueData.divisionsCount = 3;
-  }
-  if (!leagueData.genderRestriction) {
-    leagueData.genderRestriction = 'OPEN';
-  }
+  // No mock data - use actual data from database
 
   const members = leagueData.memberships || [];
   const seasons = leagueData.seasons || [];
@@ -346,10 +305,6 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   const categories = leagueData.categories || [];
   const sponsorships = leagueData.sponsorships || [];
 
-  // Debug: Log sponsorships data
-  console.log("League sponsorships data:", sponsorships);
-  console.log("League data structure:", leagueData);
-  console.log("Sponsorships length:", sponsorships.length);
 
   if (!leagueData._count) {
     leagueData._count = {
@@ -359,17 +314,36 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   }
   // Description comes from API, no default needed
 
-  const players: LeaguePlayerRow[] = transformPlayers(members);
+  const players: LeaguePlayerRow[] = transformPlayers(members, leagueData);
+
+  // Dynamic breadcrumb based on active tab
+  const getBreadcrumbItems = () => {
+    const baseItems = [
+      { label: "League", href: "/league" },
+      { label: leagueData.name }
+    ];
+
+    switch (activeTab) {
+      case "overview":
+        return [...baseItems, { label: "Overview" }];
+      case "members":
+        return [...baseItems, { label: "Players" }];
+      case "seasons":
+        return [...baseItems, { label: "Seasons" }];
+      default:
+        return baseItems;
+    }
+  };
 
   return (
     <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader items={[{ label: "League", href: "/league" }, { label: leagueData.name }]} />
+        <SiteHeader items={getBreadcrumbItems()} />
 
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col">
-            <Tabs defaultValue="overview" className="flex flex-1 flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
               {/* Hero Header */}
               <div className="bg-gradient-to-r from-background to-muted/20">
                 <div className="px-6 py-4">
@@ -417,43 +391,6 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                           </>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                          <IconTrophy className="w-4 h-4" />
-                          {getSportLabel(isEditing ? editedData.sportType : leagueData.sportType)}
-                        </Badge>
-                        <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                          <IconUsers className="w-4 h-4" />
-                          {getGameTypeOptionsForSport(isEditing ? editedData.sportType : leagueData.sportType).find(o => o.value === (isEditing ? editedData.gameType : leagueData.gameType))?.label || getGameTypeLabel(isEditing ? editedData.gameType : leagueData.gameType)}
-                        </Badge>
-                        {(isEditing ? editedData.categoryName : leagueData.categoryName) && (
-                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                            <IconTarget className="w-4 h-4" />
-                            {isEditing ? editedData.categoryName : leagueData.categoryName}
-                          </Badge>
-                        )}
-                        {(leagueData.genderRestriction || (isEditing && editedData.genderRestriction)) && (
-                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                            <IconUser className="w-4 h-4" />
-                            {(() => {
-                              const g = (isEditing ? editedData.genderRestriction : leagueData.genderRestriction) || "OPEN";
-                              return g === "OPEN" ? "Open" : g === "MALE" ? "Male" : g === "FEMALE" ? "Female" : g === "MIXED" ? "Mixed" : g;
-                            })()}
-                          </Badge>
-                        )}
-                        {leagueData.joinType && (
-                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                            <IconInfoCircle className="w-4 h-4" />
-                            {getJoinTypeLabel(isEditing ? editedData.joinType : leagueData.joinType)}
-                          </Badge>
-                        )}
-                        {(leagueData.location || (isEditing && editedData.location)) && (
-                          <Badge variant="secondary" className="gap-2 px-3 py-1 text-sm">
-                            <IconMapPin className="w-4 h-4" />
-                            {isEditing ? editedData.location : leagueData.location}
-                          </Badge>
-                        )}
-                      </div>
                     </div>
 
                     {/* Right column: Tabs bar aligned to description width + description card */}
@@ -470,12 +407,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                           <TabsTrigger value="members" className="gap-2">
                             <IconUsers className="w-4 h-4" />
                             Players
-                            <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                            <span className="ml-1 text-xs text-muted-foreground">({members.length})</span>
                           </TabsTrigger>
                           <TabsTrigger value="seasons" className="gap-2">
                             <IconCalendar className="w-4 h-4" />
                             Seasons
-                            <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                            <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
                           </TabsTrigger>
                         </TabsList>
                         {isEditing ? (
@@ -516,8 +453,129 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                     </div>
                   </div>
 
-                  {/* Key Metrics removed as requested */}
+                  {/* Statistics Cards */}
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {/* Quick Stats Card */}
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+                        <IconUsers className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{leagueData._count?.memberships || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Active players in league
+                        </p>
+                      </CardContent>
+                    </Card>
 
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Seasons</CardTitle>
+                        <IconCalendar className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{leagueData._count?.seasons || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Total seasons created
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Categories</CardTitle>
+                        <IconTrophy className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{leagueData._count?.categories || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Competition categories
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Sponsors</CardTitle>
+                        <IconBuilding className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{sponsorships.length}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Active sponsorships
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Recent Activity Card - Horizontal */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IconActivity className="w-5 h-5" />
+                        Recent Activity
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <div>
+                            <p className="text-sm font-medium">League Created</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(leagueData.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        {leagueData.updatedAt && leagueData.updatedAt !== leagueData.createdAt && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div>
+                              <p className="text-sm font-medium">Last Updated</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(leagueData.updatedAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {leagueData._count?.memberships > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <div>
+                              <p className="text-sm font-medium">Members Joined</p>
+                              <p className="text-xs text-muted-foreground">
+                                {leagueData._count.memberships} active members
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {leagueData._count?.seasons > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            <div>
+                              <p className="text-sm font-medium">Seasons Active</p>
+                              <p className="text-xs text-muted-foreground">
+                                {leagueData._count.seasons} seasons created
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <Card>
@@ -629,129 +687,23 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                     </Card>
                   </div>
 
-                  {/* Competition Settings */}
+                  {/* Sponsors Section */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <IconSettings className="w-5 h-5" />
-                        League Settings
+                        Sponsors
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Category free text with hint */}
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Category</p>
-                          {isEditing ? (
-                            <Input
-                              value={editedData.categoryName}
-                              onChange={(e) => setEditedData({ ...editedData, categoryName: e.target.value })}
-                              placeholder="e.g., Junior Singles"
-                            />
-                          ) : (
-                            <p className="font-medium">{leagueData.categoryName || "Not set"}</p>
-                          )}
-                        </div>
-                        {/* Game Type dropdown (renamed from previous sport-aware Category) */}
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Game Type</p>
-                          {isEditing ? (
-                            <Select value={editedData.gameType} onValueChange={(value) => setEditedData({ ...editedData, gameType: value })}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getGameTypeOptionsForSport(editedData.sportType || leagueData.sportType).map((opt) => (
-                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <p className="font-medium">{
-                              getGameTypeOptionsForSport(leagueData.sportType).find(o => o.value === leagueData.gameType)?.label || getGameTypeLabel(leagueData.gameType)
-                            }</p>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Match Format</p>
-                          {isEditing ? (
-                            <Input
-                              value={editedData.matchFormat}
-                              onChange={(e) => setEditedData({ ...editedData, matchFormat: e.target.value })}
-                              placeholder="e.g., Best of 3 sets"
-                            />
-                          ) : (
-                            <p className="font-medium">{leagueData.matchFormat || "Not set"}</p>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Max Players</p>
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={editedData.maxPlayers}
-                              onChange={(e) => setEditedData({ ...editedData, maxPlayers: parseInt(e.target.value) || 0 })}
-                              placeholder="0 for unlimited"
-                            />
-                          ) : (
-                            <p className="font-medium">{leagueData.maxPlayers || "Unlimited"}</p>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Max Teams</p>
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={editedData.maxTeams}
-                              onChange={(e) => setEditedData({ ...editedData, maxTeams: parseInt(e.target.value) || 0 })}
-                              placeholder="0 for unlimited"
-                            />
-                          ) : (
-                            <p className="font-medium">{leagueData.maxTeams || "Unlimited"}</p>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Divisions</p>
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={editedData.divisionsCount}
-                              onChange={(e) => setEditedData({ ...editedData, divisionsCount: parseInt(e.target.value) || 0 })}
-                              placeholder="Number of divisions"
-                            />
-                          ) : (
-                            <p className="font-medium">{leagueData.divisions?.length || leagueData.divisionsCount || "Not set"}</p>
-                          )}
-                        </div>
-                        {/* Gender relocated here */}
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Gender Restriction</p>
-                          {isEditing ? (
-                            <Select value={editedData.genderRestriction} onValueChange={(value) => setEditedData({ ...editedData, genderRestriction: value })}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="OPEN">Open</SelectItem>
-                                <SelectItem value="MALE">Male Only</SelectItem>
-                                <SelectItem value="FEMALE">Female Only</SelectItem>
-                                <SelectItem value="MIXED">Mixed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge variant="outline" className="mt-1">
-                              {leagueData.genderRestriction === 'OPEN' ? 'Open' : 
-                               leagueData.genderRestriction === 'MALE' ? 'Male Only' : 
-                               leagueData.genderRestriction === 'FEMALE' ? 'Female Only' : 
-                               leagueData.genderRestriction === 'MIXED' ? 'Mixed' : 'Not set'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Sponsors Section */}
-                      <Separator />
-                      <LeagueSponsorsSection sponsorships={sponsorships} leagueId={leagueId} />
+                    <CardContent>
+                      <LeagueSponsorsSection 
+                        sponsorships={sponsorships} 
+                        leagueId={leagueId} 
+                        onSponsorDeleted={() => {
+                          // Refresh the league data to get updated sponsorships
+                          setRefreshTrigger(prev => prev + 1);
+                        }}
+                      />
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -770,12 +722,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                       <TabsTrigger value="members" className="gap-2">
                         <IconUsers className="w-4 h-4" />
                         Players
-                        <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                        <span className="ml-1 text-xs text-muted-foreground">({members.length})</span>
                       </TabsTrigger>
                       <TabsTrigger value="seasons" className="gap-2">
                         <IconCalendar className="w-4 h-4" />
                         Seasons
-                        <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                        <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -807,12 +759,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                       <TabsTrigger value="members" className="gap-2">
                         <IconUsers className="w-4 h-4" />
                         Players
-                        <Badge variant="secondary" className="ml-1">{members.length}</Badge>
+                        <span className="ml-1 text-xs text-muted-foreground">({members.length})</span>
                       </TabsTrigger>
                       <TabsTrigger value="seasons" className="gap-2">
                         <IconCalendar className="w-4 h-4" />
                         Seasons
-                        <Badge variant="secondary" className="ml-1">{seasons.length}</Badge>
+                        <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -825,7 +777,16 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <LeagueSeasonsWrapper seasons={seasons} leagueId={leagueId} />
+                      <LeagueSeasonsWrapper 
+                        seasons={seasons} 
+                        leagueId={leagueId} 
+                        leagueName={leagueData.name}
+                        onRefresh={() => {
+                          // Refresh the league data to get updated seasons and stay on seasons tab
+                          setActiveTab("seasons");
+                          setRefreshTrigger(prev => prev + 1);
+                        }}
+                      />
                     </CardContent>
                   </Card>
                 </TabsContent>

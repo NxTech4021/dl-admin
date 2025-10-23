@@ -13,6 +13,7 @@ import {
   IconChevronUp,
   IconUsers,
   IconCalendar,
+  IconTrashX,
 } from "@tabler/icons-react";
 
 import {
@@ -62,7 +63,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
-import axios from "axios";
+import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/ZodSchema/category-schema";
 import { endpoints } from "@/lib/endpoints";
 import dynamic from "next/dynamic";
@@ -111,27 +112,28 @@ const getGameTypeBadgeVariant = (gameType: string | null) => {
   }
 };
 
-const getLeaguesDisplay = (category: Category): React.ReactNode => {
-  if (!category.leagues || category.leagues.length === 0) {
-    return <span className="text-muted-foreground text-xs">No leagues</span>;
+const getLeagueDisplay = (category: Category): React.ReactNode => {
+  if (!category.league) {
+    return <span className="text-muted-foreground text-xs">No league</span>;
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {category.leagues.length} League{category.leagues.length !== 1 ? 's' : ''}
+          {category.league.name}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Leagues</h4>
+          <h4 className="text-sm font-medium">Linked League</h4>
           <div className="flex flex-wrap gap-1">
-            {category.leagues.map((league) => (
-              <Badge key={league.id} variant="outline" className="text-xs">
-                {league.name}
-              </Badge>
-            ))}
+            <Badge variant="outline" className="text-xs">
+              {category.league.name}
+            </Badge>
+            <Badge variant="outline" className="text-xs capitalize">
+              {category.league.sportType?.toLowerCase() || "Unknown"}
+            </Badge>
           </div>
         </div>
       </HoverCardContent>
@@ -168,7 +170,8 @@ const getSeasonsDisplay = (category: Category): React.ReactNode => {
 };
 
 const createColumns = (
-  handleEditCategory: (categoryId: string) => void
+  handleEditCategory: (categoryId: string) => void,
+  handleDeleteCategory: (categoryId: string) => void
 ): ColumnDef<Category>[] => [
   {
     id: "select",
@@ -246,11 +249,11 @@ const createColumns = (
     },
   },
   {
-    accessorKey: "leagues",
-    header: "Leagues",
+    accessorKey: "league",
+    header: "League",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
-        {getLeaguesDisplay(row.original)}
+        {getLeagueDisplay(row.original)}
       </div>
     ),
   },
@@ -326,8 +329,12 @@ const createColumns = (
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => {
-                // TODO: Implement delete category functionality
-                console.log("Delete category:", category.id);
+                const confirmed = window.confirm(
+                  `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
+                );
+                if (confirmed) {
+                  handleDeleteCategory(category.id);
+                }
               }}
             >
               <IconTrash className="mr-2 size-4" />
@@ -428,7 +435,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(endpoints.categories.getAll);
+        const response = await axiosInstance.get(endpoints.categories.getAll);
         if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
@@ -454,7 +461,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     // Refresh the data
     setIsLoading(true);
     try {
-      const response = await axios.get(endpoints.categories.getAll);
+      const response = await axiosInstance.get(endpoints.categories.getAll);
       if (response.status === 200) {
         const result = await response.data;
         const parsedData = categorySchema.array().parse(result.data);
@@ -467,7 +474,55 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     }
   };
 
-  const columns = createColumns(handleEditCategory);
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      const response = await axiosInstance.delete(endpoints.categories.delete(categoryId));
+      if (response.status === 200) {
+        // Remove the deleted category from the data
+        setData(prevData => prevData.filter(category => category.id !== categoryId));
+        // Clear selection if the deleted category was selected
+        setRowSelection(prev => {
+          const newSelection = { ...prev };
+          delete (newSelection as any)[categoryId];
+          return newSelection;
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to delete category:", error);
+      // Show error message to user
+      alert(error.response?.data?.message || "Failed to delete category");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map(row => row.original.id);
+    
+    if (selectedIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} category(ies)? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Delete categories one by one
+      for (const categoryId of selectedIds) {
+        await axiosInstance.delete(endpoints.categories.delete(categoryId));
+      }
+      
+      // Remove deleted categories from data
+      setData(prevData => prevData.filter(category => !selectedIds.includes(category.id)));
+      // Clear all selections
+      setRowSelection({});
+    } catch (error: any) {
+      console.error("Failed to delete categories:", error);
+      alert(error.response?.data?.message || "Failed to delete some categories");
+    }
+  };
+
+  const columns = createColumns(handleEditCategory, handleDeleteCategory);
 
   const table = useReactTable({
     data: filteredData,
@@ -532,6 +587,17 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
           </div>
 
           <div className="flex items-center space-x-2">
+            {table.getFilteredSelectedRowModel().rows.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                className="mr-2"
+              >
+                <IconTrashX className="mr-2 size-4" />
+                Delete Selected ({table.getFilteredSelectedRowModel().rows.length})
+              </Button>
+            )}
             <div className="text-sm text-muted-foreground">
               {table.getFilteredSelectedRowModel().rows.length} of{" "}
               {table.getFilteredRowModel().rows.length} category(ies) selected
