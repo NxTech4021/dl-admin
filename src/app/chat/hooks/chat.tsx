@@ -39,6 +39,14 @@ export interface Thread {
   };
 }
 
+export interface AvailableUser {
+  id: string;
+  name: string;
+  username?: string;
+  image?: string;
+  email?: string;
+}
+
 export function useChatData(userId?: string) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -351,3 +359,65 @@ export function useCreateThread() {
     error,
   };
 }
+
+export function useAvailableUsers(currentUserId?: string) {
+  const [users, setUsers] = useState<AvailableUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAvailableUsers = useCallback(async () => {
+    if (!currentUserId) {
+      setUsers([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('Fetching available users for:', currentUserId);
+      const response = await axiosInstance.get(endpoints.chat.getAvailableUsers(currentUserId));
+      
+      console.log('Available users response:', response.data);
+      
+      let usersData: AvailableUser[] = [];
+      
+      if (response.data) {
+        if (response.data.success && response.data.data) {
+          usersData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          usersData = response.data;
+        } else if (response.data.users && Array.isArray(response.data.users)) {
+          usersData = response.data.users;
+        }
+      }
+      
+      // Filter out current user just in case
+      const filteredUsers = usersData.filter(user => user.id !== currentUserId);
+      setUsers(filteredUsers);
+      
+    } catch (err: any) {
+      console.error('Error fetching available users:', err);
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error || 
+                          err.message || 
+                          'Failed to fetch users';
+      setError(errorMessage);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    fetchAvailableUsers();
+  }, [fetchAvailableUsers]);
+
+  return {
+    users,
+    loading,
+    error,
+    refetch: fetchAvailableUsers,
+  };
+}
+

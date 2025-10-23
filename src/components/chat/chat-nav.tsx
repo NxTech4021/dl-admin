@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
+
 // Icons from lucide-react
 import { Search, ChevronLeft, ChevronRight, Users, MessageSquarePlus, Plus } from 'lucide-react';
 
@@ -19,6 +20,7 @@ import { Search, ChevronLeft, ChevronRight, Users, MessageSquarePlus, Plus } fro
 import ChatNavAccount from './chat-nav-account';
 import ChatNavItemSkeleton from './chat-skeleton';
 import ChatNavItem from './chat-nav-item';
+import NewChatModal from './create-chat-modal';
 
 // --- MOCK HOOKS & UTILITIES ---
 const useResponsive = () => {
@@ -82,6 +84,7 @@ export default function ChatNav({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredConversations, setFilteredConversations] = useState(conversations);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
 
   // Filter conversations based on search query
   useEffect(() => {
@@ -222,16 +225,24 @@ export default function ChatNav({
       {/* Compose Button */}
       {!collapseDesktop && (
         <div className="p-4 border-t">
-          <Button 
-            onClick={handleClickCompose}
+           <Button 
             className="w-full"
             variant="outline"
+            onClick={() => setShowNewChatModal(true)}
           >
             <MessageSquarePlus className="w-4 h-4 mr-2" />
-            New Chat
+            New Message
           </Button>
+
         </div>
       )}
+
+      <NewChatModal
+        open={showNewChatModal}
+        onOpenChange={setShowNewChatModal}
+        currentUserId={user?.id}
+        // onThreadCreated={onThreadCreated}
+      />
     </>
   );
 
