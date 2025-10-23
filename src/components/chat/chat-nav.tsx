@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatDistanceToNow } from 'date-fns';
 
 // Shadcn UI components
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 // Icons from lucide-react
-import { Search, ChevronLeft, ChevronRight, Users, MessageSquarePlus } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Users, MessageSquarePlus, Plus } from 'lucide-react';
 
 // Components
 import ChatNavAccount from './chat-nav-account';
@@ -46,10 +49,24 @@ const useCollapseNav = () => {
 const NAV_WIDTH = 'w-[320px]';
 const NAV_COLLAPSE_WIDTH = 'w-[96px]';
 
+interface Conversation {
+  id: string;
+  type: 'direct' | 'group';
+  displayName: string;
+  photoURL?: string;
+  participants?: any[];
+  lastMessage?: {
+    content: string;
+    createdAt: string;
+    sender: { name: string };
+  };
+  unreadCount: number;
+}
+
 interface ChatNavProps {
   loading: boolean;
   user: any;
-  conversations: any[];
+  conversations: Conversation[];
   selectedConversationId: string;
 }
 
@@ -65,10 +82,6 @@ export default function ChatNav({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredConversations, setFilteredConversations] = useState(conversations);
-
-  console.log("Chat nav user", user);
-  console.log("Conversations", conversations);
-  console.log("Selected conversation ID", selectedConversationId);
 
   // Filter conversations based on search query
   useEffect(() => {

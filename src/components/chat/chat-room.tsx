@@ -8,7 +8,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useResponsive } from "@/app/chat/hooks/use-responsive"
 import { useCollapseNav } from "../../app/chat/hooks"
 import ChatRoomGroup from "./chat-room-group"
-import ChatRoomSingle from "./chat-room-single"
+// import ChatRoomSingle from "./chat-room-single"
 import ChatRoomAttachments from "./chat-room-attachments"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
@@ -46,14 +46,16 @@ export default function ChatRoom({ participants, conversation }) {
 
   const renderContent = (
     <div className="flex flex-col h-full">
-      {group ? (
-        <ChatRoomGroup participants={participants} />
+     {/* {group ? (
+         <ChatRoomGroup participants={participants} />
       ) : (
         <ChatRoomSingle participant={participants[0]} />
-      )}
+    )}
 
-      {/* <ChatRoomAttachments attachments={""} /> */}
+     <ChatRoomAttachments attachments={""} /> */}
+     <h1> Hello </h1>
     </div>
+    
   )
 
   const renderToggleBtn = (

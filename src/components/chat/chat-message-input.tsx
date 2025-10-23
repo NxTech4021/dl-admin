@@ -1,156 +1,123 @@
-'use client';
+"use client";
 
-import { sub } from "date-fns";
-import PropTypes from "prop-types";
-import { useRef, useMemo, useState, useCallback } from "react";
+import { useState, useRef, useCallback } from 'react';
+import { Send, Paperclip, Smile } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
-import { useRouter } from "next/navigation";
-// import { paths } from "src/routes/paths";
-
-import { _mockContacts, _mockUser } from "@/app/chat/hooks/_mockData";
-// import uuidv4 from "src/utils/uuidv4";
-// import { sendMessage, createConversation } from "src/api/chat";
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Smile, ImagePlus, Paperclip, Mic, Send } from "lucide-react";
-import { uuidv4 } from "zod";
+interface ChatMessageInputProps {
+  selectedConversationId?: string;
+  disabled?: boolean;
+  onSendMessage?: (content: string) => Promise<void>;
+}
 
 export default function ChatMessageInput({
-  recipients,
-  onAddRecipients,
-  disabled,
   selectedConversationId,
-}) {
-  const router = useRouter();
-  const user  = _mockUser
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  disabled = false,
+  onSendMessage,
+}: ChatMessageInputProps) {
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [message, setMessage] = useState("");
+  const handleSend = useCallback(async () => {
+    if (!message.trim() || !onSendMessage || isSending) return;
 
-  const myContact = useMemo(
-    () => ({
-      id: `${user?.id}`,
-      role: `${user?.role}`,
-      email: `${user?.email}`,
-      // address: `${user?.address}`,
-      name: `${user?.displayName}`,
-      lastActivity: new Date(),
-      avatarUrl: `${user?.photoURL}`,
-      phoneNumber: `${user?.phoneNumber}`,
-      status: "online",
-    }),
-    [user]
-  );
+    const messageToSend = message.trim();
+    setMessage('');
+    setIsSending(true);
 
-  const messageData = useMemo(
-    () => ({
-      id: uuidv4(),
-      attachments: [],
-      body: message,
-      contentType: "text",
-      createdAt: sub(new Date(), { minutes: 1 }),
-      senderId: myContact.id,
-    }),
-    [message, myContact.id]
-  );
+    try {
+      await onSendMessage(messageToSend);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Restore message on error
+      setMessage(messageToSend);
+    } finally {
+      setIsSending(false);
+    }
+  }, [message, onSendMessage, isSending]);
 
-  const conversationData = useMemo(
-    () => ({
-      id: uuidv4(),
-      messages: [messageData],
-      participants: [...recipients, myContact],
-      type: recipients.length > 1 ? "GROUP" : "ONE_TO_ONE",
-      unreadCount: 0,
-    }),
-    [messageData, myContact, recipients]
-  );
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  }, [handleSend]);
 
-  const handleAttach = useCallback(() => {
-    fileRef.current?.click();
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    }
   }, []);
 
-  const handleChangeMessage = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setMessage(event.target.value);
-    },
-    []
-  );
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight]);
 
-  const handleSendMessage = useCallback(
-    async (event: React.KeyboardEvent<HTMLInputElement>) => {
-      try {
-        if (event.key === "Enter") {
-          if (message) {
-            if (selectedConversationId) {
-              // await sendMessage(selectedConversationId, messageData);
-            } else {
-              // const res = await createConversation(conversationData);
-
-              router.push(`${paths.dashboard.chat}?id=${res.conversation.id}`);
-              onAddRecipients([]);
-            }
-          }
-          setMessage("");
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [conversationData, message, messageData, onAddRecipients, router, selectedConversationId]
-  );
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      // handleSendMessage();
-    }
-  };
+  const isDisabled = disabled || !selectedConversationId || isSending;
 
   return (
-    <div className="p-4 border-t bg-background">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
+    <div className="border-t bg-background px-4 py-3">
+      <div className="flex items-end gap-3">
+        {/* Attachment Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 flex-shrink-0"
+          disabled={isDisabled}
+        >
           <Paperclip className="h-4 w-4" />
         </Button>
-        
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <ImagePlus className="h-4 w-4" />
-        </Button>
 
-        <div className="flex-1">
-          <Input
+        {/* Message Input */}
+        <div className="flex-1 relative">
+          <Textarea
+            ref={textareaRef}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={disabled ? "Select a conversation to start messaging" : "Type a message..."}
-            disabled={disabled}
-            className="w-full"
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              selectedConversationId 
+                ? "Type a message..." 
+                : "Select a conversation to start messaging"
+            }
+            className={cn(
+              "min-h-[40px] max-h-[120px] resize-none pr-12",
+              "border-border focus:border-primary"
+            )}
+            disabled={isDisabled}
+            rows={1}
           />
+          
+          {/* Emoji Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+            disabled={isDisabled}
+          >
+            <Smile className="h-4 w-4" />
+          </Button>
         </div>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Smile className="h-4 w-4" />
-        </Button>
-
-        <Button 
-          // onClick={handleSendMessage}
-          disabled={disabled || !message.trim()}
+        {/* Send Button */}
+        <Button
+          onClick={handleSend}
+          disabled={isDisabled || !message.trim()}
           size="icon"
+          className="h-9 w-9 flex-shrink-0"
         >
-          <Send className="h-4 w-4" />
+          <Send className={cn(
+            "h-4 w-4 transition-transform",
+            isSending && "animate-pulse"
+          )} />
         </Button>
       </div>
-
-      {/* Hidden file input */}
-      <input type="file" ref={fileRef} className="hidden" />
     </div>
   );
 }
-
-ChatMessageInput.propTypes = {
-  disabled: PropTypes.bool,
-  onAddRecipients: PropTypes.func,
-  recipients: PropTypes.array,
-  selectedConversationId: PropTypes.string,
-};

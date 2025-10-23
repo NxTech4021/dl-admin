@@ -74,7 +74,7 @@ const NAV_WIDTH = 'w-[320px]';
 const NAV_COLLAPSE_WIDTH = 'w-[96px]';
 const paths = {
   dashboard: {
-    chat: '/dashboard/chat',
+    chat: '/chat',
   },
 };
 

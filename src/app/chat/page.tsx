@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -17,6 +17,7 @@ import ChatMessageInput from '@/components/chat/chat-message-input';
 import ChatRoom from '@/components/chat/chat-room';
 import { useChatData, useMessages } from './hooks/chat';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ChatView() {
   const router = useRouter();
@@ -27,11 +28,20 @@ export default function ChatView() {
   const selectedConversationId = searchParams.get('id') || '';
   const [recipients, setRecipients] = useState([]);
 
-  // Only fetch threads and messages
+  // Fetch threads and messages
   const { threads, loading: threadsLoading, error: threadsError } = useChatData(user?.id);
-  const { messages, loading: messagesLoading, sendMessage } = useMessages(selectedConversationId);
+  const { messages, loading: messagesLoading, sendMessage, error: messagesError } = useMessages(selectedConversationId);
 
-  console.log("threads test", threads)
+  // Handle URL changes to update selected conversation
+  useEffect(() => {
+    if (threadsError) {
+      toast.error('Failed to load conversations');
+    }
+    if (messagesError) {
+      toast.error('Failed to load messages');
+    }
+  }, [threadsError, messagesError]);
+
   // Transform threads to conversations format
   const conversations = threads.map(thread => ({
     id: thread.id,
@@ -49,7 +59,11 @@ export default function ChatView() {
       status: 'online',
     })),
     messages: [],
-    lastMessage: thread.messages[0] || null,
+    lastMessage: thread.messages.length > 0 ? {
+      content: thread.messages[0].content,
+      createdAt: thread.messages[0].createdAt,
+      sender: { name: thread.messages[0].sender.name }
+    } : null,
     unreadCount: 0,
   }));
 
@@ -64,12 +78,16 @@ export default function ChatView() {
   const details = !!conversation;
 
   const handleSendMessage = useCallback(async (content: string) => {
-    if (!user?.id || !selectedConversationId) return;
+    if (!user?.id || !selectedConversationId) {
+      toast.error('Unable to send message. Please select a conversation.');
+      return;
+    }
     
     try {
       await sendMessage(content, user.id);
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast.error('Failed to send message. Please try again.');
     }
   }, [sendMessage, user?.id, selectedConversationId]);
 
@@ -100,6 +118,7 @@ export default function ChatView() {
       ) : (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
+            <div className="text-6xl mb-4">💬</div>
             <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
             <p className="text-sm">Choose a chat from the sidebar to start messaging</p>
           </div>

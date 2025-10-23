@@ -16,7 +16,7 @@ export default function ChatRoomSingle({ participant }) {
     <div className="flex flex-col items-center py-5">
       <Avatar className="h-24 w-24 mb-2">
         <AvatarImage src={avatarUrl} alt={name} />
-        <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
+        <AvatarFallback>{name?.charAt(0)} </AvatarFallback>
       </Avatar>
       <p className="text-lg font-medium">{name}</p>
       <p className="text-sm text-muted-foreground mt-1">{role}</p>

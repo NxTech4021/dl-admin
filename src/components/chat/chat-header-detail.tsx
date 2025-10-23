@@ -26,10 +26,10 @@ export default function ChatHeaderDetail({ participants = [] }: ChatHeaderDetail
   const singleParticipant = participants[0];
 
   const getParticipantName = (participant: Participant) => 
-    participant.displayName || participant.name || 'Unknown';
+    participant?.displayName || participant?.name || 'Unknown';
 
   const getParticipantAvatar = (participant: Participant) => 
-    participant.photoURL || participant.avatarUrl;
+    participant?.photoURL || participant?.avatarUrl || "Test ";
 
   const getStatusColor = (status?: string) => {
     switch (status) {
