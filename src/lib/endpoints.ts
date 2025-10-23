@@ -115,14 +115,15 @@ export const endpoints = {
   },
 
   chat: {
-   
     createThread: "/api/chat/threads",
     getThreads: (userId: string) => `/api/chat/threads/${userId}`,
     getThreadMembers: (threadId: string) => `/api/chat/threads/${threadId}/members`,
-  
     sendMessage: (threadId: string) => `/api/chat/threads/${threadId}/messages`,
     getMessages: (threadId: string) => `/api/chat/threads/${threadId}/messages`,
     markAsRead: (messageId: string) => `/api/chat/messages/${messageId}/read`,
+    
+    // Add contacts endpoints
+    getContacts: (userId: string) => `/api/users/${userId}/contacts`,
+    getAllUsers: "/api/users",
   },
-  
 };

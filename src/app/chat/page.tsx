@@ -12,12 +12,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import ChatNav from '@/components/chat/chat-nav';
 import ChatHeaderDetail from '@/components/chat/chat-header-detail';
-import ChatHeaderCompose from '@/components/chat/chat-header-compose';
 import ChatMessageList from '@/components/chat/chat-message-list';
 import ChatMessageInput from '@/components/chat/chat-message-input';
 import ChatRoom from '@/components/chat/chat-room';
 import { useChatData, useMessages } from './hooks/chat';
-import { _mockContacts } from "./hooks/_mockData"; // Fallback for contacts
 import { Loader2 } from 'lucide-react';
 
 export default function ChatView() {
@@ -29,12 +27,13 @@ export default function ChatView() {
   const selectedConversationId = searchParams.get('id') || '';
   const [recipients, setRecipients] = useState([]);
 
-  // Fetch threads and messages using custom hooks
-  const { threads, loading: threadsLoading, error: threadsError, refetch: refetchThreads } = useChatData(user?.id);
+  // Only fetch threads and messages
+  const { threads, loading: threadsLoading, error: threadsError } = useChatData(user?.id);
   const { messages, loading: messagesLoading, sendMessage } = useMessages(selectedConversationId);
 
-  // Transform threads to match your existing conversation structure
-  const conversations = threads.map(thread  => ({
+  console.log("threads test", threads)
+  // Transform threads to conversations format
+  const conversations = threads.map(thread => ({
     id: thread.id,
     type: thread.isGroup ? 'group' : 'direct',
     displayName: thread.name || thread.members
@@ -47,14 +46,13 @@ export default function ChatView() {
       displayName: m.user.name,
       name: m.user.name,
       photoURL: m.user.image,
-      status: 'online', // You might want to implement real status
+      status: 'online',
     })),
     messages: [],
     lastMessage: thread.messages[0] || null,
-    unreadCount: 0, // Implement unread count logic if needed
+    unreadCount: 0,
   }));
 
-  // Get current conversation
   const conversation = selectedConversationId 
     ? conversations.find(conv => conv.id === selectedConversationId) 
     : null;
@@ -65,16 +63,11 @@ export default function ChatView() {
   
   const details = !!conversation;
 
-  const handleAddRecipients = useCallback((selected: any) => {
-    setRecipients(selected);
-  }, []);
-
   const handleSendMessage = useCallback(async (content: string) => {
     if (!user?.id || !selectedConversationId) return;
     
     try {
       await sendMessage(content, user.id);
-      // Message is automatically added to the list by the hook
     } catch (error) {
       console.error('Failed to send message:', error);
     }
@@ -82,7 +75,6 @@ export default function ChatView() {
 
   const renderNav = (
     <ChatNav
-      contacts={_mockContacts} // Using mock contacts for now
       conversations={conversations}
       loading={threadsLoading}
       selectedConversationId={selectedConversationId}
@@ -100,8 +92,6 @@ export default function ChatView() {
             loading={messagesLoading}
           />
           <ChatMessageInput
-            recipients={recipients}
-            onAddRecipients={handleAddRecipients}
             selectedConversationId={selectedConversationId}
             disabled={!selectedConversationId}
             onSendMessage={handleSendMessage}
@@ -123,10 +113,9 @@ export default function ChatView() {
       {selectedConversationId && conversation ? (
         <ChatHeaderDetail participants={participants} />
       ) : (
-        <ChatHeaderCompose 
-          contacts={_mockContacts} 
-          onAddRecipients={handleAddRecipients} 
-        />
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-medium">Messages</h3>
+        </div>
       )}
     </div>
   );
@@ -156,31 +145,6 @@ export default function ChatView() {
     );
   }
 
-  // if (threadsError) {
-  //   return (
-  //     <SidebarProvider
-  //       style={{
-  //         "--sidebar-width": "calc(var(--spacing) * 72)",
-  //         "--header-height": "calc(var(--spacing) * 12)",
-  //       } as React.CSSProperties}
-  //     >
-  //       <AppSidebar variant="inset" />
-  //       <SidebarInset>
-  //         <SiteHeader />
-  //         <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-  //           <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">Chat</h4>
-  //           <Card className="flex items-center justify-center h-[72vh]">
-  //             <div className="text-center text-muted-foreground">
-  //               <h3 className="text-lg font-medium mb-2">Error loading conversations</h3>
-  //               <p className="text-sm">{threadsError}</p>
-  //             </div>
-  //           </Card>
-  //         </div>
-  //       </SidebarInset>
-  //     </SidebarProvider>
-  //   );
-  // }
-
   return (
     <SidebarProvider
       style={{
@@ -192,9 +156,7 @@ export default function ChatView() {
       <SidebarInset>
         <SiteHeader />
         <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">
-            Chat
-          </h4>
+          <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">Chat</h4>
 
           <Card className="flex flex-row h-[72vh]">
             {renderNav}
