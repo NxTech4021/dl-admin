@@ -164,34 +164,40 @@ export default function SeasonDivisionsCard({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">
+                    <TableHead className="w-[180px]">
                       <div className="flex items-center gap-2">
                         <IconTrophy className="size-4" />
                         Division
                       </div>
                     </TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconTarget className="size-4" />
                         Game Type
                       </div>
                     </TableHead>
-                    <TableHead className="w-[100px]">Level</TableHead>
-                    <TableHead className="w-[100px]">Gender</TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[90px]">Level</TableHead>
+                    <TableHead className="w-[90px]">Gender</TableHead>
+                    <TableHead className="w-[110px]">
+                      <div className="flex items-center gap-2">
+                        <IconTarget className="size-4" />
+                        Rating Threshold
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconUsers className="size-4" />
                         Players
                       </div>
                     </TableHead>
-                    <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconCalendar className="size-4" />
                         Created
                       </div>
                     </TableHead>
-                    <TableHead className="w-[80px] text-right">Actions</TableHead>
+                    <TableHead className="w-[70px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -227,6 +233,11 @@ export default function SeasonDivisionsCard({
                         >
                           {division.genderCategory}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {division.threshold ? division.threshold : '—'}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">

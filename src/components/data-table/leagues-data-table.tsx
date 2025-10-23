@@ -122,6 +122,7 @@ const getGameTypeLabel = (gameType: string) => {
   return map[gameType] || gameType;
 };
 
+
 const getGameTypeOptionsForSport = (sport: string): { value: string; label: string }[] => {
   switch (sport) {
     case "TENNIS":
@@ -154,13 +155,24 @@ const getGameTypeOptionsForSport = (sport: string): { value: string; label: stri
 const getJoinTypeLabel = (joinType: string) => {
   const map: Record<string, string> = {
     OPEN: "Open to All",
-    INVITATION: "Invitation Only",
-    REQUEST: "Request to Join",
+    INVITE_ONLY: "Invitation Only", 
+    MANUAL: "Manual Approval",
+    // Legacy support for lowercase values
     open: "Open to All",
-    invitation: "Invitation Only",
-    request: "Request to Join",
+    invite_only: "Invitation Only",
+    manual: "Manual Approval"
   };
   return map[joinType] || joinType;
+};
+
+const formatLocation = (location: string | null | undefined): string => {
+  if (!location) return "Not specified";
+  
+  // Convert to proper case
+  return location
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 // Dynamic columns based on selection state
@@ -221,9 +233,9 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
     cell: ({ row }) => {
       const sport = row.original.sportType;
       return (
-        <Badge variant="outline" className="capitalize">
+        <span className="capitalize text-sm">
           {getSportLabel(sport)}
-        </Badge>
+        </span>
       );
     },
   },
@@ -235,7 +247,7 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
       return (
         <div className="flex items-center gap-2">
           <IconMapPin className="size-4 text-muted-foreground" />
-          <span>{location || "Not specified"}</span>
+          <span>{formatLocation(location)}</span>
         </div>
       );
     },
@@ -253,33 +265,15 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
     },
   },
   {
-    accessorKey: "genderRestriction",
-    header: "Gender",
-    cell: ({ row }) => {
-      const gender = row.original.genderRestriction;
-      console.log('Gender data:', { genderRestriction: gender, fullRow: row.original });
-      const genderLabel = gender === 'OPEN' ? 'Open' : 
-                          gender === 'MALE' ? 'Male' : 
-                          gender === 'FEMALE' ? 'Female' : 
-                          gender === 'MIXED' ? 'Mixed' : 'Not set';
-      return (
-        <div className="flex items-center gap-2">
-          <IconUser className="size-4 text-muted-foreground" />
-          <span>{genderLabel}</span>
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "joinType",
     header: "Join Type",
     cell: ({ row }) => {
       const type = row.original.joinType;
+      console.log("League joinType from database:", type, "for league:", row.original.name);
       return (
-        <div className="flex items-center gap-2">
-          <IconInfoCircle className="size-4 text-muted-foreground" />
-          <span>{type ? getJoinTypeLabel(type) : "Not set"}</span>
-        </div>
+        <Badge variant="outline" className="text-xs">
+          {type ? getJoinTypeLabel(type) : "Not Set"}
+        </Badge>
       );
     },
   },

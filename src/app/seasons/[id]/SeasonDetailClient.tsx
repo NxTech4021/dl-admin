@@ -47,17 +47,19 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
 
   const userId = session?.user.id;
 
-  console.log(" suer ", userId)
+   console.log("season ", seasonId)
   // Fetch divisions data
   const fetchDivisions = useCallback(async () => {
     setIsDivisionsLoading(true);
     try {
-      const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
-      if (!response.data || !Array.isArray(response.data)) {
+      // const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
+      const response = await axiosInstance.get(endpoints.division.getbySeasionId(seasonId))
+      if (!response.data || !Array.isArray(response.data.data)) {
         setDivisions([]);
         return;
       }
-      const parsed = z.array(divisionSchema).parse(response.data);
+      const parsed = z.array(divisionSchema).parse(response.data.data);
+       console.log ("divison pasrsed ", parsed)
       setDivisions(parsed);
     } catch (error) {
       console.error('Failed to fetch divisions:', error);
@@ -68,6 +70,8 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     }
   }, [seasonId]);
 
+
+ 
   // Fetch season data
   const fetchSeasonData = useCallback(async () => {
     setIsLoading(true);
@@ -237,7 +241,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 <div className="grid gap-6 lg:grid-cols-3">
                   {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
-                    <SeasonDetailsSection season={season} />
+                    <SeasonDetailsSection season={season} onSeasonUpdated={fetchSeasonData} />
                   </div>
 
                   {/* Quick Info Sidebar - spans 1 column */}
@@ -361,6 +365,33 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                             )}
                           </div>
                         </div>
+
+                        {/* Linked Categories */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">
+                            Linked Categories
+                          </h4>
+                          <div className="text-sm font-medium">
+                            {season.categories && season.categories.length > 0 ? (
+                              <div className="space-y-1">
+                                {season.categories.map((category: any) => (
+                                  <div key={category.id} className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {category.name || 'Unnamed Category'}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                No categories linked
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -376,6 +407,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 divisions={divisions} 
                 seasonId={season.id} 
                 adminId={userId}
+                season={season}
                 onMembershipUpdated={handleMembershipUpdated} 
               />
             </TabsContent>

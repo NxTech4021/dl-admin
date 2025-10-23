@@ -1,37 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-} from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
 import {
   IconDotsVertical,
   IconEye,
@@ -41,9 +11,43 @@ import {
   IconX,
   IconChevronDown,
   IconChevronUp,
+  IconUsers,
   IconCalendar,
-  IconTrophy,
 } from "@tabler/icons-react";
+
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -57,73 +61,105 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { toast } from "sonner";
-import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { sponsorSchema, Sponsor } from "@/ZodSchema/sponsor-schema";
+
+import axios from "axios";
+import { categorySchema, Category } from "@/ZodSchema/category-schema";
+import { endpoints } from "@/lib/endpoints";
 import dynamic from "next/dynamic";
 
-const SponsorEditModal = dynamic(
+const CategoryEditModal = dynamic(
   () =>
-    import("@/components/modal/sponsor-edit-modal").then((mod) => ({
-      default: mod.SponsorEditModal,
+    import("@/components/modal/category-edit-modal").then((mod) => ({
+      default: mod.default,
     })),
   {
     loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
   }
 );
 
-const formatDate = (date: Date | string | null | undefined) => {
-  if (!date) return "N/A";
-  const dateObject = date instanceof Date ? date : new Date(date);
-  return dateObject.toLocaleDateString("en-US", {
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString("en-MY", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 };
 
-const formatCurrency = (amount: number | null) => {
-  if (amount === null || amount === undefined) return "-";
-  return new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-  }).format(amount);
-};
-
-const getPackageTierBadgeVariant = (tier: string) => {
-  switch (tier?.toUpperCase()) {
-    case 'PLATINUM':
-      return 'default';
-    case 'GOLD':
-      return 'secondary';
-    case 'SILVER':
-      return 'outline';
-    case 'BRONZE':
-      return 'destructive';
+const getGenderRestrictionBadgeVariant = (restriction: string) => {
+  switch (restriction) {
+    case "MALE":
+      return "default";
+    case "FEMALE":
+      return "secondary";
+    case "MIXED":
+      return "outline";
+    case "OPEN":
+      return "destructive";
     default:
-      return 'outline';
+      return "outline";
   }
 };
 
-const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
-  if (!sponsor.league) {
-    return <span className="text-muted-foreground text-xs">No league</span>;
+const getGameTypeBadgeVariant = (gameType: string | null) => {
+  switch (gameType) {
+    case "SINGLES":
+      return "default";
+    case "DOUBLES":
+      return "secondary";
+    default:
+      return "outline";
+  }
+};
+
+const getLeaguesDisplay = (category: Category): React.ReactNode => {
+  if (!category.leagues || category.leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {sponsor.league.name}
+          {category.leagues.length} League{category.leagues.length !== 1 ? 's' : ''}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked League</h4>
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
           <div className="flex flex-wrap gap-1">
-            <Badge variant="outline" className="text-xs">
-              {sponsor.league.name}
-            </Badge>
+            {category.leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
+const getSeasonsDisplay = (category: Category): React.ReactNode => {
+  if (!category.seasons || category.seasons.length === 0) {
+    return <span className="text-muted-foreground text-xs">No seasons</span>;
+  }
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger>
+        <Badge variant="secondary" className="cursor-pointer">
+          {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
+        </Badge>
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Linked Seasons</h4>
+          <div className="flex flex-wrap gap-1">
+            {category.seasons.map((season) => (
+              <Badge key={season.id} variant="outline" className="text-xs">
+                {season.name}
+              </Badge>
+            ))}
           </div>
         </div>
       </HoverCardContent>
@@ -132,8 +168,8 @@ const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
 };
 
 const createColumns = (
-  handleEditSponsor: (sponsorId: string) => void
-): ColumnDef<Sponsor>[] => [
+  handleEditCategory: (categoryId: string) => void
+): ColumnDef<Category>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -161,50 +197,79 @@ const createColumns = (
     enableHiding: false,
   },
   {
-    accessorKey: "sponsoredName",
-    header: "Sponsor Name",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.sponsoredName || "Unnamed Sponsor"}</div>
-    ),
+    accessorKey: "name",
+    header: "Category Name",
+    cell: ({ row }) => {
+      const category = row.original;
+      return (
+        <div className="font-medium">{category.name || "Unnamed Category"}</div>
+      );
+    },
     enableHiding: false,
   },
   {
-    accessorKey: "packageTier",
-    header: "Package Tier",
+    accessorKey: "genderRestriction",
+    header: "Gender Restriction",
     cell: ({ row }) => {
-      const tier = row.original.packageTier;
+      const restriction = row.original.genderRestriction;
       return (
-        <Badge variant={getPackageTierBadgeVariant(tier)} className="capitalize">
-          {tier.toLowerCase()}
+        <Badge variant={getGenderRestrictionBadgeVariant(restriction)} className="capitalize">
+          {restriction.toLowerCase()}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "contractAmount",
-    header: "Contract Amount",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium">
-        {formatCurrency(row.original.contractAmount)}
-      </span>
-    ),
+    accessorKey: "game_type",
+    header: "Game Type",
+    cell: ({ row }) => {
+      const gameType = row.original.game_type;
+      return gameType ? (
+        <Badge variant={getGameTypeBadgeVariant(gameType)} className="capitalize">
+          {gameType.toLowerCase()}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">-</span>
+      );
+    },
   },
   {
-    accessorKey: "sponsorRevenue",
-    header: "Sponsor Revenue",
-    cell: ({ row }) => (
-      <span className="text-sm font-medium">
-        {formatCurrency(row.original.sponsorRevenue)}
-      </span>
-    ),
+    accessorKey: "matchFormat",
+    header: "Match Format",
+    cell: ({ row }) => {
+      const format = row.original.matchFormat;
+      return format ? (
+        <span className="text-sm">{format}</span>
+      ) : (
+        <span className="text-muted-foreground">-</span>
+      );
+    },
   },
   {
-    accessorKey: "league",
-    header: "League",
+    accessorKey: "leagues",
+    header: "Leagues",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
-        {getLeagueDisplay(row.original)}
+        {getLeaguesDisplay(row.original)}
       </div>
+    ),
+  },
+  {
+    accessorKey: "seasons",
+    header: "Seasons",
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-1">
+        {getSeasonsDisplay(row.original)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "isActive",
+    header: "Status",
+    cell: ({ row }) => (
+      <Badge variant={row.original.isActive ? "default" : "secondary"} className="capitalize">
+        {row.original.isActive ? "Active" : "Inactive"}
+      </Badge>
     ),
   },
   {
@@ -220,7 +285,7 @@ const createColumns = (
   {
     id: "actions",
     cell: ({ row }) => {
-      const sponsor = row.original;
+      const category = row.original;
 
       return (
         <DropdownMenu>
@@ -239,8 +304,8 @@ const createColumns = (
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => {
-                // TODO: Implement view sponsor functionality
-                console.log("View sponsor:", sponsor.id);
+                // TODO: Implement view category functionality
+                console.log("View category:", category.id);
               }}
             >
               <IconEye className="mr-2 size-4" />
@@ -249,10 +314,10 @@ const createColumns = (
 
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleEditSponsor(sponsor.id)}
+              onClick={() => handleEditCategory(category.id)}
             >
               <IconEdit className="mr-2 size-4" />
-              Edit Sponsor
+              Edit Category
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -261,12 +326,12 @@ const createColumns = (
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => {
-                // TODO: Implement delete sponsor functionality
-                console.log("Delete sponsor:", sponsor.id);
+                // TODO: Implement delete category functionality
+                console.log("Delete category:", category.id);
               }}
             >
               <IconTrash className="mr-2 size-4" />
-              Delete Sponsor
+              Delete Category
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -275,12 +340,12 @@ const createColumns = (
   },
 ];
 
-interface SponsorsDataTableProps {
+interface CategoriesDataTableProps {
   refreshTrigger?: number;
 }
 
-export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
-  const [data, setData] = React.useState<Sponsor[]>([]);
+export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps) {
+  const [data, setData] = React.useState<Category[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -290,111 +355,119 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
   
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false);
-  const [selectedSponsorId, setSelectedSponsorId] = React.useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
 
   // Filter states
-  const [packageTierFilter, setPackageTierFilter] = React.useState<string>("all");
+  const [gameTypeFilter, setGameTypeFilter] = React.useState<string>("all");
+  const [genderRestrictionFilter, setGenderRestrictionFilter] = React.useState<string>("all");
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [showFilters, setShowFilters] = React.useState<boolean>(false);
 
   // Get unique values for filter options
-  const uniquePackageTiers = React.useMemo(() => {
-    const tiersSet = new Set<string>();
-    data.forEach((sponsor) => {
-      tiersSet.add(sponsor.packageTier);
+  const uniqueGameTypes = React.useMemo(() => {
+    const gameTypesSet = new Set<string>();
+    data.forEach((category) => {
+      if (category.game_type) {
+        gameTypesSet.add(category.game_type);
+      }
     });
-    return Array.from(tiersSet).sort();
+    return Array.from(gameTypesSet).sort();
+  }, [data]);
+
+  const uniqueGenderRestrictions = React.useMemo(() => {
+    const restrictionsSet = new Set<string>();
+    data.forEach((category) => {
+      restrictionsSet.add(category.genderRestriction);
+    });
+    return Array.from(restrictionsSet).sort();
   }, [data]);
 
   // Filter data based on selected filters
   const filteredData = React.useMemo(() => {
     let filtered = data;
 
-    // Apply package tier filter
-    if (packageTierFilter !== "all") {
+    // Apply game type filter
+    if (gameTypeFilter !== "all") {
       filtered = filtered.filter(
-        (sponsor) => sponsor.packageTier === packageTierFilter
+        (category) => category.game_type === gameTypeFilter
       );
     }
 
+    // Apply gender restriction filter
+    if (genderRestrictionFilter !== "all") {
+      filtered = filtered.filter(
+        (category) => category.genderRestriction === genderRestrictionFilter
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      const isActive = statusFilter === "active";
+      filtered = filtered.filter((category) => category.isActive === isActive);
+    }
+
     return filtered;
-  }, [data, packageTierFilter]);
+  }, [data, gameTypeFilter, genderRestrictionFilter, statusFilter]);
 
   // Clear all filters
   const clearFilters = () => {
-    setPackageTierFilter("all");
+    setGameTypeFilter("all");
+    setGenderRestrictionFilter("all");
+    setStatusFilter("all");
     setGlobalFilter("");
   };
 
   // Check if any filters are active
   const hasActiveFilters =
-    packageTierFilter !== "all" ||
+    gameTypeFilter !== "all" ||
+    genderRestrictionFilter !== "all" ||
+    statusFilter !== "all" ||
     globalFilter !== "";
 
   React.useEffect(() => {
-    const fetchSponsors = async () => {
+    const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get(endpoints.sponsors.getAll);
+        const response = await axios.get(endpoints.categories.getAll);
         if (response.status !== 200) {
           throw new Error("Network response was not ok");
         }
         const result = await response.data;
-        console.log("Sponsors API response:", result);
-        console.log("Sponsors data:", result.data);
-        
-        // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
-          ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
-        }));
-        
-        const parsedData = sponsorSchema.array().parse(processedData);
+        const parsedData = categorySchema.array().parse(result.data);
         setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch sponsors:", error);
-        console.error("Error details:", error);
+        console.error("Failed to fetch categories:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSponsors();
+    fetchCategories();
   }, [refreshTrigger]);
 
-  const handleEditSponsor = (sponsorId: string) => {
-    setSelectedSponsorId(sponsorId);
+  const handleEditCategory = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
     setEditModalOpen(true);
   };
 
-  const handleSponsorUpdated = async () => {
+  const handleCategoryUpdated = async () => {
     // Refresh the data
     setIsLoading(true);
     try {
-      const response = await axiosInstance.get(endpoints.sponsors.getAll);
+      const response = await axios.get(endpoints.categories.getAll);
       if (response.status === 200) {
         const result = await response.data;
-        console.log("Sponsors refresh response:", result);
-        
-        // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
-          ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
-        }));
-        
-        const parsedData = sponsorSchema.array().parse(processedData);
+        const parsedData = categorySchema.array().parse(result.data);
         setData(parsedData);
       }
     } catch (error) {
-      console.error("Failed to refresh sponsors:", error);
-      console.error("Error details:", error);
+      console.error("Failed to refresh categories:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const columns = createColumns(handleEditSponsor);
+  const columns = createColumns(handleEditCategory);
 
   const table = useReactTable({
     data: filteredData,
@@ -429,7 +502,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Input
-              placeholder="Search sponsors by name..."
+              placeholder="Search categories by name or match format..."
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
               className="w-80"
@@ -445,7 +518,9 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
               Filters
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2 text-xs">
-                  {packageTierFilter !== "all" ? 1 : 0}
+                  {(gameTypeFilter !== "all" ? 1 : 0) +
+                    (genderRestrictionFilter !== "all" ? 1 : 0) +
+                    (statusFilter !== "all" ? 1 : 0)}
                 </Badge>
               )}
               {showFilters ? (
@@ -459,7 +534,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
           <div className="flex items-center space-x-2">
             <div className="text-sm text-muted-foreground">
               {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} sponsor(s) selected
+              {table.getFilteredRowModel().rows.length} category(ies) selected
             </div>
           </div>
         </div>
@@ -467,27 +542,74 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
         {/* Filter Controls - Collapsible */}
         {showFilters && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg border animate-in slide-in-from-top-2 duration-200">
-            {/* Package Tier Filter */}
+            {/* Game Type Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Package Tier:</span>
-              <Select value={packageTierFilter} onValueChange={setPackageTierFilter}>
+              <span className="text-sm text-muted-foreground">Game Type:</span>
+              <Select value={gameTypeFilter} onValueChange={setGameTypeFilter}>
                 <SelectTrigger
-                  className={`w-[140px] ${packageTierFilter !== "all" ? "border-primary" : ""}`}
+                  className={`w-[140px] ${gameTypeFilter !== "all" ? "border-primary" : ""}`}
                 >
-                  <SelectValue placeholder="All Tiers" />
+                  <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Tiers</SelectItem>
-                  {uniquePackageTiers.map((tier) => (
-                    <SelectItem key={tier} value={tier} className="capitalize">
-                      {tier.toLowerCase()}
+                  <SelectItem value="all">All Types</SelectItem>
+                  {uniqueGameTypes.map((gameType) => (
+                    <SelectItem key={gameType} value={gameType} className="capitalize">
+                      {gameType.toLowerCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {packageTierFilter !== "all" && (
+              {gameTypeFilter !== "all" && (
                 <Badge variant="secondary" className="text-xs capitalize">
-                  {packageTierFilter.toLowerCase()}
+                  {gameTypeFilter.toLowerCase()}
+                </Badge>
+              )}
+            </div>
+
+            {/* Gender Restriction Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Gender:</span>
+              <Select value={genderRestrictionFilter} onValueChange={setGenderRestrictionFilter}>
+                <SelectTrigger
+                  className={`w-[140px] ${genderRestrictionFilter !== "all" ? "border-primary" : ""}`}
+                >
+                  <SelectValue placeholder="All Genders" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Genders</SelectItem>
+                  {uniqueGenderRestrictions.map((restriction) => (
+                    <SelectItem key={restriction} value={restriction} className="capitalize">
+                      {restriction.toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {genderRestrictionFilter !== "all" && (
+                <Badge variant="secondary" className="text-xs capitalize">
+                  {genderRestrictionFilter.toLowerCase()}
+                </Badge>
+              )}
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Status:</span>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger
+                  className={`w-[140px] ${statusFilter !== "all" ? "border-primary" : ""}`}
+                >
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+              {statusFilter !== "all" && (
+                <Badge variant="secondary" className="text-xs capitalize">
+                  {statusFilter}
                 </Badge>
               )}
             </div>
@@ -508,7 +630,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
             {/* Active Filters Count */}
             {hasActiveFilters && (
               <div className="text-sm text-muted-foreground">
-                Showing {filteredData.length} of {data.length} sponsors
+                Showing {filteredData.length} of {data.length} categories
               </div>
             )}
           </div>
@@ -543,7 +665,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Loading sponsors...
+                    Loading categories...
                   </div>
                 </TableCell>
               </TableRow>
@@ -567,7 +689,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No sponsors found.
+                  No categories found.
                 </TableCell>
               </TableRow>
             )}
@@ -579,7 +701,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} sponsor(s)
+          {table.getFilteredRowModel().rows.length} category(ies)
         </div>
 
         <div className="flex items-center space-x-2">
@@ -603,13 +725,13 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
         </div>
       </div>
 
-      {/* Edit Sponsor Modal */}
-      {selectedSponsorId && (
-        <SponsorEditModal
+      {/* Edit Category Modal */}
+      {selectedCategoryId && (
+        <CategoryEditModal
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
-          sponsorId={selectedSponsorId}
-          onSponsorUpdated={handleSponsorUpdated}
+          categoryId={selectedCategoryId}
+          onCategoryUpdated={handleCategoryUpdated}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,9 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Season } from "@/ZodSchema/season-schema";
 import { format } from "date-fns";
 import { IconEdit, IconInfoCircle } from "@tabler/icons-react";
+import SeasonEditModal from "@/components/modal/season-edit-modal";
 
 interface SeasonDetailsSectionProps {
   season: Season;
+  onSeasonUpdated?: () => Promise<void>;
 }
 
 const DetailField = ({
@@ -32,7 +35,9 @@ const DetailField = ({
 
 export default function SeasonDetailsSection({
   season,
+  onSeasonUpdated,
 }: SeasonDetailsSectionProps) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const formatDate = (date: Date | null | undefined) => {
     if (!date) return "N/A";
     return format(new Date(date), "PPP");
@@ -58,7 +63,7 @@ export default function SeasonDetailsSection({
         <Button
           variant="outline"
           size="sm"
-          // onClick={} Add the edit handler here 
+          onClick={() => setIsEditModalOpen(true)}
         >
           <IconEdit className="mr-2 h-4 w-4" />
           Edit
@@ -106,6 +111,13 @@ export default function SeasonDetailsSection({
           </div>
         )}
       </CardContent>
+
+      <SeasonEditModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        season={season}
+        onSeasonUpdated={onSeasonUpdated}
+      />
     </Card>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Membership } from '@/ZodSchema/season-schema';
+import { Division } from '@/ZodSchema/division-schema';
 import { IconUser, IconStar, IconCalendar, IconTarget, IconLoader2 } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import AssignDivisionModal from '@/components/modal/assign-playerToDivision';
@@ -34,6 +35,20 @@ interface SeasonPlayersCardProps {
   seasonId: string;
   onMembershipUpdated?: () => Promise<void>;
   adminId?: string;
+  season?: {
+    leagues?: Array<{
+      id: string;
+      name: string;
+      sportType?: string;
+      gameType?: string;
+    }>;
+    categories?: Array<{
+      id: string;
+      name: string | null;
+      genderRestriction?: string;
+      matchFormat?: string | null;
+    }>;
+  };
 }
 
 export default function SeasonPlayersCard({ 
@@ -42,7 +57,8 @@ export default function SeasonPlayersCard({
   sportType, 
   seasonId,
   onMembershipUpdated,
-  adminId
+  adminId,
+  season
 }: SeasonPlayersCardProps) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Membership | null>(null);
@@ -50,7 +66,7 @@ export default function SeasonPlayersCard({
   const [isAssigning, setIsAssigning] = useState(false);
 
   const activePlayers = memberships.filter(m => m.status === 'ACTIVE' || m.status === 'PENDING');
-  const waitlistedPlayers = memberships.filter(m => m.status === 'WAITLISTED');
+  const waitlistedPlayers = memberships.filter(m => m.status === 'INACTIVE' || m.status === 'FLAGGED' || m.status === 'REMOVED');
 
 
   const getDivisionName = (divisionId: string | null) => {
@@ -61,8 +77,36 @@ export default function SeasonPlayersCard({
 
   console.log(" admin in Player card", adminId)
   const getSportRating = (member: Membership) => {
-    // Placeholder rating logic
-    return { display: '1420' };
+    // Determine sport from season leagues
+    const sport = season?.leagues?.[0]?.sportType?.toLowerCase();
+    if (!sport) {
+      return { display: 'N/A' };
+    }
+
+    // Determine category (singles/doubles) from league gameType
+    const gameType = season?.leagues?.[0]?.gameType;
+    const isDoubles = gameType === 'DOUBLES';
+
+    // Find player's questionnaire response for this sport
+    const questionnaireResponse = member.user?.questionnaireResponses?.find(
+      response => response.sport.toLowerCase() === sport && response.completedAt
+    );
+
+    if (!questionnaireResponse?.result) {
+      return { display: 'N/A' };
+    }
+
+    // Get the appropriate rating based on category
+    const rating = isDoubles 
+      ? questionnaireResponse.result.doubles 
+      : questionnaireResponse.result.singles;
+
+    if (!rating) {
+      return { display: 'N/A' };
+    }
+
+    // Return formatted rating (already stored as integer, no need to divide by 1000)
+    return { display: rating.toString() };
   };
 
   const handleAssignToDivision = (member: Membership) => {
@@ -149,7 +193,7 @@ export default function SeasonPlayersCard({
                       className="h-8 px-3 text-xs"
                       onClick={() => handleAssignToDivision(member)}
                     >
-                      Assign to Division
+                      {member.divisionId ? 'Reassign Division' : 'Assign to Division'}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -202,7 +246,7 @@ export default function SeasonPlayersCard({
         divisions={divisions}
         seasonId={seasonId}
         onAssigned={onMembershipUpdated}
-        adminId={adminId}
+        adminId={adminId || ''}
       />
     </>
   );

@@ -636,7 +636,7 @@ export default function DivisionCreateModal({
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
-                      Threshold
+                      Rating Threshold
                       <span className="text-destructive">*</span>
                     </Label>
                     <Input
