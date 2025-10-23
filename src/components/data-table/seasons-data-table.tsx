@@ -36,6 +36,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -122,6 +127,34 @@ const getStatusBadgeVariant = (status: string) => {
   }
 };
 
+const getLeaguesDisplay = (season: Season): React.ReactNode => {
+  if (!season.leagues || season.leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
+  }
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger>
+        <Badge variant="secondary" className="cursor-pointer">
+          {season.leagues.length} League{season.leagues.length !== 1 ? 's' : ''}
+        </Badge>
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
+          <div className="flex flex-wrap gap-1">
+            {season.leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 // Define handlers outside of component to avoid scope issues
 const handleViewSeason = (
   seasonId: string,
@@ -194,19 +227,13 @@ const columns: ColumnDef<Season>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "league",
+    accessorKey: "leagues",
     header: "Leagues",
-    cell: ({ row }) => {
-      const seasonType = row.original.seasonType;
-      if (!seasonType)
-        return <span className="text-muted-foreground">to be done today</span>;
-
-      return (
-        <Badge variant="outline" className="capitalize">
-          {seasonType}
-        </Badge>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-1">
+        {getLeaguesDisplay(row.original)}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -221,6 +248,49 @@ const columns: ColumnDef<Season>[] = [
     },
   },
   {
+    accessorKey: "entryFee",
+    header: "Entry Fee",
+    cell: ({ row }) => {
+      const entryFee = row.original.entryFee;
+      if (!entryFee) {
+        return <span className="text-muted-foreground">Free</span>;
+      }
+      
+      // Try to parse as number for currency formatting
+      const feeAmount = parseFloat(entryFee);
+      if (!isNaN(feeAmount)) {
+        return <span className="font-medium">{formatCurrency(feeAmount)}</span>;
+      }
+      
+      // If not a number, display as-is
+      return <span className="font-medium">{entryFee}</span>;
+    },
+  },
+  {
+    accessorKey: "divisions",
+    header: "Divisions",
+    cell: ({ row }) => {
+      const divisionsCount = row.original.divisions?.length || 0;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{divisionsCount}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "memberships",
+    header: "Players",
+    cell: ({ row }) => {
+      const membershipsCount = row.original.memberships?.length || 0;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{membershipsCount}</span>
+        </div>
+      );
+    },
+  },
+    {
     accessorKey: "regiDeadline",
     header: "Registration Deadline",
     cell: ({ row }) => {
@@ -257,7 +327,7 @@ const columns: ColumnDef<Season>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const season = row.original;
-      const onViewSeason = table.options.meta?.onViewSeason;
+      const onViewSeason = (table.options.meta as any)?.onViewSeason;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -325,7 +395,7 @@ export function SeasonsDataTable({
       columnFilters,
       globalFilter,
     },
-    meta: { onViewSeason },
+    meta: { onViewSeason } as any,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -344,10 +414,10 @@ export function SeasonsDataTable({
   return (
     <div className="space-y-4">
       {/* Search and Selection Info */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between px-1 lg:px-2">
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search seasons by name, league type..."
+            placeholder="Search seasons by name, league type, entry fee..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
@@ -362,7 +432,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Table Container */}
-      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
+      <div className="rounded-md border mx-1 lg:mx-2 bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -427,7 +497,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between px-1 lg:px-2">
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} season(s)

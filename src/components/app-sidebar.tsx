@@ -18,6 +18,8 @@ import {
   IconMessage 
 } from "@tabler/icons-react";
 
+import { Settings, Tags, CreditCard } from "lucide-react";
+
 import Image from "next/image";
 
 import { redirect } from "next/navigation";
@@ -29,6 +31,8 @@ import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 
 import { NavUser } from "@/components/nav-user";
+
+import { NavWithSubmenu } from "@/components/nav-with-submenu";
 
 import {
   Sidebar,
@@ -69,7 +73,7 @@ const data = {
 
       hasNotification: true,
 
-      notificationCount: "1",
+      notificationCount: 1,
     },
   ],
 
@@ -113,7 +117,6 @@ const data = {
 
       icon: IconCategory,
     },
-
     {
       name: "Payments",
 
@@ -123,7 +126,7 @@ const data = {
     },
 
     {
-      name: "Feedbacks",
+      name: "Feedback",
 
       url: "/feedback",
 
@@ -205,6 +208,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
 
         <NavDocuments items={data.documents} />
+
+        <NavWithSubmenu items={data.utilities} />
 
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

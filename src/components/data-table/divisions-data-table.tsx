@@ -323,7 +323,7 @@ export function DivisionsDataTable() {
       },
       {
         accessorKey: "threshold",
-        header: "Threshold",
+        header: "Rating Threshold",
         cell: ({ row }) => row.original.threshold ?? "-",
       },
       {

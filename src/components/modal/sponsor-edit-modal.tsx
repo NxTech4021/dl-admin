@@ -37,6 +37,7 @@ import { IconLoader2, IconX } from "@tabler/icons-react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { Sponsor } from "@/ZodSchema/sponsor-schema";
 
 type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
 
@@ -60,17 +61,19 @@ interface SponsorFormData {
   leagueIds: string[];
 }
 
-interface SponsorCreateModalProps {
+interface SponsorEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSponsorCreated?: () => Promise<void>;
+  sponsorId: string;
+  onSponsorUpdated?: () => Promise<void>;
 }
 
-export function CreateSponsorModal({
+export function SponsorEditModal({
   open,
   onOpenChange,
-  onSponsorCreated,
-}: SponsorCreateModalProps) {
+  sponsorId,
+  onSponsorUpdated,
+}: SponsorEditModalProps) {
   const [formData, setFormData] = useState<SponsorFormData>({
     sponsoredName: "",
     packageTier: "BRONZE",
@@ -79,21 +82,42 @@ export function CreateSponsorModal({
     leagueIds: [],
   });
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaguesLoading, setLeaguesLoading] = useState(false);
   const [leagueSelectOpen, setLeagueSelectOpen] = useState(false);
+  const [error, setError] = useState("");
 
-  // Fetch leagues on mount
+  // Fetch sponsor data and leagues on mount
   useEffect(() => {
-    if (open) {
+    if (open && sponsorId) {
+      setFetching(true);
+      setError("");
+
+      // Fetch sponsor data
+      axiosInstance
+        .get(endpoints.sponsors.getById(sponsorId))
+        .then((res) => {
+          const sponsor: Sponsor = res.data.data;
+          setFormData({
+            sponsoredName: sponsor.sponsoredName || "",
+            packageTier: sponsor.packageTier,
+            contractAmount: sponsor.contractAmount,
+            sponsorRevenue: sponsor.sponsorRevenue,
+            leagueIds: sponsor.leagues?.map((league) => league.id) || [],
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching sponsor:", error);
+          setError("Failed to load sponsor data");
+        });
+
+      // Fetch leagues
       setLeaguesLoading(true);
       axiosInstance
         .get(endpoints.league.getAll)
         .then((res) => {
-          console.log("Leagues API response:", res.data);
-          // The leagues are nested under data.leagues
           const leaguesData = res.data?.data?.leagues || res.data?.leagues || [];
-          // Ensure we always set an array
           if (Array.isArray(leaguesData)) {
             setLeagues(leaguesData);
           } else {
@@ -105,9 +129,12 @@ export function CreateSponsorModal({
           console.error("Error fetching leagues:", error);
           setLeagues([]);
         })
-        .finally(() => setLeaguesLoading(false));
+        .finally(() => {
+          setLeaguesLoading(false);
+          setFetching(false);
+        });
     }
-  }, [open]);
+  }, [open, sponsorId]);
 
   const toggleLeague = (leagueId: string) => {
     setFormData((prev) => ({
@@ -135,7 +162,7 @@ export function CreateSponsorModal({
 
     setLoading(true);
     try {
-      await axiosInstance.post(endpoints.sponsors.create, {
+      await axiosInstance.put(endpoints.sponsors.update(sponsorId), {
         sponsoredName: formData.sponsoredName,
         packageTier: formData.packageTier,
         contractAmount: formData.contractAmount,
@@ -143,35 +170,62 @@ export function CreateSponsorModal({
         leagueIds: formData.leagueIds,
       });
 
-      toast.success("Sponsor created successfully!");
+      toast.success("Sponsor updated successfully!");
       onOpenChange(false);
-      if (onSponsorCreated) {
-        await onSponsorCreated();
+      if (onSponsorUpdated) {
+        await onSponsorUpdated();
       }
-      
-      // Reset form
-      setFormData({
-        sponsoredName: "",
-        packageTier: "BRONZE",
-        contractAmount: null,
-        sponsorRevenue: null,
-        leagueIds: [],
-      });
     } catch (err: any) {
-      console.error("Error creating sponsor:", err);
-      toast.error(err.response?.data?.message || "Failed to create sponsor");
+      console.error("Error updating sponsor:", err);
+      toast.error(err.response?.data?.message || "Failed to update sponsor");
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Loading</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center h-96">
+            <div className="flex items-center gap-2">
+              <IconLoader2 className="h-4 w-4 animate-spin" />
+              Loading sponsor data...
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button onClick={() => onOpenChange(false)}>Close</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Sponsor</DialogTitle>
+          <DialogTitle>Edit Sponsor</DialogTitle>
           <DialogDescription>
-            Create a new sponsorship package with league assignments.
+            Update the sponsorship package details and league assignments.
           </DialogDescription>
         </DialogHeader>
 
@@ -236,7 +290,7 @@ export function CreateSponsorModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sponsorRevenue">Expected Revenue (RM)</Label>
+              <Label htmlFor="sponsorRevenue">Sponsor Revenue (RM)</Label>
               <Input
                 id="sponsorRevenue"
                 type="number"
@@ -331,10 +385,10 @@ export function CreateSponsorModal({
             {loading ? (
               <>
                 <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                Updating...
               </>
             ) : (
-              "Create Sponsor"
+              "Update Sponsor"
             )}
           </Button>
         </DialogFooter>

@@ -115,6 +115,16 @@ const getGameTypeLabel = (type: string) => {
   return typeLabels[type] || type;
 };
 
+const formatLocation = (location: string | null | undefined): string => {
+  if (!location) return "Not specified";
+  
+  // Convert to proper case
+  return location
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 const columns: ColumnDef<League>[] = [
   {
     id: "select",
@@ -178,7 +188,7 @@ const columns: ColumnDef<League>[] = [
       return (
         <div className="flex items-center gap-2">
           <IconMapPin className="size-4 text-muted-foreground" />
-          <span>{location || "Not specified"}</span>
+          <span>{formatLocation(location)}</span>
         </div>
       );
     },
@@ -207,19 +217,19 @@ const columns: ColumnDef<League>[] = [
       );
     },
   },
-  {
-    accessorKey: "gameType",
-    header: "Game Type",
-    cell: ({ row }) => {
-      const type = row.original.gameType;
-      return (
-        <div className="flex items-center gap-2">
-          <IconPlayerPlay className="size-4 text-muted-foreground" />
-          <span>{getGameTypeLabel(type)}</span>
-        </div>
-      );
-    },
-  },
+  // {
+  //   accessorKey: "gameType",
+  //   header: "Game Type",
+  //   cell: ({ row }) => {
+  //     const type = row.original.gameType;
+  //     return (
+  //       <div className="flex items-center gap-2">
+  //         <IconPlayerPlay className="size-4 text-muted-foreground" />
+  //         <span>{getGameTypeLabel(type)}</span>
+  //       </div>
+  //     );
+  //   },
+  // },
   {
     accessorKey: "memberCount",
     header: "Members",

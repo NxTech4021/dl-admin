@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Command,
   CommandEmpty,
@@ -38,13 +39,18 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
+type GameType = "SINGLES" | "DOUBLES";
+type GenderType = "MEN" | "WOMEN" | "MIXED";
 
-const PACKAGE_TIER_OPTIONS: { value: PackageTier; label: string }[] = [
-  { value: "BRONZE", label: "Bronze" },
-  { value: "SILVER", label: "Silver" },
-  { value: "GOLD", label: "Gold" },
-  { value: "PLATINUM", label: "Platinum" },
+const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
+  { value: "SINGLES", label: "Singles" },
+  { value: "DOUBLES", label: "Doubles" },
+];
+
+const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
+  { value: "MEN", label: "Men" },
+  { value: "WOMEN", label: "Women" },
+  { value: "MIXED", label: "Mixed" },
 ];
 
 interface League {
@@ -52,30 +58,34 @@ interface League {
   name: string;
 }
 
-interface SponsorFormData {
-  sponsoredName: string;
-  packageTier: PackageTier;
-  contractAmount: number | null;
-  sponsorRevenue: number | null;
+interface CategoryFormData {
+  name: string;
+  matchFormat: string;
+  game_type: GameType;
+  gender_category: GenderType;
+  isActive: boolean;
+  categoryOrder: number;
   leagueIds: string[];
 }
 
-interface SponsorCreateModalProps {
+interface CategoryCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSponsorCreated?: () => Promise<void>;
+  onCategoryCreated?: () => Promise<void>;
 }
 
-export function CreateSponsorModal({
+export default function CategoryCreateModal({
   open,
   onOpenChange,
-  onSponsorCreated,
-}: SponsorCreateModalProps) {
-  const [formData, setFormData] = useState<SponsorFormData>({
-    sponsoredName: "",
-    packageTier: "BRONZE",
-    contractAmount: null,
-    sponsorRevenue: null,
+  onCategoryCreated,
+}: CategoryCreateModalProps) {
+  const [formData, setFormData] = useState<CategoryFormData>({
+    name: "",
+    matchFormat: "",
+    game_type: "SINGLES",
+    gender_category: "MIXED",
+    isActive: true,
+    categoryOrder: 0,
     leagueIds: [],
   });
   const [loading, setLoading] = useState(false);
@@ -109,6 +119,37 @@ export function CreateSponsorModal({
     }
   }, [open]);
 
+  const generateCategoryName = useCallback(
+    (gender: GenderType, gameType: GameType) => {
+      let genderPrefix;
+      if (gender === "MIXED") {
+        genderPrefix = "Mixed";
+      } else {
+        genderPrefix = `${gender.charAt(0)}${gender.slice(1).toLowerCase()}'s`;
+      }
+      const gameTypeSuffix =
+        gameType.charAt(0) + gameType.slice(1).toLowerCase();
+      return `${genderPrefix} ${gameTypeSuffix}`;
+    },
+    []
+  );
+
+  const handleGameTypeChange = (value: GameType) => {
+    setFormData((prev) => ({
+      ...prev,
+      game_type: value,
+      name: generateCategoryName(prev.gender_category, value),
+    }));
+  };
+
+  const handleGenderChange = (value: GenderType) => {
+    setFormData((prev) => ({
+      ...prev,
+      gender_category: value,
+      name: generateCategoryName(value, prev.game_type),
+    }));
+  };
+
   const toggleLeague = (leagueId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -128,38 +169,51 @@ export function CreateSponsorModal({
   const selectedLeagues = leagues.filter((league) => formData.leagueIds.includes(league.id));
 
   const handleSubmit = async () => {
-    if (!formData.sponsoredName || !formData.packageTier || formData.leagueIds.length === 0) {
+    if (!formData.name || !formData.matchFormat || formData.leagueIds.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     setLoading(true);
     try {
-      await axiosInstance.post(endpoints.sponsors.create, {
-        sponsoredName: formData.sponsoredName,
-        packageTier: formData.packageTier,
-        contractAmount: formData.contractAmount,
-        sponsorRevenue: formData.sponsorRevenue,
+      // Map gender_category to genderRestriction
+      const genderRestriction =
+        formData.gender_category === "MIXED"
+          ? "OPEN"
+          : formData.gender_category === "MEN"
+          ? "MALE"
+          : "FEMALE";
+
+      await axiosInstance.post(endpoints.categories.create, {
         leagueIds: formData.leagueIds,
+        name: formData.name,
+        genderRestriction,
+        matchFormat: formData.matchFormat,
+        game_type: formData.game_type,
+        gender_category: formData.gender_category,
+        isActive: formData.isActive,
+        categoryOrder: formData.categoryOrder,
       });
 
-      toast.success("Sponsor created successfully!");
+      toast.success("Category created successfully!");
       onOpenChange(false);
-      if (onSponsorCreated) {
-        await onSponsorCreated();
+      if (onCategoryCreated) {
+        await onCategoryCreated();
       }
       
       // Reset form
       setFormData({
-        sponsoredName: "",
-        packageTier: "BRONZE",
-        contractAmount: null,
-        sponsorRevenue: null,
+        name: "",
+        matchFormat: "",
+        game_type: "SINGLES",
+        gender_category: "MIXED",
+        isActive: true,
+        categoryOrder: 0,
         leagueIds: [],
       });
     } catch (err: any) {
-      console.error("Error creating sponsor:", err);
-      toast.error(err.response?.data?.message || "Failed to create sponsor");
+      console.error("Error creating category:", err);
+      toast.error(err.response?.data?.message || "Failed to create category");
     } finally {
       setLoading(false);
     }
@@ -169,89 +223,83 @@ export function CreateSponsorModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Sponsor</DialogTitle>
+          <DialogTitle>Create Category</DialogTitle>
           <DialogDescription>
-            Create a new sponsorship package with league assignments.
+            Create a new tournament category with specific settings and league assignments.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="sponsoredName">Sponsor Name *</Label>
-            <Input
-              id="sponsoredName"
-              value={formData.sponsoredName}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  sponsoredName: e.target.value,
-                }))
-              }
-              placeholder="Enter sponsor name"
-              className="h-11"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="packageTier">Package Tier *</Label>
-            <Select
-              value={formData.packageTier}
-              onValueChange={(value: PackageTier) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  packageTier: value,
-                }))
-              }
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select package tier" />
-              </SelectTrigger>
-              <SelectContent>
-                {PACKAGE_TIER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Preview Card */}
+          <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+            <h3 className="font-semibold text-lg mb-2">
+              {formData.name || "Select options below"}
+            </h3>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {formData.matchFormat || "Match format will be set automatically"}
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
+            {/* Gender Category Selection */}
             <div className="space-y-2">
-              <Label htmlFor="contractAmount">Contract Amount (RM)</Label>
-              <Input
-                id="contractAmount"
-                type="number"
-                step="0.01"
-                value={formData.contractAmount || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    contractAmount: e.target.value ? parseFloat(e.target.value) : null,
-                  }))
-                }
-                placeholder="0.00"
-                className="h-11"
-              />
+              <Label htmlFor="genderCategory">Gender Category</Label>
+              <Select
+                value={formData.gender_category}
+                onValueChange={handleGenderChange}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Select gender category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Game Type Selection */}
             <div className="space-y-2">
-              <Label htmlFor="sponsorRevenue">Expected Revenue (RM)</Label>
-              <Input
-                id="sponsorRevenue"
-                type="number"
-                step="0.01"
-                value={formData.sponsorRevenue || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    sponsorRevenue: e.target.value ? parseFloat(e.target.value) : null,
-                  }))
-                }
-                placeholder="0.00"
-                className="h-11"
-              />
+              <Label htmlFor="gameType">Game Type</Label>
+              <Select
+                value={formData.game_type}
+                onValueChange={handleGameTypeChange}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Select game type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GAME_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Match Format *</Label>
+            <Input
+              value={formData.matchFormat}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  matchFormat: e.target.value,
+                }))
+              }
+              placeholder="e.g., Best of 3 Sets, Pro Sets, etc."
+              className="h-11"
+            />
+            <p className="text-sm text-muted-foreground">
+              Specify the match format for this category
+            </p>
           </div>
 
           {/* League Selection */}
@@ -315,6 +363,21 @@ export function CreateSponsorModal({
               </div>
             )}
           </div>
+
+          {/* Status */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isActive: checked,
+                }))
+              }
+            />
+            <Label htmlFor="isActive">Active Category</Label>
+          </div>
         </div>
 
         <DialogFooter className="mt-6">
@@ -322,8 +385,8 @@ export function CreateSponsorModal({
             onClick={handleSubmit}
             disabled={
               loading ||
-              !formData.sponsoredName ||
-              !formData.packageTier ||
+              !formData.name ||
+              !formData.matchFormat ||
               formData.leagueIds.length === 0
             }
             className="w-full sm:w-auto"
@@ -334,7 +397,7 @@ export function CreateSponsorModal({
                 Creating...
               </>
             ) : (
-              "Create Sponsor"
+              "Create Category"
             )}
           </Button>
         </DialogFooter>

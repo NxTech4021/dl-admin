@@ -60,6 +60,7 @@ type DivisionCreateModalProps = {
   mode?: "create" | "edit";
   division?: DivisionBase | null;
   seasonId?: string;
+  adminId?: string; 
 };
 
 const divisionSchema = z
@@ -250,6 +251,7 @@ export default function DivisionCreateModal({
       const payload: any = {
         name: data.name,
         seasonId: data.seasonId,
+        adminId: adminId,
         divisionLevel: data.divisionLevel,
         gameType: data.gameType,
         genderCategory: data.genderCategory,
@@ -634,7 +636,7 @@ export default function DivisionCreateModal({
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
-                      Threshold
+                      Rating Threshold
                       <span className="text-destructive">*</span>
                     </Label>
                     <Input

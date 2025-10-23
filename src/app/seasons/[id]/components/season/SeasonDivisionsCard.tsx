@@ -35,43 +35,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import axiosInstance, { endpoints } from '@/lib/endpoints';
 import DivisionCreateModal from '@/components/modal/division-create-modal';
-import { z } from 'zod';
+import { Division } from '@/ZodSchema/division-schema';
 import { toast } from 'sonner';
 
-// Use the same schema as the working DivisionsDataTable
-export const divisionLevelEnum = z.enum([
-  "beginner",
-  "intermediate", 
-  "advanced",
-]);
-export const gameTypeEnum = z.enum(["singles", "doubles"]);
-export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
-
-export const divisionSchema = z.object({
-  id: z.string(),
-  seasonId: z.string(),
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  threshold: z.number().int().nullable().optional(),
-  divisionLevel: divisionLevelEnum,
-  gameType: gameTypeEnum,
-  genderCategory: genderCategoryEnum,
-  maxSingles: z.number().int().nullable().optional(),
-  maxDoublesTeams: z.number().int().nullable().optional(),
-  currentSinglesCount: z.number().int().nullable().optional(),
-  currentDoublesCount: z.number().int().nullable().optional(),
-  autoAssignmentEnabled: z.boolean().optional().default(false),
-  isActive: z.boolean().default(true),
-  prizePoolTotal: z.number().nullable().optional(),
-  sponsoredDivisionName: z.string().nullable().optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
-
-export type Division = z.infer<typeof divisionSchema>;
 
 interface SeasonDivisionsCardProps {
   seasonId: string;
+  adminId: string;
   divisions: Division[]; 
   isLoading?: boolean; 
   onDivisionCreated?: () => Promise<void>;
@@ -81,6 +51,7 @@ interface SeasonDivisionsCardProps {
 
 export default function SeasonDivisionsCard({ 
   seasonId, 
+  adminId,
   divisions, 
   isLoading = false,
   onDivisionCreated,
@@ -173,6 +144,7 @@ export default function SeasonDivisionsCard({
           </CardTitle>
           <DivisionCreateModal
             open={isCreateModalOpen}
+            adminId={adminId}
             onOpenChange={setIsCreateModalOpen}
             onDivisionCreated={handleDivisionCreated}
             seasonId={seasonId}
@@ -192,34 +164,40 @@ export default function SeasonDivisionsCard({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">
+                    <TableHead className="w-[180px]">
                       <div className="flex items-center gap-2">
                         <IconTrophy className="size-4" />
                         Division
                       </div>
                     </TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconTarget className="size-4" />
                         Game Type
                       </div>
                     </TableHead>
-                    <TableHead className="w-[100px]">Level</TableHead>
-                    <TableHead className="w-[100px]">Gender</TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[90px]">Level</TableHead>
+                    <TableHead className="w-[90px]">Gender</TableHead>
+                    <TableHead className="w-[110px]">
+                      <div className="flex items-center gap-2">
+                        <IconTarget className="size-4" />
+                        Rating Threshold
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconUsers className="size-4" />
                         Players
                       </div>
                     </TableHead>
-                    <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[100px]">
                       <div className="flex items-center gap-2">
                         <IconCalendar className="size-4" />
                         Created
                       </div>
                     </TableHead>
-                    <TableHead className="w-[80px] text-right">Actions</TableHead>
+                    <TableHead className="w-[70px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,6 +233,11 @@ export default function SeasonDivisionsCard({
                         >
                           {division.genderCategory}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {division.threshold ? division.threshold : '—'}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -331,7 +314,8 @@ export default function SeasonDivisionsCard({
         mode="edit"
         division={editingDivision}
         seasonId={seasonId}
-        onDivisionCreated={handleDivisionUpdated} // Use updated handler
+        adminId={adminId}
+        onDivisionCreated={handleDivisionUpdated} 
       />
 
       {/* Delete Confirmation Dialog */}
