@@ -61,7 +61,8 @@ export default function AssignDivisionModal({
       }
     } catch (error: any) {
       console.error('Error assigning player to division:', error);
-      toast.error(error.response?.data?.message || 'Failed to assign player to division');
+      console.log(error.response?.data.error);
+      toast.error(error.response?.data?.error || 'Failed to assign player to division');
     } finally {
       setIsAssigning(false);
     }
