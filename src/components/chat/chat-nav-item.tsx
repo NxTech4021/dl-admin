@@ -183,7 +183,7 @@ const ChatNavItem = ({
         <div className="flex flex-1 justify-between items-center ml-3 min-w-0">
           <div className="flex flex-col overflow-hidden flex-1">
             <span className="text-sm font-semibold truncate">
-              {displayName || 'Unknown Chat'}
+              {displayName || 'Unknown'}
             </span>
             <span className="text-xs text-muted-foreground truncate">
               {displayText || 'No messages yet'}

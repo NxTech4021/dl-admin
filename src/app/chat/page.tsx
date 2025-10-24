@@ -19,6 +19,27 @@ import { useChatData, useMessages } from './hooks/chat';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface Conversation {
+  id: string;
+  type: 'direct' | 'group';
+  displayName: string;
+  photoURL?: string;
+  participants: {
+    id: string;
+    displayName: string;
+    name: string;
+    photoURL?: string;
+    status: 'online' | 'offline' | 'away' | 'busy';
+  }[];
+  messages: never[];
+  lastMessage?: {
+    content: string;
+    createdAt: string;
+    sender: { name: string };
+  } | null;
+  unreadCount: number;
+}
+
 export default function ChatView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,8 +63,7 @@ export default function ChatView() {
     }
   }, [threadsError, messagesError]);
 
-  // Transform threads to conversations format
-  const conversations = threads.map(thread => ({
+  const conversations: Conversation[] = threads.map(thread => ({
     id: thread.id,
     type: thread.isGroup ? 'group' : 'direct',
     displayName: thread.name || thread.members
@@ -56,7 +76,7 @@ export default function ChatView() {
       displayName: m.user.name,
       name: m.user.name,
       photoURL: m.user.image,
-      status: 'online',
+      status: 'online' as const,
     })),
     messages: [],
     lastMessage: thread.messages.length > 0 ? {
@@ -67,6 +87,7 @@ export default function ChatView() {
     unreadCount: 0,
   }));
 
+  console.log( "threeads", threads)
   const conversation = selectedConversationId 
     ? conversations.find(conv => conv.id === selectedConversationId) 
     : null;
@@ -128,16 +149,19 @@ export default function ChatView() {
   );
 
   const renderHeader = (
-    <div className="flex items-center px-4 py-3 min-h-[72px]">
-      {selectedConversationId && conversation ? (
-        <ChatHeaderDetail participants={participants} />
-      ) : (
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-medium">Messages</h3>
-        </div>
-      )}
-    </div>
-  );
+  <div className="flex items-center px-4 py-3 min-h-[72px]">
+    {selectedConversationId && conversation ? (
+      <ChatHeaderDetail 
+        participants={participants} 
+        conversation={conversation} 
+      />
+    ) : (
+      <div className="flex items-center gap-3">
+        <h3 className="text-lg font-medium">Messages</h3>
+      </div>
+    )}
+  </div>
+);
 
   if (threadsLoading && !threads.length) {
     return (

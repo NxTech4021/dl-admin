@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from 'date-fns';
-import { Phone, Video, MoreVertical } from 'lucide-react';
+import { Phone, Video, MoreVertical, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,19 +17,47 @@ interface Participant {
   lastActivity?: string | Date;
 }
 
-interface ChatHeaderDetailProps {
+interface Conversation {
+  id: string;
+  type: 'group' | 'direct';
+  displayName: string;
+  name?: string;
+  photoURL?: string;
+  avatarUrl?: string;
   participants: Participant[];
 }
 
-export default function ChatHeaderDetail({ participants = [] }: ChatHeaderDetailProps) {
-  const group = participants.length > 1;
+interface ChatHeaderDetailProps {
+  participants: Participant[];
+  conversation?: Conversation;
+}
+
+export default function ChatHeaderDetail({ 
+  participants = [], 
+  conversation 
+}: ChatHeaderDetailProps) {
+  const isGroup = conversation?.type === 'group' || participants.length > 1;
   const singleParticipant = participants[0];
 
   const getParticipantName = (participant: Participant) => 
     participant?.displayName || participant?.name || 'Unknown';
 
   const getParticipantAvatar = (participant: Participant) => 
-    participant?.photoURL || participant?.avatarUrl || "Test ";
+    participant?.photoURL || participant?.avatarUrl;
+
+  const getGroupInitials = (groupName: string) => {
+    if (!groupName) return 'G';
+    
+    const words = groupName.trim().split(' ');
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    } else {
+      return words.slice(0, 2)
+        .map(word => word.charAt(0))
+        .join('')
+        .toUpperCase();
+    }
+  };
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -51,42 +79,41 @@ export default function ChatHeaderDetail({ participants = [] }: ChatHeaderDetail
   };
 
   const renderGroup = (
-    <div className="flex items-center gap-3">
-      {/* Avatar Group */}
-      <div className="flex -space-x-2">
-        {participants.slice(0, 3).map((participant, index) => (
-          <Avatar 
-            key={participant.id} 
-            className={cn(
-              "h-8 w-8 border-2 border-background",
-              index > 0 && "relative"
-            )}
-            style={{ zIndex: participants.length - index }}
-          >
-            <AvatarImage 
-              src={getParticipantAvatar(participant)} 
-              alt={getParticipantName(participant)} 
-            />
-            <AvatarFallback className="text-xs">
-              {getParticipantName(participant).charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        ))}
-        {participants.length > 3 && (
-          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted border-2 border-background text-xs font-medium">
-            +{participants.length - 3}
-          </div>
+    <div className="flex items-center gap-3 flex-1">
+      {/* Group Avatar */}
+      <div className="relative">
+        <Avatar className="h-10 w-10">
+          <AvatarImage 
+            src={conversation?.photoURL || conversation?.avatarUrl} 
+            alt={conversation?.displayName || 'Group Chat'} 
+          />
+          <AvatarFallback className="text-sm bg-gradient-to-br from-gray-500 to-blue-500 text-white font-semibold">
+            {getGroupInitials(conversation?.displayName || conversation?.name || 'Group')}
+          </AvatarFallback>
+        </Avatar>
+        
+        {/* Online members indicator */}
+        {participants.some(p => p.status === 'online') && (
+          <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
         )}
       </div>
       
       {/* Group Info */}
-      <div className="flex-1">
-        <h3 className="text-sm font-medium">
-          Group Chat ({participants.length} members)
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium truncate">
+          {conversation?.displayName || conversation?.name || 'Group Chat'}
         </h3>
-        <p className="text-xs text-muted-foreground">
-          {participants.map(p => getParticipantName(p)).join(', ')}
-        </p>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Users className="h-3 w-3" />
+          <span>
+            {participants.length + 1} members
+            {participants.filter(p => p.status === 'online').length > 0 && (
+              <span className="ml-1">
+                • {participants.filter(p => p.status === 'online').length} online
+              </span>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -133,7 +160,7 @@ export default function ChatHeaderDetail({ participants = [] }: ChatHeaderDetail
 
   return (
     <div className="flex items-center gap-3 w-full">
-      {group ? renderGroup : renderSingle}
+      {isGroup ? renderGroup : renderSingle}
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1">
