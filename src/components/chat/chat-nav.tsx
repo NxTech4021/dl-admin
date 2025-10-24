@@ -116,7 +116,7 @@ export default function ChatNav({
     if (!mdUp) {
       onCloseMobile();
     }
-    router.push('/chat'); // Navigate to compose new chat
+    router.push('/chat'); // TO DO - UPDATE Path
   }, [mdUp, onCloseMobile, router]);
 
   const handleSearchChange = useCallback((inputValue: string) => {

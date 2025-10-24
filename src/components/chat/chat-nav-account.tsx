@@ -8,10 +8,20 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function ChatNavAccount( { user }: any ) {
+export default function ChatNavAccount({ user } : any) {
   const [status, setStatus] = useState('online');
 
   const statusOptions = ['online', 'away', 'busy', 'offline'];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'away': return 'bg-yellow-500';
+      case 'busy': return 'bg-red-500';
+      case 'offline': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
+  };
 
   return (
     <Popover>
@@ -19,23 +29,33 @@ export default function ChatNavAccount( { user }: any ) {
         <Tooltip>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>
-              <div className="relative">
-                <Avatar className="w-12 h-12 cursor-pointer">
-                  <AvatarImage src={user?.photoURL} alt={user?.displayName} />
-                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase()} </AvatarFallback>
+              <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors">
+                {/* Avatar */}
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={user?.image || user?.photoURL} alt={user?.name || user?.displayName} />
+                  <AvatarFallback>
+                    {(user?.name || user?.displayName)?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
-                {/* Status Badge */}
-                <span className={`absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-background 
-                  ${status === 'online' && 'bg-green-500'}
-                  ${status === 'away' && 'bg-yellow-500'}
-                  ${status === 'busy' && 'bg-red-500'}
-                  ${status === 'offline' && 'bg-gray-500'}
-                `} />
+                
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">
+                    {user?.name || user?.displayName}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    {/* Status Badge */}
+                    <span className={`h-2 w-2 rounded-full ${getStatusColor(status)}`} />
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {status}
+                    </span>
+                  </div>
+                </div>
               </div>
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{user?.displayUsername}</p>
+            <p>{user?.name}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
