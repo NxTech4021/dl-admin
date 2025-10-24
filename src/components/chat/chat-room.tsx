@@ -1,20 +1,24 @@
 "use client"
 
 import { useEffect, useCallback } from "react"
-// import { uniq, flatten } from "lodash"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useResponsive } from "@/app/chat/hooks/use-responsive"
 import { useCollapseNav } from "../../app/chat/hooks"
 import ChatRoomGroup from "./chat-room-group"
-// import ChatRoomSingle from "./chat-room-single"
-import ChatRoomAttachments from "./chat-room-attachments"
+// import ChatRoomAttachments from "./chat-room-attachments"
 import { ArrowLeft, ArrowRight } from "lucide-react"
+import ChatRoomSingle from "./chat-room-single"
 
 const NAV_WIDTH = 240
 
-export default function ChatRoom({ participants, conversation }) {
+interface ChatRoomProps {
+  participants: any[];
+  conversation: any;
+}
+
+export default function ChatRoom({ participants, conversation }: ChatRoomProps) {
   const lgUp = useResponsive("up", "lg")
 
   const {
@@ -41,21 +45,24 @@ export default function ChatRoom({ participants, conversation }) {
     }
   }, [lgUp, onCollapseDesktop, onOpenMobile])
 
-  const group = participants.length > 1
-  // const attachments = uniq(flatten(conversation.messages.map((m) => m.attachments)))
+  const isGroup = conversation?.type === 'group'
 
   const renderContent = (
     <div className="flex flex-col h-full">
-     {/* {group ? (
-         <ChatRoomGroup participants={participants} />
+      {isGroup ? (
+        <ChatRoomGroup 
+          participants={participants} 
+          conversation={conversation}
+        />
       ) : (
-        <ChatRoomSingle participant={participants[0]} />
-    )}
+        <ChatRoomSingle 
+          participant={participants[0]} 
+          conversation={conversation}
+        />
+      )}
 
-     <ChatRoomAttachments attachments={""} /> */}
-     <h1> Hello </h1>
+      {/* <ChatRoomAttachments attachments={""} /> */}
     </div>
-    
   )
 
   const renderToggleBtn = (
