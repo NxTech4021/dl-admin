@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { League, leagueSchema } from "@/ZodSchema/league-schema";
-import { IconTrophy, IconPlus, IconDownload,IconUsers, IconTarget, IconCalendar } from "@tabler/icons-react"
+import { IconTrophy, IconPlus, IconUsers, IconTarget, IconCalendar } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
@@ -49,6 +49,10 @@ export default function Page() {
 
       const leaguesData = response.data.data.leagues;
       
+      // Debug: Log raw league data to see joinType values
+      console.log("Raw leagues data from API:", leaguesData);
+      console.log("First league joinType:", leaguesData[0]?.joinType);
+      
       // Transform the data to match our schema
       const transformedData = leaguesData.map((league: any) => ({
         id: league.id,
@@ -57,6 +61,7 @@ export default function Page() {
         description: league.description,
         status: league.status,
         sportType: league.sportType,
+        joinType: league.joinType,
         registrationType: league.registrationType,
         gameType: league.gameType,
         createdById: league.createdById,
@@ -82,7 +87,37 @@ export default function Page() {
       fetchLeagues();
     }, [fetchLeagues]);
 
-  const handleLeagueCreated = () => {
+  // Refresh data when user returns to the page (e.g., after editing a league)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh if we're not already loading
+      if (!isLoading) {
+        fetchLeagues();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // Refresh when page becomes visible again
+      if (!document.hidden && !isLoading) {
+        fetchLeagues();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchLeagues, isLoading]);
+
+  const handleLeagueCreated = async () => {
+    // Immediately refetch leagues to show the new one
+    // The modal will close itself via onOpenChange
+    await fetchLeagues();
+    
+    // Increment refresh key to force table re-render if needed
     setRefreshKey(prev => prev + 1);
   };
 
@@ -107,35 +142,14 @@ export default function Page() {
               {/* Page Header */}
               <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Description */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <IconTrophy className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">League Management</h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                          Manage leagues, tournaments, and competitions
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                          </Button>
-                        <LeagueCreateModal
-                          open={isCreateModalOpen}
-                          onOpenChange={setIsCreateModalOpen}
-                          onLeagueCreated={handleLeagueCreated}
-                        >
-                          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                            <IconPlus className="mr-2 size-4" />
-                            Create League
-                          </Button>
-                        </LeagueCreateModal>
-                      </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <IconTrophy className="size-8 text-primary" />
+                      <h1 className="text-3xl font-bold tracking-tight">League Management</h1>
                     </div>
+                    <p className="text-muted-foreground">
+                      Manage leagues, tournaments, and competitions
+                    </p>
                   </div>
                 </div>
               </div>
@@ -197,7 +211,23 @@ export default function Page() {
                             
               {/* Data Table */}
               <div className="flex-1 mt-10" >
-                <LeaguesDataTable key={refreshKey} data={leagues} isLoading={isLoading} />
+                <LeaguesDataTable 
+                  key={refreshKey} 
+                  data={leagues} 
+                  isLoading={isLoading}
+                  createLeagueButton={
+                    <LeagueCreateModal
+                      open={isCreateModalOpen}
+                      onOpenChange={setIsCreateModalOpen}
+                      onLeagueCreated={handleLeagueCreated}
+                    >
+                      <Button onClick={() => setIsCreateModalOpen(true)}>
+                        <IconPlus className="mr-2 size-4" />
+                        Create League
+                      </Button>
+                    </LeagueCreateModal>
+                  }
+                />
               </div>
               </div>
             </div>

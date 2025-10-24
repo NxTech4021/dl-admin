@@ -78,12 +78,12 @@ export const seasonSchema = z.object({
     sportType: z.string().optional(),
     gameType: z.string().optional(),
   })).default([]),
-  categories: z.array(z.object({
+  category: z.object({
     id: z.string(),
     name: z.string().nullable(),
     genderRestriction: z.string().optional(),
     matchFormat: z.string().nullable().optional(),
-  })).default([]),
+  }).nullable().optional(),
 });
 
 export type Season = z.infer<typeof seasonSchema>;

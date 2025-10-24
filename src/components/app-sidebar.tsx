@@ -1,6 +1,6 @@
 "use client";
 
-import { IconTax } from "@tabler/icons-react";
+import { IconMessage, IconTax } from "@tabler/icons-react";
 
 import { IconMessage2Question } from "@tabler/icons-react";
 
@@ -136,6 +136,13 @@ const data = {
 
       notificationCount: 3,
     },
+
+    {
+      name: "Chats",
+      url: "/chat",
+      icon:  IconMessage ,
+    },
+    
     {
       name: "Admins",
 

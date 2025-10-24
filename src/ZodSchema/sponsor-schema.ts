@@ -13,7 +13,15 @@ export const sponsorSchema = z.object({
   sponsorRevenue: z.number().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  leagues: z.array(leagueSchema).optional(),
+  league: leagueSchema.nullable().optional(),
+  company: z.object({
+    id: z.string(),
+    name: z.string(),
+  }).nullable().optional(),
+  createdBy: z.object({
+    id: z.string(),
+    name: z.string(),
+  }).nullable().optional(),
 });
 
 export type Sponsor = z.infer<typeof sponsorSchema>;

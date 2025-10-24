@@ -40,7 +40,7 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
     }
   };
 
-  const formattedDate = (date: Date | null) => (date ? format(new Date(date), 'PPP') : 'N/A');
+  const formattedDate = (date: Date | null | undefined) => (date ? format(new Date(date), 'PPP') : 'N/A');
 
   return (
     <Card>

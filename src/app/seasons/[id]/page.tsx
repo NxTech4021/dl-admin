@@ -5,8 +5,8 @@ const SeasonDetailClient = dynamic(() => import('./SeasonDetailClient'), {
 });
 
 interface SeasonDetailPageProps {
-  // Next.js automatically provides route parameters here
-  params: { id: string }; 
+  // Next.js 15 requires params to be async
+  params: Promise<{ id: string }>; 
 }
 
 // Server Component
@@ -15,5 +15,6 @@ export default async function SeasonDetailPage({ params }: SeasonDetailPageProps
   const { id } = await params;
   
   // Pass the season ID down as a prop to the Client Component
+  return <SeasonDetailClient seasonId={id} />;
   return <SeasonDetailClient seasonId={id} />;
 }
