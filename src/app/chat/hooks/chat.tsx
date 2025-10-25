@@ -244,7 +244,6 @@ export function useMessages(threadId?: string) {
   };
 }
 
-// Additional hook for thread members if needed
 export function useThreadMembers(threadId?: string) {
   const [members, setMembers] = useState<ThreadMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -308,7 +307,7 @@ export function useCreateThread() {
   const createThread = useCallback(async (data: {
     name?: string;
     isGroup: boolean;
-    memberIds: string[];
+    userIds: string[];
     createdBy: string;
   }) => {
     try {
