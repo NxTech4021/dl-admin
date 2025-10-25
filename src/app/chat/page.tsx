@@ -91,7 +91,7 @@ export default function ChatView() {
       email: m.user?.email || "N/A",
       phoneNumber: m.user?.phoneNumber || "N/A",
       address: m.user?.address || "N/A",
-      isCurrentUser: m.userId === user?.id, // Add this flag
+      isCurrentUser: m.userId === user?.id,
     })),
     messages: [],
     lastMessage:
@@ -114,7 +114,7 @@ export default function ChatView() {
     : null;
 
   const participants = conversation
-    ? conversation.participants // Don't filter here, let the components decide
+    ? conversation.participants
     : [];
 
   const details = !!conversation;
