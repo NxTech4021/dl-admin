@@ -153,6 +153,7 @@ export default function ChatView() {
             messages={messages}
             participants={participants}
             loading={messagesLoading}
+            threadId={selectedConversationId}
           />
           <ChatMessageInput
             selectedConversationId={selectedConversationId}

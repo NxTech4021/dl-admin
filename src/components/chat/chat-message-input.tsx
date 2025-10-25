@@ -1,20 +1,24 @@
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
-import { Send, Smile } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Send, Smile } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+import { useTypingIndicator } from "@/app/chat/hooks/chat";
 
-const EmojiPicker = dynamic(
-  () => import('emoji-picker-react'),
-  { 
-    ssr: false,
-    loading: () => <div className="w-80 h-96 flex items-center justify-center">Loading...</div>
-  }
-);
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-80 h-96 flex items-center justify-center">Loading...</div>
+  ),
+});
 
 interface ChatMessageInputProps {
   selectedConversationId?: string;
@@ -27,70 +31,110 @@ export default function ChatMessageInput({
   disabled = false,
   onSendMessage,
 }: ChatMessageInputProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  const { setTyping } = useTypingIndicator(selectedConversationId);
 
   const handleSend = useCallback(async () => {
     if (!message.trim() || !onSendMessage || isSending) return;
 
     const messageToSend = message.trim();
-    setMessage('');
+    setMessage("");
     setIsSending(true);
+    setTyping(false);
 
     try {
       await onSendMessage(messageToSend);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
       setMessage(messageToSend);
     } finally {
       setIsSending(false);
     }
-  }, [message, onSendMessage, isSending]);
+  }, [message, onSendMessage, isSending, setTyping]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
     }
   }, []);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    adjustTextareaHeight();
-  }, [adjustTextareaHeight]);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      setMessage(newValue);
+      adjustTextareaHeight();
 
-  const handleEmojiClick = useCallback((emojiData: any) => {
-    const emoji = emojiData.emoji;
-    const textarea = textareaRef.current;
-    
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const newMessage = message.slice(0, start) + emoji + message.slice(end);
-      
-      setMessage(newMessage);
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
-      }, 0);
-    } else {
-      setMessage(prev => prev + emoji);
-    }
-    
-    // Close emoji picker after selection
-    setShowEmojiPicker(false);
-    adjustTextareaHeight();
-  }, [message, adjustTextareaHeight]);
+      // Handle typing indicator
+      if (newValue.trim() && selectedConversationId) {
+        setTyping(true);
+
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+          setTyping(false);
+        }, 1000);
+      } else {
+        setTyping(false);
+      }
+    },
+    [adjustTextareaHeight, selectedConversationId, setTyping]
+  );
+
+  const handleEmojiClick = useCallback(
+    (emojiData: any) => {
+      const emoji = emojiData.emoji;
+      const textarea = textareaRef.current;
+
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newMessage = message.slice(0, start) + emoji + message.slice(end);
+
+        setMessage(newMessage);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(
+            start + emoji.length,
+            start + emoji.length
+          );
+        }, 0);
+      } else {
+        setMessage((prev) => prev + emoji);
+      }
+
+      setShowEmojiPicker(false);
+      adjustTextareaHeight();
+    },
+    [message, adjustTextareaHeight]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      setTyping(false);
+    };
+  }, [selectedConversationId, setTyping]);
 
   const isDisabled = disabled || !selectedConversationId || isSending;
 
@@ -115,8 +159,8 @@ export default function ChatMessageInput({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={
-              selectedConversationId 
-                ? "Type a message..." 
+              selectedConversationId
+                ? "Type a message..."
                 : "Select a conversation to start messaging"
             }
             className={cn(
@@ -126,7 +170,7 @@ export default function ChatMessageInput({
             disabled={isDisabled}
             rows={1}
           />
-          
+
           {/* Emoji Button */}
           <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
             <PopoverTrigger asChild>
@@ -139,9 +183,9 @@ export default function ChatMessageInput({
                 <Smile className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-auto p-0 border-none shadow-lg" 
-              side="top" 
+            <PopoverContent
+              className="w-auto p-0 border-none shadow-lg"
+              side="top"
               align="end"
               sideOffset={5}
             >
@@ -151,7 +195,7 @@ export default function ChatMessageInput({
                 height={400}
                 width={350}
                 previewConfig={{
-                  showPreview: false
+                  showPreview: false,
                 }}
                 skinTonesDisabled
                 searchDisabled={false}
@@ -172,10 +216,12 @@ export default function ChatMessageInput({
             "disabled:hover:bg-brand-light"
           )}
         >
-          <Send className={cn(
-            "h-4 w-4 transition-transform",
-            isSending && "animate-pulse"
-          )} />
+          <Send
+            className={cn(
+              "h-4 w-4 transition-transform",
+              isSending && "animate-pulse"
+            )}
+          />
         </Button>
       </div>
     </div>

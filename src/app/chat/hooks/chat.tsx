@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axiosInstance, { endpoints } from '@/lib/endpoints';
+import { useSocket } from '@/context/socket-context';
 import { toast } from 'sonner';
+import { useSession } from '@/lib/auth-client';
 
 export interface ChatUser {
   id: string;
@@ -51,6 +53,7 @@ export function useChatData(userId?: string) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { socket, isConnected } = useSocket();
 
   const fetchThreads = useCallback(async () => {
     if (!userId) {
@@ -61,26 +64,19 @@ export function useChatData(userId?: string) {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Fetching threads for userId:', userId);
+    
       const response = await axiosInstance.get(endpoints.chat.getThreads(userId));
-      console.log('Threads response:', response.data);
       
-      // Handle different possible response structures
       if (response.data) {
-        // If response has a success property and data property
         if (response.data.success && response.data.data) {
           setThreads(response.data.data);
         }
-        // If response data is directly an array
         else if (Array.isArray(response.data)) {
           setThreads(response.data);
         }
-        // If response has threads property
         else if (response.data.threads && Array.isArray(response.data.threads)) {
           setThreads(response.data.threads);
         }
-        // If response data has no specific structure but contains the threads
         else {
           setThreads([]);
         }
@@ -101,6 +97,33 @@ export function useChatData(userId?: string) {
     }
   }, [userId]);
 
+  // Listen for real-time thread updates
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleNewThread = (data: { thread: Thread }) => {
+      setThreads(prev => [data.thread, ...prev]);
+      toast.success('New conversation started!');
+    };
+
+    const handleThreadUpdate = (data: { threadId: string; lastMessage: Message }) => {
+      console.log('📥 Thread updated:', data.threadId);
+      setThreads(prev => prev.map(thread => 
+        thread.id === data.threadId 
+          ? { ...thread, messages: [data.lastMessage], updatedAt: new Date().toISOString() }
+          : thread
+      ));
+    };
+
+    socket.on('new_thread', handleNewThread);
+    socket.on('thread_updated', handleThreadUpdate);
+
+    return () => {
+      socket.off('new_thread', handleNewThread);
+      socket.off('thread_updated', handleThreadUpdate);
+    };
+  }, [socket, isConnected]);
+
   useEffect(() => {
     fetchThreads();
   }, [fetchThreads]);
@@ -117,6 +140,8 @@ export function useMessages(threadId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { socket, isConnected, joinThread, leaveThread } = useSocket();
+  const currentThreadRef = useRef<string | null>(null);
 
   const fetchMessages = useCallback(async () => {
     if (!threadId) {
@@ -127,26 +152,19 @@ export function useMessages(threadId?: string) {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Fetching messages for threadId:', threadId);
+    
       const response = await axiosInstance.get(endpoints.chat.getMessages(threadId));
-      console.log('Messages response:', response.data);
-      
-      // Handle different possible response structures
+        
       if (response.data) {
-        // If response has a success property and data property
         if (response.data.success && response.data.data) {
           setMessages(Array.isArray(response.data.data) ? response.data.data : []);
         }
-        // If response data is directly an array
         else if (Array.isArray(response.data)) {
           setMessages(response.data);
         }
-        // If response has messages property
         else if (response.data.messages && Array.isArray(response.data.messages)) {
           setMessages(response.data.messages);
         }
-        // Default to empty array
         else {
           setMessages([]);
         }
@@ -180,7 +198,6 @@ export function useMessages(threadId?: string) {
 
       console.log('Send message response:', response.data);
 
-      // Handle different possible response structures for the new message
       let newMessage = null;
       
       if (response.data) {
@@ -189,18 +206,12 @@ export function useMessages(threadId?: string) {
         } else if (response.data.message) {
           newMessage = response.data.message;
         } else if (response.data.id) {
-          // Response data is the message itself
           newMessage = response.data;
         }
       }
 
       if (newMessage) {
-        // Add the new message to the list
-        setMessages(prev => [...prev, newMessage]);
         return newMessage;
-      } else {
-        // If we don't get the message back, refresh the messages
-        await fetchMessages();
       }
     } catch (err: any) {
       console.error('Error sending message:', err);
@@ -211,22 +222,91 @@ export function useMessages(threadId?: string) {
       toast.error(errorMessage);
       throw err;
     }
-  }, [threadId, fetchMessages]);
+  }, [threadId]);
+
+  // Socket event listeners for real-time messages
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleNewMessage = (message: Message) => {
+      console.log('📥 Received new message:', message.id);
+      
+      // Only add message if it belongs to current thread
+      if (message.threadId === threadId) {
+        setMessages(prev => [...prev, message]);
+      }
+    };
+
+    const handleMessageSent = (data: { messageId: string; threadId: string }) => {
+    };
+
+    const handleMessageRead = (data: {
+      messageId: string;
+      threadId: string;
+      readerId: string;
+      readerName: string;
+    }) => {
+      console.log('👁️ Message read:', data);
+      
+      if (data.threadId === threadId) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === data.messageId 
+            ? {
+                ...msg,
+                readBy: [
+                  ...(msg.readBy || []),
+                  {
+                    id: `${data.messageId}-${data.readerId}`,
+                    userId: data.readerId,
+                    messageId: data.messageId,
+                    readAt: new Date().toISOString(),
+                    user: {
+                      id: data.readerId,
+                      name: data.readerName,
+                    },
+                  },
+                ],
+              }
+            : msg
+        ));
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('message_sent', handleMessageSent);
+    socket.on('message_read', handleMessageRead);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('message_sent', handleMessageSent);
+      socket.off('message_read', handleMessageRead);
+    };
+  }, [socket, isConnected, threadId]);
+
+  // Join/leave thread rooms
+  useEffect(() => {
+    if (!threadId || !isConnected) return;
+
+    if (currentThreadRef.current && currentThreadRef.current !== threadId) {
+      leaveThread(currentThreadRef.current);
+    }
+
+    joinThread(threadId);
+    currentThreadRef.current = threadId;
+
+    return () => {
+      if (threadId) {
+        leaveThread(threadId);
+        currentThreadRef.current = null;
+      }
+    };
+  }, [threadId, isConnected, joinThread, leaveThread]);
 
   const markAsRead = useCallback(async (messageId: string) => {
     try {
       await axiosInstance.post(endpoints.chat.markAsRead(messageId));
-      // Optionally update the message's read status locally
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === messageId 
-            ? { ...msg, readBy: [...(msg.readBy || []), { userId: 'currentUser' }] }
-            : msg
-        )
-      );
     } catch (err: any) {
       console.error('Error marking message as read:', err);
-      // Don't show toast for read errors as they're not critical
     }
   }, []);
 
@@ -241,6 +321,97 @@ export function useMessages(threadId?: string) {
     sendMessage,
     markAsRead,
     refetch: fetchMessages,
+  };
+}
+
+
+export function useTypingIndicator(threadId?: string) {
+  const [typingUsers, setTypingUsers] = useState<Array<{ userId: string; userName: string }>>([]);
+  const { socket, isConnected, sendTyping } = useSocket();
+  const { data: session } = useSession();
+  const user = session?.user;
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  useEffect(() => {
+    if (!socket || !isConnected || !threadId) {
+      console.log('❌ Not setting up typing listener:', { socket: !!socket, isConnected, threadId });
+      return;
+    }
+
+    const handleTypingStatus = (data: {
+      threadId: string;
+      senderId: string;
+      isTyping: boolean;
+    }) => {
+      console.log('📝 Received typing_status event:', data);
+      
+      if (data.threadId !== threadId) {
+        console.log('❌ Typing event for different thread, ignoring');
+        return;
+      }
+
+      if (data.senderId === user?.id) {
+        console.log('❌ Ignoring typing from current user');
+        return;
+      }
+
+      setTypingUsers(prev => {
+        console.log('📝 Current typing users:', prev);
+        
+        if (data.isTyping) {
+          const exists = prev.some(typingUser => typingUser.userId === data.senderId);
+          if (exists) {
+
+            return prev;
+          }
+          
+          // TO DO use actual User name from paticipants
+          const newUsers = [...prev, { userId: data.senderId, userName: 'Someone' }];
+        
+          return newUsers;
+        } else {
+        
+          const newUsers = prev.filter(typingUser => typingUser.userId !== data.senderId);
+        
+          return newUsers;
+        }
+      });
+    };
+
+    socket.on('typing_status', handleTypingStatus);
+
+    return () => {
+      console.log('🧹 Cleaning up typing listener for thread:', threadId);
+      socket.off('typing_status', handleTypingStatus);
+    };
+  }, [socket, isConnected, threadId, user?.id]);
+
+  const setTyping = useCallback((isTyping: boolean) => {
+    if (!threadId) {
+      console.log('❌ No threadId for typing');
+      return;
+    }
+
+    console.log('⌨️ Setting typing status:', { threadId, isTyping });
+    sendTyping(threadId, isTyping);
+
+    if (isTyping) {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        console.log('⌨️ Auto-stopping typing after timeout');
+        sendTyping(threadId, false);
+      }, 3000);
+    }
+  }, [threadId, sendTyping]);
+
+  console.log('📝 Current typing users in hook:', typingUsers);
+
+  return {
+    typingUsers,
+    setTyping,
   };
 }
 
@@ -299,7 +470,6 @@ export function useThreadMembers(threadId?: string) {
   };
 }
 
-// Hook for creating new threads
 export function useCreateThread() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -391,7 +561,6 @@ export function useAvailableUsers(currentUserId?: string) {
         }
       }
       
-      // Filter out current user just in case
       const filteredUsers = usersData.filter(user => user.id !== currentUserId);
       setUsers(filteredUsers);
       
