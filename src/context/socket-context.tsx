@@ -2,51 +2,131 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
+import { useSession } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 interface SocketContextType {
   socket: Socket | null;
+  isConnected: boolean;
+  joinThread: (threadId: string) => void;
+  leaveThread: (threadId: string) => void;
+  sendTyping: (threadId: string, isTyping: boolean) => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
+  isConnected: false,
+  joinThread: () => {},
+  leaveThread: () => {},
+  sendTyping: () => {},
 });
 
-export const SocketProvider = ({ children }: { children: ReactNode }) => {
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error("useSocket must be used within a SocketProvider");
+  }
+  return context;
+};
+
+interface SocketProviderProps {
+  children: ReactNode;
+}
+
+export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const { data: session } = useSession();
+  const user = session?.user;
 
   useEffect(() => {
+    if (!user?.id) return;
+
     const socketInstance = io(
-      process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:3001",  
+      process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:3001",
       {
-        transports: ["websocket"],
+        auth: {
+          userId: user.id,
+          userName: user.name,
+        },
+        transports: ["websocket", "polling"],
         withCredentials: true,
       }
     );
 
-    setSocket(socketInstance);
-
-    console.log("✅ Socket connected:", socketInstance.id);
-    console.log("Connecting to:", process.env.NEXT_PUBLIC_HOST_URL);
-
+    // Connection events
     socketInstance.on("connect", () => {
-      console.log("🔌 Socket reconnected:", socketInstance.id);
+      console.log("✅ Socket connected:", socketInstance.id);
+      setIsConnected(true);
+      toast.success("Connected to chat server");
     });
 
     socketInstance.on("disconnect", () => {
       console.log("❌ Socket disconnected");
+      setIsConnected(false);
+      toast.error("Disconnected from chat server");
     });
 
-    // Cleanup on unmount
+    socketInstance.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error);
+      setIsConnected(false);
+      toast.error("Failed to connect to chat server");
+    });
+
+    // Join user's personal room for notifications
+    socketInstance.emit("join_user_room", user.id);
+
+    setSocket(socketInstance);
+
     return () => {
+      console.log("🧹 Cleaning up socket connection");
       socketInstance.disconnect();
     };
-  }, []);
+  }, [user?.id, user?.name]);
+
+  const joinThread = (threadId: string) => {
+    if (socket && isConnected) {
+      socket.emit("join_thread", threadId);
+      console.log(`📥 Joined thread: ${threadId}`);
+    }
+  };
+
+  const leaveThread = (threadId: string) => {
+    if (socket && isConnected) {
+      socket.emit("leave_thread", threadId);
+      console.log(`📤 Left thread: ${threadId}`);
+    }
+  };
+  
+const sendTyping = (threadId: string, isTyping: boolean) => {
+  if (socket && isConnected && user?.id) {
+    // console.log(`⌨️ Sending typing event:`, { threadId, userId: user.id, isTyping });
+    
+    if (isTyping) {
+      socket.emit('typing_start', {
+        threadId,
+        senderId: user.id,
+      });
+    } else {
+      socket.emit('typing_stop', {
+        threadId,
+        senderId: user.id,
+      });
+    }
+  }
+};
+
+  const value: SocketContextType = {
+    socket,
+    isConnected,
+    joinThread,
+    leaveThread,
+    sendTyping,
+  };
 
   return (
-    <SocketContext.Provider value={{ socket }}>
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   );
 };
-
-export const useSocket = () => useContext(SocketContext);

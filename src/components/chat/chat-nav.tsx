@@ -1,26 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 // Shadcn UI components
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  MessageSquarePlus,
+} from "lucide-react";
 
-
-// Icons from lucide-react
-import { Search, ChevronLeft, ChevronRight, Users, MessageSquarePlus, Plus } from 'lucide-react';
-
-// Components
-import ChatNavAccount from './chat-nav-account';
-import ChatNavItemSkeleton from './chat-skeleton';
-import ChatNavItem from './chat-nav-item';
-import NewChatModal from './create-chat-modal';
+import ChatNavAccount from "./chat-nav-account";
+import ChatNavItemSkeleton from "./chat-skeleton";
+import ChatNavItem from "./chat-nav-item";
+import NewChatModal from "./create-chat-modal";
 
 // --- MOCK HOOKS & UTILITIES ---
 const useResponsive = () => {
@@ -28,9 +27,9 @@ const useResponsive = () => {
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: 768px)`);
     const handler = (e: MediaQueryListEvent) => setIsMatch(e.matches);
-    mediaQuery.addEventListener('change', handler);
+    mediaQuery.addEventListener("change", handler);
     handler(mediaQuery as any);
-    return () => mediaQuery.removeEventListener('change', handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, []);
   return isMatch;
 };
@@ -40,7 +39,7 @@ const useCollapseNav = () => {
   const [openMobile, setOpenMobile] = useState(false);
   return {
     collapseDesktop,
-    onCollapseDesktop: () => setCollapseDesktop(prev => !prev),
+    onCollapseDesktop: () => setCollapseDesktop((prev) => !prev),
     openMobile,
     onOpenMobile: () => setOpenMobile(true),
     onCloseMobile: () => setOpenMobile(false),
@@ -48,12 +47,12 @@ const useCollapseNav = () => {
 };
 
 // --- CONSTANTS ---
-const NAV_WIDTH = 'w-[320px]';
-const NAV_COLLAPSE_WIDTH = 'w-[96px]';
+const NAV_WIDTH = "w-[320px]";
+const NAV_COLLAPSE_WIDTH = "w-[96px]";
 
 interface Conversation {
   id: string;
-  type: 'direct' | 'group';
+  type: "direct" | "group";
   displayName: string;
   photoURL?: string;
   participants?: any[];
@@ -72,18 +71,25 @@ interface ChatNavProps {
   selectedConversationId: string;
 }
 
-export default function ChatNav({ 
-  loading, 
-  user, 
-  conversations, 
-  selectedConversationId 
+export default function ChatNav({
+  loading,
+  user,
+  conversations,
+  selectedConversationId,
 }: ChatNavProps) {
   const router = useRouter();
   const mdUp = useResponsive();
-  const { collapseDesktop, onCollapseDesktop, openMobile, onOpenMobile, onCloseMobile } = useCollapseNav();
+  const {
+    collapseDesktop,
+    onCollapseDesktop,
+    openMobile,
+    onOpenMobile,
+    onCloseMobile,
+  } = useCollapseNav();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredConversations, setFilteredConversations] = useState(conversations);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredConversations, setFilteredConversations] =
+    useState(conversations);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
 
   // Filter conversations based on search query
@@ -92,12 +98,13 @@ export default function ChatNav({
       setFilteredConversations(conversations);
     } else {
       const filtered = conversations.filter((conversation: any) => {
-        const displayName = conversation.displayName || '';
-        const participantNames = conversation.participants
-          ?.map((p: any) => p.displayName || p.name || '')
-          .join(' ') || '';
-        
-        const searchText = (displayName + ' ' + participantNames).toLowerCase();
+        const displayName = conversation.displayName || "";
+        const participantNames =
+          conversation.participants
+            ?.map((p: any) => p.displayName || p.name || "")
+            .join(" ") || "";
+
+        const searchText = (displayName + " " + participantNames).toLowerCase();
         return searchText.includes(searchQuery.toLowerCase());
       });
       setFilteredConversations(filtered);
@@ -116,7 +123,7 @@ export default function ChatNav({
     if (!mdUp) {
       onCloseMobile();
     }
-    router.push('/chat'); // TO DO - UPDATE Path
+    router.push("/chat"); // TO DO - UPDATE Path
   }, [mdUp, onCloseMobile, router]);
 
   const handleSearchChange = useCallback((inputValue: string) => {
@@ -124,7 +131,7 @@ export default function ChatNav({
   }, []);
 
   const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
+    setSearchQuery("");
   }, []);
 
   // Mobile toggle button
@@ -164,10 +171,12 @@ export default function ChatNav({
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <MessageSquarePlus className="w-12 h-12 text-muted-foreground mb-4" />
           <p className="text-sm text-muted-foreground mb-2">
-            {searchQuery ? 'No conversations found' : 'No conversations yet'}
+            {searchQuery ? "No conversations found" : "No conversations yet"}
           </p>
           <p className="text-xs text-muted-foreground">
-            {searchQuery ? 'Try a different search term' : 'Start a new conversation'}
+            {searchQuery
+              ? "Try a different search term"
+              : "Start a new conversation"}
           </p>
         </div>
       )}
@@ -186,7 +195,11 @@ export default function ChatNav({
         )}
 
         <Button variant="ghost" size="icon" onClick={handleToggleNav}>
-          {collapseDesktop ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapseDesktop ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
         </Button>
       </div>
 
@@ -217,15 +230,13 @@ export default function ChatNav({
 
       {/* Conversations List */}
       <ScrollArea className="flex-1">
-        <div className="px-2">
-          {loading ? renderSkeleton : renderList}
-        </div>
+        <div className="px-2">{loading ? renderSkeleton : renderList}</div>
       </ScrollArea>
 
       {/* Compose Button */}
       {!collapseDesktop && (
         <div className="p-4 border-t">
-           <Button 
+          <Button
             className="w-full"
             variant="outline"
             onClick={() => setShowNewChatModal(true)}
@@ -233,7 +244,6 @@ export default function ChatNav({
             <MessageSquarePlus className="w-4 h-4 mr-2" />
             New Message
           </Button>
-
         </div>
       )}
 
