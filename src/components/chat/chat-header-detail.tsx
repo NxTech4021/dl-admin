@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { Phone, Video, MoreVertical, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface Participant {
@@ -14,6 +14,7 @@ interface Participant {
   photoURL?: string;
   status?: 'online' | 'offline' | 'away' | 'busy';
   lastActivity?: string | Date;
+  isCurrentUser?: boolean;
 }
 
 interface Conversation {
@@ -35,14 +36,10 @@ export default function ChatHeaderDetail({
   participants = [], 
   conversation 
 }: ChatHeaderDetailProps) {
-  const isGroup = conversation?.type === 'group' || participants.length > 1;
-  const singleParticipant = participants[0];
-
-  const getParticipantName = (participant: Participant) => 
-    participant?.displayName || participant?.name || 'Unknown';
-
-  const getParticipantAvatar = (participant: Participant) => 
-    participant?.photoURL || participant?.avatarUrl;
+  const isGroup = conversation?.type === 'group';
+  
+  // For single chats, find the other participant (not current user)
+  const otherParticipant = participants.find(p => !p.isCurrentUser);
 
   const getGroupInitials = (groupName: string) => {
     if (!groupName) return 'G';
@@ -77,6 +74,10 @@ export default function ChatHeaderDetail({
     return `Last seen ${formatDistanceToNow(new Date(lastActivity), { addSuffix: true })}`;
   };
 
+  // Get total member count for groups (all participants including current user)
+  const totalMembers = conversation?.participants?.length || participants.length;
+  const onlineMembers = (conversation?.participants || participants).filter(p => p.status === 'online').length;
+
   const renderGroup = (
     <div className="flex items-center gap-3 flex-1">
       {/* Group Avatar */}
@@ -86,13 +87,13 @@ export default function ChatHeaderDetail({
             src={conversation?.photoURL || conversation?.avatarUrl} 
             alt={conversation?.displayName || 'Group Chat'} 
           />
-          <AvatarFallback className="text-sm bg-gradient-to-br from-gray-500 to-blue-500 text-white font-semibold">
+          <AvatarFallback className="text-sm bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
             {getGroupInitials(conversation?.displayName || conversation?.name || 'Group')}
           </AvatarFallback>
         </Avatar>
         
         {/* Online members indicator */}
-        {participants.some(p => p.status === 'online') && (
+        {onlineMembers > 0 && (
           <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
         )}
       </div>
@@ -105,10 +106,10 @@ export default function ChatHeaderDetail({
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
           <span>
-            {participants.length} members
-            {participants.filter(p => p.status === 'online').length > 0 && (
+            {totalMembers} members
+            {onlineMembers > 0 && (
               <span className="ml-1">
-                • {participants.filter(p => p.status === 'online').length} online
+                • {onlineMembers} online
               </span>
             )}
           </span>
@@ -123,32 +124,32 @@ export default function ChatHeaderDetail({
       <div className="relative">
         <Avatar className="h-10 w-10">
           <AvatarImage 
-            src={getParticipantAvatar(singleParticipant)} 
-            alt={getParticipantName(singleParticipant)} 
+            src={otherParticipant?.photoURL || otherParticipant?.avatarUrl || conversation?.photoURL} 
+            alt={otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'User'} 
           />
           <AvatarFallback>
-            {getParticipantName(singleParticipant).charAt(0).toUpperCase()}
+            {(otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'U').charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         
         {/* Status Indicator */}
         <div className={cn(
           "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
-          getStatusColor(singleParticipant?.status)
+          getStatusColor(otherParticipant?.status)
         )} />
       </div>
 
       {/* Participant Info */}
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-medium truncate">
-          {getParticipantName(singleParticipant)}
+          {otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'Unknown User'}
         </h3>
         <p className="text-xs text-muted-foreground truncate">
-          {singleParticipant?.status === 'offline' 
-            ? formatLastActivity(singleParticipant.lastActivity)
+          {otherParticipant?.status === 'offline' 
+            ? formatLastActivity(otherParticipant.lastActivity)
             : (
               <span className="capitalize">
-                {singleParticipant?.status || 'online'}
+                {otherParticipant?.status || 'online'}
               </span>
             )
           }
@@ -162,7 +163,7 @@ export default function ChatHeaderDetail({
       {isGroup ? renderGroup : renderSingle}
 
       {/* Action Buttons */}
-      {/* <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Phone className="h-4 w-4" />
         </Button>
@@ -174,7 +175,7 @@ export default function ChatHeaderDetail({
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreVertical className="h-4 w-4" />
         </Button>
-      </div> */}
+      </div>
     </div>
   );
 }

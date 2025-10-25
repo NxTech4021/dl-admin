@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Key } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { useSession } from '@/lib/auth-client';
 
 // Shadcn UI components
 import { Button } from "@/components/ui/button";
@@ -10,16 +11,12 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { _mockUser } from '@/app/chat/hooks/_mockData';
 
-// Icons from lucide-react
-import { Search, ChevronLeft, ChevronRight, Users, UserPlus } from 'lucide-react';
-
-const useResponsive = (query :any, start : any) => {
+const useResponsive = (query: any, start: any) => {
   const [isMatch, setIsMatch] = useState(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: 768px)`);
-    const handler = (e : any) => setIsMatch(e.matches);
+    const handler = (e: any) => setIsMatch(e.matches);
     mediaQuery.addEventListener('change', handler);
     handler(mediaQuery);
     return () => mediaQuery.removeEventListener('change', handler);
@@ -27,39 +24,34 @@ const useResponsive = (query :any, start : any) => {
   return isMatch;
 };
 
-const useCollapseNav = () => {
-  const [collapseDesktop, setCollapseDesktop] = useState(false);
-  const [openMobile, setOpenMobile] = useState(false);
+const useGetNavItem = ({ conversation, currentUserId }: any) => {
+  const isGroup = conversation?.type === 'group';
+  
+  // For single chats, get the other participant
+  const otherParticipants = isGroup 
+    ? conversation?.participants || []
+    : conversation?.participants?.filter((p: any) => p.id !== currentUserId) || [];
+  
+  // Display name logic
+  const displayName = isGroup 
+    ? conversation?.displayName || conversation?.name || 'Group Chat'
+    : otherParticipants[0]?.name || otherParticipants[0]?.displayName || 'Unknown User';
+  
+  const displayText = conversation?.lastMessage?.body || conversation?.lastMessage?.content || '';
+  const lastActivity = conversation?.lastMessage?.createdAt;
+  const hasOnlineInGroup = isGroup && conversation?.participants?.some((p: any) => p.status === 'online');
+
   return {
-    collapseDesktop,
-    onCollapseDesktop: () => setCollapseDesktop(prev => !prev),
-    openMobile,
-    onOpenMobile: () => setOpenMobile(true),
-    onCloseMobile: () => setOpenMobile(false),
+    group: isGroup,
+    displayName,
+    displayText,
+    participants: otherParticipants,
+    lastActivity,
+    hasOnlineInGroup,
   };
 };
 
-const useGetNavItem = ({ conversation, currentUserId } : any) => {
-    const isGroup = conversation?.type === 'group';
-    const otherParticipants = isGroup ? conversation?.participants.filter(p => p.id !== currentUserId) : [conversation?.participants[0]];
-    const displayName = isGroup ? conversation?.displayName : otherParticipants[0]?.name;
-    const displayText = conversation?.lastMessage?.body || conversation?.lastMessage?.content || '';
-    const lastActivity = conversation?.lastMessage?.createdAt;
-    const hasOnlineInGroup = isGroup && conversation?.participants?.some(p => p.status === 'online');
-
-    return {
-        group: isGroup,
-        displayName,
-        displayText,
-        participants: otherParticipants,
-        lastActivity,
-        hasOnlineInGroup,
-    };
-};
-
 // --- CONSTANTS ---
-const NAV_WIDTH = 'w-[320px]';
-const NAV_COLLAPSE_WIDTH = 'w-[96px]';
 const paths = {
   dashboard: {
     chat: '/chat',
@@ -104,18 +96,19 @@ const ChatNavItem = ({
   conversation,
   onCloseMobile,
 }: ChatNavItemProps) => {
-  const user = _mockUser;
+  const { data: session } = useSession(); 
+  const user = session?.user;
   const router = useRouter();
   const mdUp = useResponsive('up', 'md');
 
   const { group, displayName, displayText, participants, lastActivity, hasOnlineInGroup } =
     useGetNavItem({
       conversation,
-      currentUserId: `${user?.id}`,
+      currentUserId: user?.id,
     });
 
   const singleParticipant = participants[0];
-  const { name, avatarUrl, status } = singleParticipant || {};
+  const { name, photoURL, status } = singleParticipant || {};
 
   const handleClickConversation = useCallback(async () => {
     try {
@@ -129,12 +122,11 @@ const ChatNavItem = ({
   const renderGroup = (
     <div className="relative">
       <Avatar className="w-12 h-12">
-        {/* For group chats, check if there's an avatarUrl, otherwise use group name fallback */}
         <AvatarImage 
           src={conversation.avatarUrl || conversation.photoURL} 
           alt={displayName || 'Group Chat'} 
         />
-        <AvatarFallback className="text-sm bg-gradient-to-br from-gray-500 to-blue-600 text-white font-semibold">
+        <AvatarFallback className="text-sm bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
           {getGroupInitials(displayName || conversation.name || 'Group')}
         </AvatarFallback>
       </Avatar>
@@ -148,11 +140,11 @@ const ChatNavItem = ({
     <div className="relative">
       <Avatar className="w-12 h-12">
         <AvatarImage 
-          src={avatarUrl || conversation.photoURL} 
-          alt={name || displayName || 'User'} 
+          src={photoURL || singleParticipant?.photoURL} 
+          alt={displayName || 'User'} 
         />
         <AvatarFallback className="text-sm bg-muted">
-          {getInitials(name || displayName || 'User')}
+          {getInitials(displayName || 'User')}
         </AvatarFallback>
       </Avatar>
       {status === 'online' && (
