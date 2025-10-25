@@ -3,8 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { Phone, Video, MoreVertical, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+
 import { cn } from '@/lib/utils';
 
 interface Participant {
@@ -106,7 +105,7 @@ export default function ChatHeaderDetail({
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
           <span>
-            {participants.length + 1} members
+            {participants.length} members
             {participants.filter(p => p.status === 'online').length > 0 && (
               <span className="ml-1">
                 • {participants.filter(p => p.status === 'online').length} online
@@ -163,7 +162,7 @@ export default function ChatHeaderDetail({
       {isGroup ? renderGroup : renderSingle}
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-1">
+      {/* <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Phone className="h-4 w-4" />
         </Button>
@@ -175,7 +174,7 @@ export default function ChatHeaderDetail({
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreVertical className="h-4 w-4" />
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }

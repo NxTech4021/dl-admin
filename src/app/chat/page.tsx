@@ -81,19 +81,18 @@ export default function ChatView() {
     photoURL: thread.isGroup
       ? thread.avatarUrl
       : thread.members.find((m) => m.userId !== user?.id)?.user.image,
-    participants: thread.members
-      .filter((m) => m.userId !== user?.id) // Filter out current user
-      .map((m) => ({
-        id: m.userId,
-        displayName: m.user.name,
-        name: m.user.name,
-        photoURL: m.user.image,
-        status: "online" as const,
-        role: m.role || "Member",
-        email: m.user?.email || "N/A",
-        phoneNumber: m.user?.phoneNumber || "N/A",
-        address: m.user?.address || "N/A",
-      })),
+    participants: thread.members.map((m) => ({
+      id: m.userId,
+      displayName: m.user.name,
+      name: m.user.name,
+      photoURL: m.user.image,
+      status: "online" as const,
+      role: m.role || "Member",
+      email: m.user?.email || "N/A",
+      phoneNumber: m.user?.phoneNumber || "N/A",
+      address: m.user?.address || "N/A",
+      isCurrentUser: m.userId === user?.id, // Add this flag
+    })),
     messages: [],
     lastMessage:
       thread.messages.length > 0
@@ -105,7 +104,7 @@ export default function ChatView() {
         : null,
     unreadCount: 0,
     name: thread.name,
-    // avatarUrl: thread.avatarUrl,
+    avatarUrl: thread.avatarUrl,
     isGroup: thread.isGroup,
   }));
 
@@ -115,9 +114,7 @@ export default function ChatView() {
     : null;
 
   const participants = conversation
-    ? conversation.participants.filter(
-        (participant) => participant.id !== user?.id
-      )
+    ? conversation.participants // Don't filter here, let the components decide
     : [];
 
   const details = !!conversation;

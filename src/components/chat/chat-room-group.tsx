@@ -59,13 +59,14 @@ export default function ChatRoomGroup({
   }, [])
 
   const handleClose = () => setSelected(null)
-  const totalParticipants = participants.length + 1
- 
+  
+  // Use all participants length (includes current user)
+  const totalParticipants = participants.length
+  
   // To do implement socket 
   const onlineParticipants = participants.filter(
     (p) => p.status === "online"
   ).length
-
 
   const renderGroupInfo = (
     <div className="flex flex-col items-center py-5 px-3 border-b border-border">
@@ -75,7 +76,7 @@ export default function ChatRoomGroup({
           src={conversation?.photoURL || conversation?.avatarUrl}
           alt={conversation?.displayName || "Group Chat"}
         />
-        <AvatarFallback className="text-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+        <AvatarFallback className="text-lg bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
           {getGroupInitials(
             conversation?.displayName || conversation?.name || "Group"
           )}
@@ -147,10 +148,17 @@ export default function ChatRoomGroup({
               />
             </div>
 
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium truncate">
-                {participant.name || participant.displayName}
-              </span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">
+                  {participant.name || participant.displayName}
+                </span>
+                {participant.isCurrentUser && (
+                  <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded-full">
+                    You
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground truncate">
                 {participant.role || "Member"}
               </span>
