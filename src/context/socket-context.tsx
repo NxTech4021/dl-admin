@@ -51,6 +51,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         },
         transports: ["websocket", "polling"],
         withCredentials: true,
+        path: "/socket.io/",
       }
     );
 
