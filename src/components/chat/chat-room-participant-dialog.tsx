@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
-export default function ChatRoomParticipantDialog({ participant, open, onClose }) {
+export default function ChatRoomParticipantDialog({ participant, open, onClose }: any) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-xs p-6 relative flex gap-4">

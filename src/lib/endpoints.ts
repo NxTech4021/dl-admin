@@ -118,7 +118,7 @@ export const endpoints = {
   },
 
   chat: {
-    createThread: "/api/chat/threads",
+    createThread: "/api/chat/threads/",
     getThreads: (userId: string) => `/api/chat/threads/${userId}`,
     getThreadMembers: (threadId: string) => `/api/chat/threads/${threadId}/members`,
     sendMessage: (threadId: string) => `/api/chat/threads/${threadId}/messages`,

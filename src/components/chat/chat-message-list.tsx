@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
+import { isToday, isYesterday, format } from 'date-fns';
 import ChatMessageItem from './chat-message-item';
+import TypingIndicator from './typing-indicator';
 import { Loader2 } from 'lucide-react';
 
 interface Message {
@@ -25,6 +26,7 @@ interface ChatMessageListProps {
   messages: Message[];
   participants: any[];
   loading?: boolean;
+  threadId?: string;
 }
 
 const MessageSkeleton = () => (
@@ -61,13 +63,13 @@ const DateDivider = ({ date }: { date: string }) => {
 export default function ChatMessageList({ 
   messages = [], 
   participants = [],
-  loading = false 
+  loading = false,
+  threadId 
 }: ChatMessageListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Group messages by date
   const groupedMessages = messages.reduce((groups: { [key: string]: Message[] }, message) => {
     const date = format(new Date(message.createdAt), 'yyyy-MM-dd');
     if (!groups[date]) {
@@ -77,7 +79,6 @@ export default function ChatMessageList({
     return groups;
   }, {});
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (isAtBottom && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
@@ -87,7 +88,6 @@ export default function ChatMessageList({
     }
   }, [messages, isAtBottom]);
 
-  // Handle scroll events
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
@@ -152,6 +152,9 @@ export default function ChatMessageList({
               ))}
             </div>
           ))}
+              
+          {/* Typing Indicator */}
+          <TypingIndicator threadId={threadId} />
           
           {loading && (
             <div className="flex items-center justify-center py-4">

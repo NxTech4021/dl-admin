@@ -56,7 +56,7 @@ export default function ChatRoom({ participants, conversation }: ChatRoomProps) 
         />
       ) : (
         <ChatRoomSingle 
-          participant={participants[0]} 
+          participant={participants.find(p => !p.isCurrentUser)}
           conversation={conversation}
         />
       )}

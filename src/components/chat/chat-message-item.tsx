@@ -31,12 +31,10 @@ export default function ChatMessageItem({
   const messageContent = message.content || message.body || '';
   const createdAt = message.createdAt;
 
-  const renderInfo = (
-    <div className={`flex items-center gap-2 mb-1 ${me ? 'justify-end' : 'justify-start'}`}>
-      <p className="text-xs text-muted-foreground">
-        {!me && `${firstName}`}
-        {!me && firstName && ', '}
-        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
+  const renderSenderName = !me && (
+    <div className="mb-1">
+      <p className="text-xs text-muted-foreground font-medium">
+        {firstName}
       </p>
     </div>
   );
@@ -47,7 +45,7 @@ export default function ChatMessageItem({
         relative rounded-lg px-3 py-2 max-w-xs lg:max-w-md
         ${hasImage ? "p-0 bg-transparent" : ""} 
         ${me 
-          ? "bg-primary text-primary-foreground ml-auto" 
+          ? "bg-brand-light text-white ml-auto" 
           : "bg-muted text-foreground mr-auto"
         }
       `}
@@ -67,31 +65,43 @@ export default function ChatMessageItem({
     </div>
   );
 
-  const renderActions = (
+  const renderTimestampAndActions = (
     <div
       className={`
-        opacity-0 group-hover:opacity-100 transition-opacity duration-200
-        flex items-center gap-1 mt-1
-        ${me ? 'justify-end' : 'justify-start'}
+        flex items-center gap-2 mt-1
+        ${me ? 'flex-row-reverse' : 'flex-row'}
       `}
     >
-      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-        <Reply className="h-3 w-3" />
-      </Button>
-      
-      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-        <Smile className="h-3 w-3" />
-      </Button>
-      
-      {me && (
-        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-          <Trash2 className="h-3 w-3" />
+      {/* Timestamp */}
+      <p className="text-xs text-muted-foreground">
+        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
+      </p>
+
+      {/* Actions */}
+      <div
+        className={`
+          opacity-0 group-hover:opacity-100 transition-opacity duration-200
+          flex items-center gap-1
+        `}
+      >
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-muted">
+          <Reply className="h-3 w-3" />
         </Button>
-      )}
-      
-      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-        <MoreHorizontal className="h-3 w-3" />
-      </Button>
+        
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-muted">
+          <Smile className="h-3 w-3" />
+        </Button>
+        
+        {me && (
+          <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-muted">
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+        
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-muted">
+          <MoreHorizontal className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 
@@ -107,9 +117,9 @@ export default function ChatMessageItem({
       )}
 
       <div className={`flex flex-col flex-1 ${me ? 'items-end' : 'items-start'}`}>
-        {renderInfo}
+        {renderSenderName}
         {renderBody}
-        {renderActions}
+        {renderTimestampAndActions}
       </div>
     </div>
   );
