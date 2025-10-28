@@ -614,6 +614,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
         </div>
 
         <div className="flex gap-2">
+          {/*
           <Button
             onClick={handleAddPlayer}
             size="sm"
@@ -621,6 +622,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
             <IconUsers className="h-4 w-4 mr-2" />
             View Players
           </Button>
+          */}
 
           {selectedCount > 0 && (
             <Button
