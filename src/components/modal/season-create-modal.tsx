@@ -57,11 +57,10 @@ interface Category {
   genderRestriction: string;
   matchFormat: string | null;
   game_type: string | null;
-  league: {
+  leagues: Array<{
     id: string;
     name: string;
-    sportType: string;
-  } | null;
+  }>;
   seasons: Array<{
     id: string;
     name: string;
@@ -147,7 +146,9 @@ export default function SeasonCreateModal({
     if (!categorySearch) return allCategories;
     return allCategories.filter(category =>
       category.name?.toLowerCase().includes(categorySearch.toLowerCase()) ||
-      category.league?.name.toLowerCase().includes(categorySearch.toLowerCase())
+      category.leagues?.some(league => 
+        league.name.toLowerCase().includes(categorySearch.toLowerCase())
+      )
     );
   }, [allCategories, categorySearch]);
 
@@ -467,17 +468,13 @@ export default function SeasonCreateModal({
                                 <div className="font-medium truncate">
                                   {category.name || "Unnamed Category"}
                                 </div>
-                                {category.league && (
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-muted-foreground">
-                                      {category.league.name}
-                                    </span>
-                                    <Badge 
-                                      variant={getSportTypeBadgeVariant(category.league.sportType)}
-                                      className="text-xs"
-                                    >
-                                      {category.league.sportType}
-                                    </Badge>
+                                {category.leagues && category.leagues.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    {category.leagues.map((league, index) => (
+                                      <span key={league.id} className="text-xs text-muted-foreground">
+                                        {league.name}{index < category.leagues.length - 1 ? ', ' : ''}
+                                      </span>
+                                    ))}
                                   </div>
                                 )}
                               </div>

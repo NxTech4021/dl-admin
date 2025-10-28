@@ -113,27 +113,49 @@ const getGameTypeBadgeVariant = (gameType: string | null) => {
 };
 
 const getLeagueDisplay = (category: Category): React.ReactNode => {
-  if (!category.league) {
-    return <span className="text-muted-foreground text-xs">No league</span>;
+  if (!category.leagues || category.leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
+  }
+
+  if (category.leagues.length === 1) {
+    const league = category.leagues[0];
+    return (
+      <HoverCard>
+        <HoverCardTrigger>
+          <Badge variant="secondary" className="cursor-pointer">
+            {league.name}
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Linked League</h4>
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {category.league.name}
+          {category.leagues.length} League{category.leagues.length !== 1 ? 's' : ''}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked League</h4>
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
           <div className="flex flex-wrap gap-1">
-            <Badge variant="outline" className="text-xs">
-              {category.league.name}
-            </Badge>
-            <Badge variant="outline" className="text-xs capitalize">
-              {category.league.sportType?.toLowerCase() || "Unknown"}
-            </Badge>
+            {category.leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
           </div>
         </div>
       </HoverCardContent>

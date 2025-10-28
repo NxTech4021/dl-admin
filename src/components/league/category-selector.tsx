@@ -28,11 +28,10 @@ interface CategoryData {
   gender_category: "MALE" | "FEMALE" | "MIXED" | null;
   isActive: boolean;
   categoryOrder: number;
-  league: {
+  leagues: Array<{
     id: string;
     name: string;
-    sportType: string;
-  } | null;
+  }>;
   seasons: Array<{
     id: string;
     name: string;

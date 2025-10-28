@@ -78,11 +78,11 @@ const STATUS_OPTIONS = [
   { value: "UPCOMING", label: "Upcoming" },
 ];
 
-const JOIN_TYPE_OPTIONS = [
-  { value: "OPEN", label: "Open to All" },
-  { value: "INVITE_ONLY", label: "Invitation Only" },
-  { value: "MANUAL", label: "Manual Approval" },
-];
+// const JOIN_TYPE_OPTIONS = [
+//   { value: "OPEN", label: "Open to All" },
+//   { value: "INVITE_ONLY", label: "Invitation Only" },
+//   { value: "MANUAL", label: "Manual Approval" },
+// ];
 
 
 
@@ -110,7 +110,6 @@ export default function LeagueCreateModal({
     sport: "",
     location: "",
     status: "ACTIVE",
-    joinType: "OPEN",
     description: "",
     hasSponsor: false,
     existingSponsorId: "",
@@ -196,7 +195,6 @@ React.useEffect(() => {
       sport: "",
       location: "",
       status: "ACTIVE",
-      joinType: "OPEN",
       description: "",
       hasSponsor: false,
       existingSponsorId: "",
@@ -232,9 +230,8 @@ const handleCreateLeague = async () => {
       location: formData.location,
       status: formData.status,
       sportType: sportTypeMap[formData.sport] || "TENNIS",
-      joinType: formData.joinType,
-      registrationType: "OPEN",
-      gameType: "SINGLES", // Default to SINGLES (required by database)
+      gameType: "SINGLES",
+      description: formData.description || null,
       createdById: userId,
     };
 
@@ -384,26 +381,6 @@ const handleCreateLeague = async () => {
                     {STATUS_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Join Type */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Join Type</Label>
-                <Select value={formData.joinType} onValueChange={(value) => updateFormData("joinType", value)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select join type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {JOIN_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <IconUsers className="h-4 w-4 text-muted-foreground" />
-                          {option.label}
-                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

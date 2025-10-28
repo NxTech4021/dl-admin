@@ -9,11 +9,10 @@ export const categorySchema = z.object({
   gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).nullable(),
   isActive: z.boolean(),
   categoryOrder: z.number(),
-  league: z.object({ 
+  leagues: z.array(z.object({ 
     id: z.string(), 
     name: z.string(),
-    sportType: z.string()
-  }).nullable(),
+  })),
   seasons: z.array(z.object({ 
     id: z.string(), 
     name: z.string() 
