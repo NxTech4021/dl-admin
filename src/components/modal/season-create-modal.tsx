@@ -262,7 +262,7 @@ export default function SeasonCreateModal({
         startDate: form.startDate!.toISOString(),
         endDate: form.endDate!.toISOString(),
         regiDeadline: form.regiDeadline!.toISOString(),
-        categoryId: form.categoryId,
+        categoryId: form.categoryId, // Backend now accepts single categoryId
         leagueIds: [leagueId],
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,

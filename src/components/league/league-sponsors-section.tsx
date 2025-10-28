@@ -251,10 +251,10 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
                   try {
                     console.log("Assigning sponsor:", { selectedId, leagueId });
                     console.log("API endpoint:", endpoints.sponsors.update(selectedId));
-                    console.log("Payload:", { leagueId });
+                    console.log("Payload:", { leagueIds: [leagueId] });
                     
                     const response = await axiosInstance.put(endpoints.sponsors.update(selectedId), {
-                      leagueId: leagueId,
+                      leagueIds: [leagueId],
                     });
                     
                     console.log("Assignment response:", response.data);

@@ -66,6 +66,7 @@ import {
   IconTrash,
   IconSearch,
   IconUserPlus,
+  IconUsers,
   IconSend
 } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -84,6 +85,12 @@ export interface LeaguePlayerRow {
   ratings?: { [sport: string]: number } | null;
   status?: string | null;
   joinType?: string | null;
+  seasonMemberships?: Array<{
+    seasonId: string;
+    seasonName: string;
+    status: string;
+    joinedAt: string | Date;
+  }>;
 }
 
 function getInitials(name: string) {
@@ -356,18 +363,26 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
     },
   },
   {
-    accessorKey: "joinType",
-    header: "Join Type",
+    accessorKey: "seasonMemberships",
+    header: "Season Memberships",
     cell: ({ row }) => {
-      const joinType = row.original.joinType;
-      return joinType ? (
-        <span className="text-sm">
-          {getJoinTypeLabel(joinType)}
-        </span>
-      ) : (
-        <span className="text-sm text-muted-foreground">
-          Open to All
-        </span>
+      const memberships = row.original.seasonMemberships || [];
+      if (memberships.length === 0) {
+        return <span className="text-sm text-muted-foreground">No seasons</span>;
+      }
+      
+      return (
+        <div className="flex flex-wrap gap-1">
+          {memberships.map((membership) => (
+            <Badge 
+              key={membership.seasonId} 
+              variant="outline" 
+              className="text-xs"
+            >
+              {membership.seasonName}
+            </Badge>
+          ))}
+        </div>
       );
     },
   },
@@ -400,24 +415,10 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   }, [players]);
 
   const handleRemovePlayer = React.useCallback(async (playerId: string) => {
-    try {
-      await axiosInstance.delete(endpoints.league.removePlayer, {
-        data: {
-          leagueId: leagueId,
-          playerId: playerId
-        }
-      });
-      
-      toast.success("Player removed from the league successfully");
-      
-      // Refresh the page to show updated player list
-      window.location.reload();
-    } catch (error: any) {
-      console.error("Error removing player from league:", error);
-      const errorMessage = error.response?.data?.message || "Failed to remove player from league";
-      toast.error(errorMessage);
-    }
-  }, [leagueId]);
+    // This is a read-only summary of players from all seasons
+    // Players are managed at the season level, not league level
+    toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
+  }, []);
 
 
   const filtered = React.useMemo(() => {
@@ -471,32 +472,11 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
       return;
     }
 
-    if (confirm(`Are you sure you want to remove ${selectedIds.length} player(s) from this league?`)) {
-      try {
-        // Remove each selected player from the league
-        const removePromises = selectedIds.map(playerId => 
-          axiosInstance.delete(endpoints.league.removePlayer, {
-            data: {
-              leagueId: leagueId,
-              playerId: playerId
-            }
-          })
-        );
-        
-        await Promise.all(removePromises);
-        
-        toast.success(`${selectedIds.length} player(s) removed from the league`);
-        setRowSelection({});
-        
-        // Refresh the page to show updated player list
-        window.location.reload();
-      } catch (error: any) {
-        console.error("Error removing players from league:", error);
-        const errorMessage = error.response?.data?.message || "Failed to remove players from league";
-        toast.error(errorMessage);
-      }
-    }
-  }, [table, setRowSelection, leagueId]);
+    // This is a read-only summary of players from all seasons
+    // Players are managed at the season level, not league level
+    toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
+    setRowSelection({});
+  }, [table, setRowSelection]);
 
   const handleAddPlayer = () => {
     if (onAddPlayer) {
@@ -571,34 +551,12 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   };
 
   const handleAddSelectedPlayers = async () => {
-    if (selectedPlayers.size === 0) {
-      toast.error("Please select at least one player");
-      return;
-    }
-    
-    try {
-      // Add each selected player to the league
-      const addPromises = Array.from(selectedPlayers).map(playerId => 
-        axiosInstance.post(endpoints.league.addPlayer, {
-          leagueId: leagueId,
-          playerId: playerId
-        })
-      );
-      
-      await Promise.all(addPromises);
-      
-      toast.success(`Added ${selectedPlayers.size} player(s) to the league`);
-      setIsAddPlayerOpen(false);
-      setSelectedPlayers(new Set());
-      setSearchQuery("");
-      
-      // Refresh the page to show updated player list
-      window.location.reload();
-    } catch (error: any) {
-      console.error("Error adding players to league:", error);
-      const errorMessage = error.response?.data?.message || "Failed to add players to league";
-      toast.error(errorMessage);
-    }
+    // This is a read-only summary of players from all seasons
+    // Players are managed at the season level, not league level
+    toast.info("Players are managed through individual seasons. Please go to the Seasons tab to add players to specific seasons.");
+    setIsAddPlayerOpen(false);
+    setSelectedPlayers(new Set());
+    setSearchQuery("");
   };
 
   const handleSendInvite = () => {
@@ -660,8 +618,8 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
             onClick={handleAddPlayer}
             size="sm"
           >
-            <IconUserPlus className="h-4 w-4 mr-2" />
-            Add Player
+            <IconUsers className="h-4 w-4 mr-2" />
+            View Players
           </Button>
 
           {selectedCount > 0 && (
@@ -753,9 +711,9 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
       <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Add Players to League</DialogTitle>
+            <DialogTitle>League Players Summary</DialogTitle>
             <DialogDescription>
-              Search and select existing players to add to this league
+              This is a read-only summary of all players from all seasons in this league. Players are managed through individual seasons.
             </DialogDescription>
           </DialogHeader>
 
@@ -801,7 +759,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
                         />
                         <Avatar className="size-10">
                           <AvatarFallback>
-                            {player.name ? player.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
+                            {player.name ? player.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
