@@ -6,7 +6,6 @@ import {
   IconDotsVertical,
   IconCalendar,
   IconEye,
-  IconEdit,
   IconTrash,
   IconTrophy,
   IconChevronDown,
@@ -176,10 +175,6 @@ const handleViewSeason = (
   onViewSeason?: (id: string) => void
 ) => {
   if (onViewSeason) onViewSeason(seasonId);
-};
-
-const handleEditSeason = (seasonId: string) => {
-  // TODO: Open edit modal or navigate to edit page
 };
 
 const handleDeleteSeason = async (seasonId: string) => {
@@ -369,13 +364,6 @@ const columns: ColumnDef<Season>[] = [
             >
               <IconEye className="mr-2 size-4" />
               View Season
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleEditSeason(season.id)}
-            >
-              <IconEdit className="mr-2 size-4" />
-              Edit Season
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

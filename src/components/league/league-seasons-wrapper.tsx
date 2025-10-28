@@ -40,11 +40,45 @@ interface LeagueSeasonsWrapperProps {
 
 export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh }: LeagueSeasonsWrapperProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingSeason, setEditingSeason] = useState<Season | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [seasonsWithPlayers, setSeasonsWithPlayers] = useState<Season[]>([]);
+  const [seasonsLoading, setSeasonsLoading] = useState(false);
+
+  // Fetch detailed season data with players for each season
+  useEffect(() => {
+    const fetchSeasonsWithPlayers = async () => {
+      if (!seasons || seasons.length === 0) {
+        setSeasonsWithPlayers([]);
+        return;
+      }
+
+      setSeasonsLoading(true);
+      try {
+        // Fetch detailed data for each season using the same API as season detail page
+        const seasonPromises = seasons.map(async (season) => {
+          try {
+            const response = await axiosInstance.get(endpoints.season.getById(season.id));
+            return response.data; // This includes memberships and registrations
+          } catch (error) {
+            console.error(`Failed to fetch season ${season.id}:`, error);
+            return season; // Fallback to original season data
+          }
+        });
+
+        const detailedSeasons = await Promise.all(seasonPromises);
+        setSeasonsWithPlayers(detailedSeasons);
+      } catch (error) {
+        console.error("Failed to fetch seasons with players:", error);
+        setSeasonsWithPlayers(seasons); // Fallback to original seasons
+      } finally {
+        setSeasonsLoading(false);
+      }
+    };
+
+    fetchSeasonsWithPlayers();
+  }, [seasons]);
 
   // Fetch categories for the league
   useEffect(() => {
@@ -89,13 +123,6 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
     }
   };
 
-  const handleEditSeason = (seasonId: string) => {
-    const season = seasons.find(s => s.id === seasonId);
-    if (season) {
-      setEditingSeason(season);
-      setIsEditModalOpen(true);
-    }
-  };
 
   const handleDeleteSeason = async (seasonId: string) => {
     if (!confirm("Are you sure you want to delete this season?")) {
@@ -113,15 +140,6 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
   };
 
 
-  const handleEditSubmit = (seasonData: any) => {
-    // TODO: Implement actual API call to update season
-    console.log("Updating season:", editingSeason?.id, seasonData);
-    
-    // For now, just refresh the page
-    window.location.reload();
-    setIsEditModalOpen(false);
-    setEditingSeason(null);
-  };
 
   return (
     <div className="space-y-4">
@@ -129,7 +147,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Seasons Management</h3>
-          <span className="text-sm text-muted-foreground">({seasons.length} season(s))</span>
+          <span className="text-sm text-muted-foreground">({seasonsWithPlayers.length} season(s))</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -147,7 +165,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
             <IconCalendar className="w-4 h-4 text-blue-500" />
             <span className="text-sm font-medium">Total</span>
           </div>
-          <p className="text-2xl font-bold">{seasons.length}</p>
+          <p className="text-2xl font-bold">{seasonsWithPlayers.length}</p>
         </div>
         
         <div className="bg-muted/50 rounded-lg p-3">
@@ -156,7 +174,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
             <span className="text-sm font-medium">Active</span>
           </div>
           <p className="text-2xl font-bold">
-            {seasons.filter(s => s.status === 'ACTIVE').length}
+            {seasonsWithPlayers.filter(s => s.status === 'ACTIVE').length}
           </p>
         </div>
         
@@ -166,15 +184,15 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
             <span className="text-sm font-medium">Upcoming</span>
           </div>
           <p className="text-2xl font-bold">
-            {seasons.filter(s => s.status === 'UPCOMING').length}
+            {seasonsWithPlayers.filter(s => s.status === 'UPCOMING').length}
           </p>
         </div>
       </div>
 
       {/* Data Table */}
       <SeasonsDataTable 
-        data={seasons} 
-        isLoading={false}
+        data={seasonsWithPlayers} 
+        isLoading={seasonsLoading}
         onViewSeason={handleViewSeason}
       />
 

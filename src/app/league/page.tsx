@@ -30,6 +30,7 @@ export default function Page() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = React.useState<League[]>([]);
+  const [totalMembers, setTotalMembers] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const fetchLeagues = React.useCallback(async () => {
@@ -48,30 +49,44 @@ export default function Page() {
       }
 
       const leaguesData = response.data.data.leagues;
+      const totalMembersData = response.data.data.totalMembers || 0;
+      
+      // Store totalMembers from backend
+      setTotalMembers(totalMembersData);
       
       // Debug: Log raw league data to see joinType values
       console.log("Raw leagues data from API:", leaguesData);
+      console.log("Total members from backend:", totalMembersData);
       console.log("First league joinType:", leaguesData[0]?.joinType);
       
       // Transform the data to match our schema
-      const transformedData = leaguesData.map((league: any) => ({
-        id: league.id,
-        name: league.name,
-        location: league.location,
-        description: league.description,
-        status: league.status,
-        sportType: league.sportType,
-        joinType: league.joinType,
-        registrationType: league.registrationType,
-        gameType: league.gameType,
-        createdById: league.createdById,
-        createdAt: league.createdAt,
-        updatedAt: league.updatedAt,
-        // Add computed fields from _count
-        memberCount: league._count?.memberships || 0,
-        seasonCount: league._count?.seasons || 0,
-        categoryCount: league._count?.categories || 0,
-      }));
+      const transformedData = leaguesData.map((league: any) => {
+        // Calculate total members from all seasons in this league
+        const totalMembersInLeague = league.seasons?.reduce((sum: number, season: any) => {
+          const memberships = season._count?.memberships || 0;
+          const registrations = season._count?.registrations || 0;
+          return sum + memberships + registrations;
+        }, 0) || 0;
+
+        return {
+          id: league.id,
+          name: league.name,
+          location: league.location,
+          description: league.description,
+          status: league.status,
+          sportType: league.sportType,
+          joinType: league.joinType,
+          registrationType: league.registrationType,
+          gameType: league.gameType,
+          createdById: league.createdById,
+          createdAt: league.createdAt,
+          updatedAt: league.updatedAt,
+          // Add computed fields from _count
+          memberCount: totalMembersInLeague, // Total members from all seasons
+          seasonCount: league._count?.seasons || 0,
+          categoryCount: league._count?.categories || 0,
+        };
+      });
 
       const parsedData = z.array(leagueSchema).parse(transformedData);
       setData(parsedData);
@@ -176,10 +191,10 @@ export default function Page() {
                         <IconUsers className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">
-                          {leagues.reduce((sum, league) => sum + (league.memberCount || 0), 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Across all leagues</p>
+                        <div className="text-2xl font-bold">{totalMembers}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Total players across all seasons in all leagues
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>

@@ -62,8 +62,7 @@ export const endpoints = {
     create: "/api/league/create",
     update: (id: string) => `/api/league/${id}`,
     delete: (id: string) => `/api/league/${id}`,
-    addPlayer: "/api/league/add-player",
-    removePlayer: "/api/league/remove-player",
+    // addPlayer and removePlayer endpoints removed - LeagueMembership system no longer exists
   },
 
   season: {
