@@ -26,7 +26,7 @@ import type {
   Conversation,
   ChatParticipant,
   Thread,
-  ChatUser
+
 } from "@/components/chat/types";
 
 export default function ChatView() {

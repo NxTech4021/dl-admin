@@ -201,7 +201,7 @@ export default function Page() {
                         <div className="text-2xl font-bold">
                           {" "}
                           {seasons.reduce((total, season) => {
-                            const fee = parseFloat(season?.entryFee || '0') || 0;
+                            const fee = season?.entryFee ?? 0;
                             const participants =
                               season.memberships?.length || 0;
                             return total + fee * participants;

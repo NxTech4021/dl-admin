@@ -43,10 +43,11 @@ export default function SeasonDetailsSection({
     return format(new Date(date), "PPP");
   };
 
-  const formatEntryFee = (fee: string | null | undefined) => {
-    if (!fee) return "Free";
-    return `RM ${parseFloat(fee).toFixed(2)}`;
-  };
+const formatEntryFee = (fee: number | null | undefined) => {
+  if (fee == null || fee === 0) return "Free";
+  return `RM ${fee.toFixed(2)}`;
+};
+
 
   return (
     <Card>
