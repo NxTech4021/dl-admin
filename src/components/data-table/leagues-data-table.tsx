@@ -122,6 +122,19 @@ const getGameTypeLabel = (gameType: string) => {
   return map[gameType] || gameType;
 };
 
+const getSportColor = (sport: string) => {
+  switch (sport) {
+    case "TENNIS":
+      return "#ABFE4D";
+    case "PICKLEBALL":
+      return "#A04DFE";
+    case "PADEL":
+      return "#4DABFE";
+    default:
+      return "#6B7280";
+  }
+};
+
 
 const getGameTypeOptionsForSport = (sport: string): { value: string; label: string }[] => {
   switch (sport) {
@@ -150,19 +163,6 @@ const getGameTypeOptionsForSport = (sport: string): { value: string; label: stri
         { value: "MIXED", label: "Mixed Doubles" },
       ];
   }
-};
-
-const getJoinTypeLabel = (joinType: string) => {
-  const map: Record<string, string> = {
-    OPEN: "Open to All",
-    INVITE_ONLY: "Invitation Only", 
-    MANUAL: "Manual Approval",
-    // Legacy support for lowercase values
-    open: "Open to All",
-    invite_only: "Invitation Only",
-    manual: "Manual Approval"
-  };
-  return map[joinType] || joinType;
 };
 
 const formatLocation = (location: string | null | undefined): string => {
@@ -233,9 +233,15 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
     cell: ({ row }) => {
       const sport = row.original.sportType;
       return (
-        <span className="capitalize text-sm">
-          {getSportLabel(sport)}
-        </span>
+        <Badge variant="outline" className="flex items-center gap-2 w-fit">
+          <div 
+            className="w-2.5 h-2.5 rounded-full" 
+            style={{ backgroundColor: getSportColor(sport) }}
+          />
+          <span className="capitalize text-sm">
+            {getSportLabel(sport)}
+          </span>
+        </Badge>
       );
     },
   },
@@ -260,19 +266,6 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
       return (
         <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
           {status.toLowerCase()}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "joinType",
-    header: "Join Type",
-    cell: ({ row }) => {
-      const type = row.original.joinType;
-      console.log("League joinType from database:", type, "for league:", row.original.name);
-      return (
-        <Badge variant="outline" className="text-xs">
-          {type ? getJoinTypeLabel(type) : "Not Set"}
         </Badge>
       );
     },
@@ -362,10 +355,9 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
-  const [enableRowSelection, setEnableRowSelection] = React.useState(false);
   const [showTools, setShowTools] = React.useState(false);
 
-  const columns = getColumns(enableRowSelection);
+  const columns = getColumns(true);
   
   const table = useReactTable({
     data,
@@ -465,21 +457,6 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
 
           {showTools && (
             <>
-              {/* Row Selection Toggle */}
-              <Button
-                variant={enableRowSelection ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setEnableRowSelection(!enableRowSelection);
-                  if (enableRowSelection) {
-                    setRowSelection({}); // Clear selections when disabling
-                  }
-                }}
-              >
-                <IconCheck className="mr-2 h-4 w-4" />
-                {enableRowSelection ? "Disable Selection" : "Enable Selection"}
-              </Button>
-
               {/* Expand/Collapse all sports groups (icon) */}
               <Button
                 variant="outline"
@@ -560,7 +537,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
             <div>{createLeagueButton}</div>
           )}
           
-          {enableRowSelection && selectedRows.length > 0 && (
+          {selectedRows.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
                 {selectedRows.length} selected
@@ -702,16 +679,8 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
       {/* Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {enableRowSelection ? (
-            <>
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} row(s) selected.
-            </>
-          ) : (
-            <>
-              Showing {table.getFilteredRowModel().rows.length} row(s).
-            </>
-          )}
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
