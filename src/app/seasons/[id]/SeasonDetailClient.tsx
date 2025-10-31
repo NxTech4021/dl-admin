@@ -27,8 +27,6 @@ import {
   IconCalendar,
 } from "@tabler/icons-react";
 
-import SeasonMetricsCard from "./components/season/SeasonMetrics";
-import SeasonInfoCard from "./components/season/SeasonInfoCard";
 import SeasonPlayersCard from "./components/season/SeasonPlayersCard";
 import SeasonDivisionsCard from "./components/season/SeasonDivisionsCard";
 import SeasonLeaderboardCard from "./components/season/SeasonLeaderboardCard";
@@ -47,12 +45,10 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
 
   const userId = session?.user.id;
 
-   console.log("season ", seasonId)
   // Fetch divisions data
   const fetchDivisions = useCallback(async () => {
     setIsDivisionsLoading(true);
     try {
-      // const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
       const response = await axiosInstance.get(endpoints.division.getbySeasionId(seasonId))
       if (!response.data || !Array.isArray(response.data.data)) {
         setDivisions([]);
@@ -90,6 +86,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     }
   }, [seasonId]);
 
+  
   // Combined refresh function for when data changes
   const refreshAllData = useCallback(async () => {
     await Promise.all([fetchSeasonData(), fetchDivisions()]);

@@ -169,7 +169,7 @@ const getLeaguesDisplay = (season: Season): React.ReactNode => {
   );
 };
 
-// Define handlers outside of component to avoid scope issues
+
 const handleViewSeason = (
   seasonId: string,
   onViewSeason?: (id: string) => void

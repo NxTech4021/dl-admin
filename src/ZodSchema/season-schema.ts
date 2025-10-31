@@ -57,7 +57,7 @@ export const seasonSchema = z.object({
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
   regiDeadline: z.coerce.date().nullable().optional(),
-  entryFee: z.string().nullable().optional(),
+  entryFee: z.coerce.number().nullable().optional(),  
   registeredUserCount: z.number().default(0),
   isActive: z.boolean().default(false),
   paymentRequired: z.boolean().default(false),
