@@ -64,8 +64,7 @@ export default function Page() {
         // Calculate total members from all seasons in this league
         const totalMembersInLeague = league.seasons?.reduce((sum: number, season: any) => {
           const memberships = season._count?.memberships || 0;
-          const registrations = season._count?.registrations || 0;
-          return sum + memberships + registrations;
+          return sum + memberships;
         }, 0) || 0;
 
         return {

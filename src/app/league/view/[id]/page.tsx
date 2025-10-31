@@ -269,22 +269,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
         }
       });
     }
-
-    if (season.registrations) {
-      season.registrations.forEach((reg: any) => {
-        const userId = reg.player?.id || reg.playerId;
-        if (userId) {
-          uniquePlayerIds.add(userId);
-        }
-      });
-    }
   });
 
   const uniqueMemberCount = uniquePlayerIds.size;
   const totalSeasonParticipation = seasons.reduce((total: number, season: any) => {
     const membershipsCount = season._count?.memberships || 0;
-    const registrationsCount = season._count?.registrations || 0;
-    return total + membershipsCount + registrationsCount;
+    return total + membershipsCount;
   }, 0);
 
   if (!leagueData._count) {
@@ -445,7 +435,7 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-semibold">{totalSeasonParticipation}</div>
-                        <p className="text-xs text-muted-foreground">Memberships and registrations combined</p>
+                        <p className="text-xs text-muted-foreground">Total participation across all seasons</p>
                       </CardContent>
                     </Card>
                     <Card>

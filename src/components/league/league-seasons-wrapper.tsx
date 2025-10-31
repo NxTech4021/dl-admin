@@ -60,7 +60,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
         const seasonPromises = seasons.map(async (season) => {
           try {
             const response = await axiosInstance.get(endpoints.season.getById(season.id));
-            return response.data; // This includes memberships and registrations
+            return response.data; // This includes memberships with user data
           } catch (error) {
             console.error(`Failed to fetch season ${season.id}:`, error);
             return season; // Fallback to original season data
