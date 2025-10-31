@@ -8,6 +8,8 @@ export interface ChatUser {
   id: string;
   name: string;
   username?: string;
+  email?:string;
+  phoneNumber?:string;
   image?: string;
 }
 
@@ -31,6 +33,7 @@ export interface Message {
 export interface Thread {
   id: string;
   name?: string;
+  avatarUrl?: string;
   isGroup: boolean;
   createdAt: string;
   updatedAt: string;
