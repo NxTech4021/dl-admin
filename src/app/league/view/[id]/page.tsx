@@ -8,13 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
-import { LeaguePlayersTable, LeaguePlayerRow } from "@/components/league/league-players-table";
 import LeagueSponsorsSection from "@/components/league/league-sponsors-section";
-import { LeagueLeaderboard } from "@/components/league/league-leaderboard";
 import { LeagueSeasonsWrapper } from "@/components/league/league-seasons-wrapper";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,21 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  IconTrophy, 
-  IconUsers, 
-  IconMapPin, 
+import {
+  IconTrophy,
+  IconUsers,
+  IconMapPin,
   IconClock,
   IconInfoCircle,
   IconSettings,
   IconCheck,
   IconCalendar,
   IconActivity,
-  IconFlame,
   IconEdit,
   IconX,
   IconUser,
-  IconBuilding
 } from "@tabler/icons-react";
 
 type LeagueResponse = { data: { league: any } };
@@ -54,22 +48,19 @@ function getStatusBadge(status: string) {
     CANCELLED: { variant: "destructive", className: "" },
     SUSPENDED: { variant: "default", className: "bg-orange-500 hover:bg-orange-600 text-white" },
   };
-  
+
   const config = variants[status] || { variant: "outline", className: "" };
   return <Badge className={config.className}>{status}</Badge>;
 }
 
 function getSportLabel(sport: string) {
-  const map: Record<string, string> = { 
-    TENNIS: "Tennis", 
-    PICKLEBALL: "Pickleball", 
-    PADEL: "Padel"
+  const map: Record<string, string> = {
+    TENNIS: "Tennis",
+    PICKLEBALL: "Pickleball",
+    PADEL: "Padel",
   };
   return map[sport] || sport;
 }
-
-
-
 
 function getJoinTypeLabel(joinType: string) {
   const map: Record<string, string> = {
@@ -78,47 +69,39 @@ function getJoinTypeLabel(joinType: string) {
     REQUEST: "Request to Join",
     open: "Open to All",
     invitation: "Invitation Only",
-    request: "Request to Join"
+    request: "Request to Join",
   };
   return map[joinType] || joinType;
 }
 
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", { 
-    year: "numeric", 
-    month: "short", 
-    day: "numeric" 
-  });
-}
-
 function formatDateTime(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", { 
-    year: "numeric", 
-    month: "short", 
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
     day: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   });
 }
 
 async function getLeague(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:82';
+    const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:82";
     const url = `${baseUrl}${endpoints.league.getById(id)}`;
-    
-    console.log('Fetching league from:', url);
-    
+
+    console.log("Fetching league from:", url);
+
     const res = await fetch(url, {
       cache: "no-store",
       next: { revalidate: 0 },
-      credentials: 'include',
+      credentials: "include",
     });
-    
+
     if (!res.ok) {
       console.error(`Failed to fetch league: ${res.status} ${res.statusText}`);
       return null;
     }
-    
+
     const json = (await res.json()) as LeagueResponse;
     return json?.data?.league ?? null;
   } catch (error) {
@@ -127,33 +110,15 @@ async function getLeague(id: string) {
   }
 }
 
-function transformPlayers(playerData: any[], leagueData: any): LeaguePlayerRow[] {
-  return (playerData || []).map((player: any) => ({
-    id: player.user?.id,
-    name: player.user?.name || player.user?.email?.split("@")[0] || "Unknown",
-    displayUsername: player.user?.username ?? null,
-    email: player.user?.email || "",
-    image: player.user?.image ?? null,
-    area: player.user?.area ?? null,
-    registeredDate: player.seasonMemberships?.[0]?.joinedAt ?? null, // Use first season's join date
-    ratings: player.user?.ratings ?? null,
-    status: leagueData?.status ?? null,
-    joinType: leagueData?.joinType ?? null,
-    seasonMemberships: player.seasonMemberships || [],
-  }));
-}
-
 export default function LeagueViewPage({ params }: { params: Promise<{ id: string }> }) {
   const leagueId = React.use(params).id;
   const [leagueData, setLeagueData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>({});
-  // Removed selectedCategoryData state since all fields are now read-only
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
-  
-  // Fetch league data
+
   React.useEffect(() => {
     setIsLoading(true);
     getLeague(leagueId)
@@ -180,27 +145,22 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
       .finally(() => setIsLoading(false));
   }, [leagueId, refreshTrigger]);
 
-  // Removed auto-sync game type to prevent default values when data is not set
-  
-  
   const handleSave = async () => {
     try {
-      // Validate league name length
-      if (editedData.name.length > 30) {
-        toast.error('League name cannot exceed 30 characters');
-        return;
-      }
-      
-      // Make API call to save changes
-      const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:82';
+      // if (editedData.name.length > 30) {
+      //   toast.error("League name cannot exceed 30 characters");
+      //   return;
+      // }
+
+      const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:82";
       const url = `${baseUrl}${endpoints.league.update(leagueId)}`;
-      
+
       const response = await fetch(url, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           name: editedData.name,
           location: editedData.location,
@@ -211,27 +171,24 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update league');
+        throw new Error(errorData.message || "Failed to update league");
       }
 
       const result = await response.json();
       console.log("League updated successfully:", result);
-      
+
       setIsEditing(false);
-      // Update leagueData with edited values
       setLeagueData({ ...leagueData, ...editedData });
-      // Trigger refresh to fetch updated data
-      setRefreshTrigger(prev => prev + 1);
-      toast.success('League updated successfully');
+      setRefreshTrigger((prev) => prev + 1);
+      toast.success("League updated successfully");
     } catch (error) {
       console.error("Failed to save:", error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save changes');
+      toast.error(error instanceof Error ? error.message : "Failed to save changes");
     }
   };
-  
+
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset edited data to original
     if (leagueData) {
       setEditedData({
         name: leagueData.name,
@@ -298,77 +255,57 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // Collect players from all seasons since LeagueMembership was removed
   const seasons = leagueData.seasons || [];
-  const divisions = leagueData.divisions || [];
-  const categories = leagueData.categories || [];
   const sponsorships = leagueData.sponsorships || [];
 
-  // Collect all players from all seasons with season information
-  const playerSeasonMap = new Map<string, any>();
-  
+  const uniquePlayerIds = new Set<string>();
+
   seasons.forEach((season: any) => {
-    // Process SeasonMembership
     if (season.memberships) {
       season.memberships.forEach((membership: any) => {
         const userId = membership.user?.id || membership.userId;
-        if (userId && membership.user) {
-          if (!playerSeasonMap.has(userId)) {
-            playerSeasonMap.set(userId, {
-              user: membership.user,
-              seasonMemberships: []
-            });
-          }
-          playerSeasonMap.get(userId).seasonMemberships.push({
-            seasonId: season.id,
-            seasonName: season.name,
-            status: membership.status || 'ACTIVE',
-            joinedAt: membership.joinedAt
-          });
+        if (userId) {
+          uniquePlayerIds.add(userId);
         }
       });
     }
-    
-    // Process SeasonRegistration
+
     if (season.registrations) {
       season.registrations.forEach((reg: any) => {
         const userId = reg.player?.id || reg.playerId;
-        if (userId && reg.player) {
-          if (!playerSeasonMap.has(userId)) {
-            playerSeasonMap.set(userId, {
-              user: reg.player,
-              seasonMemberships: []
-            });
-          }
-          playerSeasonMap.get(userId).seasonMemberships.push({
-            seasonId: season.id,
-            seasonName: season.name,
-            status: 'REGISTERED',
-            joinedAt: reg.registeredAt
-          });
+        if (userId) {
+          uniquePlayerIds.add(userId);
         }
       });
     }
   });
 
-  // Convert map to array
-  const uniqueMembers = Array.from(playerSeasonMap.values());
+  const uniqueMemberCount = uniquePlayerIds.size;
+  const totalSeasonParticipation = seasons.reduce((total: number, season: any) => {
+    const membershipsCount = season._count?.memberships || 0;
+    const registrationsCount = season._count?.registrations || 0;
+    return total + membershipsCount + registrationsCount;
+  }, 0);
 
   if (!leagueData._count) {
     leagueData._count = {
-      memberships: 0, // No longer tracking memberships
-      seasons: seasons.length
+      memberships: 0,
+      seasons: seasons.length,
     };
   }
-  // Description comes from API, no default needed
 
-  const players: LeaguePlayerRow[] = transformPlayers(uniqueMembers, leagueData);
+  const statusValue = (isEditing ? editedData.status : leagueData.status) || "";
+  const locationLabel = (isEditing ? editedData.location : leagueData.location) || "Location not set";
+  const sportValue = (isEditing ? editedData.sportType : leagueData.sportType) || "";
+  const sportLabel = sportValue ? getSportLabel(sportValue) : "Not set";
+  const joinTypeValue = (isEditing ? editedData.joinType : leagueData.joinType) || "";
+  const joinTypeLabel = joinTypeValue ? getJoinTypeLabel(joinTypeValue) : "Not set";
+  const seasonsCount = leagueData._count?.seasons ?? seasons.length;
 
-  // Dynamic breadcrumb based on active tab
   const getBreadcrumbItems = () => {
     const baseItems = [
       { label: "League", href: "/league" },
-      { label: leagueData.name }
+      { label: leagueData.name },
     ];
 
     switch (activeTab) {
@@ -392,220 +329,168 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
-              {/* Hero Header */}
-              <div className="bg-gradient-to-r from-background to-muted/20">
-                <div className="px-6 py-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                    </div>
-                    <div className="flex-1" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Content */}
-              <div className="flex-1 p-6">
-                
-
-                {/* Overview Tab */}
-                <TabsContent value="overview" className="space-y-7">
-                  {/* Top row: Back, Tabs, Edit */}
-                  <div className="flex items-center justify-end gap-4 ml-2 md:ml-10 mt-10">
-                    <Button asChild variant="ghost" size="sm">
-                      <a href="/league">← Back</a>
-                    </Button>
-                      <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+              <div className="border-b bg-background">
+                <div className="px-6 pt-6 pb-4 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button asChild variant="ghost" size="sm">
+                        <a href="/league">← Back</a>
+                      </Button>
+                      <TabsList className="h-10 gap-1 rounded-md bg-muted/80 p-1 text-muted-foreground">
                         <TabsTrigger value="overview" className="gap-2">
-                          <IconInfoCircle className="w-4 h-4" />
+                          <IconInfoCircle className="h-4 w-4" />
                           Overview
                         </TabsTrigger>
+                        {/**
+                         * Players tab is temporarily hidden.
+                         */}
+                        {/*
                         <TabsTrigger value="members" className="gap-2">
-                          <IconUsers className="w-4 h-4" />
+                          <IconUsers className="h-4 w-4" />
                           Players
-                          <span className="ml-1 text-xs text-muted-foreground">({players.length})</span>
                         </TabsTrigger>
+                        */}
                         <TabsTrigger value="seasons" className="gap-2">
-                          <IconCalendar className="w-4 h-4" />
+                          <IconCalendar className="h-4 w-4" />
                           Seasons
                           <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
                         </TabsTrigger>
                       </TabsList>
-                    {isEditing ? (
-                      <>
-                        <Button size="sm" className="gap-2 bg-black hover:bg-black/90 text-white" onClick={handleSave}>
-                          <IconCheck className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}>
-                          <IconX className="w-4 h-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
-                        <IconEdit className="w-4 h-4" />
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* League Name and Badge - Modern Design */}
-                  <div className="ml-2 md:ml-15">
-                    <div className="relative">
+                    </div>
+                    <div className="flex items-center gap-2">
                       {isEditing ? (
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <Input
-                              value={editedData.name}
-                              onChange={(e) => {
-                                const text = e.target.value;
-                                if (text.length <= 30) {
-                                  setEditedData({ ...editedData, name: text });
-                                } else {
-                                  toast.error('League name cannot exceed 34 characters');
-                                }
-                              }}
-                              className="text-4xl font-bold tracking-tight h-auto py-0 px-0 border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent min-h-[3rem] leading-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
-                              style={{ fontSize: '2.5rem', lineHeight: '1.2' }}
-                              placeholder="League Name"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-lg -z-10 blur-sm"></div>
-                          </div>
-                          <div className="relative">
-                            {getStatusBadge(leagueData.status)}
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full -z-10 blur-sm"></div>
-                          </div>
-                        </div>
+                        <>
+                          <Button size="sm" className="gap-2" onClick={handleSave}>
+                            <IconCheck className="h-4 w-4" />
+                            Save
+                          </Button>
+                          <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}>
+                            <IconX className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                        </>
                       ) : (
-                        <div className="flex items-center gap-4">
-                          <div className="relative group">
-                            <h1 className="text-4xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors duration-300">
-                              {leagueData.name}
-                            </h1>
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/20 rounded-lg -z-10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
-                          <div className="relative group">
-                            <div className="transform group-hover:scale-105 transition-transform duration-200">
-                              {getStatusBadge(leagueData.status)}
-                            </div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/30 to-emerald-500/20 rounded-full -z-10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
-                        </div>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
+                          <IconEdit className="h-4 w-4" />
+                          Edit
+                        </Button>
                       )}
                     </div>
                   </div>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {isEditing ? (
+                        <Input
+                          value={editedData.name}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            // if (text.length <= 30) {
+                            setEditedData({ ...editedData, name: text });
+                            // } else {
+                            //   toast.error("League name cannot exceed 30 characters");
+                            // }
+                          }}
+                          placeholder="League name"
+                          // maxLength={32}
+                          className="text-3xl font-semibold tracking-tight h-auto py-2 px-3"
+                        />
+                      ) : (
+                        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                          {leagueData.name}
+                        </h1>
+                      )}
+                      <div>
+                        {statusValue ? getStatusBadge(statusValue) : <Badge variant="outline">Not set</Badge>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                        <IconMapPin className="h-3.5 w-3.5" />
+                        {locationLabel}
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                        <IconTrophy className="h-3.5 w-3.5" />
+                        {sportLabel}
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                        <IconUser className="h-3.5 w-3.5" />
+                        {joinTypeLabel}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                  {/* Description Card - Full Width */}
-                  <div className="ml-2 md:ml-10">
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <TabsContent value="overview" className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <Card>
-                      <CardHeader>
-                        <CardTitle>Description</CardTitle>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <IconUsers className="h-4 w-4" />
+                          Unique Players
+                        </span>
                       </CardHeader>
-                      <CardContent className="max-h-40 overflow-y-auto">
-                        {isEditing ? (
-                          <Textarea
-                            value={editedData.description}
-                            onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
-                            className="min-h-[100px] text-muted-foreground leading-relaxed"
-                            placeholder="Enter league description..."
-                          />
-                        ) : (
-                          <p className="text-muted-foreground leading-relaxed">
-                            {leagueData.description || "No description provided"}
-                          </p>
-                        )}
+                      <CardContent>
+                        <div className="text-2xl font-semibold">{uniqueMemberCount}</div>
+                        <p className="text-xs text-muted-foreground">Across all seasons</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <IconActivity className="h-4 w-4" />
+                          Season Entries
+                        </span>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-semibold">{totalSeasonParticipation}</div>
+                        <p className="text-xs text-muted-foreground">Memberships and registrations combined</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <IconCalendar className="h-4 w-4" />
+                          Seasons
+                        </span>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-semibold">{seasonsCount}</div>
+                        <p className="text-xs text-muted-foreground">Seasons created for this league</p>
                       </CardContent>
                     </Card>
                   </div>
 
-                  {/* Stats and Activity Grid */}
-                  <div className="grid gap-4 md:grid-cols-3 ml-2 md:ml-10">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
-                          <IconUsers className="h-4 w-4 text-muted-foreground" />
-                          Total Members
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="text-2xl font-bold">
-                          {seasons.length > 0 
-                            ? seasons.reduce((total, season) => {
-                                // Use _count which includes both memberships and registrations
-                                const membershipsCount = season._count?.memberships || 0;
-                                const registrationsCount = season._count?.registrations || 0;
-                                return total + membershipsCount + registrationsCount;
-                              }, 0)
-                            : 0}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          across all seasons
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Description</CardTitle>
+                      <CardDescription>Share what makes this league unique.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isEditing ? (
+                        <Textarea
+                          value={editedData.description}
+                          onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                          className="min-h-[120px]"
+                          placeholder="Enter league description..."
+                        />
+                      ) : (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {leagueData.description || "No description provided yet."}
                         </p>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
-                          <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                          Total Seasons
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="text-2xl font-bold">{leagueData._count?.seasons || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          total seasons
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
-                          <IconActivity className="h-4 w-4 text-muted-foreground" />
-                          Recent Activity
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <div>
-                              <p className="text-xs font-medium">League Created</p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(leagueData.createdAt).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                          {leagueData._count?.seasons > 0 && (
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                              <div>
-                                <p className="text-xs font-medium">Seasons Active</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {leagueData._count.seasons} seasons created
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2 ml-2 md:ml-10">
+                  <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <IconInfoCircle className="w-5 h-5" />
-                          League Details
-                        </CardTitle>
+                        <CardTitle>League Details</CardTitle>
+                        <CardDescription>Core information about this league.</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                      <CardContent>
+                        <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Sport Type</p>
                             {isEditing ? (
@@ -620,7 +505,7 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <p className="font-medium">{getSportLabel(leagueData.sportType)}</p>
+                              <p className="text-sm font-medium">{sportLabel}</p>
                             )}
                           </div>
                           <div className="space-y-1">
@@ -637,7 +522,7 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <p className="font-medium">{leagueData.joinType ? getJoinTypeLabel(leagueData.joinType) : "Not set"}</p>
+                              <p className="text-sm font-medium">{joinTypeLabel}</p>
                             )}
                           </div>
                           <div className="space-y-1">
@@ -657,7 +542,9 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <p className="font-medium capitalize">{leagueData.status.toLowerCase()}</p>
+                              <p className="text-sm font-medium capitalize">
+                                {statusValue ? statusValue.toLowerCase() : "Not set"}
+                              </p>
                             )}
                           </div>
                           <div className="space-y-1">
@@ -669,7 +556,7 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                                 placeholder="Enter location"
                               />
                             ) : (
-                              <p className="font-medium">{leagueData.location || "Not specified"}</p>
+                              <p className="text-sm font-medium">{locationLabel}</p>
                             )}
                           </div>
                         </div>
@@ -679,141 +566,82 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <IconClock className="w-5 h-5" />
+                          <IconClock className="h-5 w-5" />
                           Timeline
                         </CardTitle>
+                        <CardDescription>Key timestamps for this league.</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Created</span>
-                            <span className="text-sm font-medium">{formatDateTime(leagueData.createdAt)}</span>
-                          </div>
-                          <Separator />
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Last Updated</span>
-                            <span className="text-sm font-medium">{formatDateTime(leagueData.updatedAt)}</span>
-                          </div>
-                          <Separator />
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">League ID</p>
-                            <code className="text-xs bg-muted px-2 py-1 rounded block font-mono">
-                              {leagueData.id}
-                            </code>
-                          </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Created</span>
+                          <span className="font-medium">{formatDateTime(leagueData.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Last Updated</span>
+                          <span className="font-medium">{formatDateTime(leagueData.updatedAt)}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">League ID</p>
+                          <code className="mt-1 block rounded bg-muted px-2 py-1 text-xs font-mono">
+                            {leagueData.id}
+                          </code>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
 
-                  {/* Sponsors Section */}
-                  <div className="ml-2 md:ml-10">
-                    <Card>
+                  <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <IconSettings className="w-5 h-5" />
+                        <IconSettings className="h-5 w-5" />
                         Sponsors
                       </CardTitle>
+                      <CardDescription>Manage partners supporting this league.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <LeagueSponsorsSection 
-                        sponsorships={sponsorships} 
-                        leagueId={leagueId} 
+                      <LeagueSponsorsSection
+                        sponsorships={sponsorships}
+                        leagueId={leagueId}
                         onSponsorDeleted={() => {
-                          // Refresh the league data to get updated sponsorships
-                          setRefreshTrigger(prev => prev + 1);
+                          setRefreshTrigger((prev) => prev + 1);
                         }}
                       />
                     </CardContent>
-                    </Card>
-                  </div>
+                  </Card>
                 </TabsContent>
 
-                {/* Players Tab */}
+                {/*
                 <TabsContent value="members" className="space-y-6">
-                  <div className="flex items-center justify-end gap-4">
-                    <Button asChild variant="ghost" size="sm">
-                      <a href="/league">← Back</a>
-                    </Button>
-                    <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-                      <TabsTrigger value="overview" className="gap-2">
-                        <IconInfoCircle className="w-4 h-4" />
-                        Overview
-                      </TabsTrigger>
-                      <TabsTrigger value="members" className="gap-2">
-                        <IconUsers className="w-4 h-4" />
-                        Players
-                        <span className="ml-1 text-xs text-muted-foreground">({players.length})</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="seasons" className="gap-2">
-                        <IconCalendar className="w-4 h-4" />
-                        Seasons
-                        <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <div className="ml-2 md:ml-10">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>League Players</CardTitle>
-                        <CardDescription>
-                          Summary of all players from all seasons in this league (read-only view)
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <LeaguePlayersTable players={players} leagueId={leagueId} />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>League Players</CardTitle>
+                      <CardDescription>Player management is temporarily hidden.</CardDescription>
+                    </CardHeader>
+                  </Card>
                 </TabsContent>
+                */}
 
-                {/* Seasons Tab */}
                 <TabsContent value="seasons" className="space-y-6">
-                  <div className="flex items-center justify-end gap-4">
-                    <Button asChild variant="ghost" size="sm">
-                      <a href="/league">← Back</a>
-                    </Button>
-                    <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-                      <TabsTrigger value="overview" className="gap-2">
-                        <IconInfoCircle className="w-4 h-4" />
-                        Overview
-                      </TabsTrigger>
-                      <TabsTrigger value="members" className="gap-2">
-                        <IconUsers className="w-4 h-4" />
-                        Players
-                        <span className="ml-1 text-xs text-muted-foreground">({players.length})</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="seasons" className="gap-2">
-                        <IconCalendar className="w-4 h-4" />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IconCalendar className="h-5 w-5" />
                         Seasons
-                        <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <div className="ml-2 md:ml-10">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>League Seasons</CardTitle>
-                        <CardDescription>
-                          All seasons and tournaments for this league
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <LeagueSeasonsWrapper 
-                          seasons={seasons} 
-                          leagueId={leagueId} 
-                          leagueName={leagueData.name}
-                          onRefresh={() => {
-                            // Refresh the league data to get updated seasons and stay on seasons tab
-                            setActiveTab("seasons");
-                            setRefreshTrigger(prev => prev + 1);
-                          }}
-                        />
-                      </CardContent>
-                    </Card>
-                  </div>
+                      </CardTitle>
+                      <CardDescription>All seasons and tournaments for this league.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <LeagueSeasonsWrapper
+                        seasons={seasons}
+                        leagueId={leagueId}
+                        leagueName={leagueData.name}
+                        onRefresh={() => {
+                          setActiveTab("seasons");
+                          setRefreshTrigger((prev) => prev + 1);
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </div>
             </Tabs>

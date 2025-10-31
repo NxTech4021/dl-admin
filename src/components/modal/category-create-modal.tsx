@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { IconLoader2, IconX } from "@tabler/icons-react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
@@ -109,7 +109,7 @@ export default function CategoryCreateModal({
     matchFormat: "",
     game_type: "SINGLES",
     gender_category: "MALE",
-    genderRestriction: "OPEN",
+    genderRestriction: "MALE", // Auto-calculated from gender_category
     maxPlayers: null,
     maxTeams: null,
     isActive: true,
@@ -164,6 +164,14 @@ export default function CategoryCreateModal({
     []
   );
 
+  // Auto-calculate gender restriction from gender category
+  const getGenderRestriction = (genderCategory: GenderType): GenderRestriction => {
+    if (genderCategory === "MIXED") {
+      return "MIXED";
+    }
+    return genderCategory as GenderRestriction;
+  };
+
   const handleGameTypeChange = (value: GameType) => {
     setFormData((prev) => ({
       ...prev,
@@ -176,6 +184,7 @@ export default function CategoryCreateModal({
     setFormData((prev) => ({
       ...prev,
       gender_category: value,
+      genderRestriction: getGenderRestriction(value),
       name: generateCategoryName(value, prev.game_type),
     }));
   };
@@ -227,7 +236,7 @@ export default function CategoryCreateModal({
         matchFormat: "",
         game_type: "SINGLES",
         gender_category: "MALE",
-        genderRestriction: "OPEN",
+        genderRestriction: "MALE", // Auto-calculated from gender_category
         maxPlayers: null,
         maxTeams: null,
         isActive: true,
@@ -244,295 +253,263 @@ export default function CategoryCreateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Category</DialogTitle>
-          <DialogDescription>
-            Create a new tournament category with specific settings and league assignments.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-3 pr-12">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
+            <Trophy className="h-4 w-4 text-primary" />
+            Create Category
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6">
-          {/* Preview Card */}
-          <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-            <h3 className="font-semibold text-lg mb-2">
-              {formData.name || "Select options below"}
-            </h3>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {GENDER_TYPE_OPTIONS.find(opt => opt.value === formData.gender_category)?.label || "Gender"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {GAME_TYPE_OPTIONS.find(opt => opt.value === formData.game_type)?.label || "Game Type"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {GENDER_RESTRICTION_OPTIONS.find(opt => opt.value === formData.genderRestriction)?.label || "Restriction"}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {formData.matchFormat || "Match format will be set automatically"}
-              </p>
-              {(formData.maxPlayers || formData.maxTeams) && (
-                <p className="text-sm text-muted-foreground">
-                  Max: {formData.maxPlayers ? `${formData.maxPlayers} players` : ""} 
-                  {formData.maxPlayers && formData.maxTeams ? ", " : ""}
-                  {formData.maxTeams ? `${formData.maxTeams} teams` : ""}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Gender Category Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="genderCategory">Gender Category</Label>
-              <Select
-                value={formData.gender_category}
-                onValueChange={handleGenderChange}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Select gender category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENDER_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Game Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="gameType">Game Type</Label>
-              <Select
-                value={formData.game_type}
-                onValueChange={handleGameTypeChange}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Select game type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GAME_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Match Format *</Label>
-            <Input
-              value={formData.matchFormat}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  matchFormat: e.target.value,
-                }))
-              }
-              placeholder="e.g., Best of 3 Sets, Pro Sets, etc."
-              className="h-11"
-            />
-            <p className="text-sm text-muted-foreground">
-              Specify the match format for this category
-            </p>
-          </div>
-
-          {/* Gender Restriction */}
-          <div className="space-y-2">
-            <Label htmlFor="genderRestriction">Gender Restriction</Label>
-            <Select
-              value={formData.genderRestriction}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  genderRestriction: value as GenderRestriction,
-                }))
-              }
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select gender restriction" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENDER_RESTRICTION_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              Restrict participation based on gender
-            </p>
-          </div>
-
-          {/* Max Players and Max Teams */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="maxPlayers">Max Players</Label>
-              <Input
-                type="number"
-                value={formData.maxPlayers || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxPlayers: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-                placeholder="0 for unlimited"
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Maximum number of players (for singles)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="maxTeams">Max Teams</Label>
-              <Input
-                type="number"
-                value={formData.maxTeams || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    maxTeams: e.target.value ? parseInt(e.target.value) : null,
-                  }))
-                }
-                placeholder="0 for unlimited"
-                className="h-11"
-              />
-              <p className="text-sm text-muted-foreground">
-                Maximum number of teams (for doubles)
-              </p>
-            </div>
-          </div>
-
-          {/* League Selection */}
-          <div className="space-y-2">
-            <Label>Select League *</Label>
-            <Popover open={leagueSelectOpen} onOpenChange={setLeagueSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={leagueSelectOpen}
-                  className="w-full justify-between h-11"
-                >
-                  {selectedLeague
-                    ? selectedLeague.name
-                    : "Select a league..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
-                <div className="p-2">
-                  <Input 
-                    placeholder="Search leagues..." 
-                    className="mb-2"
-                    value={leagueSearchTerm}
-                    onChange={(e) => setLeagueSearchTerm(e.target.value)}
-                  />
-                  <div 
-                    ref={scrollContainerRef}
-                    className="max-h-64 overflow-y-auto overflow-x-hidden"
-                    style={{ 
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#d1d5db #f3f4f6',
-                      WebkitOverflowScrolling: 'touch'
-                    }}
-                    onWheel={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (scrollContainerRef.current) {
-                        scrollContainerRef.current.scrollTop += e.deltaY;
-                      }
-                    }}
-                  >
-                    {leaguesLoading ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        Loading leagues...
-                      </div>
-                    ) : filteredLeagues.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
-                      </div>
-                    ) : (
-                      filteredLeagues.map((league) => (
-                        <div
-                          key={league.id}
-                          onClick={() => selectLeague(league.id)}
-                          className={cn(
-                            "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
-                            formData.leagueId === league.id && "bg-accent text-accent-foreground"
-                          )}
-                        >
-                          <div className="flex items-center">
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.leagueId === league.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">{league.name}</span>
-                          </div>
-                          <Badge 
-                            variant={getSportTypeBadgeVariant(league.sportType)} 
-                            className="text-xs capitalize"
-                          >
-                            {league.sportType?.toLowerCase() || "Unknown"}
-                          </Badge>
-                        </div>
-                      ))
+        <div className="flex-1 overflow-y-auto px-6 pb-4">
+          <div className="space-y-3">
+            {/* Minimal Preview */}
+            <div className="border rounded-lg p-3 bg-muted/30">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm mb-1.5 truncate">
+                    {formData.name || "Category name"}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                      {GENDER_TYPE_OPTIONS.find(opt => opt.value === formData.gender_category)?.label}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                      {GAME_TYPE_OPTIONS.find(opt => opt.value === formData.game_type)?.label}
+                    </Badge>
+                    {formData.matchFormat && (
+                      <span className="text-muted-foreground">· {formData.matchFormat}</span>
                     )}
                   </div>
                 </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Selected League */}
-            {selectedLeague && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {selectedLeague.name}
-                  <Badge 
-                    variant={getSportTypeBadgeVariant(selectedLeague.sportType)} 
-                    className="text-xs capitalize ml-1"
-                  >
-                    {selectedLeague.sportType?.toLowerCase() || "Unknown"}
+                {selectedLeague && (
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {selectedLeague.name}
                   </Badge>
-                  <IconX
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() => setFormData(prev => ({ ...prev, leagueId: null }))}
-                  />
-                </Badge>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Status */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isActive: checked,
-                }))
-              }
-            />
-            <Label htmlFor="isActive">Active Category</Label>
+            {/* Category Settings */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="genderCategory" className="text-xs">Gender *</Label>
+                <Select
+                  value={formData.gender_category}
+                  onValueChange={handleGenderChange}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDER_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="gameType" className="text-xs">Game Type *</Label>
+                <Select
+                  value={formData.game_type}
+                  onValueChange={handleGameTypeChange}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GAME_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="matchFormat" className="text-xs">Match Format *</Label>
+              <Input
+                id="matchFormat"
+                value={formData.matchFormat}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    matchFormat: e.target.value,
+                  }))
+                }
+                placeholder="e.g., Best of 3"
+                className="h-9"
+              />
+            </div>
+
+            {/* Max Players and Max Teams */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="maxPlayers" className="text-xs">Max Players</Label>
+                <Input
+                  id="maxPlayers"
+                  type="number"
+                  value={formData.maxPlayers || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maxPlayers: e.target.value ? parseInt(e.target.value) : null,
+                    }))
+                  }
+                  placeholder="Unlimited"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="maxTeams" className="text-xs">Max Teams</Label>
+                <Input
+                  id="maxTeams"
+                  type="number"
+                  value={formData.maxTeams || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maxTeams: e.target.value ? parseInt(e.target.value) : null,
+                    }))
+                  }
+                  placeholder="Unlimited"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* League Selection */}
+            <div className="space-y-1">
+              <Label className="text-xs">League *</Label>
+              <div className="flex gap-2 items-start">
+                <Popover open={leagueSelectOpen} onOpenChange={setLeagueSelectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={leagueSelectOpen}
+                      className="flex-1 justify-between h-9"
+                    >
+                      {selectedLeague ? selectedLeague.name : "Select league"}
+                      <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
+                    <div className="p-2">
+                      <Input 
+                        placeholder="Search..." 
+                        className="mb-2 h-8"
+                        value={leagueSearchTerm}
+                        onChange={(e) => setLeagueSearchTerm(e.target.value)}
+                      />
+                      <div 
+                        ref={scrollContainerRef}
+                        className="max-h-56 overflow-y-auto overflow-x-hidden"
+                        style={{ 
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#d1d5db #f3f4f6',
+                          WebkitOverflowScrolling: 'touch'
+                        }}
+                        onWheel={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (scrollContainerRef.current) {
+                            scrollContainerRef.current.scrollTop += e.deltaY;
+                          }
+                        }}
+                      >
+                        {leaguesLoading ? (
+                          <div className="p-3 text-xs text-muted-foreground text-center">
+                            Loading...
+                          </div>
+                        ) : filteredLeagues.length === 0 ? (
+                          <div className="p-3 text-xs text-muted-foreground text-center">
+                            {leagueSearchTerm ? "No leagues found" : "No leagues available"}
+                          </div>
+                        ) : (
+                          filteredLeagues.map((league) => (
+                            <div
+                              key={league.id}
+                              onClick={() => selectLeague(league.id)}
+                              className={cn(
+                                "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent",
+                                formData.leagueId === league.id && "bg-accent"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Check
+                                  className={cn(
+                                    "h-3.5 w-3.5",
+                                    formData.leagueId === league.id
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <span className="truncate">{league.name}</span>
+                              </div>
+                              <Badge 
+                                variant={getSportTypeBadgeVariant(league.sportType)} 
+                                className="text-xs"
+                              >
+                                {league.sportType?.toLowerCase() || "Unknown"}
+                              </Badge>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {selectedLeague && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 px-2 py-1 h-9"
+                  >
+                    {selectedLeague.name}
+                    <IconX
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => setFormData(prev => ({ ...prev, leagueId: null }))}
+                    />
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="flex items-center justify-between p-2 border rounded-md">
+              <Label htmlFor="isActive" className="text-xs font-medium cursor-pointer">
+                Active
+              </Label>
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isActive: checked,
+                  }))
+                }
+                className="scale-75"
+              />
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
+        <DialogFooter className="flex gap-2 px-6 pt-4 pb-6 border-t">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+            size="sm"
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleSubmit}
             disabled={
@@ -541,15 +518,18 @@ export default function CategoryCreateModal({
               !formData.matchFormat ||
               !formData.leagueId
             }
-            className="w-full sm:w-auto"
+            size="sm"
           >
             {loading ? (
               <>
-                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                <IconLoader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Creating...
               </>
             ) : (
-              "Create Category"
+              <>
+                <Trophy className="mr-1.5 h-3.5 w-3.5" />
+                Create
+              </>
             )}
           </Button>
         </DialogFooter>
