@@ -75,38 +75,48 @@ export default function SeasonPlayersCard({
     return division ? division.name : 'Unassigned';
   };
 
-  console.log(" admin in Player card", adminId)
   const getSportRating = (member: Membership) => {
-    // Determine sport from season leagues
-    const sport = season?.leagues?.[0]?.sportType?.toLowerCase();
-    if (!sport) {
-      return { display: 'N/A' };
+    // Check if user has initialRatingResult
+    const ratingResult = member.user?.initialRatingResult;
+    
+    if (!ratingResult) {
+      return { 
+        display: 'N/A', 
+        value: 0,
+        color: 'gray' 
+      };
     }
 
     // Determine category (singles/doubles) from league gameType
     const gameType = season?.leagues?.[0]?.gameType;
     const isDoubles = gameType === 'DOUBLES';
 
-    // Find player's questionnaire response for this sport
-    const questionnaireResponse = member.user?.questionnaireResponses?.find(
-      response => response.sport.toLowerCase() === sport && response.completedAt
-    );
-
-    if (!questionnaireResponse?.result) {
-      return { display: 'N/A' };
-    }
-
     // Get the appropriate rating based on category
     const rating = isDoubles 
-      ? questionnaireResponse.result.doubles 
-      : questionnaireResponse.result.singles;
+      ? ratingResult.doubles 
+      : ratingResult.singles;
 
-    if (!rating) {
-      return { display: 'N/A' };
+    if (!rating || rating === 0) {
+      return { 
+        display: 'N/A', 
+        value: 0,
+        color: 'gray' 
+      };
     }
 
-    // Return formatted rating (already stored as integer, no need to divide by 1000)
-    return { display: rating.toString() };
+    // Determine color based on rating level (adjust thresholds as needed)
+    let color = 'green';
+    if (rating >= 4500) color = 'purple'; // Expert
+    else if (rating >= 4000) color = 'blue'; // Advanced
+    else if (rating >= 3500) color = 'green'; // Intermediate
+    else if (rating >= 3000) color = 'yellow'; // Beginner
+    else color = 'gray'; // Novice
+
+    return { 
+      display: rating.toString(),
+      value: rating,
+      color 
+    };
   };
 
   const handleAssignToDivision = (member: Membership) => {
