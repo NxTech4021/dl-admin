@@ -129,4 +129,13 @@ export const endpoints = {
     getContacts: (userId: string) => `/api/users/${userId}/contacts`,
     getAllUsers: "/api/users",
   },
+
+   notifications: {
+    getAll: "/api/notifications",
+    unreadCount: "/api/notifications/unread-count",
+    stats: "/api/notifications/stats",
+    markRead: (id: string) => `/api/notifications/${id}/read`,
+    markAllRead: "/api/notifications/mark-all-read",
+    archive: (id: string) => `/api/notifications/${id}/archive`,
+  },
 };
