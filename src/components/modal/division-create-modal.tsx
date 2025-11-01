@@ -1,25 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-
-// Schema imports
-import {
-  divisionFormSchema,
-  defaultFormValues,
-  getDisplayLabels,
-  transformToPayload,
-  transformFromDivision,
-  type DivisionFormValues,
-  type DivisionBase,
-  divisionLevelEnum,
-  gameTypeEnum,
-  genderCategoryEnum,
-} from "@/ZodSchema/division-schema";
-
-// UI Components
 import {
   Dialog,
   DialogContent,
@@ -31,353 +15,833 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { IconCategory, IconEye, IconArrowLeft, IconArrowRight, IconLoader2 } from "@tabler/icons-react";
+import {
+  IconCategory,
+  IconEye,
+  IconArrowLeft,
+  IconArrowRight,
+  IconLoader2,
+  IconX,
+} from "@tabler/icons-react";
+import { toast } from "sonner";
 
-// Import formatCurrency from constants
-import { formatCurrency } from "@/components/data-table/constants";
+type DivisionBase = {
+  id: string;
+  seasonId: string;
+  name: string;
+  description?: string | null;
+  threshold?: number | null;
+  divisionLevel: "beginner" | "intermediate" | "advanced";
+  gameType: "singles" | "doubles";
+  genderCategory?: "male" | "female" | "mixed" | null;
+  maxSingles?: number | null;
+  maxDoublesTeams?: number | null;
+  autoAssignmentEnabled?: boolean;
+  isActive?: boolean;
+  prizePoolTotal?: number | null;
+  sponsoredDivisionName?: string | null;
+};
 
-type Props = {
+type DivisionCreateModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  children?: React.ReactNode;
   onDivisionCreated?: () => void;
   mode?: "create" | "edit";
   division?: DivisionBase | null;
   seasonId?: string;
-  adminId?: string;
+  adminId?: string; 
 };
+
+const divisionSchema = z
+  .object({
+    name: z.string().min(2, "Name is required"),
+    seasonId: z.string().min(1, "Select a season"),
+    divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
+    gameType: z.enum(["singles", "doubles"]),
+    genderCategory: z.enum(["male", "female", "mixed"]),
+    maxSinglesPlayers: z.number().int().positive().optional().nullable(),
+    maxDoublesTeams: z.number().int().positive().optional().nullable(),
+    autoAssignmentEnabled: z.boolean().default(false).optional(),
+    isActive: z.boolean().default(true).optional(),
+    prizePoolTotal: z.number().int().nonnegative().optional().nullable(),
+    sponsorName: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    threshold: z.number().int().nonnegative().optional().nullable(),
+  })
+  .superRefine((val, ctx) => {
+    if (val.gameType === "singles") {
+      if (!val.maxSinglesPlayers) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxSinglesPlayers"],
+          message: "Max singles players is required for singles game type",
+        });
+      }
+    }
+    if (val.gameType === "doubles") {
+      if (!val.maxDoublesTeams) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxDoublesTeams"],
+          message: "Max doubles teams is required for doubles game type",
+        });
+      }
+    }
+  });
+
+type DivisionFormValues = z.infer<typeof divisionSchema>;
 
 export default function DivisionCreateModal({
   open,
   onOpenChange,
+  children,
   onDivisionCreated,
   mode = "create",
   division,
   seasonId,
-  adminId,
-}: Props) {
+  adminId
+}: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
-  
-  const isEditMode = mode === "edit";
-  const labels = getDisplayLabels();
 
-  const form = useForm<DivisionFormValues>({
-    resolver: zodResolver(divisionFormSchema),
+  
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    reset,
+    setValue,
+    trigger,
+    formState: { errors, isValid },
+  } = useForm<DivisionFormValues>({
+    resolver: zodResolver(divisionSchema),
     mode: "onChange",
-    defaultValues: { ...defaultFormValues, seasonId: seasonId || "" },
+    defaultValues: {
+      name: "",
+      seasonId: seasonId || "",
+      divisionLevel: "beginner",
+      gameType: "singles",
+      genderCategory: "male",
+      maxSinglesPlayers: undefined,
+      maxDoublesTeams: undefined,
+      autoAssignmentEnabled: false,
+      isActive: true,
+      prizePoolTotal: undefined,
+      sponsorName: "",
+      description: "",
+      threshold: undefined,
+    },
   });
 
-  const { register, handleSubmit, watch, control, reset, setValue, trigger, formState: { errors, isValid } } = form;
+  const gameType = watch("gameType");
   const formValues = watch();
+  const isEditMode = mode === "edit";
 
-  // Fetch seasons
   useEffect(() => {
-    if (!open) return;
-    
-    axiosInstance.get(endpoints.season.getAll)
-      .then(res => setSeasons(Array.isArray(res.data) ? res.data : res.data?.seasons ?? []))
-      .catch(err => console.error("Failed to load seasons", err));
+    // fetch seasons
+    const fetchSeasons = async () => {
+      try {
+        const res = await axiosInstance.get(endpoints.season.getAll);
+        setSeasons(
+          Array.isArray(res.data) ? res.data : res.data?.seasons ?? []
+        );
+      } catch (err: any) {
+        try {
+          const raw = await axiosInstance.get(endpoints.season.getAll);
+          setSeasons(Array.isArray(raw.data) ? raw.data : []);
+        } catch (e) {
+          console.error("Failed to load seasons", e);
+        }
+      }
+    };
+
+    if (open) fetchSeasons();
   }, [open]);
 
-  // Reset form
-  const resetForm = () => {
+  const resetModal = React.useCallback(() => {
     setCurrentStep("form");
-    reset({ ...defaultFormValues, seasonId: seasonId || "" });
-  };
+    reset({
+      name: "",
+      seasonId: seasonId || "",
+      divisionLevel: "beginner",
+      gameType: "singles",
+      genderCategory: "male",
+      maxSinglesPlayers: undefined,
+      maxDoublesTeams: undefined,
+      autoAssignmentEnabled: false,
+      isActive: true,
+      prizePoolTotal: undefined,
+      sponsorName: "",
+      description: "",
+      threshold: undefined,
+    });
+    setError("");
+  }, [reset, seasonId]);
 
-  // Handle edit mode
   useEffect(() => {
     if (open && isEditMode && division) {
       setCurrentStep("form");
-      reset(transformFromDivision(division));
-    } else if (!open) {
-      resetForm();
+      reset({
+        name: division.name ?? "",
+        seasonId: division.seasonId ?? "",
+        divisionLevel: division.divisionLevel ?? "beginner",
+        gameType: division.gameType ?? "singles",
+        genderCategory:
+          (division.genderCategory as DivisionFormValues["genderCategory"]) ??
+          "male",
+        maxSinglesPlayers:
+          division.maxSingles !== undefined && division.maxSingles !== null
+            ? division.maxSingles
+            : undefined,
+        maxDoublesTeams:
+          division.maxDoublesTeams !== undefined &&
+          division.maxDoublesTeams !== null
+            ? division.maxDoublesTeams
+            : undefined,
+        autoAssignmentEnabled: Boolean(division.autoAssignmentEnabled),
+        isActive:
+          division.isActive !== undefined ? division.isActive : true,
+        prizePoolTotal:
+          division.prizePoolTotal !== undefined &&
+          division.prizePoolTotal !== null
+            ? Number(division.prizePoolTotal)
+            : undefined,
+        sponsorName: division.sponsoredDivisionName ?? "",
+        description: division.description ?? "",
+        threshold:
+          division.threshold !== undefined && division.threshold !== null
+            ? division.threshold
+            : undefined,
+      });
     }
-  }, [open, isEditMode, division, reset, seasonId]);
+    if (!open) {
+      resetModal();
+    }  }, [open, isEditMode, division, resetModal]);
 
-  // Navigation
   const handleNextToPreview = async () => {
-    const valid = await trigger();
-    if (valid && isValid) {
+    const valid = await trigger(); // triggers validation for all fields
+    if (!valid) return;
+    if (isValid) {
       setCurrentStep("preview");
     } else {
       toast.error("Please fix form errors before previewing.");
     }
   };
 
-  // Submit
+  const handleBackToForm = () => setCurrentStep("form");
+
   const onSubmit = async (data: DivisionFormValues) => {
     setLoading(true);
+    setError("");
     try {
-      const payload = transformToPayload(data, adminId);
-      
+      // prepare payload (strip undefined/null)
+      const payload: any = {
+        name: data.name,
+        seasonId: data.seasonId,
+        adminId: adminId,
+        divisionLevel: data.divisionLevel,
+        gameType: data.gameType,
+        genderCategory: data.genderCategory,
+        autoAssignmentEnabled: Boolean(data.autoAssignmentEnabled),
+        isActive: Boolean(data.isActive),
+      };
+
+      console.log("payload", payload)
+      const toNumberOrNull = (value: unknown) => {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? null : parsed;
+      };
+
+      payload.maxSinglesPlayers = toNumberOrNull(data.maxSinglesPlayers);
+      payload.maxDoublesTeams = toNumberOrNull(data.maxDoublesTeams);
+      payload.prizePoolTotal = toNumberOrNull(data.prizePoolTotal);
+      payload.threshold = toNumberOrNull(data.threshold);
+      payload.sponsorName =
+        data.sponsorName && data.sponsorName.trim().length > 0
+          ? data.sponsorName.trim()
+          : null;
+      payload.description =
+        data.description && data.description.trim().length > 0
+          ? data.description.trim()
+          : null;
+
+      let res;
       if (isEditMode && division) {
-        await axiosInstance.put(endpoints.division.update(division.id), payload);
-        toast.success("Division updated successfully");
+        res = await axiosInstance.put(
+          endpoints.division.update(division.id),
+          payload
+        );
+        toast.success(res.data?.message ?? "Division updated");
       } else {
-        await axiosInstance.post(endpoints.division.create, payload);
-        toast.success("Division created successfully");
+        res = await axiosInstance.post(endpoints.division.create, payload);
+        toast.success(res.data?.message ?? "Division created");
       }
-      
       onDivisionCreated?.();
-      resetForm();
+      resetModal();
       onOpenChange(false);
     } catch (err: any) {
-      const message = err.response?.data?.error || err.response?.data?.message || "Operation failed";
+      const message =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create division";
       toast.error(message);
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const FormField = ({ name, label, required = false, children }: any) => (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
-      {children}
-      {errors[name] && (
-        <p className="text-xs text-destructive">{errors[name]?.message}</p>
-      )}
-    </div>
-  );
-
-  const renderForm = () => (
-    <div className="space-y-6">
-      {/* Basic Information */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormField name="name" label="Division Name" required>
-          <Input {...register("name")} placeholder="e.g., Division A" />
-        </FormField>
-
-        <FormField name="seasonId" label="Season" required>
-          <Controller
-            control={control}
-            name="seasonId"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select season" />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </FormField>
-      </div>
-
-      {/* Division Type */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <FormField name="divisionLevel" label="Level" required>
-          <Controller
-            control={control}
-            name="divisionLevel"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {divisionLevelEnum.options.map((level) => (
-                    <SelectItem key={level} value={level}>{labels.divisionLevel[level]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </FormField>
-
-        <FormField name="gameType" label="Game Type" required>
-          <Controller
-            control={control}
-            name="gameType"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {gameTypeEnum.options.map((type) => (
-                    <SelectItem key={type} value={type}>{labels.gameType[type]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </FormField>
-
-        <FormField name="genderCategory" label="Gender" required>
-          <Controller
-            control={control}
-            name="genderCategory"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {genderCategoryEnum.options.map((category) => (
-                    <SelectItem key={category} value={category}>{labels.genderCategory[category]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </FormField>
-      </div>
-
-      {/* Capacity */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {formValues.gameType === "singles" && (
-          <FormField name="maxSinglesPlayers" label="Max Singles Players" required>
-            <Input
-              type="number"
-              {...register("maxSinglesPlayers", { valueAsNumber: true })}
-              placeholder="e.g., 12"
-            />
-          </FormField>
-        )}
-
-        {formValues.gameType === "doubles" && (
-          <FormField name="maxDoublesTeams" label="Max Doubles Teams" required>
-            <Input
-              type="number"
-              {...register("maxDoublesTeams", { valueAsNumber: true })}
-              placeholder="e.g., 10"
-            />
-          </FormField>
-        )}
-
-        <FormField name="threshold" label="Rating Threshold" required>
-          <Input
-            type="number"
-            {...register("threshold", { valueAsNumber: true })}
-            placeholder="e.g., 1500"
-          />
-        </FormField>
-      </div>
-
-      {/* Optional Fields */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormField name="prizePoolTotal" label="Prize Pool (MYR)">
-          <Input
-            type="number"
-            {...register("prizePoolTotal", { valueAsNumber: true })}
-            placeholder="e.g., 1000"
-          />
-        </FormField>
-
-        <FormField name="description" label="Description">
-          <Input {...register("description")} placeholder="Optional description" />
-        </FormField>
-      </div>
-
-      {/* Active Switch */}
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={formValues.isActive}
-          onCheckedChange={(val) => setValue("isActive", Boolean(val))}
-        />
-        <Label className="text-sm">Active</Label>
-      </div>
-    </div>
-  );
-
-  const renderPreview = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto mb-4">
-          <IconCategory className="h-6 w-6 text-primary" />
-        </div>
-        <h3 className="text-xl font-semibold">{formValues.name}</h3>
-        <p className="text-sm text-muted-foreground">
-          {seasons.find((s) => s.id === formValues.seasonId)?.name || "—"}
-        </p>
-      </div>
-
-      <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
-        {[
-          ["Level", labels.divisionLevel[formValues.divisionLevel]],
-          ["Game Type", labels.gameType[formValues.gameType]],
-          ["Gender", labels.genderCategory[formValues.genderCategory]],
-          ["Rating Threshold", formValues.threshold ? `${formValues.threshold} pts` : "—"],
-          ["Capacity", formValues.gameType === "singles" 
-            ? `${formValues.maxSinglesPlayers ?? "—"} players`
-            : `${formValues.maxDoublesTeams ?? "—"} teams`
-          ],
-          ["Prize Pool", formatCurrency(formValues.prizePoolTotal, 'MYR')],
-          ["Status", formValues.isActive ? "Active" : "Inactive"],
-        ].map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">{label}</span>
-            <span className="text-sm font-medium">{value}</span>
-          </div>
-        ))}
-        
-        {formValues.description && (
-          <div className="pt-2 border-t">
-            <span className="text-sm font-medium text-muted-foreground block mb-1">Description</span>
-            <p className="text-sm">{formValues.description}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetForm(); onOpenChange(isOpen); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetModal();
+        onOpenChange(isOpen);
+      }}
+    >
+      {children}
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="flex items-center gap-3 text-2xl">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              {currentStep === "form" ? <IconCategory className="h-5 w-5 text-primary" /> : <IconEye className="h-5 w-5 text-primary" />}
+              {currentStep === "form" ? (
+                <IconCategory className="h-5 w-5 text-primary" />
+              ) : (
+                <IconEye className="h-5 w-5 text-primary" />
+              )}
             </div>
-            {currentStep === "form" 
-              ? (isEditMode ? "Edit Division" : "Create New Division")
-              : (isEditMode ? "Confirm Updates" : "Confirm Division")}
-          </DialogTitle>
-          <DialogDescription>
             {currentStep === "form"
-              ? (isEditMode ? "Update division settings." : "Set up a new division.")
-              : "Review details before saving."}
+              ? isEditMode
+                ? "Edit Division"
+                : "Create New Division"
+              : isEditMode
+              ? "Confirm Updates"
+              : "Confirm Division"}
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            {currentStep === "form"
+              ? isEditMode
+                ? "Update division settings and linked season."
+                : "Set up a new division and link it to a season."
+              : isEditMode
+              ? "Review the changes before updating this division."
+              : "Review division details before creating."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          {currentStep === "form" ? renderForm() : renderPreview()}
+        <div className="space-y-6 py-4">
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center space-x-4">
+            <div
+              className={cn(
+                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                currentStep === "form"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  currentStep === "form"
+                    ? "bg-primary-foreground"
+                    : "bg-muted-foreground"
+                )}
+              />
+              <span>1. Details</span>
+            </div>
+            <div className="w-8 h-px bg-border" />
+            <div
+              className={cn(
+                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                currentStep === "preview"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  currentStep === "preview"
+                    ? "bg-primary-foreground"
+                    : "bg-muted-foreground"
+                )}
+              />
+              <span>2. Confirm</span>
+            </div>
+          </div>
+
+          {/* Form */}
+          {currentStep === "form" && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+              {/* Basic */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-px bg-border flex-1" />
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Basic Information
+                  </span>
+                  <div className="h-px bg-border flex-1" />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Division Name
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      {...register("name")}
+                      className="h-11"
+                      placeholder="e.g., Division A"
+                    />
+                    {errors.name && (
+                      <p className="text-xs text-destructive mt-1">
+                        {errors.name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Season
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="seasonId"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={(val) => field.onChange(val)}
+                        >
+                          <SelectTrigger className="h-11 w-full">
+                            <SelectValue placeholder="Select season" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {seasons.length > 0 ? (
+                              seasons.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-season" disabled>
+                                No seasons available
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.seasonId && (
+                      <p className="text-xs text-destructive mt-1">
+                        {errors.seasonId.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-px bg-border flex-1" />
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Division Type
+                  </span>
+                  <div className="h-px bg-border flex-1" />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Division Level
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="divisionLevel"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="h-11 w-full">
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner</SelectItem>
+                            <SelectItem value="intermediate">
+                              Intermediate
+                            </SelectItem>
+                            <SelectItem value="advanced">Advanced</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Game Type
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="gameType"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="h-11 w-full">
+                            <SelectValue placeholder="Select game type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="singles">Singles</SelectItem>
+                            <SelectItem value="doubles">Doubles</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Gender
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="genderCategory"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="h-11 w-full">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="mixed">Mixed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 mt-4">
+                  {watch("gameType") === "singles" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Max Singles Players
+                      </Label>
+                      <Input
+                        type="number"
+                        {...register("maxSinglesPlayers", {
+                          valueAsNumber: true,
+                        })}
+                        className={`h-11 ${
+                          errors.maxSinglesPlayers
+                            ? "border-destructive focus:border-destructive focus:ring-destructive"
+                            : ""
+                        }`}
+                        placeholder="e.g 12"
+                      />
+                      {errors.maxSinglesPlayers && (
+                        <p className="text-xs text-destructive mt-1">
+                          {errors.maxSinglesPlayers.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {watch("gameType") === "doubles" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Max Doubles Teams
+                      </Label>
+                      <Input
+                        type="number"
+                        {...register("maxDoublesTeams", {
+                          valueAsNumber: true,
+                        })}
+                        className={`h-11 ${
+                          errors.maxDoublesTeams
+                            ? "border-destructive focus:border-destructive focus:ring-destructive"
+                            : ""
+                        }`}
+                        placeholder="e.g 10"
+                      />
+                      {errors.maxDoublesTeams && (
+                        <p className="text-xs text-destructive mt-1">
+                          {errors.maxDoublesTeams.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Optional & Extra */}
+              <div className="space-y-2">
+                {/* <div className="flex items-center gap-2">
+                  <div className="h-px bg-border flex-1" />
+                  <span className="text-sm font-medium text-muted-foreground px-2">
+                    Optional
+                  </span>
+                  <div className="h-px bg-border flex-1" />
+                </div> */}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Prize Pool</Label>
+                    <Input
+                      type="number"
+                      {...register("prizePoolTotal", { valueAsNumber: true })}
+                      className="h-11"
+                      placeholder="e.g., 1000"
+                    />
+                  </div>
+
+                  {/* <div className="space-y-2">
+                    <Label className="text-sm font-medium">Sponsor Name</Label>
+                    <Input
+                      {...register("sponsorName")}
+                      className="h-11"
+                      placeholder="Optional sponsor display name"
+                    />
+                  </div> */}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Rating Threshold
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      {...register("threshold", { valueAsNumber: true })}
+                      className="h-11"
+                      placeholder="e.g 100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Description</Label>
+                  <Input
+                    {...register("description")}
+                    className="h-11"
+                    placeholder="Short description (optional)"
+                  />
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={formValues.isActive}
+                      onCheckedChange={(val) =>
+                        setValue("isActive", Boolean(val))
+                      }
+                    />
+                    <Label className="text-sm">Active</Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                  <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <IconX className="h-2.5 w-2.5" />
+                  </div>
+                  {error}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Preview */}
+          {currentStep === "preview" && (
+            <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
+              <div className="space-y-4 text-center">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto">
+                  <IconCategory className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">{formValues.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {seasons.find((s) => s.id === formValues.seasonId)?.name ||
+                    "—"}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Level
+                  </span>
+                  <span className="text-sm font-medium capitalize">
+                    {formValues.divisionLevel}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Game Type
+                  </span>
+                  <span className="text-sm font-medium capitalize">
+                    {formValues.gameType}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Gender
+                  </span>
+                  <span className="text-sm font-medium capitalize">
+                    {formValues.genderCategory}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Capacity
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formValues.gameType === "singles"
+                      ? `${formValues.maxSinglesPlayers ?? "—"} players`
+                      : `${formValues.maxDoublesTeams ?? "—"} teams`}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Prize Pool
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formValues.prizePoolTotal
+                      ? new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: "USD",
+                          maximumFractionDigits: 0,
+                        }).format(Number(formValues.prizePoolTotal))
+                      : "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Sponsor
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formValues.sponsorName ?? "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Auto Assignment
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formValues.autoAssignmentEnabled ? "Yes" : "No"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Active
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formValues.isActive ? "Yes" : "No"}
+                  </span>
+                </div>
+
+                {formValues.description && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Description
+                    </span>
+                    <p className="text-sm mt-1">{formValues.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="flex gap-3">
+        <DialogFooter className="flex gap-3 pt-4">
           {currentStep === "form" ? (
             <>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+                className="flex-1 sm:flex-none"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleNextToPreview} disabled={loading}>
+              <Button
+                type="button"
+                onClick={handleNextToPreview}
+                disabled={loading}
+                className="flex-1 sm:flex-none min-w-[140px]"
+              >
                 <IconArrowRight className="mr-2 h-4 w-4" />
                 {isEditMode ? "Review Changes" : "Review Details"}
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setCurrentStep("form")} disabled={loading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBackToForm}
+                disabled={loading}
+                className="flex-1 sm:flex-none"
+              >
                 <IconArrowLeft className="mr-2 h-4 w-4" />
                 Back to Edit
               </Button>
-              <Button onClick={handleSubmit(onSubmit)} disabled={loading}>
+
+              <Button
+                type="button"
+                onClick={handleSubmit(onSubmit)}
+                disabled={loading}
+                className="flex-1 sm:flex-none min-w-[160px]"
+              >
                 {loading ? (
-                  <><IconLoader2 className="animate-spin mr-2 h-4 w-4" />{isEditMode ? "Saving..." : "Creating..."}</>
+                  <>
+                    <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
+                    {isEditMode ? "Saving..." : "Creating..."}
+                  </>
                 ) : (
-                  <><IconCategory className="mr-2 h-4 w-4" />{isEditMode ? "Save Changes" : "Create Division"}</>
+                  <>
+                    <IconCategory className="mr-2 h-4 w-4" />
+                    {isEditMode ? "Save Changes" : "Create Division"}
+                  </>
                 )}
               </Button>
             </>

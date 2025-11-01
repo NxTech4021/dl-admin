@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSession } from "@/lib/auth-client";
-import { toast } from "sonner";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -59,19 +58,16 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     socketInstance.on("connect", () => {
       console.log("✅ Socket connected:", socketInstance.id);
       setIsConnected(true);
-      toast.success("Connected to chat server");
     });
 
     socketInstance.on("disconnect", () => {
       console.log("❌ Socket disconnected");
       setIsConnected(false);
-      toast.error("Disconnected from chat server");
     });
 
     socketInstance.on("connect_error", (error) => {
       console.error("❌ Socket connection error:", error);
       setIsConnected(false);
-      toast.error("Failed to connect to chat server");
     });
 
     // Join user's personal room for notifications
