@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import AdminsWrapper from "@/components/wrappers/adminpagewrapper"
+import AdminsWrapper from "@/components/wrappers/adminpagewrapper";
 
 export const metadata: Metadata = {
   title: "Admins",
