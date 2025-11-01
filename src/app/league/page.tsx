@@ -292,6 +292,7 @@ export default function Page() {
                     key={refreshKey}
                     data={leagues}
                     isLoading={isLoading}
+                    onDataChange={fetchLeagues}
                   />
                 </div>
               </div>

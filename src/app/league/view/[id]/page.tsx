@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 import React, { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { endpoints } from "@/lib/endpoints";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import LeagueSponsorsSection from "@/components/league/league-sponsors-section";
 import { LeagueSeasonsWrapper } from "@/components/league/league-seasons-wrapper";
@@ -35,43 +34,16 @@ import {
   IconX,
   IconUser,
 } from "@tabler/icons-react";
-
-type LeagueResponse = { data: { league: any } };
+import {
+  getStatusBadgeVariant,
+  getSportLabel,
+  formatLocation,
+  FILTER_OPTIONS,
+} from "@/components/data-table/constants";
 
 function getStatusBadge(status: string) {
-  const variants: Record<string, { variant: string; className: string }> = {
-    ACTIVE: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
-    ONGOING: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
-    UPCOMING: { variant: "secondary", className: "bg-blue-500 hover:bg-blue-600 text-white" },
-    FINISHED: { variant: "outline", className: "border-gray-400" },
-    INACTIVE: { variant: "outline", className: "border-gray-300" },
-    CANCELLED: { variant: "destructive", className: "" },
-    SUSPENDED: { variant: "default", className: "bg-orange-500 hover:bg-orange-600 text-white" },
-  };
-
-  const config = variants[status] || { variant: "outline", className: "" };
-  return <Badge className={config.className}>{status}</Badge>;
-}
-
-function getSportLabel(sport: string) {
-  const map: Record<string, string> = {
-    TENNIS: "Tennis",
-    PICKLEBALL: "Pickleball",
-    PADEL: "Padel",
-  };
-  return map[sport] || sport;
-}
-
-function getJoinTypeLabel(joinType: string) {
-  const map: Record<string, string> = {
-    OPEN: "Open to All",
-    INVITATION: "Invitation Only",
-    REQUEST: "Request to Join",
-    open: "Open to All",
-    invitation: "Invitation Only",
-    request: "Request to Join",
-  };
-  return map[joinType] || joinType;
+  const variant = getStatusBadgeVariant('LEAGUE', status);
+  return <Badge variant={variant}>{status}</Badge>;
 }
 
 function formatDateTime(dateString: string) {
@@ -86,24 +58,8 @@ function formatDateTime(dateString: string) {
 
 async function getLeague(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:82";
-    const url = `${baseUrl}${endpoints.league.getById(id)}`;
-
-    console.log("Fetching league from:", url);
-
-    const res = await fetch(url, {
-      cache: "no-store",
-      next: { revalidate: 0 },
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to fetch league: ${res.status} ${res.statusText}`);
-      return null;
-    }
-
-    const json = (await res.json()) as LeagueResponse;
-    return json?.data?.league ?? null;
+    const response = await axiosInstance.get(endpoints.league.getById(id));
+    return response.data?.data?.league
   } catch (error) {
     console.error("Error fetching league:", error);
     return null;
@@ -111,7 +67,7 @@ async function getLeague(id: string) {
 }
 
 export default function LeagueViewPage({ params }: { params: Promise<{ id: string }> }) {
-  const leagueId = React.use(params).id;
+  const { id: leagueId } = React.use(params);
   const [leagueData, setLeagueData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>({});
@@ -147,43 +103,23 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
 
   const handleSave = async () => {
     try {
-      // if (editedData.name.length > 30) {
-      //   toast.error("League name cannot exceed 30 characters");
-      //   return;
-      // }
+      const payload = {
+        name: editedData.name,
+        location: editedData.location,
+        description: editedData.description,
+        status: editedData.status,
+      };
 
-      const baseUrl = process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:82";
-      const url = `${baseUrl}${endpoints.league.update(leagueId)}`;
-
-      const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name: editedData.name,
-          location: editedData.location,
-          description: editedData.description,
-          status: editedData.status,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update league");
-      }
-
-      const result = await response.json();
-      console.log("League updated successfully:", result);
+      await axiosInstance.put(endpoints.league.update(leagueId), payload);
 
       setIsEditing(false);
       setLeagueData({ ...leagueData, ...editedData });
       setRefreshTrigger((prev) => prev + 1);
       toast.success("League updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save changes");
+      const message = error.response?.data?.message || error.message || "Failed to save changes";
+      toast.error(message);
     }
   };
 
@@ -285,11 +221,9 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   }
 
   const statusValue = (isEditing ? editedData.status : leagueData.status) || "";
-  const locationLabel = (isEditing ? editedData.location : leagueData.location) || "Location not set";
+  const locationLabel = formatLocation(isEditing ? editedData.location : leagueData.location);
   const sportValue = (isEditing ? editedData.sportType : leagueData.sportType) || "";
   const sportLabel = sportValue ? getSportLabel(sportValue) : "Not set";
-  const joinTypeValue = (isEditing ? editedData.joinType : leagueData.joinType) || "";
-  const joinTypeLabel = joinTypeValue ? getJoinTypeLabel(joinTypeValue) : "Not set";
   const seasonsCount = leagueData._count?.seasons ?? seasons.length;
 
   const getBreadcrumbItems = () => {
@@ -402,10 +336,6 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         <IconTrophy className="h-3.5 w-3.5" />
                         {sportLabel}
                       </Badge>
-                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
-                        <IconUser className="h-3.5 w-3.5" />
-                        {joinTypeLabel}
-                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -484,14 +414,19 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Sport Type</p>
                             {isEditing ? (
-                              <Select value={editedData.sportType} onValueChange={(value) => setEditedData({ ...editedData, sportType: value })}>
+                              <Select 
+                                value={editedData.sportType} 
+                                onValueChange={(value) => setEditedData({ ...editedData, sportType: value })}
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="TENNIS">Tennis</SelectItem>
-                                  <SelectItem value="PICKLEBALL">Pickleball</SelectItem>
-                                  <SelectItem value="PADEL">Padel</SelectItem>
+                                  {FILTER_OPTIONS.SPORTS.map((sport) => (
+                                    <SelectItem key={sport} value={sport}>
+                                      {getSportLabel(sport)}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             ) : (
@@ -499,36 +434,21 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                             )}
                           </div>
                           <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Join Type</p>
-                            {isEditing ? (
-                              <Select value={editedData.joinType} onValueChange={(value) => setEditedData({ ...editedData, joinType: value })}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="OPEN">Open to All</SelectItem>
-                                  <SelectItem value="INVITATION">Invitation Only</SelectItem>
-                                  <SelectItem value="REQUEST">Request to Join</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <p className="text-sm font-medium">{joinTypeLabel}</p>
-                            )}
-                          </div>
-                          <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Status</p>
                             {isEditing ? (
-                              <Select value={editedData.status} onValueChange={(value) => setEditedData({ ...editedData, status: value })}>
+                              <Select 
+                                value={editedData.status} 
+                                onValueChange={(value) => setEditedData({ ...editedData, status: value })}
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="ACTIVE">Active</SelectItem>
-                                  <SelectItem value="UPCOMING">Upcoming</SelectItem>
-                                  <SelectItem value="ONGOING">Ongoing</SelectItem>
-                                  <SelectItem value="FINISHED">Finished</SelectItem>
-                                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                                  {FILTER_OPTIONS.LEAGUE_STATUS.map((status) => (
+                                    <SelectItem key={status} value={status}>
+                                      {status.charAt(0) + status.slice(1).toLowerCase()}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             ) : (
