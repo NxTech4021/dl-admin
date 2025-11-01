@@ -11,8 +11,6 @@ import { IconCalendar, IconPlus, IconDownload } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
 import { useSession } from "@/lib/auth-client";
-// import { DivisionsDataTable } from "@/components/data-table/divisions-data-table";
- 
 
 const DivisionsDataTable = dynamic(() => import("@/components/data-table/divisions-data-table").then(mod => ({ default: mod.DivisionsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
@@ -69,17 +67,16 @@ export default function Page() {
                           <IconDownload className="mr-2 size-4" />
                           Export
                         </Button>
+                        <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                          <IconPlus className="mr-2 size-4" />
+                          Create Division
+                        </Button>
                         <DivisionCreateModal
                           open={isCreateModalOpen}
                           onOpenChange={setIsCreateModalOpen}
                           onDivisionCreated={handleDivisionCreated}
                           adminId= {adminId}
-                        >
-                          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                            <IconPlus className="mr-2 size-4" />
-                            Create Division
-                          </Button>
-                        </DivisionCreateModal>
+                        />
                       </div>
                     </div>
                   </div>

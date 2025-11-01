@@ -7,6 +7,9 @@ import {
   IconEdit,
   IconEye,
   IconTrash,
+  IconCalendar,
+  IconUsers,
+  IconTrophy,
 } from "@tabler/icons-react";
 import {
   ColumnDef,
@@ -22,8 +25,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { z } from "zod";
+import { divisionSchema, Division } from "@/ZodSchema/division-schema";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import DivisionCreateModal from "@/components/modal/division-create-modal";
 import {
@@ -62,64 +66,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { seasonSchema } from "@/ZodSchema/season-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
-export const divisionLevelEnum = z.enum([
-  "beginner",
-  "intermediate",
-  "advanced",
-]);
-export const gameTypeEnum = z.enum(["singles", "doubles"]);
-export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
-
-export const divisionSchema = z.object({
-  id: z.string(),
-  seasonId: z.string(),
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  threshold: z.number().int().nullable().optional(),
-  divisionLevel: divisionLevelEnum,
-  gameType: gameTypeEnum,
-  genderCategory: genderCategoryEnum,
-  maxSingles: z.number().int().nullable().optional(),
-  maxDoublesTeams: z.number().int().nullable().optional(),
-  currentSinglesCount: z.number().int().nullable().optional(),
-  currentDoublesCount: z.number().int().nullable().optional(),
-  autoAssignmentEnabled: z.boolean().optional().default(false),
-  isActive: z.boolean().default(true),
-  prizePoolTotal: z.number().nullable().optional(),
-  sponsoredDivisionName: z.string().nullable().optional(),
-  season: seasonSchema,
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
-
-export type Division = z.infer<typeof divisionSchema>;
-
-const formatDate = (date: Date) =>
-  date.toLocaleDateString("en-MY", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
-const formatMaybeDate = (date?: Date | null) => (date ? formatDate(date) : "-");
-
-const formatCurrency = (value?: number | null) =>
-  value != null
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-      }).format(value)
-    : "-";
-
-const renderValue = (value: unknown) =>
-  value === null || value === undefined || value === "" ? "-" : value;
-
-const formatCount = (value?: number | null) =>
-  value === null || value === undefined ? "-" : value;
+import {
+  formatTableDate,
+  formatCurrency,
+  getStatusBadgeVariant,
+  getDivisionLevelLabel,
+  getGameTypeLabel,
+  getGenderCategoryLabel,
+  renderValue,
+  formatCount,
+  LOADING_STATES,
+  TABLE_ANIMATIONS,
+  RESPONSIVE_CLASSES,
+  ACTION_MESSAGES,
+  COLUMN_WIDTHS,
+} from './constants';
 
 const DetailRow = ({
   label,
@@ -139,12 +102,11 @@ const DetailRow = ({
 export function DivisionsDataTable() {
   const [data, setData] = React.useState<Division[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -152,25 +114,88 @@ export function DivisionsDataTable() {
   const [isViewOpen, setIsViewOpen] = React.useState(false);
   const [editDivision, setEditDivision] = React.useState<Division | null>(null);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
-  const [deleteDivision, setDeleteDivision] =
-    React.useState<Division | null>(null);
+  const [deleteDivision, setDeleteDivision] = React.useState<Division | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const fetchDivisions = React.useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
+      console.log('Fetching divisions from:', endpoints.division.getAll);
       const response = await axiosInstance.get(endpoints.division.getAll);
-      if (!response.data || !Array.isArray(response.data)) {
+      
+      console.log('Raw response:', response.data);
+      
+      if (!response.data) {
+        console.error('No data received from API');
         setData([]);
+        setError('No data received from server');
+        toast.error('No data received from server');
         return;
       }
-      const parsed = z.array(divisionSchema).parse(response.data);
-      setData(parsed);
-    } catch (error) {
-      console.error("Failed to fetch divisions:", error);
+
+      // Handle different response formats
+      let divisionsArray = response.data;
+      
+      // Check if response has a 'data' property (nested structure)
+      if (response.data.data && Array.isArray(response.data.data)) {
+        divisionsArray = response.data.data;
+      } 
+      // Check if response has a 'divisions' property
+      else if (response.data.divisions && Array.isArray(response.data.divisions)) {
+        divisionsArray = response.data.divisions;
+      } 
+      // Check if response.data is directly an array
+      else if (Array.isArray(response.data)) {
+        divisionsArray = response.data;
+      } 
+      // Invalid format
+      else {
+        console.error('Response data is not in expected format:', response.data);
+        setData([]);
+        setError('Invalid data format from server');
+        toast.error('Invalid data format from server');
+        return;
+      }
+
+      console.log('Divisions array before parsing:', divisionsArray);
+      
+      // Parse and validate with Zod
+      try {
+        const parsed = z.array(divisionSchema).parse(divisionsArray);
+        console.log('Successfully parsed divisions:', parsed);
+        setData(parsed);
+      } catch (parseError: any) {
+        console.error('Zod validation error:', parseError);
+        console.error('Zod error details:', JSON.stringify(parseError.errors, null, 2));
+        
+        // Show more detailed error
+        const errorMessage = parseError.errors?.[0]?.message || 'Data validation failed';
+        const errorPath = parseError.errors?.[0]?.path?.join('.') || '';
+        setError(`Data validation error at ${errorPath}: ${errorMessage}`);
+        toast.error(`Data validation error: ${errorMessage}`);
+        
+        // Try to set data anyway for debugging
+        setData(divisionsArray);
+      }
+    } catch (error: any) {
+      console.error('Failed to load divisions:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+      
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || ACTION_MESSAGES.ERROR.LOAD_FAILED;
+      
       setData([]);
-      toast.error("Unable to load divisions.");
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -203,14 +228,18 @@ export function DivisionsDataTable() {
         endpoints.division.delete(deleteDivision.id)
       );
       toast.success(
-        response.data?.message ?? "Division deleted successfully."
+        response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE
       );
       await fetchDivisions();
       setDeleteDivision(null);
       setIsDeleteOpen(false);
-    } catch (error) {
-      console.error("Failed to delete division:", error);
-      toast.error("Failed to delete division.");
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error 
+        || error.message 
+        || ACTION_MESSAGES.ERROR.DELETE_FAILED;
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -234,7 +263,7 @@ export function DivisionsDataTable() {
       threshold: editDivision.threshold ?? null,
       divisionLevel: editDivision.divisionLevel,
       gameType: editDivision.gameType,
-      genderCategory: editDivision.genderCategory,
+      genderCategory: editDivision.genderCategory ?? null,
       maxSingles: editDivision.maxSingles ?? null,
       maxDoublesTeams: editDivision.maxDoublesTeams ?? null,
       autoAssignmentEnabled: editDivision.autoAssignmentEnabled ?? false,
@@ -244,8 +273,8 @@ export function DivisionsDataTable() {
     };
   }, [editDivision]);
 
-  const columns = React.useMemo<ColumnDef<Division>[]>(
-    () => [
+  const columns = React.useMemo<ColumnDef<Division>[]>
+    (() => [
       {
         id: "select",
         header: ({ table }) => (
@@ -273,6 +302,7 @@ export function DivisionsDataTable() {
         ),
         enableSorting: false,
         enableHiding: false,
+        size: 50,
       },
       {
         accessorKey: "name",
@@ -287,7 +317,7 @@ export function DivisionsDataTable() {
               <div className="flex flex-col">
                 <span className="font-medium">{division.name}</span>
                 <span className="text-xs text-muted-foreground">
-                  Level: {division.divisionLevel}
+                  Level: {getDivisionLevelLabel(division.divisionLevel)}
                 </span>
               </div>
             </div>
@@ -298,7 +328,15 @@ export function DivisionsDataTable() {
       {
         accessorKey: "season.name",
         header: "Season",
-        cell: ({ row }) => <span>{row.original.season.name ?? "-"}</span>,
+        cell: ({ row }) => {
+          const seasonName = (row.original as any).season?.name;
+          return (
+            <div className="flex items-center gap-2">
+              <IconTrophy className="size-4 text-muted-foreground" />
+              <span>{seasonName || renderValue(null)}</span>
+            </div>
+          );
+        },
       },
       {
         id: "composition",
@@ -307,14 +345,16 @@ export function DivisionsDataTable() {
           const division = row.original;
           return (
             <div className="flex flex-col gap-1 text-sm">
-              <span className="font-medium capitalize">
-                {division.divisionLevel}
-              </span>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="capitalize text-xs">
+                  {getDivisionLevelLabel(division.divisionLevel)}
+                </Badge>
+              </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="capitalize">{division.gameType}</span>
+                <span className="capitalize">{getGameTypeLabel(division.gameType)}</span>
                 <span>•</span>
                 <span className="capitalize">
-                  {division.genderCategory ?? "Any gender"}
+                  {getGenderCategoryLabel(division.genderCategory)}
                 </span>
               </div>
             </div>
@@ -324,40 +364,62 @@ export function DivisionsDataTable() {
       {
         accessorKey: "threshold",
         header: "Rating Threshold",
-        cell: ({ row }) => row.original.threshold ?? "-",
+        cell: ({ row }) => {
+          const threshold = row.original.threshold;
+          return threshold ? (
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {threshold} pts
+              </Badge>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          );
+        },
       },
       {
         id: "capacity",
         header: "Capacity",
         cell: ({ row }) => {
           const division = row.original;
-          const singlesInfo =
-            division.gameType !== "doubles" ? (
+          const gameType = division.gameType;
+          
+          if (gameType === "singles") {
+            return (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Singles</span>
+                <IconUsers className="size-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {formatCount(division.currentSinglesCount)} /{" "}
-                  {renderValue(division.maxSingles)}
+                  {formatCount(division.currentSinglesCount)} / {renderValue(division.maxSingles)}
                 </span>
               </div>
-            ) : null;
-          const doublesInfo =
-            division.gameType !== "singles" ? (
+            );
+          } else if (gameType === "doubles") {
+            return (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Doubles</span>
+                <IconUsers className="size-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {formatCount(division.currentDoublesCount)} /{" "}
-                  {renderValue(division.maxDoublesTeams)}
+                  {formatCount(division.currentDoublesCount)} / {renderValue(division.maxDoublesTeams)}
                 </span>
               </div>
-            ) : null;
-
-          return (
-            <div className="flex flex-col gap-1">
-              {singlesInfo}
-              {doublesInfo}
-            </div>
-          );
+            );
+          } else {
+            return (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Singles</span>
+                  <span className="text-sm font-medium">
+                    {formatCount(division.currentSinglesCount)} / {renderValue(division.maxSingles)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Doubles</span>
+                  <span className="text-sm font-medium">
+                    {formatCount(division.currentDoublesCount)} / {renderValue(division.maxDoublesTeams)}
+                  </span>
+                </div>
+              </div>
+            );
+          }
         },
       },
       {
@@ -365,9 +427,9 @@ export function DivisionsDataTable() {
         header: "Sponsor & Prize",
         cell: ({ row }) => (
           <div className="flex flex-col gap-1 text-sm">
-            <span>{renderValue(row.original.sponsoredDivisionName)}</span>
-            <span className="text-xs text-muted-foreground">
-              {formatCurrency(row.original.prizePoolTotal)}
+            <span className="font-medium">{renderValue(row.original.sponsoredDivisionName)}</span>
+            <span className="text-xs text-green-600 font-medium">
+              {formatCurrency(row.original.prizePoolTotal, 'MYR')}
             </span>
           </div>
         ),
@@ -378,23 +440,28 @@ export function DivisionsDataTable() {
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <Badge
-              variant={row.original.isActive ? "outline" : "default"}
+              variant={getStatusBadgeVariant('DIVISION', row.original.isActive ? 'ACTIVE' : 'INACTIVE')}
               className="capitalize"
             >
               {row.original.isActive ? "Active" : "Inactive"}
             </Badge>
-            <Badge
-              variant={row.original.autoAssignmentEnabled ? "secondary" : "outline"}
-            >
-              {row.original.autoAssignmentEnabled ? "Auto assign" : "Manual"}
-            </Badge>
+            {row.original.autoAssignmentEnabled && (
+              <Badge variant="secondary" className="text-xs">
+                Auto assign
+              </Badge>
+            )}
           </div>
         ),
       },
       {
         accessorKey: "updatedAt",
         header: "Last Updated",
-        cell: ({ row }) => formatDate(row.original.updatedAt),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <IconCalendar className="size-4 text-muted-foreground" />
+            <span>{formatTableDate(row.original.updatedAt)}</span>
+          </div>
+        ),
       },
       {
         id: "actions",
@@ -406,7 +473,7 @@ export function DivisionsDataTable() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="flex h-8 w-8 items-center justify-center"
+                  className={`flex h-8 w-8 items-center justify-center ${TABLE_ANIMATIONS.ROW_HOVER} ${TABLE_ANIMATIONS.TRANSITION}`}
                 >
                   <IconDotsVertical className="h-4 w-4" />
                   <span className="sr-only">Open menu</span>
@@ -472,10 +539,32 @@ export function DivisionsDataTable() {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-4 lg:px-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
+            <div className="flex items-start gap-2">
+              <IconTrash className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold">Error loading divisions</p>
+                <p className="text-sm mt-1">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchDivisions}
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search and Selection Info */}
+        <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}>
           <div className="flex items-center space-x-2">
             <Input
-              placeholder="Search divisions by name, game type..."
+              placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.DIVISIONS}
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
               className="w-80"
@@ -487,7 +576,8 @@ export function DivisionsDataTable() {
           </div>
         </div>
 
-        <div className="mx-4 rounded-md border bg-background lg:mx-6">
+        {/* Table Container */}
+        <div className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -513,8 +603,8 @@ export function DivisionsDataTable() {
                     className="h-24 text-center text-muted-foreground"
                   >
                     <div className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary" />
-                      Loading divisions...
+                      <div className={TABLE_ANIMATIONS.LOADING_SPINNER} />
+                      {LOADING_STATES.LOADING_TEXT}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -523,7 +613,7 @@ export function DivisionsDataTable() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-muted/50"
+                    className={TABLE_ANIMATIONS.ROW_HOVER}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -541,7 +631,7 @@ export function DivisionsDataTable() {
                     colSpan={columns.length}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    No divisions found.
+                    {LOADING_STATES.NO_DATA_TEXT}
                   </TableCell>
                 </TableRow>
               )}
@@ -549,7 +639,8 @@ export function DivisionsDataTable() {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between px-4 lg:px-6">
+        {/* Pagination */}
+        <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}>
           <div className="text-sm text-muted-foreground">
             Showing {table.getRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} division(s)
@@ -575,6 +666,7 @@ export function DivisionsDataTable() {
         </div>
       </div>
 
+      {/* View Division Dialog */}
       <Dialog
         open={isViewOpen}
         onOpenChange={(open) => {
@@ -596,25 +688,25 @@ export function DivisionsDataTable() {
               <div className="grid gap-3 rounded-lg border bg-muted/30 p-4">
                 <DetailRow
                   label="Season"
-                  value={viewDivision.season?.name ?? "-"}
+                  value={(viewDivision as any).season?.name ?? renderValue(null)}
                 />
                 <DetailRow
                   label="Season dates"
-                  value={`${formatMaybeDate(viewDivision.season?.startDate)} - ${formatMaybeDate(
-                    viewDivision.season?.endDate
+                  value={`${formatTableDate((viewDivision as any).season?.startDate)} - ${formatTableDate(
+                    (viewDivision as any).season?.endDate
                   )}`}
                 />
                 <DetailRow
                   label="Level"
-                  value={viewDivision.divisionLevel}
+                  value={getDivisionLevelLabel(viewDivision.divisionLevel)}
                 />
                 <DetailRow
                   label="Game type"
-                  value={viewDivision.gameType}
+                  value={getGameTypeLabel(viewDivision.gameType)}
                 />
                 <DetailRow
                   label="Gender"
-                  value={viewDivision.genderCategory}
+                  value={getGenderCategoryLabel(viewDivision.genderCategory)}
                 />
                 <DetailRow
                   label="Points threshold"
@@ -630,23 +722,15 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Current singles"
-                  value={
-                    viewDivision.gameType === "singles"
-                      ? formatCount(viewDivision.currentSinglesCount)
-                      : "-"
-                  }
+                  value={formatCount(viewDivision.currentSinglesCount)}
                 />
                 <DetailRow
                   label="Current doubles"
-                  value={
-                    viewDivision.gameType === "doubles"
-                      ? formatCount(viewDivision.currentDoublesCount)
-                      : "-"
-                  }
+                  value={formatCount(viewDivision.currentDoublesCount)}
                 />
                 <DetailRow
                   label="Prize pool"
-                  value={formatCurrency(viewDivision.prizePoolTotal)}
+                  value={formatCurrency(viewDivision.prizePoolTotal, 'MYR')}
                 />
                 <DetailRow
                   label="Sponsor"
@@ -660,7 +744,7 @@ export function DivisionsDataTable() {
                   label="Status"
                   value={
                     <Badge
-                      variant={viewDivision.isActive ? "outline" : "default"}
+                      variant={getStatusBadgeVariant('DIVISION', viewDivision.isActive ? 'ACTIVE' : 'INACTIVE')}
                       className="capitalize"
                     >
                       {viewDivision.isActive ? "Active" : "Inactive"}
@@ -669,11 +753,11 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Created"
-                  value={formatDate(viewDivision.createdAt)}
+                  value={formatTableDate(viewDivision.createdAt)}
                 />
                 <DetailRow
                   label="Last updated"
-                  value={formatDate(viewDivision.updatedAt)}
+                  value={formatTableDate(viewDivision.updatedAt)}
                 />
               </div>
               {viewDivision.description && (
@@ -693,6 +777,7 @@ export function DivisionsDataTable() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Division Modal */}
       <DivisionCreateModal
         open={isEditOpen}
         onOpenChange={(open) => {
@@ -706,6 +791,7 @@ export function DivisionsDataTable() {
         division={mappedEditDivision}
       />
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={isDeleteOpen}
         onOpenChange={(open) => {
@@ -719,7 +805,8 @@ export function DivisionsDataTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete division</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{" "}
+              {ACTION_MESSAGES.DELETE_CONFIRM}
+              <br />
               <span className="font-semibold">
                 {deleteDivision?.name ?? "this division"}
               </span>

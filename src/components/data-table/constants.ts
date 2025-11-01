@@ -204,9 +204,11 @@ export const getDivisionLevelLabel = (level: string): string => {
   return DIVISION_LEVEL_LABELS[level as keyof typeof DIVISION_LEVEL_LABELS] || level;
 };
 
-export const getGenderCategoryLabel = (category: string): string => {
+export const getGenderCategoryLabel = (category: string | null | undefined): string => {
+  if (!category) return 'Missing Category';
   return GENDER_CATEGORY_LABELS[category as keyof typeof GENDER_CATEGORY_LABELS] || category;
 };
+
 
 export const formatTableDate = (date: Date | string | null | undefined): string => {
   if (!date) return 'Not set';
