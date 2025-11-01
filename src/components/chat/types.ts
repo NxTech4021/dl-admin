@@ -288,7 +288,7 @@ export interface TypingIndicatorProps {
 
 // Socket Context
 export interface SocketContextType {
-  socket: any | null; // Socket.IO socket type
+  socket: any | null;
   isConnected: boolean;
   joinThread: (threadId: string) => void;
   leaveThread: (threadId: string) => void;

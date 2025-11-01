@@ -254,14 +254,14 @@ export default function ChatView() {
   };
 
   // Debug logging
-  console.log("Chat View Debug:", {
-    threadsCount: threads.length,
-    conversationsCount: conversations.length,
-    selectedConversationId,
-    currentConversation: currentConversation?.displayName,
-    messagesCount: messages.length,
-    user: user?.id,
-  });
+  // console.log("Chat View Debug:", {
+  //   threadsCount: threads.length,
+  //   conversationsCount: conversations.length,
+  //   selectedConversationId,
+  //   currentConversation: currentConversation?.displayName,
+  //   messagesCount: messages.length,
+  //   user: user?.id,
+  // });
 
   return (
     <SidebarProvider

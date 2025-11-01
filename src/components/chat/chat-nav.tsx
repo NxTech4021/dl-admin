@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Search,
   ChevronLeft,
@@ -253,7 +253,7 @@ export default function ChatNav({
 
     return (
       <div className="px-4 pb-4">
-        <div className="relative">
+        <div className="relative py-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -304,11 +304,13 @@ export default function ChatNav({
       {renderSearch()}
 
       {/* Conversations List */}
-      <ScrollArea className="flex-1">
-        <div className="px-2 pb-2">
-          {loading ? renderSkeleton() : renderConversationsList()}
-        </div>
-      </ScrollArea>
+        <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="px-2 space-y-1">
+            {loading ? renderSkeleton() : renderConversationsList()}
+          </div>
+        </ScrollArea>
+      </div>
       
       {/* New Chat Button */}
       {renderComposeButton()}
