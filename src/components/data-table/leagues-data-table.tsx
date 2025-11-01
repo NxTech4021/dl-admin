@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmationModal } from "../modal/confirmation-modal";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -52,6 +53,8 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { League } from "@/ZodSchema/league-schema";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
 
 import {
   formatTableDate,
@@ -270,12 +273,14 @@ interface LeaguesDataTableProps {
   data: League[];
   isLoading?: boolean;
   createLeagueButton?: React.ReactNode;
+  onDataChange?: () => void; // Callback to refresh data after operations
 }
 
 export function LeaguesDataTable({ 
   data, 
   isLoading = false, 
-  createLeagueButton 
+  createLeagueButton,
+  onDataChange
 }: LeaguesDataTableProps) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
@@ -285,6 +290,9 @@ export function LeaguesDataTable({
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
   const [showTools, setShowTools] = React.useState(false);
+
+  // Use the confirmation modal hook
+  const confirmation = useConfirmationModal();
 
   const columns = getColumns(true);
   
@@ -348,19 +356,75 @@ export function LeaguesDataTable({
     setExpandedGroups((prev) => ({ ...prev, ...next }));
   };
 
-  // const handleBulkAction = (action: string) => {
-  //   const selectedIds = selectedRows.map(row => row.original.id);
-  //   switch (action) {
-  //     case "delete":
-  //       toast.error(ACTION_MESSAGES.BULK_DELETE_CONFIRM(selectedIds.length));
-  //       break;
-  //     default:
-  //       break;
-  //   }
-  // };
+  // Delete leagues function
+  const deleteLeagues = async (leagueIds: string[]) => {
+    confirmation.setLoading(true);
+    
+    try {
+      // Delete leagues one by one
+      const deletePromises = leagueIds.map(id => 
+        axiosInstance.delete(endpoints.league.delete(id))
+      );
+      
+      await Promise.all(deletePromises);
+      
+      toast.success(ACTION_MESSAGES.SUCCESS.DELETE);
+      
+      // Clear selection
+      setRowSelection({});
+      
+      // Refresh data
+      onDataChange?.();
+      
+      // Close modal
+      confirmation.hideConfirmation();
+      
+    } catch (error: any) {
+      console.error("Failed to delete leagues:", error);
+      toast.error(error.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED);
+    } finally {
+      confirmation.setLoading(false);
+    }
+  };
+
+  const handleBulkAction = (action: string) => {
+    const selectedIds = selectedRows.map(row => row.original.id);
+    const selectedNames = selectedRows.map(row => row.original.name);
+    
+    switch (action) {
+      case "delete":
+        confirmation.showConfirmation({
+          title: `Delete ${selectedIds.length} League${selectedIds.length > 1 ? 's' : ''}`,
+          description: selectedIds.length === 1 
+            ? `Are you sure you want to delete "${selectedNames[0]}"? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`
+            : `Are you sure you want to delete ${selectedIds.length} leagues? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`,
+          onConfirm: () => deleteLeagues(selectedIds),
+          variant: "destructive",
+          confirmText: "Delete",
+          cancelText: "Cancel",
+        });
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
-    <div className={`w-full space-y-4 ${RESPONSIVE_CLASSES.CONTAINER}`}>
+    <div className={`w-full space-y-4 py-4 ${RESPONSIVE_CLASSES.CONTAINER}`}>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={confirmation.open}
+        onOpenChange={confirmation.hideConfirmation}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        onConfirm={confirmation.onConfirm}
+        isLoading={confirmation.isLoading}
+        variant={confirmation.variant}
+        icon={<IconTrash className="h-5 w-5 text-destructive" />}
+      />
+
       {/* Toolbar */}
       <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
         <div className="flex items-center space-x-2">
@@ -465,7 +529,7 @@ export function LeaguesDataTable({
             <div>{createLeagueButton}</div>
           )}
           
-          {/* {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
                 {selectedRows.length} selected
@@ -474,12 +538,13 @@ export function LeaguesDataTable({
                 variant="destructive"
                 size="sm"
                 onClick={() => handleBulkAction("delete")}
+                disabled={confirmation.isLoading}
               >
                 <IconTrash className="mr-2 h-4 w-4" />
                 Delete
               </Button>
             </div>
-          )} */}
+          )}
         </div>
       </div>
 
