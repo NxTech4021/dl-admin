@@ -1,10 +1,16 @@
-// @ts-nocheck
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,13 +46,25 @@ type LeagueResponse = { data: { league: any } };
 
 function getStatusBadge(status: string) {
   const variants: Record<string, { variant: string; className: string }> = {
-    ACTIVE: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
-    ONGOING: { variant: "default", className: "bg-green-500 hover:bg-green-600 text-white" },
-    UPCOMING: { variant: "secondary", className: "bg-blue-500 hover:bg-blue-600 text-white" },
+    ACTIVE: {
+      variant: "default",
+      className: "bg-green-500 hover:bg-green-600 text-white",
+    },
+    ONGOING: {
+      variant: "default",
+      className: "bg-green-500 hover:bg-green-600 text-white",
+    },
+    UPCOMING: {
+      variant: "secondary",
+      className: "bg-blue-500 hover:bg-blue-600 text-white",
+    },
     FINISHED: { variant: "outline", className: "border-gray-400" },
     INACTIVE: { variant: "outline", className: "border-gray-300" },
     CANCELLED: { variant: "destructive", className: "" },
-    SUSPENDED: { variant: "default", className: "bg-orange-500 hover:bg-orange-600 text-white" },
+    SUSPENDED: {
+      variant: "default",
+      className: "bg-orange-500 hover:bg-orange-600 text-white",
+    },
   };
 
   const config = variants[status] || { variant: "outline", className: "" };
@@ -110,7 +128,11 @@ async function getLeague(id: string) {
   }
 }
 
-export default function LeagueViewPage({ params }: { params: Promise<{ id: string }> }) {
+export default function LeagueViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const leagueId = React.use(params).id;
   const [leagueData, setLeagueData] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -183,7 +205,9 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
       toast.success("League updated successfully");
     } catch (error) {
       console.error("Failed to save:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save changes");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save changes"
+      );
     }
   };
 
@@ -210,7 +234,14 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
 
   if (isLoading) {
     return (
-      <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 56)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as any
+        }
+      >
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
@@ -226,7 +257,14 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
 
   if (!leagueData && !isLoading) {
     return (
-      <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 56)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as any
+        }
+      >
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
@@ -239,7 +277,8 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                 <div>
                   <CardTitle className="text-2xl">League Not Found</CardTitle>
                   <CardDescription className="mt-2">
-                    The league you're looking for doesn't exist or has been removed.
+                    The league you&apos;re looking for doesn&apos;t exist or has
+                    been removed.
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -272,10 +311,13 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   });
 
   const uniqueMemberCount = uniquePlayerIds.size;
-  const totalSeasonParticipation = seasons.reduce((total: number, season: any) => {
-    const membershipsCount = season._count?.memberships || 0;
-    return total + membershipsCount;
-  }, 0);
+  const totalSeasonParticipation = seasons.reduce(
+    (total: number, season: any) => {
+      const membershipsCount = season._count?.memberships || 0;
+      return total + membershipsCount;
+    },
+    0
+  );
 
   if (!leagueData._count) {
     leagueData._count = {
@@ -285,11 +327,17 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   }
 
   const statusValue = (isEditing ? editedData.status : leagueData.status) || "";
-  const locationLabel = (isEditing ? editedData.location : leagueData.location) || "Location not set";
-  const sportValue = (isEditing ? editedData.sportType : leagueData.sportType) || "";
+  const locationLabel =
+    (isEditing ? editedData.location : leagueData.location) ||
+    "Location not set";
+  const sportValue =
+    (isEditing ? editedData.sportType : leagueData.sportType) || "";
   const sportLabel = sportValue ? getSportLabel(sportValue) : "Not set";
-  const joinTypeValue = (isEditing ? editedData.joinType : leagueData.joinType) || "";
-  const joinTypeLabel = joinTypeValue ? getJoinTypeLabel(joinTypeValue) : "Not set";
+  const joinTypeValue =
+    (isEditing ? editedData.joinType : leagueData.joinType) || "";
+  const joinTypeLabel = joinTypeValue
+    ? getJoinTypeLabel(joinTypeValue)
+    : "Not set";
   const seasonsCount = leagueData._count?.seasons ?? seasons.length;
 
   const getBreadcrumbItems = () => {
@@ -311,14 +359,25 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <SidebarProvider style={{ "--sidebar-width": "calc(var(--spacing) * 56)", "--header-height": "calc(var(--spacing) * 12)" } as any}>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 56)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as any
+      }
+    >
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader items={getBreadcrumbItems()} />
 
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex flex-1 flex-col"
+            >
               <div className="border-b bg-background">
                 <div className="px-6 pt-6 pb-4 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -343,24 +402,40 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         <TabsTrigger value="seasons" className="gap-2">
                           <IconCalendar className="h-4 w-4" />
                           Seasons
-                          <span className="ml-1 text-xs text-muted-foreground">({seasons.length})</span>
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            ({seasons.length})
+                          </span>
                         </TabsTrigger>
                       </TabsList>
                     </div>
                     <div className="flex items-center gap-2">
                       {isEditing ? (
                         <>
-                          <Button size="sm" className="gap-2" onClick={handleSave}>
+                          <Button
+                            size="sm"
+                            className="gap-2"
+                            onClick={handleSave}
+                          >
                             <IconCheck className="h-4 w-4" />
                             Save
                           </Button>
-                          <Button variant="outline" size="sm" className="gap-2" onClick={handleCancel}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={handleCancel}
+                          >
                             <IconX className="h-4 w-4" />
                             Cancel
                           </Button>
                         </>
                       ) : (
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(true)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setIsEditing(true)}
+                        >
                           <IconEdit className="h-4 w-4" />
                           Edit
                         </Button>
@@ -390,19 +465,32 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         </h1>
                       )}
                       <div>
-                        {statusValue ? getStatusBadge(statusValue) : <Badge variant="outline">Not set</Badge>}
+                        {statusValue ? (
+                          getStatusBadge(statusValue)
+                        ) : (
+                          <Badge variant="outline">Not set</Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 font-normal"
+                      >
                         <IconMapPin className="h-3.5 w-3.5" />
                         {locationLabel}
                       </Badge>
-                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 font-normal"
+                      >
                         <IconTrophy className="h-3.5 w-3.5" />
                         {sportLabel}
                       </Badge>
-                      <Badge variant="outline" className="flex items-center gap-1 font-normal">
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 font-normal"
+                      >
                         <IconUser className="h-3.5 w-3.5" />
                         {joinTypeLabel}
                       </Badge>
@@ -422,8 +510,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         </span>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-semibold">{uniqueMemberCount}</div>
-                        <p className="text-xs text-muted-foreground">Across all seasons</p>
+                        <div className="text-2xl font-semibold">
+                          {uniqueMemberCount}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Across all seasons
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -434,8 +526,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         </span>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-semibold">{totalSeasonParticipation}</div>
-                        <p className="text-xs text-muted-foreground">Total participation across all seasons</p>
+                        <div className="text-2xl font-semibold">
+                          {totalSeasonParticipation}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Total participation across all seasons
+                        </p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -446,8 +542,12 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         </span>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-semibold">{seasonsCount}</div>
-                        <p className="text-xs text-muted-foreground">Seasons created for this league</p>
+                        <div className="text-2xl font-semibold">
+                          {seasonsCount}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Seasons created for this league
+                        </p>
                       </CardContent>
                     </Card>
                   </div>
@@ -455,19 +555,27 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                   <Card>
                     <CardHeader>
                       <CardTitle>Description</CardTitle>
-                      <CardDescription>Share what makes this league unique.</CardDescription>
+                      <CardDescription>
+                        Share what makes this league unique.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {isEditing ? (
                         <Textarea
                           value={editedData.description}
-                          onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                          onChange={(e) =>
+                            setEditedData({
+                              ...editedData,
+                              description: e.target.value,
+                            })
+                          }
                           className="min-h-[120px]"
                           placeholder="Enter league description..."
                         />
                       ) : (
                         <p className="text-sm leading-relaxed text-muted-foreground">
-                          {leagueData.description || "No description provided yet."}
+                          {leagueData.description ||
+                            "No description provided yet."}
                         </p>
                       )}
                     </CardContent>
@@ -477,76 +585,141 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                     <Card>
                       <CardHeader>
                         <CardTitle>League Details</CardTitle>
-                        <CardDescription>Core information about this league.</CardDescription>
+                        <CardDescription>
+                          Core information about this league.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Sport Type</p>
+                            <p className="text-sm text-muted-foreground">
+                              Sport Type
+                            </p>
                             {isEditing ? (
-                              <Select value={editedData.sportType} onValueChange={(value) => setEditedData({ ...editedData, sportType: value })}>
+                              <Select
+                                value={editedData.sportType}
+                                onValueChange={(value) =>
+                                  setEditedData({
+                                    ...editedData,
+                                    sportType: value,
+                                  })
+                                }
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="TENNIS">Tennis</SelectItem>
-                                  <SelectItem value="PICKLEBALL">Pickleball</SelectItem>
+                                  <SelectItem value="PICKLEBALL">
+                                    Pickleball
+                                  </SelectItem>
                                   <SelectItem value="PADEL">Padel</SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <p className="text-sm font-medium">{sportLabel}</p>
+                              <p className="text-sm font-medium">
+                                {sportLabel}
+                              </p>
                             )}
                           </div>
                           <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Join Type</p>
+                            <p className="text-sm text-muted-foreground">
+                              Join Type
+                            </p>
                             {isEditing ? (
-                              <Select value={editedData.joinType} onValueChange={(value) => setEditedData({ ...editedData, joinType: value })}>
+                              <Select
+                                value={editedData.joinType}
+                                onValueChange={(value) =>
+                                  setEditedData({
+                                    ...editedData,
+                                    joinType: value,
+                                  })
+                                }
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="OPEN">Open to All</SelectItem>
-                                  <SelectItem value="INVITATION">Invitation Only</SelectItem>
-                                  <SelectItem value="REQUEST">Request to Join</SelectItem>
+                                  <SelectItem value="OPEN">
+                                    Open to All
+                                  </SelectItem>
+                                  <SelectItem value="INVITATION">
+                                    Invitation Only
+                                  </SelectItem>
+                                  <SelectItem value="REQUEST">
+                                    Request to Join
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <p className="text-sm font-medium">{joinTypeLabel}</p>
+                              <p className="text-sm font-medium">
+                                {joinTypeLabel}
+                              </p>
                             )}
                           </div>
                           <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Status</p>
+                            <p className="text-sm text-muted-foreground">
+                              Status
+                            </p>
                             {isEditing ? (
-                              <Select value={editedData.status} onValueChange={(value) => setEditedData({ ...editedData, status: value })}>
+                              <Select
+                                value={editedData.status}
+                                onValueChange={(value) =>
+                                  setEditedData({
+                                    ...editedData,
+                                    status: value,
+                                  })
+                                }
+                              >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="ACTIVE">Active</SelectItem>
-                                  <SelectItem value="UPCOMING">Upcoming</SelectItem>
-                                  <SelectItem value="ONGOING">Ongoing</SelectItem>
-                                  <SelectItem value="FINISHED">Finished</SelectItem>
-                                  <SelectItem value="INACTIVE">Inactive</SelectItem>
-                                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                                  <SelectItem value="UPCOMING">
+                                    Upcoming
+                                  </SelectItem>
+                                  <SelectItem value="ONGOING">
+                                    Ongoing
+                                  </SelectItem>
+                                  <SelectItem value="FINISHED">
+                                    Finished
+                                  </SelectItem>
+                                  <SelectItem value="INACTIVE">
+                                    Inactive
+                                  </SelectItem>
+                                  <SelectItem value="CANCELLED">
+                                    Cancelled
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
                               <p className="text-sm font-medium capitalize">
-                                {statusValue ? statusValue.toLowerCase() : "Not set"}
+                                {statusValue
+                                  ? statusValue.toLowerCase()
+                                  : "Not set"}
                               </p>
                             )}
                           </div>
                           <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Location</p>
+                            <p className="text-sm text-muted-foreground">
+                              Location
+                            </p>
                             {isEditing ? (
                               <Input
                                 value={editedData.location}
-                                onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                                onChange={(e) =>
+                                  setEditedData({
+                                    ...editedData,
+                                    location: e.target.value,
+                                  })
+                                }
                                 placeholder="Enter location"
                               />
                             ) : (
-                              <p className="text-sm font-medium">{locationLabel}</p>
+                              <p className="text-sm font-medium">
+                                {locationLabel}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -559,19 +732,29 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                           <IconClock className="h-5 w-5" />
                           Timeline
                         </CardTitle>
-                        <CardDescription>Key timestamps for this league.</CardDescription>
+                        <CardDescription>
+                          Key timestamps for this league.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Created</span>
-                          <span className="font-medium">{formatDateTime(leagueData.createdAt)}</span>
+                          <span className="font-medium">
+                            {formatDateTime(leagueData.createdAt)}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Last Updated</span>
-                          <span className="font-medium">{formatDateTime(leagueData.updatedAt)}</span>
+                          <span className="text-muted-foreground">
+                            Last Updated
+                          </span>
+                          <span className="font-medium">
+                            {formatDateTime(leagueData.updatedAt)}
+                          </span>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">League ID</p>
+                          <p className="text-sm text-muted-foreground">
+                            League ID
+                          </p>
                           <code className="mt-1 block rounded bg-muted px-2 py-1 text-xs font-mono">
                             {leagueData.id}
                           </code>
@@ -586,7 +769,9 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         <IconSettings className="h-5 w-5" />
                         Sponsors
                       </CardTitle>
-                      <CardDescription>Manage partners supporting this league.</CardDescription>
+                      <CardDescription>
+                        Manage partners supporting this league.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <LeagueSponsorsSection
@@ -618,7 +803,9 @@ export default function LeagueViewPage({ params }: { params: Promise<{ id: strin
                         <IconCalendar className="h-5 w-5" />
                         Seasons
                       </CardTitle>
-                      <CardDescription>All seasons and tournaments for this league.</CardDescription>
+                      <CardDescription>
+                        All seasons and tournaments for this league.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <LeagueSeasonsWrapper
