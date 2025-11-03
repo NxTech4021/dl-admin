@@ -6,6 +6,7 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet";
+import { DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -235,15 +236,17 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
       <SheetContent side="right" className="w-full max-w-[400px] p-0 flex flex-col">
         {/* Header - Clean and minimal */}
         <div className="flex items-center justify-between p-12 border-b">
-          <div className="flex items-center gap-2">
-            <IconBell className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Notifications</h2>
-            {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                {unreadCount}
-              </Badge>
-            )}
-          </div>
+          <DialogTitle asChild>
+        <div className="flex items-center gap-2">
+          <IconBell className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Notifications</h2>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+              {unreadCount}
+            </Badge>
+          )}
+        </div>
+      </DialogTitle>
 
           <div className="flex items-center gap-1">
             {unreadCountTotal > 0 && (
