@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmationModal } from "../modal/confirmation-modal";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -43,18 +44,33 @@ import {
   IconFilter,
   IconTrophy,
   IconMapPin,
-  IconPlayerPlay,
   IconUsers,
-  IconUser,
   IconCalendar,
   IconTrash,
   IconAdjustments,
   IconArrowsMaximize,
   IconArrowsMinimize,
-  IconCheck,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { League } from "@/ZodSchema/league-schema";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
+
+import {
+  formatTableDate,
+  formatLocation,
+  getStatusBadgeVariant,
+  getSportColor,
+  getSportLabel,
+  getGameTypeLabel,
+  getGameTypeOptionsForSport,
+  LOADING_STATES,
+  TABLE_ANIMATIONS,
+  RESPONSIVE_CLASSES,
+  ACTION_MESSAGES,
+  FILTER_OPTIONS,
+  formatCount,
+} from './constants';
 
 // View Details button component
 const ViewDetailsButton = ({ league }: { league: League }) => {
@@ -65,114 +81,11 @@ const ViewDetailsButton = ({ league }: { league: League }) => {
       variant="ghost" 
       size="sm"
       onClick={() => router.push(`/league/view/${league.id}`)}
-      className="flex items-center justify-center"
+      className={`flex items-center justify-center ${TABLE_ANIMATIONS.ROW_HOVER} ${TABLE_ANIMATIONS.TRANSITION}`}
     >
       <IconInfoCircle className="h-4 w-4" />
     </Button>
   );
-};
-
-const formatDate = (date: Date | string | null | undefined) => {
-  if (!date) return "N/A";
-  const dateObject = date instanceof Date ? date : new Date(date);
-  return dateObject.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-    case "ONGOING":
-      return "default";
-    case "UPCOMING":
-      return "secondary";
-    case "FINISHED":
-      return "outline";
-    case "INACTIVE":
-      return "outline";
-    case "CANCELLED":
-    case "SUSPENDED":
-      return "destructive";
-    default:
-      return "outline";
-  }
-};
-
-const getSportLabel = (sport: string) => {
-  const map: Record<string, string> = { 
-    TENNIS: "Tennis", 
-    PICKLEBALL: "Pickleball", 
-    PADEL: "Padel"
-  };
-  return map[sport] || sport;
-};
-
-const getGameTypeLabel = (gameType: string) => {
-  const map: Record<string, string> = {
-    SINGLES: "Singles",
-    DOUBLES: "Doubles",
-    MIXED: "Mixed Doubles",
-    singles: "Singles",
-    doubles: "Doubles",
-    mixed: "Mixed Doubles",
-  };
-  return map[gameType] || gameType;
-};
-
-const getSportColor = (sport: string) => {
-  switch (sport) {
-    case "TENNIS":
-      return "#ABFE4D";
-    case "PICKLEBALL":
-      return "#A04DFE";
-    case "PADEL":
-      return "#4DABFE";
-    default:
-      return "#6B7280";
-  }
-};
-
-
-const getGameTypeOptionsForSport = (sport: string): { value: string; label: string }[] => {
-  switch (sport) {
-    case "TENNIS":
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-    case "PADEL":
-      return [
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-        { value: "SINGLES", label: "Singles" },
-      ];
-    case "PICKLEBALL":
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-    default:
-      return [
-        { value: "SINGLES", label: "Singles" },
-        { value: "DOUBLES", label: "Doubles" },
-        { value: "MIXED", label: "Mixed Doubles" },
-      ];
-  }
-};
-
-const formatLocation = (location: string | null | undefined): string => {
-  if (!location) return "Not specified";
-  
-  // Convert to proper case
-  return location
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
 };
 
 // Dynamic columns based on selection state
@@ -184,158 +97,173 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
     baseColumns.push({
       id: "select",
       header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
       ),
       enableSorting: false,
       enableHiding: false,
+      size: 50,
     });
   }
-  
-  // Add all other columns
+
   baseColumns.push(
-  {
-    accessorKey: "name",
-    header: "League Name",
-    cell: ({ row }) => {
-      const league = row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <IconTrophy className="size-4 text-primary" />
-          </div>
-          <div>
-            <div className="font-semibold">{league.name}</div>
-            <div className="text-sm text-muted-foreground">
-              ID: {league.id}
+    {
+      accessorKey: "name",
+      header: "League Name",
+      cell: ({ row }) => {
+        const league = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <IconTrophy className="size-4 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold">{league.name}</div>
+              <div className="text-sm text-muted-foreground">
+                ID: {league.id}
+              </div>
             </div>
           </div>
-        </div>
-      );
+        );
+      },
+      enableHiding: false,
     },
-  },
-  {
-    accessorKey: "sportType",
-    header: "Sport",
-    cell: ({ row }) => {
-      const sport = row.original.sportType;
-      return (
-        <Badge variant="outline" className="flex items-center gap-2 w-fit">
-          <div 
-            className="w-2.5 h-2.5 rounded-full" 
-            style={{ backgroundColor: getSportColor(sport) }}
-          />
-          <span className="capitalize text-sm">
-            {getSportLabel(sport)}
-          </span>
-        </Badge>
-      );
+    {
+      accessorKey: "sportType",
+      header: "Sport",
+      cell: ({ row }) => {
+        const sport = row.original.sportType;
+        const sportColor = getSportColor(sport);
+        const sportLabel = getSportLabel(sport);
+        
+        return (
+          <div
+            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
+            style={{ 
+              color: sportColor,
+              borderColor: sportColor + '40',
+              backgroundColor: sportColor + '08'
+            }}
+          >
+            <div 
+              className="w-2.5 h-2.5 rounded-full mr-2" 
+              style={{ backgroundColor: sportColor }}
+            />
+            {sportLabel}
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "location",
-    header: "Location",
-    cell: ({ row }) => {
-      const location = row.original.location;
-      return (
-        <div className="flex items-center gap-2">
-          <IconMapPin className="size-4 text-muted-foreground" />
-          <span>{formatLocation(location)}</span>
-        </div>
-      );
+    {
+      accessorKey: "location",
+      header: "Location",
+      cell: ({ row }) => {
+        const location = row.original.location;
+        return (
+          <div className="flex items-center gap-2">
+            <IconMapPin className="size-4 text-muted-foreground" />
+            <span>{formatLocation(location)}</span>
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status;
-      return (
-        <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
-          {status.toLowerCase()}
-        </Badge>
-      );
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <Badge variant={getStatusBadgeVariant('LEAGUE', status)} className="capitalize">
+            {status.toLowerCase()}
+          </Badge>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "gameType",
-    header: "Game Type",
-    cell: ({ row }) => {
-      const sport = row.original.sportType;
-      const gameType = row.original.gameType;
-      const label = getGameTypeOptionsForSport(sport).find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
-      return (
-        <div className="flex items-center gap-2">
-          <IconUsers className="size-4 text-muted-foreground" />
-          <span>{label}</span>
-        </div>
-      );
+    {
+      accessorKey: "gameType",
+      header: "Game Type",
+      cell: ({ row }) => {
+        const sport = row.original.sportType;
+        const gameType = row.original.gameType;
+        const gameTypeOptions = getGameTypeOptionsForSport(sport);
+        const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
+        
+        return (
+          <div className="flex items-center gap-2">
+            <IconUsers className="size-4 text-muted-foreground" />
+            <span>{label}</span>
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "memberCount",
-    header: "Members",
-    cell: ({ row }) => {
-      const memberCount = row.original.memberCount || 0;
-      return (
-        <div className="flex items-center gap-2">
-          <IconUsers className="size-4 text-muted-foreground" />
-          <span>{memberCount}</span>
-        </div>
-      );
+    {
+      accessorKey: "memberCount",
+      header: "Members",
+      cell: ({ row }) => {
+        const memberCount = row.original.memberCount;
+        return (
+          <div className="flex items-center gap-2">
+            <IconUsers className="size-4 text-muted-foreground" />
+            <span>{formatCount(memberCount)}</span>
+          </div>
+        );
+      },
     },
-  },
-  {
-    accessorKey: "seasonCount",
-    header: "Seasons",
-    cell: ({ row }) => {
-      const seasonCount = row.original.seasonCount || 0;
-      return (
-        <div className="flex items-center gap-2">
-          <IconCalendar className="size-4 text-muted-foreground" />
-          <span>{seasonCount}</span>
-        </div>
-      );
+    {
+      accessorKey: "seasonCount",
+      header: "Seasons",
+      cell: ({ row }) => {
+        const seasonCount = row.original.seasonCount;
+        return (
+          <div className="flex items-center gap-2">
+            <IconCalendar className="size-4 text-muted-foreground" />
+            <span>{formatCount(seasonCount)}</span>
+          </div>
+        );
+      },
     },
-  },
- {
-    accessorKey: "createdAt",
-    header: "Created",
-    cell: ({ row }) => {
-      const createdAt = row.original.createdAt;
-      return (
-        <div className="flex items-center gap-2">
-          <IconCalendar className="size-4 text-muted-foreground" />
-          <span>{formatDate(createdAt)}</span>
-        </div>
-      );
+    {
+      accessorKey: "createdAt",
+      header: "Created",
+      cell: ({ row }) => {
+        const createdAt = row.original.createdAt;
+        return (
+          <div className="flex items-center gap-2">
+            <IconCalendar className="size-4 text-muted-foreground" />
+            <span>{formatTableDate(createdAt)}</span>
+          </div>
+        );
+      },
     },
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-center">League Details</div>,
-    cell: ({ row }) => {
-      const league = row.original;
-      return (
-        <div className="flex items-center justify-center">
-          <ViewDetailsButton league={league} />
-        </div>
-      );
+    {
+      id: "actions",
+      header: () => <div className="text-center">League Details</div>,
+      cell: ({ row }) => {
+        const league = row.original;
+        return (
+          <div className="flex items-center justify-center">
+            <ViewDetailsButton league={league} />
+          </div>
+        );
+      },
     },
-  },
   );
   
   return baseColumns;
@@ -345,9 +273,15 @@ interface LeaguesDataTableProps {
   data: League[];
   isLoading?: boolean;
   createLeagueButton?: React.ReactNode;
+  onDataChange?: () => void; // Callback to refresh data after operations
 }
 
-export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }: LeaguesDataTableProps) {
+export function LeaguesDataTable({ 
+  data, 
+  isLoading = false, 
+  createLeagueButton,
+  onDataChange
+}: LeaguesDataTableProps) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -356,6 +290,9 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
   const [showTools, setShowTools] = React.useState(false);
+
+  // Use the confirmation modal hook
+  const confirmation = useConfirmationModal();
 
   const columns = getColumns(true);
   
@@ -383,7 +320,6 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
 
-  // Group the CURRENT row model (after filters/sorts/pagination) by league name
   const groupedRows = React.useMemo(() => {
     const groups = new Map<string, { name: string; rows: Row<League>[] }>();
     table.getRowModel().rows.forEach((row: Row<League>) => {
@@ -399,7 +335,6 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Compute keys for groups that actually have multiple sports
   const multiGroupKeys = React.useMemo(
     () =>
       groupedRows
@@ -421,11 +356,53 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
     setExpandedGroups((prev) => ({ ...prev, ...next }));
   };
 
+  // Delete leagues function
+  const deleteLeagues = async (leagueIds: string[]) => {
+    confirmation.setLoading(true);
+    
+    try {
+      // Delete leagues one by one
+      const deletePromises = leagueIds.map(id => 
+        axiosInstance.delete(endpoints.league.delete(id))
+      );
+      
+      await Promise.all(deletePromises);
+      
+      toast.success(ACTION_MESSAGES.SUCCESS.DELETE);
+      
+      // Clear selection
+      setRowSelection({});
+      
+      // Refresh data
+      onDataChange?.();
+      
+      // Close modal
+      confirmation.hideConfirmation();
+      
+    } catch (error: any) {
+      console.error("Failed to delete leagues:", error);
+      toast.error(error.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED);
+    } finally {
+      confirmation.setLoading(false);
+    }
+  };
+
   const handleBulkAction = (action: string) => {
     const selectedIds = selectedRows.map(row => row.original.id);
+    const selectedNames = selectedRows.map(row => row.original.name);
+    
     switch (action) {
       case "delete":
-        toast.error(`Delete ${selectedIds.length} leagues requires confirmation`);
+        confirmation.showConfirmation({
+          title: `Delete ${selectedIds.length} League${selectedIds.length > 1 ? 's' : ''}`,
+          description: selectedIds.length === 1 
+            ? `Are you sure you want to delete "${selectedNames[0]}"? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`
+            : `Are you sure you want to delete ${selectedIds.length} leagues? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`,
+          onConfirm: () => deleteLeagues(selectedIds),
+          variant: "destructive",
+          confirmText: "Delete",
+          cancelText: "Cancel",
+        });
         break;
       default:
         break;
@@ -433,14 +410,28 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className={`w-full space-y-4 py-4 ${RESPONSIVE_CLASSES.CONTAINER}`}>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={confirmation.open}
+        onOpenChange={confirmation.hideConfirmation}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        onConfirm={confirmation.onConfirm}
+        isLoading={confirmation.isLoading}
+        variant={confirmation.variant}
+        icon={<IconTrash className="h-5 w-5 text-destructive" />}
+      />
+
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search leagues..."
+              placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.LEAGUES}
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(String(event.target.value))}
               className="pl-8 max-w-sm"
@@ -457,13 +448,13 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
 
           {showTools && (
             <>
-              {/* Expand/Collapse all sports groups (icon) */}
+              {/* Expand/Collapse all league groups */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => toggleAllGroups(!allExpanded)}
                 disabled={!multiGroupKeys.length}
-                aria-label={allExpanded ? "Collapse all sports groups" : "Expand all sports groups"}
+                aria-label={allExpanded ? "Collapse all league groups" : "Expand all league groups"}
               >
                 {allExpanded ? (
                   <IconArrowsMinimize className="h-4 w-4" />
@@ -484,7 +475,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
                 <DropdownMenuContent align="start">
                   <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {["ACTIVE", "UPCOMING", "ONGOING", "FINISHED", "INACTIVE", "CANCELLED", "SUSPENDED"].map((status) => (
+                  {FILTER_OPTIONS.LEAGUE_STATUS.map((status) => (
                     <DropdownMenuCheckboxItem
                       key={status}
                       className="capitalize"
@@ -531,6 +522,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
             </>
           )}
         </div>
+        
         <div className="flex items-center space-x-2">
           {/* Create League Button */}
           {!selectedRows.length && createLeagueButton && (
@@ -546,6 +538,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
                 variant="destructive"
                 size="sm"
                 onClick={() => handleBulkAction("delete")}
+                disabled={confirmation.isLoading}
               >
                 <IconTrash className="mr-2 h-4 w-4" />
                 Delete
@@ -556,7 +549,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
       </div>
 
       {/* Data Table */}
-      <div className="rounded-md border">
+      <div className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -577,12 +570,23 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              // Render grouped rows: for names with multiple entries, show a collapsible parent row
-              groupedRows.map((group) => {
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <div className={TABLE_ANIMATIONS.LOADING_SPINNER}></div>
+                    {LOADING_STATES.LOADING_TEXT}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
+                groupedRows.map((group) => {
                 const key = group.name.trim().toLowerCase();
                 const isMulti = group.rows.length > 1;
-                const isExpanded = expandedGroups[key] ?? true; // default expanded for multi
+                const isExpanded = expandedGroups[key] ?? true;
 
                 if (!isMulti) {
                   const single = group.rows[0];
@@ -590,6 +594,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
                     <TableRow
                       key={single.id}
                       data-state={single.getIsSelected() && "selected"}
+                      className={TABLE_ANIMATIONS.ROW_HOVER}
                     >
                       {single.getVisibleCells().map((cell: Cell<League, unknown>) => (
                         <TableCell key={cell.id}>
@@ -617,7 +622,9 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
                             className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
                           />
                           {group.name}
-                          <span className="ml-2 text-xs text-muted-foreground">{group.rows.length} sports</span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {group.rows.length} league{group.rows.length !== 1 ? 's' : ''}
+                          </span>
                         </button>
                       </TableCell>
                     </TableRow>
@@ -628,6 +635,7 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
                         <TableRow
                           key={row.id}
                           data-state={row.getIsSelected() && "selected"}
+                          className={TABLE_ANIMATIONS.ROW_HOVER}
                         >
                           {row.getVisibleCells().map((cell: Cell<League, unknown>) => (
                             <TableCell key={cell.id}>
@@ -656,19 +664,12 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      <span className="ml-2">Loading leagues...</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <IconTrophy className="size-12 text-muted-foreground" />
-                      <span>No leagues found</span>
-                    </div>
-                  )}
+                  <div className="flex flex-col items-center gap-2">
+                    <IconTrophy className="size-12 text-muted-foreground" />
+                    <span>{LOADING_STATES.NO_DATA_TEXT}</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
@@ -677,10 +678,10 @@ export function LeaguesDataTable({ data, isLoading = false, createLeagueButton }
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className={`flex items-center justify-between space-x-2 py-4 ${RESPONSIVE_CLASSES.PADDING}`}>
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {table.getFilteredRowModel().rows.length} league(s) selected.
         </div>
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">

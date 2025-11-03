@@ -117,6 +117,7 @@ export default function DivisionCreateModal({
   const [error, setError] = useState("");
   const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
 
+  
   const {
     register,
     handleSubmit,
@@ -658,16 +659,6 @@ export default function DivisionCreateModal({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* <div className="flex items-center gap-2">
-                    <Switch
-                      checked={formValues.autoAssignmentEnabled}
-                      onCheckedChange={(val) =>
-                        setValue("autoAssignmentEnabled", Boolean(val))
-                      }
-                    />
-                    <Label className="text-sm">Auto assignment</Label>
-                  </div> */}
-
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={formValues.isActive}

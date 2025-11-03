@@ -6,6 +6,13 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// Import constants
+import {
+  getStatusColor,
+  DEFAULTS,
+  CHAT_UI,
+} from "./constants";
+
 const useResponsive = (query: any, start: any) => {
   const [isMatch, setIsMatch] = useState(false);
   useEffect(() => {
@@ -38,7 +45,7 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
     ? conversation?.displayName || conversation?.name || "Group Chat"
     : otherParticipants[0]?.name ||
       otherParticipants[0]?.displayName ||
-      "Unknown User";
+      DEFAULTS.UNKNOWN_USER;
 
   const rawDisplayText = conversation?.lastMessage?.content || "";
   const displayText = getPreviewText(rawDisplayText, 6);
@@ -66,7 +73,7 @@ const paths = {
 };
 
 const getInitials = (name: string) => {
-  if (!name) return "?";
+  if (!name) return DEFAULTS.AVATAR_FALLBACK;
   return name
     .split(" ")
     .map((word) => word.charAt(0))
@@ -135,24 +142,32 @@ const ChatNavItem = ({
 
   const renderGroup = (
     <div className="relative">
-      <Avatar className="w-12 h-12">
+      <Avatar
+        className={collapse ? CHAT_UI.AVATAR_SIZES.SMALL : CHAT_UI.AVATAR_SIZES.MEDIUM}
+      >
         <AvatarImage
           src={conversation.avatarUrl || conversation.photoURL}
           alt={displayName || "Group Chat"}
         />
-        <AvatarFallback className="text-sm bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
+        <AvatarFallback className="text-sm  bg-gradient-to-br from-brand-dark to-brand-light text-white text-primary-foreground font-semibold">
           {getGroupInitials(displayName || conversation.name || "Group")}
         </AvatarFallback>
       </Avatar>
       {hasOnlineInGroup && (
-        <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${getStatusColor(
+            "online"
+          )} ring-2 ring-background`}
+        />
       )}
     </div>
   );
 
   const renderSingle = (
     <div className="relative">
-      <Avatar className="w-12 h-12">
+      <Avatar
+        className={collapse ? CHAT_UI.AVATAR_SIZES.SMALL : CHAT_UI.AVATAR_SIZES.MEDIUM}
+      >
         <AvatarImage
           src={photoURL || singleParticipant?.photoURL}
           alt={displayName || "User"}
@@ -162,7 +177,11 @@ const ChatNavItem = ({
         </AvatarFallback>
       </Avatar>
       {status === "online" && (
-        <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${getStatusColor(
+            "online"
+          )} ring-2 ring-background`}
+        />
       )}
     </div>
   );
@@ -170,15 +189,18 @@ const ChatNavItem = ({
   return (
     <div
       onClick={handleClickConversation}
-      className={`flex items-center p-3 cursor-pointer rounded-lg mb-1 transition-colors
-        ${selected ? "bg-accent/10" : "hover:bg-accent/5"}
+      className={`flex items-center p-3 cursor-pointer rounded-lg mb-1
+        ${selected
+          ? "bg-primary/10 border border-primary/20"
+          : `hover:bg-accent/50`
+        }
       `}
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0">
         {group ? renderGroup : renderSingle}
         {conversation.unreadCount > 0 && collapse && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-xs text-white font-medium">
+          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground font-medium">
             {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
           </span>
         )}
@@ -189,10 +211,10 @@ const ChatNavItem = ({
         <div className="flex flex-1 justify-between items-center ml-3 min-w-0">
           <div className="flex flex-col overflow-hidden flex-1 max-w-[65%]">
             <span className="text-sm font-semibold truncate">
-              {displayName || "Unknown"}
+              {displayName || DEFAULTS.UNKNOWN_USER}
             </span>
             <span className="text-xs text-muted-foreground truncate">
-              {displayText || "No messages yet"}
+              {displayText || DEFAULTS.EMPTY_MESSAGES}
             </span>
           </div>
 
@@ -205,7 +227,7 @@ const ChatNavItem = ({
                 : ""}
             </span>
             {conversation.unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs text-white font-medium">
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-destructive text-xs text-destructive-foreground font-medium">
                 {conversation.unreadCount > 99
                   ? "99+"
                   : conversation.unreadCount}

@@ -56,89 +56,24 @@ import {
 } from "@/components/ui/table";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
+// Import constants
+import {
+  formatTableDate,
+  formatCurrency,
+  getStatusBadgeVariant,
+  getSportColor,
+  getSportLabel,
+  LOADING_STATES,
+  TABLE_ANIMATIONS,
+  RESPONSIVE_CLASSES,
+  ACTION_MESSAGES,
+  COLUMN_WIDTHS,
+} from './constants';
+
 export type SeasonsDataTableProps = {
   data: Season[];
   isLoading: boolean;
   onViewSeason?: (seasonId: string) => void;
-};
-
-const formatDate = (date: Date | string | null | undefined) => {
-  if (!date) return "Not set";
-
-  try {
-    const dateObj = date instanceof Date ? date : new Date(date);
-    if (isNaN(dateObj.getTime())) return "Invalid date";
-
-    return dateObj.toLocaleDateString("en-MY", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch (error) {
-    console.error("Error formatting date:", error, "Input:", date);
-    return "Invalid date";
-  }
-};
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-  }).format(amount);
-};
-
-const getLeagueTypeBadgeVariant = (leagueType: string) => {
-  switch (leagueType) {
-    case "Pickleball":
-      return "default";
-    case "Tennis":
-      return "secondary";
-    case "Padel":
-      return "outline";
-    default:
-      return "outline";
-  }
-};
-
-const getSportColor = (leagueType: string) => {
-  switch (leagueType) {
-    case "PICKLEBALL":
-      return "#8e41e6ff";
-    case "TENNIS":
-      return "#518516ff";
-    case "PADEL":
-      return "#3880c0ff";
-    default:
-      return "#6B7280";
-  }
-};
-
-// const getCompetitionTypeBadgeVariant = (competitionType: string) => {
-//   switch (competitionType) {
-//     case "Men's Singles":
-//       return "default";
-//     case "Men's Doubles":
-//       return "secondary";
-//     case "Mixed Doubles":
-//       return "outline";
-//     default:
-//       return "outline";
-//   }
-// };
-
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case "UPCOMING":
-      return "secondary";
-    case "ACTIVE":
-      return "default";
-    case "FINISHED":
-      return "outline";
-    case "CANCELLED":
-      return "destructive";
-    default:
-      return "outline";
-  }
 };
 
 const getLeaguesDisplay = (season: Season): React.ReactNode => {
@@ -157,11 +92,24 @@ const getLeaguesDisplay = (season: Season): React.ReactNode => {
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Linked Leagues</h4>
           <div className="flex flex-wrap gap-1">
-            {season.leagues.map((league) => (
-              <Badge key={league.id} variant="outline" className="text-xs">
-                {league.name}
-              </Badge>
-            ))}
+            {season.leagues.map((league) => {
+              const sportColor = getSportColor(league.sportType?.toUpperCase() || 'DEFAULT');
+              const sportLabel = getSportLabel(league.sportType?.toUpperCase() || league.sportType || 'Unknown');
+              
+              return (
+                <div
+                  key={league.id}
+                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
+                  style={{ 
+                    color: sportColor,
+                    borderColor: sportColor + '40',
+                    backgroundColor: sportColor + '08'
+                  }}
+                >
+                  {league.name} • {sportLabel}
+                </div>
+              );
+            })}
           </div>
         </div>
       </HoverCardContent>
@@ -177,7 +125,7 @@ const handleViewSeason = (
 };
 
 const handleDeleteSeason = async (seasonId: string) => {
-  if (!confirm("Are you sure you want to delete this season?")) {
+  if (!confirm(ACTION_MESSAGES.DELETE_CONFIRM)) {
     return;
   }
 
@@ -186,7 +134,7 @@ const handleDeleteSeason = async (seasonId: string) => {
     // Refresh the data after successful deletion
     window.location.reload();
   } catch (error) {
-    console.error("Failed to delete season:", error);
+    console.error(ACTION_MESSAGES.ERROR.DELETE_FAILED, error);
   }
 };
 
@@ -216,6 +164,7 @@ const columns: ColumnDef<Season>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+    size: 50,
   },
   {
     accessorKey: "name",
@@ -257,7 +206,7 @@ const columns: ColumnDef<Season>[] = [
     cell: ({ row }) => {
       const status = row.original.status;
       return (
-        <Badge variant={getStatusBadgeVariant(status)} className="capitalize">
+        <Badge variant={getStatusBadgeVariant('SEASON', status)} className="capitalize">
           {status}
         </Badge>
       );
@@ -273,9 +222,9 @@ const columns: ColumnDef<Season>[] = [
       }
 
       // Try to parse as number for currency formatting
-      const feeAmount = parseFloat(entryFee as unknown as string);
+      const feeAmount = typeof entryFee === 'string' ? parseFloat(entryFee) : entryFee;
       if (!isNaN(feeAmount)) {
-        return <span className="font-medium">{formatCurrency(feeAmount)}</span>;
+        return <span className="font-medium">{formatCurrency(feeAmount ,'MYR') }</span>;
       }
 
       // If not a number, display as-is
@@ -316,7 +265,7 @@ const columns: ColumnDef<Season>[] = [
 
       return (
         <div className="flex items-center gap-2">
-          <span>{formatDate(regiDeadline)}</span>
+          <span>{formatTableDate(regiDeadline)}</span>
         </div>
       );
     },
@@ -329,11 +278,11 @@ const columns: ColumnDef<Season>[] = [
         <IconCalendar className="size-4 text-muted-foreground" />
         <span>
           {row.original.startDate
-            ? formatDate(row.original.startDate)
+            ? formatTableDate(row.original.startDate)
             : "No start date"}{" "}
           –{" "}
           {row.original.endDate
-            ? formatDate(row.original.endDate)
+            ? formatTableDate(row.original.endDate)
             : "No end date"}
         </span>
       </div>
@@ -349,7 +298,7 @@ const columns: ColumnDef<Season>[] = [
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="hover:bg-muted hover:text-foreground transition-colors flex size-8"
+              className={`${TABLE_ANIMATIONS.ROW_HOVER} ${TABLE_ANIMATIONS.TRANSITION} flex size-8`}
               size="icon"
             >
               <IconDotsVertical className="size-4" />
@@ -464,10 +413,10 @@ export function SeasonsDataTable({
   return (
     <div className="space-y-4">
       {/* Search and Selection Info */}
-      <div className="flex items-center justify-between px-1 lg:px-2">
+      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search seasons by name, league type, entry fee..."
+            placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.SEASONS}
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
@@ -501,7 +450,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Table Container */}
-      <div className="rounded-md border mx-1 lg:mx-2 bg-background">
+      <div className={`rounded-md border ${RESPONSIVE_CLASSES.CONTAINER} bg-background`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -529,8 +478,8 @@ export function SeasonsDataTable({
                   className="h-24 text-center text-muted-foreground"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Loading seasons...
+                    <div className={TABLE_ANIMATIONS.LOADING_SPINNER}></div>
+                    {LOADING_STATES.LOADING_TEXT}
                   </div>
                 </TableCell>
               </TableRow>
@@ -547,7 +496,7 @@ export function SeasonsDataTable({
                     <TableRow
                       key={single.id}
                       data-state={single.getIsSelected() && "selected"}
-                      className="hover:bg-muted/50"
+                      className={TABLE_ANIMATIONS.ROW_HOVER}
                     >
                       {single
                         .getVisibleCells()
@@ -592,7 +541,7 @@ export function SeasonsDataTable({
                         <TableRow
                           key={row.id}
                           data-state={row.getIsSelected() && "selected"}
-                          className="hover:bg-muted/50"
+                          className={TABLE_ANIMATIONS.ROW_HOVER}
                         >
                           {row
                             .getVisibleCells()
@@ -625,7 +574,7 @@ export function SeasonsDataTable({
                   colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No seasons found.
+                  {LOADING_STATES.NO_DATA_TEXT}
                 </TableCell>
               </TableRow>
             )}
@@ -634,7 +583,7 @@ export function SeasonsDataTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-1 lg:px-2">
+      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
         <div className="text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} season(s)

@@ -6,11 +6,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronDown, ChevronRight, MapPin, Phone, Mail, User } from "lucide-react"
-
-interface ChatRoomSingleProps {
-  participant: any;
-  conversation: any;
-}
+import { ChatRoomSingleProps } from "./types"
+import { getStatusColor } from "./constants"
 
 const getInitials = (name: string) => {
   if (!name) return '?';
@@ -26,22 +23,12 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
   const collapse = useBoolean(true)
   
   const name = participant?.name || participant?.displayName || 'Unknown User'
-  const avatarUrl = participant?.photoURL || participant?.avatarUrl
+  const avatarUrl = participant?.photoURL || 'unknown'
   const role = participant?.role || 'User'
-  const address = participant?.address || 'No address provided'
   const phoneNumber = participant?.phoneNumber || 'No phone number'
   const email = participant?.email || 'No email provided'
   const status = participant?.status || 'offline'
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500'
-      case 'away': return 'bg-yellow-500'
-      case 'busy': return 'bg-red-500'
-      case 'offline':
-      default: return 'bg-gray-400'
-    }
-  }
 
   const renderInfo = (
     <div className="flex flex-col items-center py-5 px-3 border-b border-border">
@@ -109,14 +96,6 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Phone</span>
             <span className="text-sm">{phoneNumber}</span>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3">
-          <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Address</span>
-            <span className="text-sm">{address}</span>
           </div>
         </div>
       </div>
