@@ -47,6 +47,7 @@ const SeasonCreateModal = dynamic(
   }
 );
 
+
 // Note: Metadata and revalidate are not available in client components
 // These would need to be moved to a layout.tsx file if needed
 

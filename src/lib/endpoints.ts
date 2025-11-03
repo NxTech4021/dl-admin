@@ -131,7 +131,7 @@ export const endpoints = {
   },
 
    notifications: {
-    getAll: "/api/notifications",
+    getAll: "/api/notifications/",
     unreadCount: "/api/notifications/unread-count",
     stats: "/api/notifications/stats",
     markRead: (id: string) => `/api/notifications/${id}/read`,
@@ -139,3 +139,4 @@ export const endpoints = {
     archive: (id: string) => `/api/notifications/${id}/archive`,
   },
 };
+  

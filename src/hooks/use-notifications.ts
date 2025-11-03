@@ -104,7 +104,7 @@ export const useNotifications = () => {
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
-      await axiosInstance.patch(endpoints.notifications.markRead(notificationId));
+      await axiosInstance.put(endpoints.notifications.markRead(notificationId));
       
       // Update local state
       setNotifications(prev => 
@@ -127,7 +127,7 @@ export const useNotifications = () => {
   // Mark all as read
   const markAllAsRead = useCallback(async () => {
     try {
-      const response = await axiosInstance.patch(endpoints.notifications.markAllRead);
+      const response = await axiosInstance.put(endpoints.notifications.markAllRead);
       
       if (response.data?.success) {
         setNotifications(prev => 
@@ -145,7 +145,7 @@ export const useNotifications = () => {
   // Archive notification
   const archiveNotification = useCallback(async (notificationId: string) => {
     try {
-      await axiosInstance.patch(endpoints.notifications.archive(notificationId));
+      await axiosInstance.put(endpoints.notifications.archive(notificationId));
       
       // Remove from local state
       setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
