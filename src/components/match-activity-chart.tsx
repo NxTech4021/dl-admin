@@ -40,80 +40,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-// Static mock data for the last 12 weeks (realistic for 100+ member app with fluctuations)
-
-// Generate dynamic mock data based on chart range and history range
-
-const generateMatchData = (
-  chartRange: "monthly" | "average" | "thisWeek",
-  historyRange: 1 | 3 | 6
-) => {
-  const weeksToShow = historyRange * 4; // Approximate weeks per month
-
-  const data = [];
-
-  const currentDate = new Date();
-
-  // Base match numbers per sport
-
-  const baseMatches = {
-    tennisLeague: 12,
-    tennisFriendly: 7,
-
-    pickleballLeague: 8,
-    pickleballFriendly: 5,
-
-    padelLeague: 4,
-    padelFriendly: 3,
-  };
-
-  const multiplier =
-    chartRange === "average" ? 1 : chartRange === "thisWeek" ? 1.2 : 1;
-
-  for (let i = weeksToShow - 1; i >= 0; i--) {
-    const weekDate = new Date(currentDate);
-
-    weekDate.setDate(weekDate.getDate() - i * 7);
-
-    const randomVariation = () => 0.7 + Math.random() * 0.6; // ±30% variation
-
-    data.push({
-      week: `Week ${weeksToShow - i}`,
-
-      date: weekDate.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
-
-      tennisLeague: Math.round(
-        baseMatches.tennisLeague * multiplier * randomVariation()
-      ),
-
-      tennisFriendly: Math.round(
-        baseMatches.tennisFriendly * multiplier * randomVariation()
-      ),
-
-      pickleballLeague: Math.round(
-        baseMatches.pickleballLeague * multiplier * randomVariation()
-      ),
-
-      pickleballFriendly: Math.round(
-        baseMatches.pickleballFriendly * multiplier * randomVariation()
-      ),
-
-      padelLeague: Math.round(
-        baseMatches.padelLeague * multiplier * randomVariation()
-      ),
-
-      padelFriendly: Math.round(
-        baseMatches.padelFriendly * multiplier * randomVariation()
-      ),
-    });
-  }
-
-  return data;
-};
+import { getMatchActivityData } from "@/data/mock-chart-data";
 
 const chartConfig = {
   tennisLeague: {
@@ -172,11 +99,9 @@ export function MatchActivityChart({
 
   const [chartType, setChartType] = React.useState<ChartType>("line");
 
-  // Generate data based on current props
-
+  // Use static mock data based on current props
   const chartData = React.useMemo(
-    () => generateMatchData(chartRange, historyRange),
-
+    () => getMatchActivityData(chartRange, historyRange),
     [chartRange, historyRange]
   );
 

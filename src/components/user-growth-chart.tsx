@@ -16,40 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// === Generate dynamic mock data based on history range
-const generateChartData = (historyRange: 1 | 3 | 6) => {
-  const data = [];
-  const currentDate = new Date();
-  
-  // Generate data for the specified number of months (going backwards from current month)
-  for (let i = 0; i < historyRange; i++) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (historyRange - 1 - i), 1);
-    const monthStr = date.toISOString().slice(0, 7);
-    
-    // Generate realistic growth patterns with consistent seed for same month
-    const seed = date.getFullYear() * 12 + date.getMonth();
-    const random = (seed * 9301 + 49297) % 233280 / 233280; // Simple seeded random
-    
-    const baseUsers = 150 + i * 15 + Math.floor(random * 30);
-    const baseMembers = Math.floor(baseUsers * (0.45 + random * 0.15));
-    
-    data.push({
-      month: monthStr,
-      totalUsers: baseUsers,
-      payingMembers: baseMembers,
-    });
-  }
-  
-  return data;
-};
+import { getUserGrowthData, getUserGrowthThisWeekData } from "@/data/mock-chart-data";
 
 // === Chart configuration
 const chartConfig = {
@@ -75,9 +42,9 @@ export function UserGrowthChart({
   chartRange = "monthly",
   historyRange = 3,
 }: UserGrowthChartProps) {
-  // Generate data based on history range
+  // Use static mock data based on history range
   const chartData = React.useMemo(() => 
-    generateChartData(historyRange), 
+    getUserGrowthData(historyRange), 
     [historyRange]
   );
 
@@ -111,20 +78,10 @@ export function UserGrowthChart({
     }
 
     if (chartRange === "thisWeek") {
-      // Show current week data (simulate current week activity)
-      const currentDate = new Date();
-      const weekStr = `Week of ${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      // using mock data
+      const weeklyData = getUserGrowthThisWeekData(chartData);
       
-      // Generate current week data based on latest trends
-      const latestMonth = chartData[chartData.length - 1] || { totalUsers: 200, payingMembers: 90 };
-      const weeklyUsers = Math.round(latestMonth.totalUsers / 4.3 * (0.8 + Math.random() * 0.4)); // Some weekly variation
-      const weeklyMembers = Math.round(latestMonth.payingMembers / 4.3 * (0.8 + Math.random() * 0.4));
-      
-      return [{
-        month: weekStr,
-        totalUsers: weeklyUsers,
-        payingMembers: weeklyMembers,
-      }];
+      return [weeklyData];
     }
 
     // Default monthly

@@ -23,40 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Generate dynamic mock data based on chart range and history range
-const generateSportData = (chartRange: "monthly" | "average" | "thisWeek", historyRange: 1 | 3 | 6) => {
-  const baseData = {
-    Tennis: { members: 68, revenue: 1700 },
-    Pickleball: { members: 42, revenue: 1260 },
-    Padel: { members: 22, revenue: 1000 },
-  };
-
-  const multiplier = chartRange === "average" ? 0.25 : chartRange === "thisWeek" ? 0.15 : 1;
-  const historyMultiplier = historyRange === 1 ? 0.8 : historyRange === 3 ? 1 : 1.2;
-  const randomVariation = () => 0.9 + Math.random() * 0.2; // ±10% variation
-
-  return [
-    {
-      sport: "Tennis",
-      payingMembers: Math.round(baseData.Tennis.members * multiplier * historyMultiplier * randomVariation()),
-      revenue: Math.round(baseData.Tennis.revenue * multiplier * historyMultiplier * randomVariation()),
-      fill: "#ABFE4D",
-    },
-    {
-      sport: "Pickleball",
-      payingMembers: Math.round(baseData.Pickleball.members * multiplier * historyMultiplier * randomVariation()),
-      revenue: Math.round(baseData.Pickleball.revenue * multiplier * historyMultiplier * randomVariation()),
-      fill: "#A04DFE",
-    },
-    {
-      sport: "Padel",
-      payingMembers: Math.round(baseData.Padel.members * multiplier * historyMultiplier * randomVariation()),
-      revenue: Math.round(baseData.Padel.revenue * multiplier * historyMultiplier * randomVariation()),
-      fill: "#4DABFE",
-    },
-  ];
-};
+import { getSportComparisonData } from "@/data/mock-chart-data";
 
 const chartConfig = {
   payingMembers: {
@@ -83,9 +50,9 @@ export function SportComparisonChart({
   const [activeMetric, setActiveMetric] =
     React.useState<MetricType>("payingMembers");
 
-  // Generate data based on current props
+  // using mock data
   const chartData = React.useMemo(() => 
-    generateSportData(chartRange, historyRange), 
+    getSportComparisonData(chartRange, historyRange), 
     [chartRange, historyRange]
   );
 
