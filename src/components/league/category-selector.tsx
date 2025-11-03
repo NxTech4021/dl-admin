@@ -38,13 +38,16 @@ interface CategoryData {
   }>;
   createdAt: Date;
   updatedAt: Date;
+  league: {
+    name: string;
+  };
 }
 
-export function CategorySelector({ 
-  value, 
-  onChange, 
-  placeholder = "Select a category...", 
-  className 
+export function CategorySelector({
+  value,
+  onChange,
+  placeholder = "Select a category...",
+  className,
 }: CategorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState<CategoryData[]>([]);
@@ -99,7 +102,9 @@ export function CategorySelector({
     category.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedCategory = categories.find((category) => category.name === value);
+  const selectedCategory = categories.find(
+    (category) => category.name === value
+  );
 
   const handleCategorySelect = (category: CategoryData) => {
     onChange(category.name || "", category);
@@ -171,9 +176,9 @@ export function CategorySelector({
               ref={scrollContainerRef}
               className="max-h-64 overflow-y-auto overflow-x-hidden"
               style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#d1d5db #f3f4f6',
-                WebkitOverflowScrolling: 'touch'
+                scrollbarWidth: "thin",
+                scrollbarColor: "#d1d5db #f3f4f6",
+                WebkitOverflowScrolling: "touch",
               }}
               onWheel={(e) => {
                 e.preventDefault();
@@ -189,7 +194,9 @@ export function CategorySelector({
                 </div>
               ) : filteredCategories.length === 0 ? (
                 <div className="p-2 text-sm text-muted-foreground text-center">
-                  {searchTerm ? "No categories found matching your search." : "No categories found."}
+                  {searchTerm
+                    ? "No categories found matching your search."
+                    : "No categories found."}
                 </div>
               ) : (
                 filteredCategories.map((category) => (
@@ -198,14 +205,17 @@ export function CategorySelector({
                     onClick={() => handleCategorySelect(category)}
                     className={cn(
                       "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
-                      selectedCategory?.id === category.id && "bg-accent text-accent-foreground"
+                      selectedCategory?.id === category.id &&
+                        "bg-accent text-accent-foreground"
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedCategory?.id === category.id ? "opacity-100" : "opacity-0"
+                          selectedCategory?.id === category.id
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       <span className="font-medium">{category.name}</span>
@@ -233,27 +243,41 @@ export function CategorySelector({
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
               <Label className="text-muted-foreground">Game Type:</Label>
-              <p className="font-medium capitalize">{selectedCategory.game_type?.toLowerCase() || "Not set"}</p>
+              <p className="font-medium capitalize">
+                {selectedCategory.game_type?.toLowerCase() || "Not set"}
+              </p>
             </div>
             <div>
-              <Label className="text-muted-foreground">Gender Restriction:</Label>
-              <p className="font-medium capitalize">{selectedCategory.genderRestriction?.toLowerCase() || "Not set"}</p>
+              <Label className="text-muted-foreground">
+                Gender Restriction:
+              </Label>
+              <p className="font-medium capitalize">
+                {selectedCategory.genderRestriction?.toLowerCase() || "Not set"}
+              </p>
             </div>
             <div>
               <Label className="text-muted-foreground">Match Format:</Label>
-              <p className="font-medium">{selectedCategory.matchFormat || "Not set"}</p>
+              <p className="font-medium">
+                {selectedCategory.matchFormat || "Not set"}
+              </p>
             </div>
             <div>
               <Label className="text-muted-foreground">Max Players:</Label>
-              <p className="font-medium">{selectedCategory.maxPlayers || "Not set"}</p>
+              <p className="font-medium">
+                {selectedCategory.maxPlayers || "Not set"}
+              </p>
             </div>
             <div>
               <Label className="text-muted-foreground">Max Teams:</Label>
-              <p className="font-medium">{selectedCategory.maxTeams || "Not set"}</p>
+              <p className="font-medium">
+                {selectedCategory.maxTeams || "Not set"}
+              </p>
             </div>
             <div>
               <Label className="text-muted-foreground">League:</Label>
-              <p className="font-medium">{selectedCategory.league?.name || "Not set"}</p>
+              <p className="font-medium">
+                {selectedCategory.league?.name || "Not set"}
+              </p>
             </div>
           </div>
         </div>

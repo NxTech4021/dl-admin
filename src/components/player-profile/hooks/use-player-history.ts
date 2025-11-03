@@ -1,10 +1,15 @@
 import * as React from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { LeagueHistory, SeasonHistory } from "../types";
+import { LeagueHistory, SeasonHistory } from "../utils/types";
+// import { LeagueHistory, SeasonHistory } from "../types";
 
 export function usePlayerHistory(playerId: string) {
-  const [leagueHistory, setLeagueHistory] = React.useState<LeagueHistory[] | null>(null);
-  const [seasonHistory, setSeasonHistory] = React.useState<SeasonHistory[] | null>(null);
+  const [leagueHistory, setLeagueHistory] = React.useState<
+    LeagueHistory[] | null
+  >(null);
+  const [seasonHistory, setSeasonHistory] = React.useState<
+    SeasonHistory[] | null
+  >(null);
   const [historyLoading, setHistoryLoading] = React.useState({
     leagues: false,
     seasons: false,
@@ -54,4 +59,3 @@ export function usePlayerHistory(playerId: string) {
     fetchSeasonHistory,
   };
 }
-

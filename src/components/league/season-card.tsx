@@ -1,15 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import { IconCalendar, IconPlus, IconTrash, IconEdit, IconEye } from "@tabler/icons-react";
+import {
+  IconCalendar,
+  IconPlus,
+  IconTrash,
+  IconEdit,
+  IconEye,
+} from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Season, FormatDateFunction } from "./types";
 import dynamic from "next/dynamic";
 import {
@@ -48,7 +50,7 @@ interface SeasonCardProps {
 export function SeasonCard({
   seasons,
   leagueId,
-  categories, 
+  categories,
   formatDate,
   onSeasonCreated,
   onDeleteSeason,
@@ -97,24 +99,27 @@ export function SeasonCard({
                   <div>
                     <p className="font-medium">{season.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatDate(season.startDate)} - {formatDate(season.endDate)}
+                      {formatDate(season.startDate)} -{" "}
+                      {formatDate(season.endDate)}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    season.isActive 
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-                      : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                  }`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${
+                      season.isActive
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                    }`}
+                  >
                     {season.status}
                   </span>
-                  
+
                   {/* View Button */}
                   {onViewSeason && (
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onViewSeason(season.id)}
@@ -125,8 +130,8 @@ export function SeasonCard({
 
                   {/* Edit Button */}
                   {onEditSeason && (
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onEditSeason(season)}
@@ -139,7 +144,11 @@ export function SeasonCard({
                   {onDeleteSeason && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                        >
                           <IconTrash className="size-4 text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
@@ -147,7 +156,8 @@ export function SeasonCard({
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Season</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this season? This action cannot be undone.
+                            Are you sure you want to delete this season? This
+                            action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -179,7 +189,7 @@ export function SeasonCard({
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         leagueId={leagueId}
-        categories={categories} 
+        categories={categories as any}
         onSeasonCreated={handleSeasonCreated}
       />
     </Card>

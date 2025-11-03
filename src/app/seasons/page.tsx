@@ -57,7 +57,6 @@ export default function Page() {
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
-
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
     let response;
@@ -201,7 +200,10 @@ export default function Page() {
                         <div className="text-2xl font-bold">
                           {" "}
                           {seasons.reduce((total, season) => {
-                            const fee = parseFloat(season?.entryFee || '0') || 0;
+                            const fee =
+                              parseFloat(
+                                (season?.entryFee as unknown as string) || "0"
+                              ) || 0;
                             const participants =
                               season.memberships?.length || 0;
                             return total + fee * participants;

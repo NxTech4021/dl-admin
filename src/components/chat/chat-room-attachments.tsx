@@ -1,17 +1,23 @@
-"use client"
+"use client";
 
-import PropTypes from "prop-types"
-import { useBoolean } from "@/app/chat/hooks/use-boolean"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import PropTypes from "prop-types";
+import { useBoolean } from "@/app/chat/hooks/use-boolean";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronDown, ChevronRight } from "lucide-react";
 // import FileThumbnail from "src/components/file-thumbnail"
 // import { fDateTime } from "src/utils/format-time"
 
-export default function ChatRoomAttachments({ attachments = [] }) { 
-  const collapse = useBoolean(true)
-  const totalAttachments = attachments.length
+interface ChatRoomAttachments {
+  attachments: {
+    name: string;
+  }[];
+}
+
+export default function ChatRoomAttachments({ attachments = [] }: ChatRoomAttachments) {
+  const collapse = useBoolean(true);
+  const totalAttachments = attachments.length;
 
   const renderBtn = (
     <Button
@@ -27,7 +33,7 @@ export default function ChatRoomAttachments({ attachments = [] }) {
         <ChevronDown className="h-4 w-4" />
       )}
     </Button>
-  )
+  );
 
   const renderContent = (
     <ScrollArea className="px-2 py-2.5 max-h-64">
@@ -47,7 +53,9 @@ export default function ChatRoomAttachments({ attachments = [] }) {
             </div>
 
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium truncate">{attachment.name}</span>
+              <span className="text-sm font-medium truncate">
+                {attachment.name}
+              </span>
               <span className="text-xs text-muted-foreground truncate mt-1">
                 {/* {fDateTime(attachment.createdAt)} */}
               </span>
@@ -56,7 +64,7 @@ export default function ChatRoomAttachments({ attachments = [] }) {
         ))}
       </div>
     </ScrollArea>
-  )
+  );
 
   return (
     <div className="flex flex-col">
@@ -71,9 +79,9 @@ export default function ChatRoomAttachments({ attachments = [] }) {
         {renderContent}
       </div>
     </div>
-  )
+  );
 }
 
 ChatRoomAttachments.propTypes = {
   attachments: PropTypes.array,
-}
+};

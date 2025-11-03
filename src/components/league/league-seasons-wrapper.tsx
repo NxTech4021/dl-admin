@@ -8,13 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { 
-  IconPlus, 
-  IconCalendar,
-  IconTrophy
-} from "@tabler/icons-react";
+import { IconPlus, IconCalendar, IconTrophy } from "@tabler/icons-react";
 
-interface Category {
+export interface Category {
+  leagues: any;
   id: string;
   name: string | null;
   genderRestriction: string;
@@ -38,7 +35,12 @@ interface LeagueSeasonsWrapperProps {
   onRefresh?: () => void;
 }
 
-export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh }: LeagueSeasonsWrapperProps) {
+export function LeagueSeasonsWrapper({
+  seasons,
+  leagueId,
+  leagueName,
+  onRefresh,
+}: LeagueSeasonsWrapperProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -59,7 +61,9 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
         // Fetch detailed data for each season using the same API as season detail page
         const seasonPromises = seasons.map(async (season) => {
           try {
-            const response = await axiosInstance.get(endpoints.season.getById(season.id));
+            const response = await axiosInstance.get(
+              endpoints.season.getById(season.id)
+            );
             return response.data; // This includes memberships with user data
           } catch (error) {
             console.error(`Failed to fetch season ${season.id}:`, error);
@@ -86,7 +90,7 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
       setCategoriesLoading(true);
       try {
         const response = await axiosInstance.get(endpoints.categories.getAll, {
-          params: { leagueId }
+          params: { leagueId },
         });
         const categoriesData = response.data?.data || response.data || [];
         setCategories(categoriesData);
@@ -123,12 +127,11 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
     }
   };
 
-
   const handleDeleteSeason = async (seasonId: string) => {
     if (!confirm("Are you sure you want to delete this season?")) {
       return;
     }
-    
+
     try {
       // TODO: Implement actual delete API call
       console.log("Delete season:", seasonId);
@@ -139,17 +142,17 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
     }
   };
 
-
-
   return (
     <div className="space-y-4">
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Seasons Management</h3>
-          <span className="text-sm text-muted-foreground">({seasonsWithPlayers.length} season(s))</span>
+          <span className="text-sm text-muted-foreground">
+            ({seasonsWithPlayers.length} season(s))
+          </span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button onClick={handleCreateSeason} size="sm" className="gap-2">
             <IconPlus className="w-4 h-4" />
@@ -167,31 +170,31 @@ export function LeagueSeasonsWrapper({ seasons, leagueId, leagueName, onRefresh 
           </div>
           <p className="text-2xl font-bold">{seasonsWithPlayers.length}</p>
         </div>
-        
+
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-2">
             <IconTrophy className="w-4 h-4 text-green-500" />
             <span className="text-sm font-medium">Active</span>
           </div>
           <p className="text-2xl font-bold">
-            {seasonsWithPlayers.filter(s => s.status === 'ACTIVE').length}
+            {seasonsWithPlayers.filter((s) => s.status === "ACTIVE").length}
           </p>
         </div>
-        
+
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-2">
             <IconCalendar className="w-4 h-4 text-orange-500" />
             <span className="text-sm font-medium">Upcoming</span>
           </div>
           <p className="text-2xl font-bold">
-            {seasonsWithPlayers.filter(s => s.status === 'UPCOMING').length}
+            {seasonsWithPlayers.filter((s) => s.status === "UPCOMING").length}
           </p>
         </div>
       </div>
 
       {/* Data Table */}
-      <SeasonsDataTable 
-        data={seasonsWithPlayers} 
+      <SeasonsDataTable
+        data={seasonsWithPlayers}
         isLoading={seasonsLoading}
         onViewSeason={handleViewSeason}
       />

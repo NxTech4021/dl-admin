@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -20,6 +21,7 @@ import ChatNavAccount from "./chat-nav-account";
 import ChatNavItemSkeleton from "./chat-skeleton";
 import ChatNavItem from "./chat-nav-item";
 import NewChatModal from "./create-chat-modal";
+import { Conversation } from "@/app/chat/page";
 
 // --- MOCK HOOKS & UTILITIES ---
 const useResponsive = () => {
@@ -50,19 +52,19 @@ const useCollapseNav = () => {
 const NAV_WIDTH = "w-[320px]";
 const NAV_COLLAPSE_WIDTH = "w-[96px]";
 
-interface Conversation {
-  id: string;
-  type: "direct" | "group";
-  displayName: string;
-  photoURL?: string;
-  participants?: any[];
-  lastMessage?: {
-    content: string;
-    createdAt: string;
-    sender: { name: string };
-  };
-  unreadCount: number;
-}
+// export interface Conversation {
+//   id: string;
+//   type: "direct" | "group";
+//   displayName: string;
+//   photoURL?: string;
+//   participants?: any[];
+//   lastMessage?: {
+//     content: string;
+//     createdAt: string;
+//     sender: { name: string };
+//   };
+//   unreadCount: number;
+// }
 
 interface ChatNavProps {
   loading: boolean;

@@ -16,7 +16,7 @@ import { useChatData, useMessages } from "./hooks/chat";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Conversation {
+export interface Conversation {
   id: string;
   type: "direct" | "group";
   displayName: string;
@@ -113,9 +113,7 @@ export default function ChatView() {
     ? conversations.find((conv) => conv.id === selectedConversationId)
     : null;
 
-  const participants = conversation
-    ? conversation.participants
-    : [];
+  const participants = conversation ? conversation.participants : [];
 
   const details = !!conversation;
 

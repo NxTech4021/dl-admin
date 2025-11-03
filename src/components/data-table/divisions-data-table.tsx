@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -143,8 +144,9 @@ export function DivisionsDataTable() {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -152,8 +154,9 @@ export function DivisionsDataTable() {
   const [isViewOpen, setIsViewOpen] = React.useState(false);
   const [editDivision, setEditDivision] = React.useState<Division | null>(null);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
-  const [deleteDivision, setDeleteDivision] =
-    React.useState<Division | null>(null);
+  const [deleteDivision, setDeleteDivision] = React.useState<Division | null>(
+    null
+  );
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -202,9 +205,7 @@ export function DivisionsDataTable() {
       const response = await axiosInstance.delete(
         endpoints.division.delete(deleteDivision.id)
       );
-      toast.success(
-        response.data?.message ?? "Division deleted successfully."
-      );
+      toast.success(response.data?.message ?? "Division deleted successfully.");
       await fetchDivisions();
       setDeleteDivision(null);
       setIsDeleteOpen(false);
@@ -337,7 +338,7 @@ export function DivisionsDataTable() {
                 <span className="text-xs text-muted-foreground">Singles</span>
                 <span className="text-sm font-medium">
                   {formatCount(division.currentSinglesCount)} /{" "}
-                  {renderValue(division.maxSingles)}
+                  {renderValue(division.maxSingles) as any}
                 </span>
               </div>
             ) : null;
@@ -347,7 +348,7 @@ export function DivisionsDataTable() {
                 <span className="text-xs text-muted-foreground">Doubles</span>
                 <span className="text-sm font-medium">
                   {formatCount(division.currentDoublesCount)} /{" "}
-                  {renderValue(division.maxDoublesTeams)}
+                  {renderValue(division.maxDoublesTeams) as any}
                 </span>
               </div>
             ) : null;
@@ -365,7 +366,9 @@ export function DivisionsDataTable() {
         header: "Sponsor & Prize",
         cell: ({ row }) => (
           <div className="flex flex-col gap-1 text-sm">
-            <span>{renderValue(row.original.sponsoredDivisionName)}</span>
+            <span>
+              {renderValue(row.original.sponsoredDivisionName) as any}
+            </span>
             <span className="text-xs text-muted-foreground">
               {formatCurrency(row.original.prizePoolTotal)}
             </span>
@@ -384,7 +387,9 @@ export function DivisionsDataTable() {
               {row.original.isActive ? "Active" : "Inactive"}
             </Badge>
             <Badge
-              variant={row.original.autoAssignmentEnabled ? "secondary" : "outline"}
+              variant={
+                row.original.autoAssignmentEnabled ? "secondary" : "outline"
+              }
             >
               {row.original.autoAssignmentEnabled ? "Auto assign" : "Manual"}
             </Badge>
@@ -586,7 +591,9 @@ export function DivisionsDataTable() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{viewDivision?.name ?? "Division details"}</DialogTitle>
+            <DialogTitle>
+              {viewDivision?.name ?? "Division details"}
+            </DialogTitle>
             <DialogDescription>
               Overview of this division configuration.
             </DialogDescription>
@@ -600,25 +607,16 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Season dates"
-                  value={`${formatMaybeDate(viewDivision.season?.startDate)} - ${formatMaybeDate(
-                    viewDivision.season?.endDate
-                  )}`}
+                  value={`${formatMaybeDate(
+                    viewDivision.season?.startDate
+                  )} - ${formatMaybeDate(viewDivision.season?.endDate)}`}
                 />
-                <DetailRow
-                  label="Level"
-                  value={viewDivision.divisionLevel}
-                />
-                <DetailRow
-                  label="Game type"
-                  value={viewDivision.gameType}
-                />
-                <DetailRow
-                  label="Gender"
-                  value={viewDivision.genderCategory}
-                />
+                <DetailRow label="Level" value={viewDivision.divisionLevel} />
+                <DetailRow label="Game type" value={viewDivision.gameType} />
+                <DetailRow label="Gender" value={viewDivision.genderCategory} />
                 <DetailRow
                   label="Points threshold"
-                  value={renderValue(viewDivision.threshold)}
+                  value={renderValue(viewDivision.threshold) as any}
                 />
                 <DetailRow
                   label="Capacity"
@@ -650,11 +648,13 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Sponsor"
-                  value={renderValue(viewDivision.sponsoredDivisionName)}
+                  value={renderValue(viewDivision.sponsoredDivisionName) as any}
                 />
                 <DetailRow
                   label="Auto assignment"
-                  value={viewDivision.autoAssignmentEnabled ? "Enabled" : "Disabled"}
+                  value={
+                    viewDivision.autoAssignmentEnabled ? "Enabled" : "Disabled"
+                  }
                 />
                 <DetailRow
                   label="Status"
@@ -727,9 +727,7 @@ export function DivisionsDataTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteDivision}
               disabled={isDeleting}

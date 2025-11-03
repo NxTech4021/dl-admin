@@ -76,7 +76,7 @@ export default function SeasonDetailsSection({
             <DetailField label="Season Name" value={season.name} />
             <DetailField
               label="Entry Fee"
-              value={formatEntryFee(season.entryFee)}
+              value={formatEntryFee(season.entryFee as unknown as string)}
             />
             {/* <DetailField label="Sport Type" value={season.sportType || 'N/A'} />
             <DetailField label="Season Type" value={season.seasonType || 'N/A'} /> */}
