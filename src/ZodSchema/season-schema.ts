@@ -10,7 +10,7 @@ export const membershipSchema = z.object({
     .optional(),
   joinedAt: z.coerce.date().optional(),
   withdrawalReason: z.string().nullable().optional(),
-  paymentStatus: z.enum(["PENDING", "PAID", "FAILED"]).optional(),
+  paymentStatus: z.enum(["PENDING", "COMPLETED", "FAILED"]).optional(),
   user: z
     .object({
       name: z.string().optional(),
