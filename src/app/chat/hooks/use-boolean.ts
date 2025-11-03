@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 
 // ----------------------------------------------------------------------
 
-export function useBoolean(defaultValue) {
+export function useBoolean(defaultValue : any) {
   const [value, setValue] = useState(!!defaultValue);
 
   const onTrue = useCallback(() => {
