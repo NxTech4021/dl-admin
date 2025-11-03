@@ -5,9 +5,6 @@ import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 
 export interface ChatUser {
-  email: string;
-  phoneNumber: string;
-  address: string;
   id: string;
   name: string;
   username?: string;
@@ -34,7 +31,6 @@ export interface Message {
 }
 
 export interface Thread {
-  avatarUrl: any;
   id: string;
   name?: string;
   avatarUrl?: string;

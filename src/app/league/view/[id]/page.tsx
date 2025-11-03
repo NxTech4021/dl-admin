@@ -42,8 +42,6 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 import {
-  getStatusBadgeVariant,
-  getSportLabel,
   formatLocation,
   FILTER_OPTIONS,
 } from "@/components/data-table/constants";
@@ -82,18 +80,6 @@ function getSportLabel(sport: string) {
     PADEL: "Padel",
   };
   return map[sport] || sport;
-}
-
-function getJoinTypeLabel(joinType: string) {
-  const map: Record<string, string> = {
-    OPEN: "Open to All",
-    INVITATION: "Invitation Only",
-    REQUEST: "Request to Join",
-    open: "Open to All",
-    invitation: "Invitation Only",
-    request: "Request to Join",
-  };
-  return map[joinType] || joinType;
 }
 
 function formatDateTime(dateString: string) {
