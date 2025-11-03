@@ -21,17 +21,22 @@ interface PairingLoading {
 }
 
 export function usePlayerPairingRequests(playerId: string) {
-  const [pairingRequests, setPairingRequests] = React.useState<PairingRequests>({
-    received: [],
-    sent: [],
-  });
+  const [pairingRequests, setPairingRequests] = React.useState<PairingRequests>(
+    {
+      received: [],
+      sent: [],
+    }
+  );
   const [pairingLoading, setPairingLoading] = React.useState<PairingLoading>({
     received: false,
     sent: false,
   });
 
   const fetchPairingRequests = React.useCallback(async () => {
-    if (pairingRequests.received.length > 0 && pairingRequests.sent.length > 0) {
+    if (
+      pairingRequests.received.length > 0 &&
+      pairingRequests.sent.length > 0
+    ) {
       return; // Already loaded
     }
 
@@ -52,7 +57,7 @@ export function usePlayerPairingRequests(playerId: string) {
     } finally {
       setPairingLoading({ received: false, sent: false });
     }
-  }, [playerId, pairingRequests.received.length, pairingRequests.sent.length]);
+  }, [pairingRequests.received.length, pairingRequests.sent.length]);
 
   const handleAcceptRequest = React.useCallback(
     async (requestId: string) => {

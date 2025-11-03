@@ -85,7 +85,7 @@ const getLeaguesDisplay = (season: Season): React.ReactNode => {
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {season.leagues.length} League{season.leagues.length !== 1 ? 's' : ''}
+          {season.leagues.length} League{season.leagues.length !== 1 ? "s" : ""}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
@@ -220,13 +220,13 @@ const columns: ColumnDef<Season>[] = [
       if (!entryFee) {
         return <span className="text-muted-foreground">Free</span>;
       }
-      
+
       // Try to parse as number for currency formatting
       const feeAmount = typeof entryFee === 'string' ? parseFloat(entryFee) : entryFee;
       if (!isNaN(feeAmount)) {
         return <span className="font-medium">{formatCurrency(feeAmount ,'MYR') }</span>;
       }
-      
+
       // If not a number, display as-is
       return <span className="font-medium">{entryFee}</span>;
     },
@@ -342,7 +342,9 @@ export function SeasonsDataTable({
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
+  const [expandedGroups, setExpandedGroups] = React.useState<
+    Record<string, boolean>
+  >({});
 
   const table = useReactTable({
     data,
@@ -419,14 +421,18 @@ export function SeasonsDataTable({
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-80"
           />
-          
+
           {/* Expand/Collapse all seasons groups (icon) */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => toggleAllGroups(!allExpanded)}
             disabled={!multiGroupKeys.length}
-            aria-label={allExpanded ? "Collapse all season groups" : "Expand all season groups"}
+            aria-label={
+              allExpanded
+                ? "Collapse all season groups"
+                : "Expand all season groups"
+            }
           >
             {allExpanded ? (
               <IconArrowsMinimize className="h-4 w-4" />
@@ -492,14 +498,16 @@ export function SeasonsDataTable({
                       data-state={single.getIsSelected() && "selected"}
                       className={TABLE_ANIMATIONS.ROW_HOVER}
                     >
-                      {single.getVisibleCells().map((cell: Cell<Season, unknown>) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                      {single
+                        .getVisibleCells()
+                        .map((cell: Cell<Season, unknown>) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
                     </TableRow>
                   );
                 }
@@ -515,10 +523,14 @@ export function SeasonsDataTable({
                           className="flex items-center gap-2 font-semibold"
                         >
                           <IconChevronDown
-                            className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                            className={`h-4 w-4 transition-transform ${
+                              isExpanded ? "rotate-0" : "-rotate-90"
+                            }`}
                           />
                           {group.name}
-                          <span className="ml-2 text-xs text-muted-foreground">{group.rows.length} seasons</span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {group.rows.length} seasons
+                          </span>
                         </button>
                       </TableCell>
                     </TableRow>
@@ -531,24 +543,26 @@ export function SeasonsDataTable({
                           data-state={row.getIsSelected() && "selected"}
                           className={TABLE_ANIMATIONS.ROW_HOVER}
                         >
-                          {row.getVisibleCells().map((cell: Cell<Season, unknown>) => (
-                            <TableCell key={cell.id}>
-                              {/* Indent first column content for hierarchy visual */}
-                              {cell.column.id === "name" ? (
-                                <div className="pl-6">
-                                  {flexRender(
+                          {row
+                            .getVisibleCells()
+                            .map((cell: Cell<Season, unknown>) => (
+                              <TableCell key={cell.id}>
+                                {/* Indent first column content for hierarchy visual */}
+                                {cell.column.id === "name" ? (
+                                  <div className="pl-6">
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )}
+                                  </div>
+                                ) : (
+                                  flexRender(
                                     cell.column.columnDef.cell,
                                     cell.getContext()
-                                  )}
-                                </div>
-                              ) : (
-                                flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )
-                              )}
-                            </TableCell>
-                          ))}
+                                  )
+                                )}
+                              </TableCell>
+                            ))}
                         </TableRow>
                       ))}
                   </React.Fragment>

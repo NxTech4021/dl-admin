@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 // ----------------------------------------------------------------------
 
-export function useBoolean(defaultValue : any) {
+export function useBoolean(defaultValue: boolean) {
   const [value, setValue] = useState(!!defaultValue);
 
   const onTrue = useCallback(() => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -29,6 +30,7 @@ import ChatNavAccount from "./chat-nav-account";
 import ChatNavItemSkeleton from "./chat-skeleton";
 import ChatNavItem from "./chat-nav-item";
 import NewChatModal from "./create-chat-modal";
+import { Conversation } from "@/app/chat/page";
 
 // --- CUSTOM HOOKS ---
 const useResponsive = (): boolean => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -105,8 +106,11 @@ export function DivisionsDataTable() {
   const [error, setError] = React.useState<string | null>(null);
 
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -114,7 +118,9 @@ export function DivisionsDataTable() {
   const [isViewOpen, setIsViewOpen] = React.useState(false);
   const [editDivision, setEditDivision] = React.useState<Division | null>(null);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
-  const [deleteDivision, setDeleteDivision] = React.useState<Division | null>(null);
+  const [deleteDivision, setDeleteDivision] = React.useState<Division | null>(
+    null
+  );
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -389,7 +395,8 @@ export function DivisionsDataTable() {
               <div className="flex items-center gap-2">
                 <IconUsers className="size-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {formatCount(division.currentSinglesCount)} / {renderValue(division.maxSingles)}
+                  {formatCount(division.currentSinglesCount)} /{" "}
+                  {renderValue(division.maxSingles) as any}
                 </span>
               </div>
             );
@@ -398,7 +405,8 @@ export function DivisionsDataTable() {
               <div className="flex items-center gap-2">
                 <IconUsers className="size-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {formatCount(division.currentDoublesCount)} / {renderValue(division.maxDoublesTeams)}
+                  {formatCount(division.currentDoublesCount)} /{" "}
+                  {renderValue(division.maxDoublesTeams) as any}
                 </span>
               </div>
             );
@@ -678,7 +686,9 @@ export function DivisionsDataTable() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{viewDivision?.name ?? "Division details"}</DialogTitle>
+            <DialogTitle>
+              {viewDivision?.name ?? "Division details"}
+            </DialogTitle>
             <DialogDescription>
               Overview of this division configuration.
             </DialogDescription>
@@ -710,7 +720,7 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Points threshold"
-                  value={renderValue(viewDivision.threshold)}
+                  value={renderValue(viewDivision.threshold) as any}
                 />
                 <DetailRow
                   label="Capacity"
@@ -734,11 +744,13 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Sponsor"
-                  value={renderValue(viewDivision.sponsoredDivisionName)}
+                  value={renderValue(viewDivision.sponsoredDivisionName) as any}
                 />
                 <DetailRow
                   label="Auto assignment"
-                  value={viewDivision.autoAssignmentEnabled ? "Enabled" : "Disabled"}
+                  value={
+                    viewDivision.autoAssignmentEnabled ? "Enabled" : "Disabled"
+                  }
                 />
                 <DetailRow
                   label="Status"
@@ -814,9 +826,7 @@ export function DivisionsDataTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteDivision}
               disabled={isDeleting}

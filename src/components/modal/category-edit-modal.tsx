@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,13 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -41,7 +40,7 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Category } from "@/ZodSchema/category-schema";
 
 type GameType = "SINGLES" | "DOUBLES";
-type GenderType = "MALE" | "FEMALE" | "MIXED";
+type GenderType = "MALE" | "FEMALE" | "MIXED" | "MEN" | "WOMEN";
 type GenderRestriction = "MALE" | "FEMALE" | "MIXED" | "OPEN";
 
 const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
@@ -55,7 +54,10 @@ const GENDER_TYPE_OPTIONS: { value: GenderType; label: string }[] = [
   { value: "MIXED", label: "Mixed" },
 ];
 
-const GENDER_RESTRICTION_OPTIONS: { value: GenderRestriction; label: string }[] = [
+const GENDER_RESTRICTION_OPTIONS: {
+  value: GenderRestriction;
+  label: string;
+}[] = [
   { value: "OPEN", label: "Open" },
   { value: "MALE", label: "Male Only" },
   { value: "FEMALE", label: "Female Only" },
@@ -183,7 +185,7 @@ export default function CategoryEditModal({
   const selectedLeagues = useMemo(() => {
     return leagues.filter((league) => formData.leagueIds.includes(league.id));
   }, [leagues, formData.leagueIds]);
-  
+
   // Filter leagues based on search term
   const filteredLeagues = useMemo(() => {
     return leagues.filter((league) =>
@@ -195,7 +197,7 @@ export default function CategoryEditModal({
   useEffect(() => {
     if (open && categoryId) {
       setFetching(true);
-      
+
       // Fetch category data
       axiosInstance
         .get(endpoints.categories.getById(categoryId))
@@ -203,7 +205,7 @@ export default function CategoryEditModal({
           const categoryData = res.data?.data;
           if (categoryData) {
             setCategory(categoryData);
-            
+
             // Map genderRestriction to gender_category
             let mappedGenderCategory: GenderType = "MIXED";
             if (categoryData.genderRestriction === "MALE") {
@@ -215,7 +217,7 @@ export default function CategoryEditModal({
             } else if (categoryData.genderRestriction === "OPEN") {
               mappedGenderCategory = "MIXED";
             }
-            
+
             setFormData({
               name: categoryData.name || "",
               matchFormat: categoryData.matchFormat || "",
@@ -225,7 +227,8 @@ export default function CategoryEditModal({
               maxPlayers: categoryData.maxPlayers || null,
               maxTeams: categoryData.maxTeams || null,
               categoryOrder: categoryData.categoryOrder || 0,
-              leagueIds: categoryData.leagues?.map((league: any) => league.id) || [],
+              leagueIds:
+                categoryData.leagues?.map((league: any) => league.id) || [],
               isActive: categoryData.isActive ?? true,
             });
           }
@@ -242,7 +245,7 @@ export default function CategoryEditModal({
         .then((res) => {
           const leaguesData = res.data?.data;
           console.log("Leagues API response:", res.data);
-          
+
           // Handle nested structure: {leagues: Array, totalMembers: number, totalCategories: number}
           if (leaguesData?.leagues && Array.isArray(leaguesData.leagues)) {
             setLeagues(leaguesData.leagues);
@@ -287,7 +290,11 @@ export default function CategoryEditModal({
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.matchFormat || formData.leagueIds.length === 0) {
+    if (
+      !formData.name ||
+      !formData.matchFormat ||
+      formData.leagueIds.length === 0
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -297,10 +304,14 @@ export default function CategoryEditModal({
 
     try {
       // Map gender_category back to genderRestriction
-      const genderRestriction = 
-        formData.gender_category === "MEN" ? "MALE" :
-        formData.gender_category === "WOMEN" ? "FEMALE" :
-        formData.gender_category === "MIXED" ? "MIXED" : "OPEN";
+      const genderRestriction =
+        formData.gender_category === "MEN"
+          ? "MALE"
+          : formData.gender_category === "WOMEN"
+          ? "FEMALE"
+          : formData.gender_category === "MIXED"
+          ? "MIXED"
+          : "OPEN";
 
       const updateData = {
         name: formData.name,
@@ -330,7 +341,9 @@ export default function CategoryEditModal({
     } catch (err: any) {
       console.error("Error updating category:", err);
       const errorMessage =
-        err.response?.data?.message || err.message || "Failed to update category";
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to update category";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -360,7 +373,8 @@ export default function CategoryEditModal({
         <DialogHeader>
           <DialogTitle>Edit Category</DialogTitle>
           <DialogDescription>
-            Update the tournament category with specific settings and league assignments.
+            Update the tournament category with specific settings and league
+            assignments.
           </DialogDescription>
         </DialogHeader>
 
@@ -378,7 +392,8 @@ export default function CategoryEditModal({
             </h3>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">
-                {formData.matchFormat || "Match format will be set automatically"}
+                {formData.matchFormat ||
+                  "Match format will be set automatically"}
               </p>
             </div>
           </div>
@@ -394,13 +409,13 @@ export default function CategoryEditModal({
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Select gender category" />
                 </SelectTrigger>
-                <SelectContent>
+                {/* <SelectContent>
                   {GENDER_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
+                </SelectContent> */}
               </Select>
             </div>
 
@@ -460,21 +475,24 @@ export default function CategoryEditModal({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
+              <PopoverContent
+                className="w-full p-0"
+                style={{ maxHeight: "400px" }}
+              >
                 <div className="p-2">
-                  <Input 
-                    placeholder="Search leagues..." 
+                  <Input
+                    placeholder="Search leagues..."
                     className="mb-2"
                     value={leagueSearchTerm}
                     onChange={(e) => setLeagueSearchTerm(e.target.value)}
                   />
-                  <div 
+                  <div
                     ref={scrollContainerRef}
                     className="max-h-64 overflow-y-auto overflow-x-hidden"
-                    style={{ 
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#d1d5db #f3f4f6',
-                      WebkitOverflowScrolling: 'touch'
+                    style={{
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "#d1d5db #f3f4f6",
+                      WebkitOverflowScrolling: "touch",
                     }}
                     onWheel={(e) => {
                       e.preventDefault();
@@ -490,7 +508,9 @@ export default function CategoryEditModal({
                       </div>
                     ) : filteredLeagues.length === 0 ? (
                       <div className="p-2 text-sm text-muted-foreground text-center">
-                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
+                        {leagueSearchTerm
+                          ? "No leagues found matching your search."
+                          : "No leagues found."}
                       </div>
                     ) : (
                       filteredLeagues.map((league) => (
@@ -499,7 +519,8 @@ export default function CategoryEditModal({
                           onClick={() => toggleLeague(league.id)}
                           className={cn(
                             "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
-                            formData.leagueIds.includes(league.id) && "bg-accent text-accent-foreground"
+                            formData.leagueIds.includes(league.id) &&
+                              "bg-accent text-accent-foreground"
                           )}
                         >
                           <div className="flex items-center">
@@ -513,8 +534,8 @@ export default function CategoryEditModal({
                             />
                             <span className="font-medium">{league.name}</span>
                           </div>
-                          <Badge 
-                            variant={getSportTypeBadgeVariant(league.sportType)} 
+                          <Badge
+                            variant={getSportTypeBadgeVariant(league.sportType)}
                             className="text-xs capitalize"
                           >
                             {league.sportType?.toLowerCase() || "Unknown"}
@@ -531,7 +552,11 @@ export default function CategoryEditModal({
             {selectedLeagues.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedLeagues.map((league) => (
-                  <Badge key={league.id} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={league.id}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {league.name}
                     <IconX
                       className="h-3 w-3 cursor-pointer"

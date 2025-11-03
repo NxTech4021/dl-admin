@@ -1,11 +1,18 @@
-"use client"
+"use client";
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,20 +20,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Membership } from '@/ZodSchema/season-schema';
-import { Division } from '@/ZodSchema/division-schema';
-import { IconUser, IconStar, IconCalendar, IconTarget, IconLoader2 } from '@tabler/icons-react';
-import { toast } from 'sonner';
-import AssignDivisionModal from '@/components/modal/assign-playerToDivision';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Membership } from "@/ZodSchema/season-schema";
+import { Division } from "@/ZodSchema/division-schema";
+import {
+  IconUser,
+  IconStar,
+  IconCalendar,
+  IconTarget,
+  IconLoader2,
+} from "@tabler/icons-react";
+import { toast } from "sonner";
+import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 
 interface SeasonPlayersCardProps {
   memberships: Membership[];
@@ -51,71 +64,75 @@ interface SeasonPlayersCardProps {
   };
 }
 
-export default function SeasonPlayersCard({ 
-  memberships, 
-  divisions = [], 
-  sportType, 
+export default function SeasonPlayersCard({
+  memberships,
+  divisions = [],
+  sportType,
   seasonId,
   onMembershipUpdated,
   adminId,
-  season
+  season,
 }: SeasonPlayersCardProps) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Membership | null>(null);
-  const [selectedDivisionId, setSelectedDivisionId] = useState<string>('');
+  const [selectedDivisionId, setSelectedDivisionId] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const activePlayers = memberships.filter(m => m.status === 'ACTIVE' || m.status === 'PENDING');
-  const waitlistedPlayers = memberships.filter(m => m.status === 'INACTIVE' || m.status === 'FLAGGED' || m.status === 'REMOVED');
-
+  const activePlayers = memberships.filter(
+    (m) => m.status === "ACTIVE" || m.status === "PENDING"
+  );
+  const waitlistedPlayers = memberships.filter(
+    (m) =>
+      m.status === "INACTIVE" ||
+      m.status === "FLAGGED" ||
+      m.status === "REMOVED"
+  );
 
   const getDivisionName = (divisionId: string | null) => {
-    if (!divisionId) return 'Unassigned';
-    const division = divisions.find(d => d.id === divisionId);
-    return division ? division.name : 'Unassigned';
+    if (!divisionId) return "Unassigned";
+    const division = divisions.find((d) => d.id === divisionId);
+    return division ? division.name : "Unassigned";
   };
 
   const getSportRating = (member: Membership) => {
     // Check if user has initialRatingResult
     const ratingResult = member.user?.initialRatingResult;
-    
+
     if (!ratingResult) {
-      return { 
-        display: 'N/A', 
+      return {
+        display: "N/A",
         value: 0,
-        color: 'gray' 
+        color: "gray",
       };
     }
 
     // Determine category (singles/doubles) from league gameType
     const gameType = season?.leagues?.[0]?.gameType;
-    const isDoubles = gameType === 'DOUBLES';
+    const isDoubles = gameType === "DOUBLES";
 
     // Get the appropriate rating based on category
-    const rating = isDoubles 
-      ? ratingResult.doubles 
-      : ratingResult.singles;
+    const rating = isDoubles ? ratingResult.doubles : ratingResult.singles;
 
     if (!rating || rating === 0) {
-      return { 
-        display: 'N/A', 
+      return {
+        display: "N/A",
         value: 0,
-        color: 'gray' 
+        color: "gray",
       };
     }
 
     // Determine color based on rating level (adjust thresholds as needed)
-    let color = 'green';
-    if (rating >= 4500) color = 'purple'; // Expert
-    else if (rating >= 4000) color = 'blue'; // Advanced
-    else if (rating >= 3500) color = 'green'; // Intermediate
-    else if (rating >= 3000) color = 'yellow'; // Beginner
-    else color = 'gray'; // Novice
+    let color = "green";
+    if (rating >= 4500) color = "purple"; // Expert
+    else if (rating >= 4000) color = "blue"; // Advanced
+    else if (rating >= 3500) color = "green"; // Intermediate
+    else if (rating >= 3000) color = "yellow"; // Beginner
+    else color = "gray"; // Novice
 
-    return { 
+    return {
       display: rating.toString(),
       value: rating,
-      color 
+      color,
     };
   };
 
@@ -165,9 +182,11 @@ export default function SeasonPlayersCard({
                 <TableRow key={member.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium text-sm">{member.user?.name || 'Unknown'}</div>
+                      <div className="font-medium text-sm">
+                        {member.user?.name || "Unknown"}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        @{member.user?.email?.split('@')[0] || 'unknown'}
+                        @{member.user?.email?.split("@")[0] || "unknown"}
                       </div>
                     </div>
                   </TableCell>
@@ -180,30 +199,46 @@ export default function SeasonPlayersCard({
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={rating.display !== 'N/A' ? 'default' : 'outline'}
-                      className={`text-xs font-mono ${rating.display !== 'N/A' ? 'bg-green-100 text-green-800 border-green-200' : ''}`}
+                      variant={rating.display !== "N/A" ? "default" : "outline"}
+                      className={`text-xs font-mono ${
+                        rating.display !== "N/A"
+                          ? "bg-green-100 text-green-800 border-green-200"
+                          : ""
+                      }`}
                     >
                       {rating.display}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                      {member.joinedAt
+                        ? new Date(member.joinedAt).toLocaleDateString(
+                            "en-US",
+                            { month: "short", day: "numeric", year: "numeric" }
+                          )
+                        : "-"}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={member.status === 'ACTIVE' ? 'default' : 'secondary'} className="capitalize text-xs">
+                    <Badge
+                      variant={
+                        member.status === "ACTIVE" ? "default" : "secondary"
+                      }
+                      className="capitalize text-xs"
+                    >
                       {member?.status?.toLowerCase()}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-8 px-3 text-xs"
                       onClick={() => handleAssignToDivision(member)}
                     >
-                      {member.divisionId ? 'Reassign Division' : 'Assign to Division'}
+                      {member.divisionId
+                        ? "Reassign Division"
+                        : "Assign to Division"}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -216,7 +251,9 @@ export default function SeasonPlayersCard({
                   <IconUser className="size-12 opacity-50" />
                   <div className="space-y-1">
                     <p className="text-sm font-medium">No players found</p>
-                    <p className="text-xs">Players will appear here once they join the season</p>
+                    <p className="text-xs">
+                      Players will appear here once they join the season
+                    </p>
                   </div>
                 </div>
               </TableCell>
@@ -236,8 +273,12 @@ export default function SeasonPlayersCard({
         <CardContent>
           <Tabs defaultValue="active">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active">Active ({activePlayers.length})</TabsTrigger>
-              <TabsTrigger value="waitlisted">Waitlist ({waitlistedPlayers.length})</TabsTrigger>
+              <TabsTrigger value="active">
+                Active ({activePlayers.length})
+              </TabsTrigger>
+              <TabsTrigger value="waitlisted">
+                Waitlist ({waitlistedPlayers.length})
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="active">
               <PlayerTable players={activePlayers} />
@@ -249,14 +290,14 @@ export default function SeasonPlayersCard({
         </CardContent>
       </Card>
 
-     <AssignDivisionModal
-        isOpen={isAssignModalOpen}  
+      <AssignDivisionModal
+        isOpen={isAssignModalOpen}
         onOpenChange={setIsAssignModalOpen}
         member={selectedMember}
         divisions={divisions}
         seasonId={seasonId}
         onAssigned={onMembershipUpdated}
-        adminId={adminId || ''}
+        adminId={adminId || ""}
       />
     </>
   );

@@ -1,16 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { IconBuilding, IconPlus, IconCurrencyDollar, IconCalendar, IconTrophy, IconTrash } from "@tabler/icons-react";
+import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface LeagueSponsorsSectionProps {
   sponsorships: Array<any>;
@@ -19,15 +30,25 @@ interface LeagueSponsorsSectionProps {
   onSponsorDeleted?: () => void;
 }
 
-export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor, onSponsorDeleted }: LeagueSponsorsSectionProps) {
+export function LeagueSponsorsSection({
+  sponsorships,
+  leagueId,
+  onAssignSponsor,
+  onSponsorDeleted,
+}: LeagueSponsorsSectionProps) {
   const router = useRouter();
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
-  const [available, setAvailable] = React.useState<Array<{ id: string; label: string }>>([]);
+  const [available, setAvailable] = React.useState<
+    Array<{ id: string; label: string }>
+  >([]);
   const [selectedId, setSelectedId] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
 
-
-  console.log("LeagueSponsorsSection props:", { sponsorships, leagueId, onAssignSponsor });
+  console.log("LeagueSponsorsSection props:", {
+    sponsorships,
+    leagueId,
+    onAssignSponsor,
+  });
   console.log("Sponsorships data:", sponsorships);
   console.log("Sponsorships type:", typeof sponsorships);
   console.log("Sponsorships is array:", Array.isArray(sponsorships));
@@ -42,7 +63,10 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
       .get(endpoints.sponsors.getAll)
       .then((res) => {
         const api = res.data;
-        const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as any[];
+        const sponsorships = (api?.data?.sponsorships ||
+          api?.data ||
+          api ||
+          []) as any[];
         const mapped = sponsorships.map((s: any) => ({
           id: s.id,
           label: s.company?.name || s.sponsoredName || "Unnamed Sponsor",
@@ -58,15 +82,22 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
     router.push(`/utilities/sponsors/view/${sponsorId}`);
   };
 
-  const handleDeleteSponsor = async (sponsorshipId: string, sponsorName: string) => {
-    if (!confirm(`Are you sure you want to remove "${sponsorName}" from this league?`)) {
+  const handleDeleteSponsor = async (
+    sponsorshipId: string,
+    sponsorName: string
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to remove "${sponsorName}" from this league?`
+      )
+    ) {
       return;
     }
 
     try {
       await axiosInstance.delete(endpoints.sponsors.delete(sponsorshipId));
       toast.success(`"${sponsorName}" has been removed from the league`);
-      
+
       // Call the refresh callback if provided, otherwise fallback to page reload
       if (onSponsorDeleted) {
         onSponsorDeleted();
@@ -75,52 +106,55 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
       }
     } catch (error: any) {
       console.error("Error deleting sponsorship:", error);
-      toast.error(error.response?.data?.message || "Failed to remove sponsor from league");
+      toast.error(
+        error.response?.data?.message || "Failed to remove sponsor from league"
+      );
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getTierBadgeVariant = (tier: string) => {
     switch (tier?.toUpperCase()) {
-      case 'PLATINUM':
-        return 'default';
-      case 'GOLD':
-        return 'secondary';
-      case 'SILVER':
-        return 'outline';
-      case 'BRONZE':
-        return 'outline';
+      case "PLATINUM":
+        return "default";
+      case "GOLD":
+        return "secondary";
+      case "SILVER":
+        return "outline";
+      case "BRONZE":
+        return "outline";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
   const getTierColor = (tier: string) => {
     switch (tier?.toUpperCase()) {
-      case 'PLATINUM':
-        return 'text-slate-700 bg-slate-100 border-slate-300';
-      case 'GOLD':
-        return 'text-yellow-700 bg-yellow-50 border-yellow-300';
-      case 'SILVER':
-        return 'text-gray-600 bg-gray-50 border-gray-300';
-      case 'BRONZE':
-        return 'text-orange-700 bg-orange-50 border-orange-300';
+      case "PLATINUM":
+        return "text-slate-700 bg-slate-100 border-slate-300";
+      case "GOLD":
+        return "text-yellow-700 bg-yellow-50 border-yellow-300";
+      case "SILVER":
+        return "text-gray-600 bg-gray-50 border-gray-300";
+      case "BRONZE":
+        return "text-orange-700 bg-orange-50 border-orange-300";
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-300';
+        return "text-gray-600 bg-gray-50 border-gray-300";
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      year: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -128,9 +162,13 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Sponsors</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Sponsors
+          </h3>
           {sponsorships?.length > 0 && (
-            <span className="text-xs text-muted-foreground">({sponsorships.length})</span>
+            <span className="text-xs text-muted-foreground">
+              ({sponsorships.length})
+            </span>
           )}
         </div>
         <Button
@@ -146,7 +184,7 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
 
       {sponsorships && sponsorships.length > 0 ? (
         <div className="space-y-2">
-          {sponsorships.map((s: any, index: number) => {
+          {sponsorships.map((s: any) => {
             return (
               <div
                 key={s.id}
@@ -162,8 +200,10 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
                       <h4 className="font-medium text-sm truncate">
                         {s.company?.name || s.sponsoredName || "Sponsor"}
                       </h4>
-                      <span 
-                        className={`text-xs px-1.5 py-0.5 rounded ${getTierColor(s.tier || s.packageTier)}`}
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded ${getTierColor(
+                          s.tier || s.packageTier
+                        )}`}
                       >
                         {s.tier || s.packageTier || "Standard"}
                       </span>
@@ -174,9 +214,7 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
                           {formatCurrency(Number(s.amount || s.contractAmount))}
                         </span>
                       )}
-                      {s.startDate && (
-                        <span>{formatDate(s.startDate)}</span>
-                      )}
+                      {s.startDate && <span>{formatDate(s.startDate)}</span>}
                     </div>
                   </div>
                 </div>
@@ -186,7 +224,8 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const sponsorName = s.company?.name || s.sponsoredName || "Sponsor";
+                    const sponsorName =
+                      s.company?.name || s.sponsoredName || "Sponsor";
                     handleDeleteSponsor(s.id, sponsorName);
                   }}
                 >
@@ -198,14 +237,14 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
         </div>
       ) : (
         <div className="text-center py-6">
-            <div className="w-8 h-8 rounded-md bg-muted mx-auto mb-2 flex items-center justify-center">
-              <IconBuilding className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground">No sponsors assigned</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Click "Add" to assign sponsors
-            </p>
+          <div className="w-8 h-8 rounded-md bg-muted mx-auto mb-2 flex items-center justify-center">
+            <IconBuilding className="w-4 h-4 text-muted-foreground" />
           </div>
+          <p className="text-sm text-muted-foreground">No sponsors assigned</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Click &quot;Add&quot; to assign sponsors
+          </p>
+        </div>
       )}
 
       {/* Assign Sponsor Modal */}
@@ -222,22 +261,28 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
               <Label className="text-sm font-medium">Sponsorship</Label>
               <Select value={selectedId} onValueChange={setSelectedId}>
                 <SelectTrigger className="h-9">
-                  <SelectValue placeholder={loading ? "Loading..." : "Choose sponsorship"} />
+                  <SelectValue
+                    placeholder={loading ? "Loading..." : "Choose sponsorship"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {available.length > 0 ? (
                     available.map((opt) => (
-                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </SelectItem>
                     ))
                   ) : (
-                    <SelectItem disabled value="none">{loading ? "Loading..." : "No sponsorships found"}</SelectItem>
+                    <SelectItem disabled value="none">
+                      {loading ? "Loading..." : "No sponsorships found"}
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setIsAssignOpen(false)}
               >
@@ -250,24 +295,32 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
                   if (!selectedId || !leagueId) return;
                   try {
                     console.log("Assigning sponsor:", { selectedId, leagueId });
-                    console.log("API endpoint:", endpoints.sponsors.update(selectedId));
+                    console.log(
+                      "API endpoint:",
+                      endpoints.sponsors.update(selectedId)
+                    );
                     console.log("Payload:", { leagueIds: [leagueId] });
-                    
-                    const response = await axiosInstance.put(endpoints.sponsors.update(selectedId), {
-                      leagueIds: [leagueId],
-                    });
-                    
+
+                    const response = await axiosInstance.put(
+                      endpoints.sponsors.update(selectedId),
+                      {
+                        leagueIds: [leagueId],
+                      }
+                    );
+
                     console.log("Assignment response:", response.data);
                     toast.success("Sponsor assigned to league");
                     setIsAssignOpen(false);
                     setSelectedId("");
-                    
+
                     // Force page reload to refresh data
                     window.location.reload();
                   } catch (err: any) {
                     console.error("Assignment error:", err);
                     console.error("Error response:", err?.response?.data);
-                    toast.error(err?.response?.data?.message || "Failed to assign sponsor");
+                    toast.error(
+                      err?.response?.data?.message || "Failed to assign sponsor"
+                    );
                   }
                 }}
               >
@@ -282,5 +335,3 @@ export function LeagueSponsorsSection({ sponsorships, leagueId, onAssignSponsor,
 }
 
 export default LeagueSponsorsSection;
-
-

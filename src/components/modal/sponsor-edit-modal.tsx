@@ -133,7 +133,8 @@ export function SponsorEditModal({
       axiosInstance
         .get(endpoints.league.getAll)
         .then((res) => {
-          const leaguesData = res.data?.data?.leagues || res.data?.leagues || [];
+          const leaguesData =
+            res.data?.data?.leagues || res.data?.leagues || [];
           if (Array.isArray(leaguesData)) {
             setLeagues(leaguesData);
           } else {
@@ -168,15 +169,21 @@ export function SponsorEditModal({
     }));
   };
 
-  const selectedLeagues = leagues.filter((league) => formData.leagueIds.includes(league.id));
-  
+  const selectedLeagues = leagues.filter((league) =>
+    formData.leagueIds.includes(league.id)
+  );
+
   // Filter leagues based on search term
   const filteredLeagues = leagues.filter((league) =>
     league.name.toLowerCase().includes(leagueSearchTerm.toLowerCase())
   );
 
   const handleSubmit = async () => {
-    if (!formData.sponsoredName || !formData.packageTier || formData.leagueIds.length === 0) {
+    if (
+      !formData.sponsoredName ||
+      !formData.packageTier ||
+      formData.leagueIds.length === 0
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -302,7 +309,9 @@ export function SponsorEditModal({
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    contractAmount: e.target.value ? parseFloat(e.target.value) : null,
+                    contractAmount: e.target.value
+                      ? parseFloat(e.target.value)
+                      : null,
                   }))
                 }
                 placeholder="0.00"
@@ -320,7 +329,9 @@ export function SponsorEditModal({
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    sponsorRevenue: e.target.value ? parseFloat(e.target.value) : null,
+                    sponsorRevenue: e.target.value
+                      ? parseFloat(e.target.value)
+                      : null,
                   }))
                 }
                 placeholder="0.00"
@@ -346,21 +357,24 @@ export function SponsorEditModal({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
+              <PopoverContent
+                className="w-full p-0"
+                style={{ maxHeight: "400px" }}
+              >
                 <div className="p-2">
-                  <Input 
-                    placeholder="Search leagues..." 
+                  <Input
+                    placeholder="Search leagues..."
                     className="mb-2"
                     value={leagueSearchTerm}
                     onChange={(e) => setLeagueSearchTerm(e.target.value)}
                   />
-                  <div 
+                  <div
                     ref={scrollContainerRef}
                     className="max-h-64 overflow-y-auto overflow-x-hidden"
-                    style={{ 
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#d1d5db #f3f4f6',
-                      WebkitOverflowScrolling: 'touch'
+                    style={{
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "#d1d5db #f3f4f6",
+                      WebkitOverflowScrolling: "touch",
                     }}
                     onWheel={(e) => {
                       e.preventDefault();
@@ -376,7 +390,9 @@ export function SponsorEditModal({
                       </div>
                     ) : filteredLeagues.length === 0 ? (
                       <div className="p-2 text-sm text-muted-foreground text-center">
-                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
+                        {leagueSearchTerm
+                          ? "No leagues found matching your search."
+                          : "No leagues found."}
                       </div>
                     ) : (
                       filteredLeagues.map((league) => (
@@ -385,7 +401,8 @@ export function SponsorEditModal({
                           onClick={() => toggleLeague(league.id)}
                           className={cn(
                             "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
-                            formData.leagueIds.includes(league.id) && "bg-accent text-accent-foreground"
+                            formData.leagueIds.includes(league.id) &&
+                              "bg-accent text-accent-foreground"
                           )}
                         >
                           <div className="flex items-center">
@@ -399,8 +416,8 @@ export function SponsorEditModal({
                             />
                             <span className="font-medium">{league.name}</span>
                           </div>
-                          <Badge 
-                            variant={getSportTypeBadgeVariant(league.sportType)} 
+                          <Badge
+                            variant={getSportTypeBadgeVariant(league.sportType)}
                             className="text-xs capitalize"
                           >
                             {league.sportType?.toLowerCase() || "Unknown"}
@@ -417,7 +434,11 @@ export function SponsorEditModal({
             {selectedLeagues.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedLeagues.map((league) => (
-                  <Badge key={league.id} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={league.id}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {league.name}
                     <IconX
                       className="h-3 w-3 cursor-pointer"

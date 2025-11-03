@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import axiosInstance, { endpoints } from '@/lib/endpoints';
-import { useSocket } from '@/context/socket-context';
-import { toast } from 'sonner';
-import { useSession } from '@/lib/auth-client';
+import { useState, useEffect, useCallback, useRef } from "react";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useSocket } from "@/context/socket-context";
+import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 
 export interface ChatUser {
+  email: string;
+  phoneNumber: string;
+  address: string;
   id: string;
   name: string;
   username?: string;
@@ -31,6 +34,7 @@ export interface Message {
 }
 
 export interface Thread {
+  avatarUrl: any;
   id: string;
   name?: string;
   avatarUrl?: string;
@@ -67,33 +71,36 @@ export function useChatData(userId?: string) {
     try {
       setLoading(true);
       setError(null);
-    
-      const response = await axiosInstance.get(endpoints.chat.getThreads(userId));
-      
+
+      const response = await axiosInstance.get(
+        endpoints.chat.getThreads(userId)
+      );
+
       if (response.data) {
         if (response.data.success && response.data.data) {
           setThreads(response.data.data);
-        }
-        else if (Array.isArray(response.data)) {
+        } else if (Array.isArray(response.data)) {
           setThreads(response.data);
-        }
-        else if (response.data.threads && Array.isArray(response.data.threads)) {
+        } else if (
+          response.data.threads &&
+          Array.isArray(response.data.threads)
+        ) {
           setThreads(response.data.threads);
-        }
-        else {
+        } else {
           setThreads([]);
         }
       } else {
         setThreads([]);
       }
     } catch (err: any) {
-      console.error('Error fetching threads:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to fetch threads';
+      console.error("Error fetching threads:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to fetch threads";
       setError(errorMessage);
-      toast.error('Failed to load chat threads');
+      toast.error("Failed to load chat threads");
       setThreads([]);
     } finally {
       setLoading(false);
@@ -105,25 +112,34 @@ export function useChatData(userId?: string) {
     if (!socket || !isConnected) return;
 
     const handleNewThread = (data: { thread: Thread }) => {
-      setThreads(prev => [data.thread, ...prev]);
-      toast.success('New conversation started!');
+      setThreads((prev) => [data.thread, ...prev]);
+      toast.success("New conversation started!");
     };
 
-    const handleThreadUpdate = (data: { threadId: string; lastMessage: Message }) => {
-      console.log('📥 Thread updated:', data.threadId);
-      setThreads(prev => prev.map(thread => 
-        thread.id === data.threadId 
-          ? { ...thread, messages: [data.lastMessage], updatedAt: new Date().toISOString() }
-          : thread
-      ));
+    const handleThreadUpdate = (data: {
+      threadId: string;
+      lastMessage: Message;
+    }) => {
+      console.log("📥 Thread updated:", data.threadId);
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id === data.threadId
+            ? {
+                ...thread,
+                messages: [data.lastMessage],
+                updatedAt: new Date().toISOString(),
+              }
+            : thread
+        )
+      );
     };
 
-    socket.on('new_thread', handleNewThread);
-    socket.on('thread_updated', handleThreadUpdate);
+    socket.on("new_thread", handleNewThread);
+    socket.on("thread_updated", handleThreadUpdate);
 
     return () => {
-      socket.off('new_thread', handleNewThread);
-      socket.off('thread_updated', handleThreadUpdate);
+      socket.off("new_thread", handleNewThread);
+      socket.off("thread_updated", handleThreadUpdate);
     };
   }, [socket, isConnected]);
 
@@ -155,31 +171,36 @@ export function useMessages(threadId?: string) {
     try {
       setLoading(true);
       setError(null);
-    
-      const response = await axiosInstance.get(endpoints.chat.getMessages(threadId));
-        
+
+      const response = await axiosInstance.get(
+        endpoints.chat.getMessages(threadId)
+      );
+
       if (response.data) {
         if (response.data.success && response.data.data) {
-          setMessages(Array.isArray(response.data.data) ? response.data.data : []);
-        }
-        else if (Array.isArray(response.data)) {
+          setMessages(
+            Array.isArray(response.data.data) ? response.data.data : []
+          );
+        } else if (Array.isArray(response.data)) {
           setMessages(response.data);
-        }
-        else if (response.data.messages && Array.isArray(response.data.messages)) {
+        } else if (
+          response.data.messages &&
+          Array.isArray(response.data.messages)
+        ) {
           setMessages(response.data.messages);
-        }
-        else {
+        } else {
           setMessages([]);
         }
       } else {
         setMessages([]);
       }
     } catch (err: any) {
-      console.error('Error fetching messages:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to fetch messages';
+      console.error("Error fetching messages:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to fetch messages";
       setError(errorMessage);
       setMessages([]);
     } finally {
@@ -187,61 +208,70 @@ export function useMessages(threadId?: string) {
     }
   }, [threadId]);
 
-  const sendMessage = useCallback(async (content: string, senderId: string) => {
-    if (!threadId) return;
+  const sendMessage = useCallback(
+    async (content: string, senderId: string) => {
+      if (!threadId) return;
 
-    try {
-      console.log('Sending message:', { threadId, senderId, content });
-      
-      const response = await axiosInstance.post(endpoints.chat.sendMessage(threadId), {
-        senderId,
-        content,
-        messageType: 'text',
-      });
+      try {
+        console.log("Sending message:", { threadId, senderId, content });
 
-      console.log('Send message response:', response.data);
+        const response = await axiosInstance.post(
+          endpoints.chat.sendMessage(threadId),
+          {
+            senderId,
+            content,
+            messageType: "text",
+          }
+        );
 
-      let newMessage = null;
-      
-      if (response.data) {
-        if (response.data.success && response.data.data) {
-          newMessage = response.data.data;
-        } else if (response.data.message) {
-          newMessage = response.data.message;
-        } else if (response.data.id) {
-          newMessage = response.data;
+        console.log("Send message response:", response.data);
+
+        let newMessage = null;
+
+        if (response.data) {
+          if (response.data.success && response.data.data) {
+            newMessage = response.data.data;
+          } else if (response.data.message) {
+            newMessage = response.data.message;
+          } else if (response.data.id) {
+            newMessage = response.data;
+          }
         }
-      }
 
-      if (newMessage) {
-        return newMessage;
+        if (newMessage) {
+          return newMessage;
+        }
+      } catch (err: any) {
+        console.error("Error sending message:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to send message";
+        toast.error(errorMessage);
+        throw err;
       }
-    } catch (err: any) {
-      console.error('Error sending message:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to send message';
-      toast.error(errorMessage);
-      throw err;
-    }
-  }, [threadId]);
+    },
+    [threadId]
+  );
 
   // Socket event listeners for real-time messages
   useEffect(() => {
     if (!socket || !isConnected) return;
 
     const handleNewMessage = (message: Message) => {
-      console.log('📥 Received new message:', message.id);
-      
+      console.log("📥 Received new message:", message.id);
+
       // Only add message if it belongs to current thread
       if (message.threadId === threadId) {
-        setMessages(prev => [...prev, message]);
+        setMessages((prev) => [...prev, message]);
       }
     };
 
-    const handleMessageSent = (data: { messageId: string; threadId: string }) => {
-    };
+    const handleMessageSent = (data: {
+      messageId: string;
+      threadId: string;
+    }) => {};
 
     const handleMessageRead = (data: {
       messageId: string;
@@ -249,40 +279,42 @@ export function useMessages(threadId?: string) {
       readerId: string;
       readerName: string;
     }) => {
-      console.log('👁️ Message read:', data);
-      
+      console.log("👁️ Message read:", data);
+
       if (data.threadId === threadId) {
-        setMessages(prev => prev.map(msg => 
-          msg.id === data.messageId 
-            ? {
-                ...msg,
-                readBy: [
-                  ...(msg.readBy || []),
-                  {
-                    id: `${data.messageId}-${data.readerId}`,
-                    userId: data.readerId,
-                    messageId: data.messageId,
-                    readAt: new Date().toISOString(),
-                    user: {
-                      id: data.readerId,
-                      name: data.readerName,
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === data.messageId
+              ? {
+                  ...msg,
+                  readBy: [
+                    ...(msg.readBy || []),
+                    {
+                      id: `${data.messageId}-${data.readerId}`,
+                      userId: data.readerId,
+                      messageId: data.messageId,
+                      readAt: new Date().toISOString(),
+                      user: {
+                        id: data.readerId,
+                        name: data.readerName,
+                      },
                     },
-                  },
-                ],
-              }
-            : msg
-        ));
+                  ],
+                }
+              : msg
+          )
+        );
       }
     };
 
-    socket.on('new_message', handleNewMessage);
-    socket.on('message_sent', handleMessageSent);
-    socket.on('message_read', handleMessageRead);
+    socket.on("new_message", handleNewMessage);
+    socket.on("message_sent", handleMessageSent);
+    socket.on("message_read", handleMessageRead);
 
     return () => {
-      socket.off('new_message', handleNewMessage);
-      socket.off('message_sent', handleMessageSent);
-      socket.off('message_read', handleMessageRead);
+      socket.off("new_message", handleNewMessage);
+      socket.off("message_sent", handleMessageSent);
+      socket.off("message_read", handleMessageRead);
     };
   }, [socket, isConnected, threadId]);
 
@@ -309,7 +341,7 @@ export function useMessages(threadId?: string) {
     try {
       await axiosInstance.post(endpoints.chat.markAsRead(messageId));
     } catch (err: any) {
-      console.error('Error marking message as read:', err);
+      console.error("Error marking message as read:", err);
     }
   }, []);
 
@@ -327,9 +359,10 @@ export function useMessages(threadId?: string) {
   };
 }
 
-
 export function useTypingIndicator(threadId?: string) {
-  const [typingUsers, setTypingUsers] = useState<Array<{ userId: string; userName: string }>>([]);
+  const [typingUsers, setTypingUsers] = useState<
+    Array<{ userId: string; userName: string }>
+  >([]);
   const { socket, isConnected, sendTyping } = useSocket();
   const { data: session } = useSession();
   const user = session?.user;
@@ -337,7 +370,11 @@ export function useTypingIndicator(threadId?: string) {
 
   useEffect(() => {
     if (!socket || !isConnected || !threadId) {
-      console.log('❌ Not setting up typing listener:', { socket: !!socket, isConnected, threadId });
+      console.log("❌ Not setting up typing listener:", {
+        socket: !!socket,
+        isConnected,
+        threadId,
+      });
       return;
     }
 
@@ -346,71 +383,79 @@ export function useTypingIndicator(threadId?: string) {
       senderId: string;
       isTyping: boolean;
     }) => {
-      console.log('📝 Received typing_status event:', data);
-      
+      console.log("📝 Received typing_status event:", data);
+
       if (data.threadId !== threadId) {
-        console.log('❌ Typing event for different thread, ignoring');
+        console.log("❌ Typing event for different thread, ignoring");
         return;
       }
 
       if (data.senderId === user?.id) {
-        console.log('❌ Ignoring typing from current user');
+        console.log("❌ Ignoring typing from current user");
         return;
       }
 
-      setTypingUsers(prev => {
-        console.log('📝 Current typing users:', prev);
-        
-        if (data.isTyping) {
-          const exists = prev.some(typingUser => typingUser.userId === data.senderId);
-          if (exists) {
+      setTypingUsers((prev) => {
+        console.log("📝 Current typing users:", prev);
 
+        if (data.isTyping) {
+          const exists = prev.some(
+            (typingUser) => typingUser.userId === data.senderId
+          );
+          if (exists) {
             return prev;
           }
-          
+
           // TO DO use actual User name from paticipants
-          const newUsers = [...prev, { userId: data.senderId, userName: 'Someone' }];
-        
+          const newUsers = [
+            ...prev,
+            { userId: data.senderId, userName: "Someone" },
+          ];
+
           return newUsers;
         } else {
-        
-          const newUsers = prev.filter(typingUser => typingUser.userId !== data.senderId);
-        
+          const newUsers = prev.filter(
+            (typingUser) => typingUser.userId !== data.senderId
+          );
+
           return newUsers;
         }
       });
     };
 
-    socket.on('typing_status', handleTypingStatus);
+    socket.on("typing_status", handleTypingStatus);
 
     return () => {
-      console.log('🧹 Cleaning up typing listener for thread:', threadId);
-      socket.off('typing_status', handleTypingStatus);
+      console.log("🧹 Cleaning up typing listener for thread:", threadId);
+      socket.off("typing_status", handleTypingStatus);
     };
   }, [socket, isConnected, threadId, user?.id]);
 
-  const setTyping = useCallback((isTyping: boolean) => {
-    if (!threadId) {
-      console.log('❌ No threadId for typing');
-      return;
-    }
-
-    console.log('⌨️ Setting typing status:', { threadId, isTyping });
-    sendTyping(threadId, isTyping);
-
-    if (isTyping) {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+  const setTyping = useCallback(
+    (isTyping: boolean) => {
+      if (!threadId) {
+        console.log("❌ No threadId for typing");
+        return;
       }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        console.log('⌨️ Auto-stopping typing after timeout');
-        sendTyping(threadId, false);
-      }, 3000);
-    }
-  }, [threadId, sendTyping]);
 
-  console.log('📝 Current typing users in hook:', typingUsers);
+      console.log("⌨️ Setting typing status:", { threadId, isTyping });
+      sendTyping(threadId, isTyping);
+
+      if (isTyping) {
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+          console.log("⌨️ Auto-stopping typing after timeout");
+          sendTyping(threadId, false);
+        }, 3000);
+      }
+    },
+    [threadId, sendTyping]
+  );
+
+  console.log("📝 Current typing users in hook:", typingUsers);
 
   return {
     typingUsers,
@@ -432,15 +477,22 @@ export function useThreadMembers(threadId?: string) {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await axiosInstance.get(endpoints.chat.getThreadMembers(threadId));
-      
+
+      const response = await axiosInstance.get(
+        endpoints.chat.getThreadMembers(threadId)
+      );
+
       if (response.data) {
         if (response.data.success && response.data.data) {
-          setMembers(Array.isArray(response.data.data) ? response.data.data : []);
+          setMembers(
+            Array.isArray(response.data.data) ? response.data.data : []
+          );
         } else if (Array.isArray(response.data)) {
           setMembers(response.data);
-        } else if (response.data.members && Array.isArray(response.data.members)) {
+        } else if (
+          response.data.members &&
+          Array.isArray(response.data.members)
+        ) {
           setMembers(response.data.members);
         } else {
           setMembers([]);
@@ -449,11 +501,12 @@ export function useThreadMembers(threadId?: string) {
         setMembers([]);
       }
     } catch (err: any) {
-      console.error('Error fetching thread members:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to fetch thread members';
+      console.error("Error fetching thread members:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to fetch thread members";
       setError(errorMessage);
       setMembers([]);
     } finally {
@@ -477,53 +530,60 @@ export function useCreateThread() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createThread = useCallback(async (data: {
-    name?: string;
-    isGroup: boolean;
-    userIds: string[];
-    createdBy: string;
-  }) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const createThread = useCallback(
+    async (data: {
+      name?: string;
+      isGroup: boolean;
+      userIds: string[];
+      createdBy: string;
+    }) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      console.log('Creating thread:', data);
-      
-      const response = await axiosInstance.post(endpoints.chat.createThread, data);
-      
-      console.log('Create thread response:', response.data);
+        console.log("Creating thread:", data);
 
-      if (response.data) {
-        let newThread = null;
-        
-        if (response.data.success && response.data.data) {
-          newThread = response.data.data;
-        } else if (response.data.thread) {
-          newThread = response.data.thread;
-        } else if (response.data.id) {
-          newThread = response.data;
+        const response = await axiosInstance.post(
+          endpoints.chat.createThread,
+          data
+        );
+
+        console.log("Create thread response:", response.data);
+
+        if (response.data) {
+          let newThread = null;
+
+          if (response.data.success && response.data.data) {
+            newThread = response.data.data;
+          } else if (response.data.thread) {
+            newThread = response.data.thread;
+          } else if (response.data.id) {
+            newThread = response.data;
+          }
+
+          if (newThread) {
+            toast.success("Thread created successfully");
+            return newThread;
+          }
         }
 
-        if (newThread) {
-          toast.success('Thread created successfully');
-          return newThread;
-        }
+        throw new Error("Failed to create thread");
+      } catch (err: any) {
+        console.error("Error creating thread:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to create thread";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      
-      throw new Error('Failed to create thread');
-    } catch (err: any) {
-      console.error('Error creating thread:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to create thread';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   return {
     createThread,
@@ -546,14 +606,16 @@ export function useAvailableUsers(currentUserId?: string) {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Fetching available users for:', currentUserId);
-      const response = await axiosInstance.get(endpoints.chat.getAvailableUsers(currentUserId));
-      
-      console.log('Available users response:', response.data);
-      
+
+      console.log("Fetching available users for:", currentUserId);
+      const response = await axiosInstance.get(
+        endpoints.chat.getAvailableUsers(currentUserId)
+      );
+
+      console.log("Available users response:", response.data);
+
       let usersData: AvailableUser[] = [];
-      
+
       if (response.data) {
         if (response.data.success && response.data.data) {
           usersData = response.data.data;
@@ -563,16 +625,18 @@ export function useAvailableUsers(currentUserId?: string) {
           usersData = response.data.users;
         }
       }
-      
-      const filteredUsers = usersData.filter(user => user.id !== currentUserId);
+
+      const filteredUsers = usersData.filter(
+        (user) => user.id !== currentUserId
+      );
       setUsers(filteredUsers);
-      
     } catch (err: any) {
-      console.error('Error fetching available users:', err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          err.message || 
-                          'Failed to fetch users';
+      console.error("Error fetching available users:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to fetch users";
       setError(errorMessage);
       setUsers([]);
     } finally {
@@ -591,4 +655,3 @@ export function useAvailableUsers(currentUserId?: string) {
     refetch: fetchAvailableUsers,
   };
 }
-

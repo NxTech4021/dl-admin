@@ -40,7 +40,7 @@ interface SeasonFormData {
   startDate: Date | undefined;
   endDate: Date | undefined;
   regiDeadline: Date | undefined;
-  entryFee: string;
+  entryFee: string | number;
   description: string;
   categoryIds: string[];
   isActive: boolean;
@@ -108,7 +108,9 @@ export default function SeasonEditModal({
         name: season.name || "",
         startDate: season.startDate ? new Date(season.startDate) : undefined,
         endDate: season.endDate ? new Date(season.endDate) : undefined,
-        regiDeadline: season.regiDeadline ? new Date(season.regiDeadline) : undefined,
+        regiDeadline: season.regiDeadline
+          ? new Date(season.regiDeadline)
+          : undefined,
         entryFee: season.entryFee || "",
         description: season.description || "",
         categoryIds: [], // Not using categories for now
@@ -283,9 +285,7 @@ export default function SeasonEditModal({
                 <Eye className="h-5 w-5 text-primary" />
               )}
             </div>
-            {currentStep === "form"
-              ? "Edit Season"
-              : "Update Season Details"}
+            {currentStep === "form" ? "Edit Season" : "Update Season Details"}
           </DialogTitle>
           <DialogDescription className="text-base">
             {currentStep === "form"
