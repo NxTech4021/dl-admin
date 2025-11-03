@@ -192,7 +192,7 @@ export function LeagueInfoCard({
                 <SelectContent>
                   <SelectItem value="TENNIS">Tennis</SelectItem>
                   <SelectItem value="PICKLEBALL">Pickleball</SelectItem>
-                  <SelectItem value="PADDLE">Padel</SelectItem>
+                  <SelectItem value="PADEL">Padel</SelectItem>
                 </SelectContent>
               </Select>
 

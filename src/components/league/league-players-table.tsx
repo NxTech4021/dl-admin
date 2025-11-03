@@ -112,8 +112,7 @@ function getSportLabel(sport: string) {
   const map: Record<string, string> = { 
     TENNIS: "Tennis", 
     PICKLEBALL: "Pickleball", 
-    PADDLE: "Padel", 
-    PADEL: "Padel",
+    PADEL: "Padel", 
     tennis: "Tennis",
     pickleball: "Pickleball", 
     padel: "Padel" 
