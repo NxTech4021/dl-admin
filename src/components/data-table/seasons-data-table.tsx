@@ -117,6 +117,55 @@ const getLeaguesDisplay = (season: Season): React.ReactNode => {
   );
 };
 
+const getCategoriesDisplay = (season: Season): React.ReactNode => {
+  const categories = season.categories || (season.category ? [season.category] : []);
+  
+  if (!categories || categories.length === 0) {
+    return <span className="text-muted-foreground text-xs">No categories</span>;
+  }
+
+  if (categories.length === 1) {
+    const categoryName = categories[0]?.name || "Unnamed Category";
+    return (
+      <Badge variant="secondary" className="text-xs">
+        {categoryName}
+      </Badge>
+    );
+  }
+
+  const firstCategoryName = categories[0]?.name || "Unnamed Category";
+  
+  return (
+    <HoverCard>
+      <HoverCardTrigger>
+        <Badge variant="secondary" className="cursor-pointer text-xs">
+          {firstCategoryName}
+          {categories.length > 1 && ` +${categories.length - 1}`}
+        </Badge>
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Linked Categories</h4>
+          <div className="flex flex-wrap gap-1">
+            {categories.map((category: any) => {
+              const categoryName = category?.name || "Unnamed Category";
+              
+              return (
+                <div
+                  key={category?.id || categoryName}
+                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border bg-muted"
+                >
+                  {categoryName}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 const handleViewSeason = (
   seasonId: string,
   onViewSeason?: (id: string) => void
@@ -176,16 +225,7 @@ const columns: ColumnDef<Season>[] = [
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
             <IconTrophy className="size-4 text-primary" />
           </div>
-          <div className="flex flex-col">
-            <div className="font-medium">{season.name}</div>
-            {season.category && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {season.category.name || "Unnamed Category"}
-                </Badge>
-              </div>
-            )}
-          </div>
+          <div className="font-medium">{season.name}</div>
         </div>
       );
     },
@@ -197,6 +237,15 @@ const columns: ColumnDef<Season>[] = [
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
         {getLeaguesDisplay(row.original)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "categories",
+    header: "Categories",
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-1">
+        {getCategoriesDisplay(row.original)}
       </div>
     ),
   },
