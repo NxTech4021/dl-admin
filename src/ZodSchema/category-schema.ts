@@ -3,20 +3,18 @@ import { z } from "zod";
 export const categorySchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]),
+  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED"]),
   matchFormat: z.string().nullable(),
   game_type: z.enum(["SINGLES", "DOUBLES"]).nullable(),
   gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).nullable(),
   isActive: z.boolean(),
   categoryOrder: z.number(),
-  leagues: z.array(z.object({ 
-    id: z.string(), 
-    name: z.string(),
-  })),
-  seasons: z.array(z.object({ 
-    id: z.string(), 
-    name: z.string() 
-  })),
+  season: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -31,7 +29,7 @@ export const createCategorySchema = z.object({
   game_type: z.enum(["SINGLES", "DOUBLES"]).optional(),
   gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).optional(),
   categoryOrder: z.number().min(0, "Category order must be non-negative").default(0),
-  leagueIds: z.array(z.string()).min(1, "At least one league must be selected"),
+  seasonId: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -45,7 +43,7 @@ export const updateCategorySchema = z.object({
   game_type: z.enum(["SINGLES", "DOUBLES"]).optional(),
   gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).optional(),
   categoryOrder: z.number().min(0, "Category order must be non-negative").optional(),
-  leagueIds: z.array(z.string()).min(1, "At least one league must be selected").optional(),
+  seasonId: z.string().nullable().optional(),
   isActive: z.boolean().optional(),
 });
 
