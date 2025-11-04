@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   IconDotsVertical,
   IconCalendar,
@@ -119,6 +120,31 @@ const getSportIcon = (sportType: string | null | undefined, size = 18) => {
     default:
       return null;
   }
+};
+
+// Season Name Cell Component
+const SeasonNameCell = ({ season }: { season: Season }) => {
+  const router = useRouter();
+  const sportIcon = season.leagues && season.leagues.length > 0 
+    ? getSportIcon(season.leagues[0]?.sportType, 18)
+    : <IconTrophy className="size-4 text-primary" />;
+  
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black">
+        {sportIcon}
+      </div>
+      <div 
+        className="font-medium cursor-pointer hover:text-primary hover:underline group-hover:underline transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          router.push(`/seasons/${season.id}`);
+        }}
+      >
+        {season.name}
+      </div>
+    </div>
+  );
 };
 
 export type SeasonsDataTableProps = {
@@ -271,18 +297,7 @@ const columns: ColumnDef<Season>[] = [
     header: "Season Name",
     cell: ({ row }) => {
       const season = row.original;
-      const sportIcon = season.leagues && season.leagues.length > 0 
-        ? getSportIcon(season.leagues[0]?.sportType, 18)
-        : <IconTrophy className="size-4 text-primary" />;
-      
-      return (
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black">
-            {sportIcon}
-          </div>
-          <div className="font-medium">{season.name}</div>
-        </div>
-      );
+      return <SeasonNameCell season={season} />;
     },
     enableHiding: false,
   },
@@ -415,14 +430,14 @@ const columns: ColumnDef<Season>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => handleViewSeason(season.id, onViewSeason)}
             >
               <IconEye className="mr-2 size-4" />
               View Season
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator /> */}
             <DropdownMenuItem
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
@@ -443,6 +458,7 @@ export function SeasonsDataTable({
   isLoading,
   onViewSeason,
 }: SeasonsDataTableProps) {
+  const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -601,11 +617,20 @@ export function SeasonsDataTable({
 
                 if (!isMulti) {
                   const single = group.rows[0];
+                  const season = single.original;
                   return (
                     <TableRow
                       key={single.id}
                       data-state={single.getIsSelected() && "selected"}
-                      className={TABLE_ANIMATIONS.ROW_HOVER}
+                      className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
+                      onClick={(e) => {
+                        // Don't navigate if clicking on checkbox or interactive elements
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                          return;
+                        }
+                        router.push(`/seasons/${season.id}`);
+                      }}
                     >
                       {single
                         .getVisibleCells()
@@ -646,34 +671,45 @@ export function SeasonsDataTable({
 
                     {/* Child rows */}
                     {isExpanded &&
-                      group.rows.map((row: Row<Season>) => (
-                        <TableRow
-                          key={row.id}
-                          data-state={row.getIsSelected() && "selected"}
-                          className={TABLE_ANIMATIONS.ROW_HOVER}
-                        >
-                          {row
-                            .getVisibleCells()
-                            .map((cell: Cell<Season, unknown>) => (
-                              <TableCell key={cell.id}>
-                                {/* Indent first column content for hierarchy visual */}
-                                {cell.column.id === "name" ? (
-                                  <div className="pl-6">
-                                    {flexRender(
+                      group.rows.map((row: Row<Season>) => {
+                        const season = row.original;
+                        return (
+                          <TableRow
+                            key={row.id}
+                            data-state={row.getIsSelected() && "selected"}
+                            className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
+                            onClick={(e) => {
+                              // Don't navigate if clicking on checkbox or interactive elements
+                              const target = e.target as HTMLElement;
+                              if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                                return;
+                              }
+                              router.push(`/seasons/${season.id}`);
+                            }}
+                          >
+                            {row
+                              .getVisibleCells()
+                              .map((cell: Cell<Season, unknown>) => (
+                                <TableCell key={cell.id}>
+                                  {/* Indent first column content for hierarchy visual */}
+                                  {cell.column.id === "name" ? (
+                                    <div className="pl-6">
+                                      {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext()
+                                      )}
+                                    </div>
+                                  ) : (
+                                    flexRender(
                                       cell.column.columnDef.cell,
                                       cell.getContext()
-                                    )}
-                                  </div>
-                                ) : (
-                                  flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                  )
-                                )}
-                              </TableCell>
-                            ))}
-                        </TableRow>
-                      ))}
+                                    )
+                                  )}
+                                </TableCell>
+                              ))}
+                          </TableRow>
+                        );
+                      })}
                   </React.Fragment>
                 );
               })
