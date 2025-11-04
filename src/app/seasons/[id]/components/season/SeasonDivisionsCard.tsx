@@ -109,8 +109,11 @@ export default function SeasonDivisionsCard({
     }
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return "—";
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return "—";
+    return dateObj.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
