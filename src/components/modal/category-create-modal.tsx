@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -21,22 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { IconLoader2, IconX } from "@tabler/icons-react";
-import { Check, ChevronsUpDown, Trophy } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Trophy } from "lucide-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 type GameType = "SINGLES" | "DOUBLES";
@@ -61,36 +47,17 @@ const GENDER_RESTRICTION_OPTIONS: { value: GenderRestriction; label: string }[] 
   { value: "MIXED", label: "Mixed" },
 ];
 
-const getSportTypeBadgeVariant = (sportType: string) => {
-  switch (sportType?.toUpperCase()) {
-    case "PADEL":
-      return "default";
-    case "PICKLEBALL":
-      return "secondary";
-    case "TENNIS":
-      return "outline";
-    default:
-      return "outline";
-  }
-};
-
-interface League {
-  id: string;
-  name: string;
-  sportType: string;
-}
 
 interface CategoryFormData {
   name: string;
   matchFormat: string;
-  game_type: GameType;
-  gender_category: GenderType;
-  genderRestriction: GenderRestriction;
+  game_type: GameType | "";
+  gender_category: GenderType | "";
+  genderRestriction: GenderRestriction | "";
   maxPlayers: number | null;
   maxTeams: number | null;
   isActive: boolean;
   categoryOrder: number;
-  leagueId: string | null;
 }
 
 interface CategoryCreateModalProps {
@@ -107,60 +74,75 @@ export default function CategoryCreateModal({
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     matchFormat: "",
-    game_type: "SINGLES",
-    gender_category: "MALE",
-    genderRestriction: "MALE", // Auto-calculated from gender_category
+    game_type: "",
+    gender_category: "",
+    genderRestriction: "",
     maxPlayers: null,
     maxTeams: null,
     isActive: true,
     categoryOrder: 0,
-    leagueId: null,
   });
   const [loading, setLoading] = useState(false);
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [leaguesLoading, setLeaguesLoading] = useState(false);
-  const [leagueSelectOpen, setLeagueSelectOpen] = useState(false);
-  const [leagueSearchTerm, setLeagueSearchTerm] = useState("");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Existing categories for duplicate checking (globally, not per league)
+  const [existingCategories, setExistingCategories] = useState<Array<{
+    id: string;
+    name: string | null;
+    gender_category: GenderType | null;
+    game_type: GameType | null;
+  }>>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
-  // Fetch leagues on mount
+  // Fetch all existing categories globally (for duplicate checking)
   useEffect(() => {
     if (open) {
-      setLeaguesLoading(true);
+      setCategoriesLoading(true);
       axiosInstance
-        .get(endpoints.league.getAll)
+        .get(endpoints.categories.getAll)
         .then((res) => {
-          console.log("Leagues API response:", res.data);
-          // The leagues are nested under data.leagues
-          const leaguesData = res.data?.data?.leagues || res.data?.leagues || [];
-          // Ensure we always set an array
-          if (Array.isArray(leaguesData)) {
-            setLeagues(leaguesData);
-          } else {
-            console.warn("Leagues data is not an array:", leaguesData);
-            setLeagues([]);
-          }
+          const result = res.data;
+          const categoriesData = result?.data || result || [];
+          setExistingCategories(Array.isArray(categoriesData) ? categoriesData : []);
         })
         .catch((error) => {
-          console.error("Error fetching leagues:", error);
-          setLeagues([]);
+          console.error("Error fetching categories:", error);
+          setExistingCategories([]);
         })
-        .finally(() => setLeaguesLoading(false));
+        .finally(() => setCategoriesLoading(false));
+    } else {
+      setExistingCategories([]);
+    }
+  }, [open]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      setFormData({
+        name: "",
+        matchFormat: "",
+        game_type: "",
+        gender_category: "",
+        genderRestriction: "",
+        maxPlayers: null,
+        maxTeams: null,
+        isActive: true,
+        categoryOrder: 0,
+      });
     }
   }, [open]);
 
   const generateCategoryName = useCallback(
-    (gender: GenderType, gameType: GameType) => {
-      let genderPrefix;
+    (gender: GenderType | "", gameType: GameType | ""): string => {
+      if (!gender || !gameType) return "";
+      
+      let genderPrefix: string;
       if (gender === "MIXED") {
         genderPrefix = "Mixed";
       } else if (gender === "MALE") {
         genderPrefix = "Men's";
-      } else if (gender === "FEMALE") {
-        genderPrefix = "Women's";
       } else {
-        // For MEN/WOMEN types (already in correct format)
-        genderPrefix = `${gender.charAt(0)}${gender.slice(1).toLowerCase()}'s`;
+        // gender === "FEMALE"
+        genderPrefix = "Women's";
       }
       // Game type should be plural: Singles, Doubles
       const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";
@@ -170,54 +152,139 @@ export default function CategoryCreateModal({
   );
 
   // Auto-calculate gender restriction from gender category
-  const getGenderRestriction = (genderCategory: GenderType): GenderRestriction => {
+  const getGenderRestriction = (genderCategory: GenderType | ""): GenderRestriction | "" => {
+    if (!genderCategory) return "";
     if (genderCategory === "MIXED") {
       return "MIXED";
     }
     return genderCategory as GenderRestriction;
   };
 
+  // Check if combination already exists globally
+  const isDuplicateCombination = useCallback(
+    (gender: GenderType | "", gameType: GameType | ""): boolean => {
+      if (!gender || !gameType) return false;
+      
+      return existingCategories.some(
+        (category) =>
+          category.gender_category === gender &&
+          category.game_type === gameType
+      );
+    },
+    [existingCategories]
+  );
+
+  // Check if a specific gender option is already used with any game type
+  const isGenderUsed = useCallback(
+    (gender: GenderType): boolean => {
+      return existingCategories.some(
+        (category) => category.gender_category === gender
+      );
+    },
+    [existingCategories]
+  );
+
+  // Check if a specific game type option is already used with any gender
+  const isGameTypeUsed = useCallback(
+    (gameType: GameType): boolean => {
+      return existingCategories.some(
+        (category) => category.game_type === gameType
+      );
+    },
+    [existingCategories]
+  );
+
+  // Check if a specific combination is already used
+  const isCombinationUsed = useCallback(
+    (gender: GenderType, gameType: GameType): boolean => {
+      return existingCategories.some(
+        (category) =>
+          category.gender_category === gender &&
+          category.game_type === gameType
+      );
+    },
+    [existingCategories]
+  );
+
+  // Check if Mixed Singles combination
+  const isMixedSingles = (gender: GenderType | "", gameType: GameType | ""): boolean => {
+    return gender === "MIXED" && gameType === "SINGLES";
+  };
+
   const handleGameTypeChange = (value: GameType) => {
+    // Prevent Mixed Singles
+    if (formData.gender_category && isMixedSingles(formData.gender_category, value)) {
+      toast.error("Mixed Singles category is not allowed");
+      return;
+    }
+
+    // Check for duplicate combination if gender is selected
+    if (formData.gender_category && isCombinationUsed(formData.gender_category, value)) {
+      toast.error(
+        `A ${generateCategoryName(formData.gender_category, value)} category already exists`
+      );
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       game_type: value,
-      name: generateCategoryName(prev.gender_category, value),
+      name: prev.gender_category ? generateCategoryName(prev.gender_category, value) : "",
     }));
   };
 
   const handleGenderChange = (value: GenderType) => {
+    // If switching to MIXED and SINGLES is selected, reset to empty
+    const newGameType = value === "MIXED" && formData.game_type === "SINGLES" 
+      ? "" 
+      : formData.game_type;
+
+    // Prevent Mixed Singles
+    if (newGameType && isMixedSingles(value, newGameType)) {
+      toast.error("Mixed Singles category is not allowed");
+      return;
+    }
+
+    // Check for duplicate combination if game type is selected
+    if (newGameType && isCombinationUsed(value, newGameType)) {
+      toast.error(
+        `A ${generateCategoryName(value, newGameType)} category already exists`
+      );
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       gender_category: value,
       genderRestriction: getGenderRestriction(value),
-      name: generateCategoryName(value, prev.game_type),
+      game_type: newGameType,
+      name: newGameType ? generateCategoryName(value, newGameType) : "",
     }));
   };
-
-  const selectLeague = (leagueId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      leagueId: prev.leagueId === leagueId ? null : leagueId,
-    }));
-  };
-
-  const selectedLeague = leagues.find((league) => league.id === formData.leagueId);
-  
-  // Filter leagues based on search term
-  const filteredLeagues = leagues.filter((league) =>
-    league.name.toLowerCase().includes(leagueSearchTerm.toLowerCase())
-  );
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.matchFormat || !formData.leagueId) {
+    if (!formData.gender_category || !formData.game_type || !formData.matchFormat) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate Mixed Singles
+    if (isMixedSingles(formData.gender_category, formData.game_type)) {
+      toast.error("Mixed Singles category is not allowed");
+      return;
+    }
+
+    // Validate duplicate combination
+    if (isDuplicateCombination(formData.gender_category, formData.game_type)) {
+      toast.error(
+        `A ${formData.name} category already exists. Please choose a different combination.`
+      );
       return;
     }
 
     setLoading(true);
     try {
       await axiosInstance.post(endpoints.categories.create, {
-        leagueId: formData.leagueId,
         name: formData.name,
         genderRestriction: formData.genderRestriction,
         matchFormat: formData.matchFormat,
@@ -239,14 +306,13 @@ export default function CategoryCreateModal({
       setFormData({
         name: "",
         matchFormat: "",
-        game_type: "SINGLES",
-        gender_category: "MALE",
-        genderRestriction: "MALE", // Auto-calculated from gender_category
+        game_type: "",
+        gender_category: "",
+        genderRestriction: "",
         maxPlayers: null,
         maxTeams: null,
         isActive: true,
         categoryOrder: 0,
-        leagueId: null,
       });
     } catch (err: any) {
       console.error("Error creating category:", err);
@@ -276,22 +342,21 @@ export default function CategoryCreateModal({
                     {formData.name || "Category name"}
                   </h3>
                   <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                      {GENDER_TYPE_OPTIONS.find(opt => opt.value === formData.gender_category)?.label}
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                      {GAME_TYPE_OPTIONS.find(opt => opt.value === formData.game_type)?.label}
-                    </Badge>
+                    {formData.gender_category && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                        {GENDER_TYPE_OPTIONS.find(opt => opt.value === formData.gender_category)?.label}
+                      </Badge>
+                    )}
+                    {formData.game_type && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                        {GAME_TYPE_OPTIONS.find(opt => opt.value === formData.game_type)?.label}
+                      </Badge>
+                    )}
                     {formData.matchFormat && (
                       <span className="text-muted-foreground">· {formData.matchFormat}</span>
                     )}
                   </div>
                 </div>
-                {selectedLeague && (
-                  <Badge variant="outline" className="text-xs shrink-0">
-                    {selectedLeague.name}
-                  </Badge>
-                )}
               </div>
             </div>
 
@@ -300,41 +365,96 @@ export default function CategoryCreateModal({
               <div className="space-y-1">
                 <Label htmlFor="genderCategory" className="text-xs">Gender *</Label>
                 <Select
-                  value={formData.gender_category}
+                  value={formData.gender_category || undefined}
                   onValueChange={handleGenderChange}
                 >
                   <SelectTrigger className="h-9">
-                    <SelectValue />
+                    <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    {GENDER_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                    {GENDER_TYPE_OPTIONS.map((option) => {
+                      // Disable Mixed if Singles is selected
+                      const isMixedSinglesDisabled = option.value === "MIXED" && formData.game_type === "SINGLES";
+                      // Disable if this gender is already used with the selected game type
+                      const isCombinationDisabled = formData.game_type 
+                        ? isCombinationUsed(option.value, formData.game_type)
+                        : false;
+                      const isDisabled = isMixedSinglesDisabled || isCombinationDisabled;
+                      return (
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value}
+                          disabled={isDisabled}
+                          className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                        >
+                          {option.label}
+                          {isCombinationDisabled && formData.game_type && (
+                            <span className="ml-2 text-xs text-muted-foreground">(already exists)</span>
+                          )}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+                {formData.gender_category && formData.game_type && isMixedSingles(formData.gender_category, formData.game_type) && (
+                  <p className="text-xs text-destructive mt-1">
+                    Mixed Singles category is not allowed
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="gameType" className="text-xs">Game Type *</Label>
                 <Select
-                  value={formData.game_type}
+                  value={formData.game_type || undefined}
                   onValueChange={handleGameTypeChange}
                 >
                   <SelectTrigger className="h-9">
-                    <SelectValue />
+                    <SelectValue placeholder="Select game type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {GAME_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    {GAME_TYPE_OPTIONS.map((option) => {
+                      // Hide Singles if Mixed is selected
+                      if (option.value === "SINGLES" && formData.gender_category === "MIXED") {
+                        return null;
+                      }
+                      // Disable if this game type is already used with the selected gender
+                      const isCombinationDisabled = formData.gender_category 
+                        ? isCombinationUsed(formData.gender_category, option.value)
+                        : false;
+                      return (
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value}
+                          disabled={isCombinationDisabled}
+                          className={isCombinationDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                        >
+                          {option.label}
+                          {isCombinationDisabled && formData.gender_category && (
+                            <span className="ml-2 text-xs text-muted-foreground">(already exists)</span>
+                          )}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+                {formData.gender_category && formData.game_type && isMixedSingles(formData.gender_category, formData.game_type) && (
+                  <p className="text-xs text-destructive mt-1">
+                    Mixed Singles category is not allowed
+                  </p>
+                )}
               </div>
             </div>
+
+            {/* Duplicate Warning */}
+            {formData.gender_category && formData.game_type && isDuplicateCombination(formData.gender_category, formData.game_type) && (
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                <IconX className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  A {formData.name || generateCategoryName(formData.gender_category, formData.game_type)} category already exists. Please choose a different combination.
+                </span>
+              </div>
+            )}
 
             <div className="space-y-1">
               <Label htmlFor="matchFormat" className="text-xs">Match Format *</Label>
@@ -353,7 +473,7 @@ export default function CategoryCreateModal({
             </div>
 
             {/* Max Players and Max Teams */}
-            <div className="grid gap-3 md:grid-cols-2">
+            {/* <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="maxPlayers" className="text-xs">Max Players</Label>
                 <Input
@@ -387,104 +507,7 @@ export default function CategoryCreateModal({
                   className="h-9"
                 />
               </div>
-            </div>
-
-            {/* League Selection */}
-            <div className="space-y-1">
-              <Label className="text-xs">League *</Label>
-              <div className="flex gap-2 items-start">
-                <Popover open={leagueSelectOpen} onOpenChange={setLeagueSelectOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={leagueSelectOpen}
-                      className="flex-1 justify-between h-9"
-                    >
-                      {selectedLeague ? selectedLeague.name : "Select league"}
-                      <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
-                    <div className="p-2">
-                      <Input 
-                        placeholder="Search..." 
-                        className="mb-2 h-8"
-                        value={leagueSearchTerm}
-                        onChange={(e) => setLeagueSearchTerm(e.target.value)}
-                      />
-                      <div 
-                        ref={scrollContainerRef}
-                        className="max-h-56 overflow-y-auto overflow-x-hidden"
-                        style={{ 
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: '#d1d5db #f3f4f6',
-                          WebkitOverflowScrolling: 'touch'
-                        }}
-                        onWheel={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (scrollContainerRef.current) {
-                            scrollContainerRef.current.scrollTop += e.deltaY;
-                          }
-                        }}
-                      >
-                        {leaguesLoading ? (
-                          <div className="p-3 text-xs text-muted-foreground text-center">
-                            Loading...
-                          </div>
-                        ) : filteredLeagues.length === 0 ? (
-                          <div className="p-3 text-xs text-muted-foreground text-center">
-                            {leagueSearchTerm ? "No leagues found" : "No leagues available"}
-                          </div>
-                        ) : (
-                          filteredLeagues.map((league) => (
-                            <div
-                              key={league.id}
-                              onClick={() => selectLeague(league.id)}
-                              className={cn(
-                                "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent",
-                                formData.leagueId === league.id && "bg-accent"
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Check
-                                  className={cn(
-                                    "h-3.5 w-3.5",
-                                    formData.leagueId === league.id
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                <span className="truncate">{league.name}</span>
-                              </div>
-                              <Badge 
-                                variant={getSportTypeBadgeVariant(league.sportType)} 
-                                className="text-xs"
-                              >
-                                {league.sportType?.toLowerCase() || "Unknown"}
-                              </Badge>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                {selectedLeague && (
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1 px-2 py-1 h-9"
-                  >
-                    {selectedLeague.name}
-                    <IconX
-                      className="h-3 w-3 cursor-pointer hover:text-destructive"
-                      onClick={() => setFormData(prev => ({ ...prev, leagueId: null }))}
-                    />
-                  </Badge>
-                )}
-              </div>
-            </div>
+            </div> */}
 
             {/* Status */}
             <div className="flex items-center justify-between p-2 border rounded-md">
@@ -519,9 +542,11 @@ export default function CategoryCreateModal({
             onClick={handleSubmit}
             disabled={
               loading ||
-              !formData.name ||
+              !formData.gender_category ||
+              !formData.game_type ||
               !formData.matchFormat ||
-              !formData.leagueId
+              isMixedSingles(formData.gender_category, formData.game_type) ||
+              isDuplicateCombination(formData.gender_category, formData.game_type)
             }
             size="sm"
           >
@@ -542,3 +567,4 @@ export default function CategoryCreateModal({
     </Dialog>
   );
 }
+
