@@ -57,16 +57,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 
 import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/ZodSchema/category-schema";
 import { endpoints } from "@/lib/endpoints";
 import dynamic from "next/dynamic";
+import { ConfirmationModal } from "@/components/modal/confirmation-modal";
+import { toast } from "sonner";
 
 const CategoryEditModal = dynamic(
   () =>
@@ -112,82 +109,57 @@ const getGameTypeBadgeVariant = (gameType: string | null) => {
   }
 };
 
-const getLeagueDisplay = (category: Category): React.ReactNode => {
-  if (!category.leagues || category.leagues.length === 0) {
-    return <span className="text-muted-foreground text-xs">No leagues</span>;
-  }
 
-  if (category.leagues.length === 1) {
-    const league = category.leagues[0];
-    return (
-      <HoverCard>
-        <HoverCardTrigger>
-          <Badge variant="secondary" className="cursor-pointer">
-            {league.name}
-          </Badge>
-        </HoverCardTrigger>
-        <HoverCardContent>
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Linked League</h4>
-            <div className="flex flex-wrap gap-1">
-              <Badge variant="outline" className="text-xs">
-                {league.name}
-              </Badge>
-            </div>
-          </div>
-        </HoverCardContent>
-      </HoverCard>
-    );
-  }
+// const getSeasonsDisplay = (category: Category): React.ReactNode => {
+//   if (!category.season) {
+//     return <span className="text-muted-foreground text-xs">No season Found</span>;
+//   }
 
-  return (
-    <HoverCard>
-      <HoverCardTrigger>
-        <Badge variant="secondary" className="cursor-pointer">
-          {category.leagues.length} League{category.leagues.length !== 1 ? 's' : ''}
-        </Badge>
-      </HoverCardTrigger>
-      <HoverCardContent>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Leagues</h4>
-          <div className="flex flex-wrap gap-1">
-            {category.leagues.map((league) => (
-              <Badge key={league.id} variant="outline" className="text-xs">
-                {league.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  );
-};
+//   return (
+//     <HoverCard>
+//       <HoverCardTrigger>
+//         <Badge variant="secondary" className="cursor-pointer">
+//           {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
+//         </Badge>
+//       </HoverCardTrigger>
+//       <HoverCardContent>
+//         <div className="space-y-2">
+//           <h4 className="text-sm font-medium">Linked Seasons</h4>
+//           <div className="flex flex-wrap gap-1">
+//             {category.seasons.map((season) => (
+//               <Badge key={season.id} variant="outline" className="text-xs">
+//                 {season.name}
+//               </Badge>
+//             ))}
+//           </div>
+//         </div>
+//       </HoverCardContent>
+//     </HoverCard>
+//   );
+// };
 
 const getSeasonsDisplay = (category: Category): React.ReactNode => {
   if (!category.seasons || category.seasons.length === 0) {
-    return <span className="text-muted-foreground text-xs">No seasons</span>;
+    return <span className="text-muted-foreground text-xs">No season assigned</span>;
   }
 
+  if (category.seasons.length === 1) {
+    return (
+      <Badge variant="secondary" className="cursor-pointer">
+        {category.seasons[0].name}
+      </Badge>
+    );
+  }
+
+ 
+  //   <Badge variant="secondary" className="cursor-pointer">
+  //     {category.season.name}
+  //   </Badge>
+  
   return (
-    <HoverCard>
-      <HoverCardTrigger>
-        <Badge variant="secondary" className="cursor-pointer">
-          {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
-        </Badge>
-      </HoverCardTrigger>
-      <HoverCardContent>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Seasons</h4>
-          <div className="flex flex-wrap gap-1">
-            {category.seasons.map((season) => (
-              <Badge key={season.id} variant="outline" className="text-xs">
-                {season.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+    <Badge variant="secondary" className="cursor-pointer">
+      {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
+    </Badge>
   );
 };
 
@@ -271,8 +243,8 @@ const createColumns = (
     },
   },
   {
-    accessorKey: "seasons",
-    header: "Seasons",
+    accessorKey: "season",
+    header: "Season",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
         {getSeasonsDisplay(row.original)}
@@ -341,14 +313,7 @@ const createColumns = (
             <DropdownMenuItem
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
-              onClick={() => {
-                const confirmed = window.confirm(
-                  `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
-                );
-                if (confirmed) {
-                  handleDeleteCategory(category.id);
-                }
-              }}
+              onClick={() => handleDeleteCategory(category.id)} // Remove the window.confirm here
             >
               <IconTrash className="mr-2 size-4" />
               Delete Category
@@ -376,6 +341,10 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = React.useState(false);
+  const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Filter states
   const [gameTypeFilter, setGameTypeFilter] = React.useState<string>("all");
@@ -487,51 +456,101 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    try {
-      const response = await axiosInstance.delete(endpoints.categories.delete(categoryId));
-      if (response.status === 200) {
-        // Remove the deleted category from the data
-        setData(prevData => prevData.filter(category => category.id !== categoryId));
-        // Clear selection if the deleted category was selected
-        setRowSelection(prev => {
-          const newSelection = { ...prev };
-          delete (newSelection as any)[categoryId];
-          return newSelection;
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to delete category:", error);
-      // Show error message to user
-      alert(error.response?.data?.message || "Failed to delete category");
+  const handleDeleteCategory = (categoryId: string) => {
+    const category = data.find(cat => cat.id === categoryId);
+    if (category) {
+      setCategoryToDelete(category);
+      setDeleteModalOpen(true);
     }
   };
 
-  const handleBulkDelete = async () => {
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await axiosInstance.delete(endpoints.categories.delete(categoryToDelete.id));
+      if (response.status === 200) {
+        setData(prevData => prevData.filter(category => category.id !== categoryToDelete.id));
+        setRowSelection(prev => {
+          const newSelection = { ...prev };
+          delete (newSelection as any)[categoryToDelete.id];
+          return newSelection;
+        });
+        setDeleteModalOpen(false);
+        setCategoryToDelete(null);
+        toast.success(`Category "${categoryToDelete.name}" deleted successfully`);
+      }
+    } catch (error: any) {
+      console.error("Failed to delete category:", error);
+      toast.error(
+        error.response?.data?.message || 
+        `Failed to delete category "${categoryToDelete.name}"`
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    if (selectedRows.length === 0) return;
+    setBulkDeleteModalOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const selectedIds = selectedRows.map(row => row.original.id);
+    const selectedNames = selectedRows.map(row => row.original.name || "Unnamed Category");
     
     if (selectedIds.length === 0) return;
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedIds.length} category(ies)? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+    setIsDeleting(true);
+    let successCount = 0;
+    let failedCategories: string[] = [];
 
     try {
-      // Delete categories one by one
-      for (const categoryId of selectedIds) {
-        await axiosInstance.delete(endpoints.categories.delete(categoryId));
+      for (let i = 0; i < selectedIds.length; i++) {
+        try {
+          await axiosInstance.delete(endpoints.categories.delete(selectedIds[i]));
+          successCount++;
+        } catch (error: any) {
+          console.error(`Failed to delete category ${selectedNames[i]}:`, error);
+          failedCategories.push(selectedNames[i]);
+        }
       }
+      const failedIds = selectedRows
+        .filter((_, index) => failedCategories.includes(selectedNames[index]))
+        .map(row => row.original.id);
       
-      // Remove deleted categories from data
-      setData(prevData => prevData.filter(category => !selectedIds.includes(category.id)));
+      const successfullyDeletedIds = selectedIds.filter(id => !failedIds.includes(id));
+      
+      setData(prevData => prevData.filter(category => !successfullyDeletedIds.includes(category.id)));
+      
       // Clear all selections
       setRowSelection({});
+      setBulkDeleteModalOpen(false);
+
+      // Show appropriate toasts based on results
+      if (successCount === selectedIds.length) {
+        toast.success(
+          `Successfully deleted ${successCount} categor${successCount === 1 ? 'y' : 'ies'}`
+        );
+      } else {
+        toast.error(
+          `Failed to delete all ${selectedIds.length} categories`,
+          {
+            description: failedCategories.length <= 3
+              ? `Categories: ${failedCategories.join(', ')}`
+              : `Including: ${failedCategories.slice(0, 3).join(', ')} and others`,
+          }
+        );
+      }
     } catch (error: any) {
       console.error("Failed to delete categories:", error);
-      alert(error.response?.data?.message || "Failed to delete some categories");
+      toast.error("An unexpected error occurred during bulk deletion");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -604,7 +623,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleBulkDelete}
+                onClick={handleBulkDelete} // Remove the window.confirm here
                 className="mr-2"
               >
                 <IconTrashX className="mr-2 size-4" />
@@ -813,6 +832,38 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
           onCategoryUpdated={handleCategoryUpdated}
         />
       )}
+
+      {/* Single Delete Confirmation Modal */}
+      <ConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Category"
+        description={
+          categoryToDelete
+            ? `Are you sure you want to delete "${categoryToDelete.name}"? This action cannot be undone and will permanently remove the category and all associated data.`
+            : ""
+        }
+        confirmText="Delete Category"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteCategory}
+        isLoading={isDeleting}
+        variant="destructive"
+        icon={<IconTrash className="h-5 w-5 text-destructive" />}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmationModal
+        open={bulkDeleteModalOpen}
+        onOpenChange={setBulkDeleteModalOpen}
+        title="Delete Multiple Categories"
+        description={`Are you sure you want to delete ${table.getFilteredSelectedRowModel().rows.length} category(ies)? This action cannot be undone and will permanently remove all selected categories and their associated data.`}
+        confirmText={`Delete ${table.getFilteredSelectedRowModel().rows.length} Categories`}
+        cancelText="Cancel"
+        onConfirm={confirmBulkDelete}
+        isLoading={isDeleting}
+        variant="destructive"
+        icon={<IconTrashX className="h-5 w-5 text-destructive" />}
+      />
     </div>
   );
 }

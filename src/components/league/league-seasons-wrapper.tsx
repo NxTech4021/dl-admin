@@ -5,8 +5,6 @@ import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/ZodSchema/season-schema";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { IconPlus, IconCalendar, IconTrophy } from "@tabler/icons-react";
 
@@ -64,7 +62,7 @@ export function LeagueSeasonsWrapper({
             const response = await axiosInstance.get(
               endpoints.season.getById(season.id)
             );
-            return response.data; // This includes memberships with user data
+            return response.data;
           } catch (error) {
             console.error(`Failed to fetch season ${season.id}:`, error);
             return season; // Fallback to original season data
