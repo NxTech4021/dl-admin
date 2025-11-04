@@ -234,7 +234,7 @@ const createColumns = (
   },
   {
     accessorKey: "genderRestriction",
-    header: "Gender Restriction",
+    header: "Gender",
     cell: ({ row }) => {
       const restriction = row.original.genderRestriction;
       return (
@@ -269,15 +269,6 @@ const createColumns = (
         <span className="text-muted-foreground">-</span>
       );
     },
-  },
-  {
-    accessorKey: "league",
-    header: "League",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {getLeagueDisplay(row.original)}
-      </div>
-    ),
   },
   {
     accessorKey: "seasons",
