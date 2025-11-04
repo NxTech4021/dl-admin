@@ -35,6 +35,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useNotifications } from "@/hooks/use-notifications";
 
 type DivisionBase = {
   id: string;
@@ -178,7 +179,6 @@ export default function DivisionCreateModal({
   );
 
   useEffect(() => {
-    // fetch seasons
     const fetchSeasons = async () => {
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
@@ -273,7 +273,7 @@ export default function DivisionCreateModal({
   }, [open, isEditMode, division, resetModal]);
 
   const handleNextToPreview = async () => {
-    const valid = await trigger(); // triggers validation for all fields
+    const valid = await trigger();
     if (!valid) return;
     if (isValid) {
       setCurrentStep("preview");
@@ -284,11 +284,12 @@ export default function DivisionCreateModal({
 
   const handleBackToForm = () => setCurrentStep("form");
 
+  const { refresh: refreshNotifications } = useNotifications();
+
   const onSubmit = async (data: DivisionFormValues) => {
     setLoading(true);
     setError("");
     try {
-      // prepare payload (strip undefined/null)
       const payload: any = {
         name: data.name,
         seasonId: data.seasonId,
@@ -333,7 +334,9 @@ export default function DivisionCreateModal({
         res = await axiosInstance.post(endpoints.division.create, payload);
         toast.success(res.data?.message ?? "Division created");
       }
+      
       onDivisionCreated?.();
+      refreshNotifications();
       resetModal();
       onOpenChange(false);
     } catch (err: any) {
