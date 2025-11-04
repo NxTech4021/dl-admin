@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   CalendarIcon,
   Loader2,
   Trophy,
@@ -30,6 +37,7 @@ import {
   ArrowRight,
   Check,
   ChevronsUpDown,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -108,6 +116,16 @@ export default function SeasonCreateModal({
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [isEntryFeeFocused, setIsEntryFeeFocused] = useState(false);
+  
+  // Category creation state
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: "",
+    matchFormat: "",
+    game_type: "SINGLES" as "SINGLES" | "DOUBLES",
+    gender_category: "MIXED" as "MEN" | "WOMEN" | "MIXED",
+  });
+  const [categoryCreating, setCategoryCreating] = useState(false);
 
   const [form, setForm] = useState<SeasonFormData>({
     name: "",
@@ -154,6 +172,104 @@ export default function SeasonCreateModal({
     );
   }, [allCategories, categorySearch]);
 
+  // Generate category name from gender and game type
+  const generateCategoryName = (
+    gender: "MEN" | "WOMEN" | "MIXED",
+    gameType: "SINGLES" | "DOUBLES"
+  ): string => {
+    let genderPrefix;
+    if (gender === "MIXED") {
+      genderPrefix = "Mixed";
+    } else {
+      genderPrefix = `${gender.charAt(0)}${gender.slice(1).toLowerCase()}'s`;
+    }
+    const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";
+    return `${genderPrefix} ${gameTypeSuffix}`;
+  };
+
+  // Handle category creation
+  const handleCreateCategory = async () => {
+    if (!categoryFormData.name || !categoryFormData.matchFormat) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setCategoryCreating(true);
+    try {
+      // Map gender_category to genderRestriction
+      const genderRestriction =
+        categoryFormData.gender_category === "MIXED"
+          ? "OPEN"
+          : categoryFormData.gender_category === "MEN"
+          ? "MALE"
+          : "FEMALE";
+
+      const response = await axiosInstance.post(endpoints.categories.create, {
+        leagueIds: [leagueId],
+        name: categoryFormData.name,
+        genderRestriction,
+        matchFormat: categoryFormData.matchFormat,
+        game_type: categoryFormData.game_type,
+        gender_category: categoryFormData.gender_category,
+        isActive: true,
+        categoryOrder: 0,
+      });
+
+      const newCategory = response.data?.data || response.data;
+      
+      // Refresh categories list
+      const categoriesResponse = await axiosInstance.get(endpoints.categories.getAll);
+      if (categoriesResponse.status === 200) {
+        const result = categoriesResponse.data;
+        const categoriesData = result.data || [];
+        setAllCategories(categoriesData);
+      }
+
+      // Auto-select the newly created category
+      if (newCategory?.id) {
+        setForm((prev) => ({
+          ...prev,
+          categoryId: newCategory.id,
+        }));
+      }
+
+      // Reset category form
+      setCategoryFormData({
+        name: "",
+        matchFormat: "",
+        game_type: "SINGLES",
+        gender_category: "MIXED",
+      });
+
+      setIsCreateCategoryOpen(false);
+      setIsCategoryDropdownOpen(false);
+      toast.success("Category created and selected!");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create category";
+      toast.error(errorMessage);
+    } finally {
+      setCategoryCreating(false);
+    }
+  };
+
+  // Update category name when gender or game type changes
+  useEffect(() => {
+    if (isCreateCategoryOpen) {
+      const generatedName = generateCategoryName(
+        categoryFormData.gender_category,
+        categoryFormData.game_type
+      );
+      setCategoryFormData((prev) => ({
+        ...prev,
+        name: generatedName,
+      }));
+    }
+  }, [categoryFormData.gender_category, categoryFormData.game_type, isCreateCategoryOpen]);
+
   const resetModal = () => {
     setCurrentStep("form");
     setForm({
@@ -172,6 +288,13 @@ export default function SeasonCreateModal({
     setError("");
     setCategorySearch("");
     setIsCategoryDropdownOpen(false);
+    setIsCreateCategoryOpen(false);
+    setCategoryFormData({
+      name: "",
+      matchFormat: "",
+      game_type: "SINGLES",
+      gender_category: "MIXED",
+    });
   };
 
   // Helper function to get sport type badge variant
@@ -463,13 +586,25 @@ export default function SeasonCreateModal({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" align="start">
-                      <div className="p-2 border-b">
+                      <div className="p-2 border-b space-y-2">
                         <Input
                           placeholder="Search..."
                           value={categorySearch}
                           onChange={(e) => setCategorySearch(e.target.value)}
                           className="h-8"
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-8 text-xs"
+                          onClick={() => {
+                            setIsCategoryDropdownOpen(false);
+                            setIsCreateCategoryOpen(true);
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1.5" />
+                          Create New Category
+                        </Button>
                       </div>
                       <div className="max-h-56 overflow-y-auto">
                         {filteredCategories.length === 0 ? (
@@ -697,6 +832,130 @@ export default function SeasonCreateModal({
             </div>
           )}
         </div>
+
+        {/* Create Category Dialog */}
+        <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg">Create New Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Preview Card */}
+              <div className="rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+                <h3 className="font-semibold text-sm mb-1">
+                  {categoryFormData.name || "Select options below"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {categoryFormData.matchFormat || "Match format will appear here"}
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Gender Category */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="genderCategory" className="text-xs">
+                    Gender Category
+                  </Label>
+                  <Select
+                    value={categoryFormData.gender_category}
+                    onValueChange={(value: "MEN" | "WOMEN" | "MIXED") =>
+                      setCategoryFormData((prev) => ({
+                        ...prev,
+                        gender_category: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MEN">Men</SelectItem>
+                      <SelectItem value="WOMEN">Women</SelectItem>
+                      <SelectItem value="MIXED">Mixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Game Type */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="gameType" className="text-xs">
+                    Game Type
+                  </Label>
+                  <Select
+                    value={categoryFormData.game_type}
+                    onValueChange={(value: "SINGLES" | "DOUBLES") =>
+                      setCategoryFormData((prev) => ({
+                        ...prev,
+                        game_type: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SINGLES">Singles</SelectItem>
+                      <SelectItem value="DOUBLES">Doubles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Match Format */}
+              <div className="space-y-1.5">
+                <Label htmlFor="matchFormat" className="text-xs">
+                  Match Format *
+                </Label>
+                <Input
+                  id="matchFormat"
+                  value={categoryFormData.matchFormat}
+                  onChange={(e) =>
+                    setCategoryFormData((prev) => ({
+                      ...prev,
+                      matchFormat: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., Best of 3 Sets, Pro Sets, etc."
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Specify the match format for this category
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateCategoryOpen(false)}
+                disabled={categoryCreating}
+                size="sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateCategory}
+                disabled={
+                  categoryCreating ||
+                  !categoryFormData.name ||
+                  !categoryFormData.matchFormat
+                }
+                size="sm"
+              >
+                {categoryCreating ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Create
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <DialogFooter className="flex gap-2 px-6 pt-4 pb-6 border-t">
           {currentStep === "form" ? (
