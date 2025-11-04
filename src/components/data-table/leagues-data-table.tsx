@@ -136,9 +136,9 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
             </div>
             <div>
               <div className="font-semibold">{league.name}</div>
-              <div className="text-sm text-muted-foreground">
+              {/* <div className="text-sm text-muted-foreground">
                 ID: {league.id}
-              </div>
+              </div> */}
             </div>
           </div>
         );
@@ -196,26 +196,26 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
         );
       },
     },
-    {
-      accessorKey: "gameType",
-      header: "Game Type",
-      cell: ({ row }) => {
-        const sport = row.original.sportType;
-        const gameType = row.original.gameType;
-        const gameTypeOptions = getGameTypeOptionsForSport(sport);
-        const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
+    // {
+    //   accessorKey: "gameType",
+    //   header: "Game Type",
+    //   cell: ({ row }) => {
+    //     const sport = row.original.sportType;
+    //     const gameType = row.original.gameType;
+    //     const gameTypeOptions = getGameTypeOptionsForSport(sport);
+    //     const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
         
-        return (
-          <div className="flex items-center gap-2">
-            <IconUsers className="size-4 text-muted-foreground" />
-            <span>{label}</span>
-          </div>
-        );
-      },
-    },
+    //     return (
+    //       <div className="flex items-center gap-2">
+    //         <IconUsers className="size-4 text-muted-foreground" />
+    //         <span>{label}</span>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       accessorKey: "memberCount",
-      header: "Members",
+      header: "Players",
       cell: ({ row }) => {
         const memberCount = row.original.memberCount;
         return (
@@ -410,7 +410,7 @@ export function LeaguesDataTable({
   };
 
   return (
-    <div className={`w-full space-y-4 py-4 ${RESPONSIVE_CLASSES.CONTAINER}`}>
+    <div className={`w-full space-y-4 py-4`}>
       {/* Confirmation Modal */}
       <ConfirmationModal
         open={confirmation.open}
@@ -426,7 +426,7 @@ export function LeaguesDataTable({
       />
 
       {/* Toolbar */}
-      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
+      <div className={`flex items-center justify-between`}>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -549,7 +549,7 @@ export function LeaguesDataTable({
       </div>
 
       {/* Data Table */}
-      <div className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}>
+      <div className={`rounded-md border bg-background w-full`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -678,7 +678,7 @@ export function LeaguesDataTable({
       </div>
 
       {/* Pagination */}
-      <div className={`flex items-center justify-between space-x-2 py-4 ${RESPONSIVE_CLASSES.PADDING}`}>
+      <div className={`flex items-center justify-between space-x-2 py-4`}>
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} league(s) selected.
