@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+// @ts-expect-error
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -115,7 +116,22 @@ export default function DivisionCreateModal({
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
+  const [seasons, setSeasons] = useState<Array<{
+    id: string;
+    name: string;
+    category?: {
+      id: string;
+      name: string | null;
+      game_type?: "SINGLES" | "DOUBLES" | null;
+      gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+    } | null;
+    categories?: Array<{
+      id: string;
+      name: string | null;
+      game_type?: "SINGLES" | "DOUBLES" | null;
+      gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+    }>;
+  }>>([]);
 
   
   const {
@@ -150,21 +166,32 @@ export default function DivisionCreateModal({
   const gameType = watch("gameType");
   const formValues = watch();
   const isEditMode = mode === "edit";
+  const selectedSeasonId = watch("seasonId");
+  const selectedSeason = seasons.find((s) => s.id === selectedSeasonId);
+  // Get category from either category (singular) or first item in categories array
+  const seasonCategory = selectedSeason?.category || 
+    (selectedSeason?.categories && selectedSeason.categories.length > 0 
+      ? selectedSeason.categories[0] 
+      : null);
+  const hasCategory = Boolean(
+    seasonCategory?.game_type && seasonCategory?.gender_category
+  );
 
   useEffect(() => {
     // fetch seasons
     const fetchSeasons = async () => {
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
-        setSeasons(
-          Array.isArray(res.data) ? res.data : res.data?.seasons ?? []
-        );
+        const seasonsData = Array.isArray(res.data) ? res.data : res.data?.seasons ?? [];
+        setSeasons(seasonsData);
       } catch (err: any) {
         try {
           const raw = await axiosInstance.get(endpoints.season.getAll);
-          setSeasons(Array.isArray(raw.data) ? raw.data : []);
+          const seasonsData = Array.isArray(raw.data) ? raw.data : [];
+          setSeasons(seasonsData);
         } catch (e) {
           console.error("Failed to load seasons", e);
+          setSeasons([]);
         }
       }
     };
@@ -191,6 +218,18 @@ export default function DivisionCreateModal({
     });
     setError("");
   }, [reset, seasonId]);
+
+  // Auto-fill gameType and genderCategory when season is selected
+  useEffect(() => {
+    if (seasonCategory?.game_type && seasonCategory?.gender_category) {
+      const gameTypeLower = seasonCategory.game_type.toLowerCase() as "singles" | "doubles";
+      const genderCategoryLower = seasonCategory.gender_category.toLowerCase() as "male" | "female" | "mixed";
+      
+      setValue("gameType", gameTypeLower);
+      setValue("genderCategory", genderCategoryLower);
+      trigger(["gameType", "genderCategory"]);
+    }
+  }, [selectedSeasonId, seasonCategory, setValue, trigger]);
 
   useEffect(() => {
     if (open && isEditMode && division) {
@@ -230,7 +269,8 @@ export default function DivisionCreateModal({
     }
     if (!open) {
       resetModal();
-    }  }, [open, isEditMode, division, resetModal]);
+    }
+  }, [open, isEditMode, division, resetModal]);
 
   const handleNextToPreview = async () => {
     const valid = await trigger(); // triggers validation for all fields
@@ -429,7 +469,7 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="seasonId"
-                      render={({ field }) => (
+                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
                         <Select
                           value={field.value}
                           onValueChange={(val) => field.onChange(val)}
@@ -480,7 +520,7 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="divisionLevel"
-                      render={({ field }) => (
+                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
@@ -508,12 +548,13 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="gameType"
-                      render={({ field }) => (
+                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
+                          disabled={hasCategory}
                         >
-                          <SelectTrigger className="h-11 w-full">
+                          <SelectTrigger className={cn("h-11 w-full", hasCategory && "opacity-50 cursor-not-allowed")}>
                             <SelectValue placeholder="Select game type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -533,12 +574,13 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="genderCategory"
-                      render={({ field }) => (
+                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
+                          disabled={hasCategory}
                         >
-                          <SelectTrigger className="h-11 w-full">
+                          <SelectTrigger className={cn("h-11 w-full", hasCategory && "opacity-50 cursor-not-allowed")}>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
