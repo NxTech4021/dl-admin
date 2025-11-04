@@ -96,16 +96,6 @@ export const seasonSchema = z.object({
       })
     )
     .default([]),
-  categories: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string().nullable(),
-        genderRestriction: z.string().optional(),
-        matchFormat: z.string().nullable().optional(),
-      })
-    )
-    .default([]),
   category: z
     .object({
       id: z.string(),
