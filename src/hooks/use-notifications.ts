@@ -146,8 +146,9 @@ export const useNotifications = () => {
   useEffect(() => {
     if (session?.user?.id) {
       fetchNotifications();
+      fetchUnreadCount();
     }
-  }, [session?.user?.id, fetchNotifications]);
+  }, [session?.user?.id, fetchNotifications, fetchUnreadCount]);
 
   // Socket listeners for real-time updates
   useEffect(() => {
@@ -178,7 +179,7 @@ export const useNotifications = () => {
       socket.off('notification:new', handleNewNotification);
       socket.off('notification:read', handleNotificationRead);
     };
-  }, [socket, session?.user?.id]);
+  }, [socket, session?.user?.id, fetchUnreadCount]);
 
   return {
     notifications,
