@@ -38,7 +38,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  IconInfoCircle,
   IconChevronDown,
   IconSearch,
   IconFilter,
@@ -72,19 +71,30 @@ import {
   formatCount,
 } from './constants';
 
-// View Details button component
-const ViewDetailsButton = ({ league }: { league: League }) => {
+// League Name Cell Component
+const LeagueNameCell = ({ league }: { league: League }) => {
   const router = useRouter();
-
+  
   return (
-    <Button 
-      variant="ghost" 
-      size="sm"
-      onClick={() => router.push(`/league/view/${league.id}`)}
-      className={`flex items-center justify-center ${TABLE_ANIMATIONS.ROW_HOVER} ${TABLE_ANIMATIONS.TRANSITION}`}
-    >
-      <IconInfoCircle className="h-4 w-4" />
-    </Button>
+    <div className="flex items-center gap-3">
+      <div className="p-2 bg-primary/10 rounded-lg">
+        <IconTrophy className="size-4 text-primary" />
+      </div>
+      <div>
+        <div 
+          className="font-semibold cursor-pointer hover:text-primary hover:underline group-hover:underline transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/league/view/${league.id}`);
+          }}
+        >
+          {league.name}
+        </div>
+        {/* <div className="text-sm text-muted-foreground">
+          ID: {league.id}
+        </div> */}
+      </div>
+    </div>
   );
 };
 
@@ -129,19 +139,7 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
       header: "League Name",
       cell: ({ row }) => {
         const league = row.original;
-        return (
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <IconTrophy className="size-4 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold">{league.name}</div>
-              <div className="text-sm text-muted-foreground">
-                ID: {league.id}
-              </div>
-            </div>
-          </div>
-        );
+        return <LeagueNameCell league={league} />;
       },
       enableHiding: false,
     },
@@ -196,26 +194,26 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
         );
       },
     },
-    {
-      accessorKey: "gameType",
-      header: "Game Type",
-      cell: ({ row }) => {
-        const sport = row.original.sportType;
-        const gameType = row.original.gameType;
-        const gameTypeOptions = getGameTypeOptionsForSport(sport);
-        const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
+    // {
+    //   accessorKey: "gameType",
+    //   header: "Game Type",
+    //   cell: ({ row }) => {
+    //     const sport = row.original.sportType;
+    //     const gameType = row.original.gameType;
+    //     const gameTypeOptions = getGameTypeOptionsForSport(sport);
+    //     const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
         
-        return (
-          <div className="flex items-center gap-2">
-            <IconUsers className="size-4 text-muted-foreground" />
-            <span>{label}</span>
-          </div>
-        );
-      },
-    },
+    //     return (
+    //       <div className="flex items-center gap-2">
+    //         <IconUsers className="size-4 text-muted-foreground" />
+    //         <span>{label}</span>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       accessorKey: "memberCount",
-      header: "Members",
+      header: "Players",
       cell: ({ row }) => {
         const memberCount = row.original.memberCount;
         return (
@@ -248,18 +246,6 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
           <div className="flex items-center gap-2">
             <IconCalendar className="size-4 text-muted-foreground" />
             <span>{formatTableDate(createdAt)}</span>
-          </div>
-        );
-      },
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-center">League Details</div>,
-      cell: ({ row }) => {
-        const league = row.original;
-        return (
-          <div className="flex items-center justify-center">
-            <ViewDetailsButton league={league} />
           </div>
         );
       },
@@ -410,7 +396,7 @@ export function LeaguesDataTable({
   };
 
   return (
-    <div className={`w-full space-y-4 py-4 ${RESPONSIVE_CLASSES.CONTAINER}`}>
+    <div className={`w-full space-y-4 py-4`}>
       {/* Confirmation Modal */}
       <ConfirmationModal
         open={confirmation.open}
@@ -426,7 +412,7 @@ export function LeaguesDataTable({
       />
 
       {/* Toolbar */}
-      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}>
+      <div className={`flex items-center justify-between`}>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -549,7 +535,7 @@ export function LeaguesDataTable({
       </div>
 
       {/* Data Table */}
-      <div className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}>
+      <div className={`rounded-md border bg-background w-full`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -590,11 +576,20 @@ export function LeaguesDataTable({
 
                 if (!isMulti) {
                   const single = group.rows[0];
+                  const league = single.original;
                   return (
                     <TableRow
                       key={single.id}
                       data-state={single.getIsSelected() && "selected"}
-                      className={TABLE_ANIMATIONS.ROW_HOVER}
+                      className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
+                      onClick={(e) => {
+                        // Don't navigate if clicking on checkbox or interactive elements
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                          return;
+                        }
+                        router.push(`/league/view/${league.id}`);
+                      }}
                     >
                       {single.getVisibleCells().map((cell: Cell<League, unknown>) => (
                         <TableCell key={cell.id}>
@@ -631,32 +626,43 @@ export function LeaguesDataTable({
 
                     {/* Child rows */}
                     {isExpanded &&
-                      group.rows.map((row: Row<League>) => (
-                        <TableRow
-                          key={row.id}
-                          data-state={row.getIsSelected() && "selected"}
-                          className={TABLE_ANIMATIONS.ROW_HOVER}
-                        >
-                          {row.getVisibleCells().map((cell: Cell<League, unknown>) => (
-                            <TableCell key={cell.id}>
-                              {/* Indent first column content for hierarchy visual */}
-                              {cell.column.id === "name" ? (
-                                <div className="pl-6">
-                                  {flexRender(
+                      group.rows.map((row: Row<League>) => {
+                        const league = row.original;
+                        return (
+                          <TableRow
+                            key={row.id}
+                            data-state={row.getIsSelected() && "selected"}
+                            className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
+                            onClick={(e) => {
+                              // Don't navigate if clicking on checkbox or interactive elements
+                              const target = e.target as HTMLElement;
+                              if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                                return;
+                              }
+                              router.push(`/league/view/${league.id}`);
+                            }}
+                          >
+                            {row.getVisibleCells().map((cell: Cell<League, unknown>) => (
+                              <TableCell key={cell.id}>
+                                {/* Indent first column content for hierarchy visual */}
+                                {cell.column.id === "name" ? (
+                                  <div className="pl-6">
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )}
+                                  </div>
+                                ) : (
+                                  flexRender(
                                     cell.column.columnDef.cell,
                                     cell.getContext()
-                                  )}
-                                </div>
-                              ) : (
-                                flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )
-                              )}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                                  )
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
                   </React.Fragment>
                 );
               })
@@ -678,7 +684,7 @@ export function LeaguesDataTable({
       </div>
 
       {/* Pagination */}
-      <div className={`flex items-center justify-between space-x-2 py-4 ${RESPONSIVE_CLASSES.PADDING}`}>
+      <div className={`flex items-center justify-between space-x-2 py-4`}>
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} league(s) selected.

@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ],
     utilities: [
       {
-        title: "Utilities",
+        title: "Configuration",
         icon: Settings,
         items: [
           {
