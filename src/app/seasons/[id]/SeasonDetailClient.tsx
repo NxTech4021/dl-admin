@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import { Season, seasonSchema } from "@/ZodSchema/season-schema";
 import { divisionSchema, Division } from "@/ZodSchema/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { z } from 'zod';
-import { toast } from 'sonner';
+import { z } from "zod";
+import { toast } from "sonner";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -35,7 +35,6 @@ import SeasonSettingsCard from "./components/season/SeasonSettingsCard";
 import SeasonOverviewStats from "./components/season/SeasonOverviewStats";
 import SeasonDetailsSection from "./components/season/SeasonDetailsSection";
 
-
 export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   const [season, setSeason] = useState<Season | null>(null);
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -49,25 +48,25 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   const fetchDivisions = useCallback(async () => {
     setIsDivisionsLoading(true);
     try {
-      const response = await axiosInstance.get(endpoints.division.getbySeasionId(seasonId))
+      const response = await axiosInstance.get(
+        endpoints.division.getbySeasionId(seasonId)
+      );
       if (!response.data || !Array.isArray(response.data.data)) {
         setDivisions([]);
         return;
       }
       const parsed = z.array(divisionSchema).parse(response.data.data);
-       console.log ("divison pasrsed ", parsed)
+      console.log("divison pasrsed ", parsed);
       setDivisions(parsed);
     } catch (error) {
-      console.error('Failed to fetch divisions:', error);
+      console.error("Failed to fetch divisions:", error);
       setDivisions([]);
-      toast.error('Unable to load divisions.');
+      toast.error("Unable to load divisions.");
     } finally {
       setIsDivisionsLoading(false);
     }
   }, [seasonId]);
 
-
- 
   // Fetch season data
   const fetchSeasonData = useCallback(async () => {
     setIsLoading(true);
@@ -86,7 +85,6 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     }
   }, [seasonId]);
 
-  
   // Combined refresh function for when data changes
   const refreshAllData = useCallback(async () => {
     await Promise.all([fetchSeasonData(), fetchDivisions()]);
@@ -238,7 +236,10 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 <div className="grid gap-6 lg:grid-cols-3">
                   {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
-                    <SeasonDetailsSection season={season} onSeasonUpdated={fetchSeasonData} />
+                    <SeasonDetailsSection
+                      season={season}
+                      onSeasonUpdated={fetchSeasonData}
+                    />
                   </div>
 
                   {/* Quick Info Sidebar - spans 1 column */}
@@ -366,25 +367,18 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                         {/* Linked Categories */}
                         <div className="space-y-3">
                           <h4 className="text-sm font-medium text-foreground">
-                            Linked Categories
+                            Linked Category
                           </h4>
                           <div className="text-sm font-medium">
-                            {season.categories && season.categories.length > 0 ? (
-                              <div className="space-y-1">
-                                {season.categories.map((category: any) => (
-                                  <div key={category.id} className="flex items-center gap-2">
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      {category.name || 'Unnamed Category'}
-                                    </Badge>
-                                  </div>
-                                ))}
+                            {season.category ? (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {season.category.name || "Unnamed Category"}
+                                </Badge>
                               </div>
                             ) : (
                               <span className="text-muted-foreground">
-                                No categories linked
+                                No category linked
                               </span>
                             )}
                           </div>
@@ -401,21 +395,21 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
               <SeasonPlayersCard
                 memberships={season.memberships}
                 sportType={season.sportType}
-                divisions={divisions} 
-                seasonId={season.id} 
+                divisions={divisions}
+                seasonId={season.id}
                 adminId={userId}
                 season={season}
-                onMembershipUpdated={handleMembershipUpdated} 
+                onMembershipUpdated={handleMembershipUpdated}
               />
             </TabsContent>
 
             {/* Divisions Tab */}
             <TabsContent value="divisions">
-              <SeasonDivisionsCard 
+              <SeasonDivisionsCard
                 seasonId={seasonId}
                 divisions={divisions}
-                isLoading={isDivisionsLoading} 
-                adminId={userId as string} 
+                isLoading={isDivisionsLoading}
+                adminId={userId as string}
                 onDivisionCreated={handleDivisionCreated}
                 onDivisionUpdated={handleDivisionUpdated}
                 onDivisionDeleted={handleDivisionDeleted}
@@ -424,8 +418,8 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
 
             {/* Leaderboard Tab */}
             <TabsContent value="leaderboard">
-              <SeasonLeaderboardCard 
-                seasonId={seasonId} 
+              <SeasonLeaderboardCard
+                seasonId={seasonId}
                 // adminId={userId}
                 // divisions={divisions} TO-DO FUTURE
               />
