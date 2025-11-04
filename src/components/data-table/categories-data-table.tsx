@@ -139,13 +139,26 @@ const getGameTypeBadgeVariant = (gameType: string | null) => {
 // };
 
 const getSeasonsDisplay = (category: Category): React.ReactNode => {
-  if (!category.season) {
+  if (!category.seasons || category.seasons.length === 0) {
     return <span className="text-muted-foreground text-xs">No season assigned</span>;
   }
 
+  if (category.seasons.length === 1) {
+    return (
+      <Badge variant="secondary" className="cursor-pointer">
+        {category.seasons[0].name}
+      </Badge>
+    );
+  }
+
+ 
+  //   <Badge variant="secondary" className="cursor-pointer">
+  //     {category.season.name}
+  //   </Badge>
+  
   return (
     <Badge variant="secondary" className="cursor-pointer">
-      {category.season.name}
+      {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
     </Badge>
   );
 };

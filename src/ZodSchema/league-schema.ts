@@ -21,14 +21,12 @@ export const leagueSchema = z.object({
   seasons: z.array(z.any()).optional(),
   sponsorships: z.array(z.any()).optional(),
   memberships: z.array(z.any()).optional(),
-  categories: z.array(z.any()).optional(),
   divisions: z.array(z.any()).optional(),
   invites: z.array(z.any()).optional(),
   
   // Computed fields
   memberCount: z.number().optional(),
   seasonCount: z.number().optional(),
-  categoryCount: z.number().optional(),
 
   createdBy: z
     .object({
