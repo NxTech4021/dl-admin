@@ -227,9 +227,11 @@ export default function LeagueViewPage({
 
   // All hooks must be called before any early returns
   const seasons = leagueData?.seasons || [];
-  const categories = leagueData?.categories || [];
   const sponsorships = leagueData?.sponsorships || [];
 
+  console.log("leagues", leagueData)
+  console.log("seasons ", seasons)
+  
   const {
     uniqueMemberCount,
     totalSeasonParticipation,
@@ -352,10 +354,6 @@ export default function LeagueViewPage({
     };
   }, [seasons]);
 
-  const activeCategories = React.useMemo(
-    () => categories.filter((category: any) => category?.isActive).length,
-    [categories]
-  );
 
   const handleSave = async () => {
     try {
@@ -466,7 +464,6 @@ export default function LeagueViewPage({
   // Calculate derived values (these are safe to use even when leagueData is null)
   const seasonsCount = leagueData?._count?.seasons ?? seasons.length;
   const sponsorCount = sponsorships.length;
-  const categoryCount = categories.length;
   const averageSeasonParticipation =
     seasonsCount > 0 && totalSeasonParticipation > 0
       ? Math.round(totalSeasonParticipation / seasonsCount)

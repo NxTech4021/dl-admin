@@ -194,48 +194,46 @@ const getLeaguesDisplay = (season: Season): React.ReactNode => {
   );
 };
 
-const getCategoriesDisplay = (season: Season): React.ReactNode => {
-  const categories = season.categories || (season.category ? [season.category] : []);
-  
-  if (!categories || categories.length === 0) {
-    return <span className="text-muted-foreground text-xs">No categories</span>;
+const getCategoryDisplay = (season: Season): React.ReactNode => {
+  if (!season.category) {
+    return <span className="text-muted-foreground text-xs">No category</span>;
   }
 
-  if (categories.length === 1) {
-    const categoryName = categories[0]?.name || "Unnamed Category";
-    return (
-      <Badge variant="secondary" className="text-xs">
-        {categoryName}
-      </Badge>
-    );
-  }
+  const categoryName = season.category.name || "Unnamed Category";
+  const genderRestriction = season.category.genderRestriction;
+  const matchFormat = season.category.matchFormat;
 
-  const firstCategoryName = categories[0]?.name || "Unnamed Category";
-  
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer text-xs">
-          {firstCategoryName}
-          {categories.length > 1 && ` +${categories.length - 1}`}
+          {categoryName}
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Categories</h4>
-          <div className="flex flex-wrap gap-1">
-            {categories.map((category: any) => {
-              const categoryName = category?.name || "Unnamed Category";
-              
-              return (
-                <div
-                  key={category?.id || categoryName}
-                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border bg-muted"
-                >
-                  {categoryName}
-                </div>
-              );
-            })}
+          <h4 className="text-sm font-medium">Category Details</h4>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Name:</span>
+              <span className="font-medium">{categoryName}</span>
+            </div>
+            {genderRestriction && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Gender:</span>
+                <Badge variant="outline" className="text-xs">
+                  {genderRestriction}
+                </Badge>
+              </div>
+            )}
+            {matchFormat && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Format:</span>
+                <Badge variant="outline" className="text-xs">
+                  {matchFormat}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       </HoverCardContent>
@@ -311,11 +309,11 @@ const columns: ColumnDef<Season>[] = [
     ),
   },
   {
-    accessorKey: "categories",
-    header: "Categories",
+    accessorKey: "category",
+    header: "Category",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
-        {getCategoriesDisplay(row.original)}
+        {getCategoryDisplay(row.original)}
       </div>
     ),
   },
