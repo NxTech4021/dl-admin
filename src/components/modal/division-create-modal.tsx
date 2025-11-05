@@ -228,19 +228,28 @@ export default function DivisionCreateModal({
     const fetchSeasons = async () => {
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
-        const seasonsData = Array.isArray(res.data)
-          ? res.data
-          : res.data?.seasons ?? [];
+        // Handle ApiResponse structure: { success, status, data, message }
+        // The actual seasons array is in res.data.data
+        let seasonsData: any[] = [];
+        
+        if (Array.isArray(res.data)) {
+          // Direct array response (shouldn't happen with ApiResponse, but handle it)
+          seasonsData = res.data;
+        } else if (res.data?.data && Array.isArray(res.data.data)) {
+          // ApiResponse structure: data.data contains the seasons array
+          seasonsData = res.data.data;
+        } else if (res.data?.seasons && Array.isArray(res.data.seasons)) {
+          // Fallback: check for res.data.seasons
+          seasonsData = res.data.seasons;
+        } else {
+          console.warn("Unexpected seasons API response structure:", res.data);
+          seasonsData = [];
+        }
+        
         setSeasons(seasonsData);
       } catch (err: any) {
-        try {
-          const raw = await axiosInstance.get(endpoints.season.getAll);
-          const seasonsData = Array.isArray(raw.data) ? raw.data : [];
-          setSeasons(seasonsData);
-        } catch (e) {
-          console.error("Failed to load seasons", e);
-          setSeasons([]);
-        }
+        console.error("Failed to load seasons", err);
+        setSeasons([]);
       }
     };
 
@@ -269,12 +278,21 @@ export default function DivisionCreateModal({
 
   // Auto-fill gameType and genderCategory when season is selected
   useEffect(() => {
-    if (seasonCategory?.game_type && seasonCategory?.gender_category) {
-      const gameTypeLower = seasonCategory.game_type.toLowerCase() as
+    if (!selectedSeasonId || !selectedSeason) return;
+    
+    // Get category from either category (singular) or first item in categories array
+    const category =
+      selectedSeason?.category ||
+      (selectedSeason?.categories && selectedSeason.categories.length > 0
+        ? selectedSeason.categories[0]
+        : null);
+    
+    if (category?.game_type && category?.gender_category) {
+      const gameTypeLower = category.game_type.toLowerCase() as
         | "singles"
         | "doubles";
       const genderCategoryLower =
-        seasonCategory.gender_category.toLowerCase() as
+        category.gender_category.toLowerCase() as
           | "male"
           | "female"
           | "mixed";
@@ -283,7 +301,7 @@ export default function DivisionCreateModal({
       setValue("genderCategory", genderCategoryLower);
       trigger(["gameType", "genderCategory"]);
     }
-  }, [selectedSeasonId, seasonCategory, setValue, trigger]);
+  }, [selectedSeasonId, selectedSeason, setValue, trigger]);
 
   useEffect(() => {
     if (open && isEditMode && division) {

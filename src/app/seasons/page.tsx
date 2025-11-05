@@ -66,12 +66,18 @@ export default function Page() {
 
       console.log("seasons ", response.data);
 
-      if (!response.data || !Array.isArray(response.data)) {
+      // Handle ApiResponse structure from backend
+      if (
+        !response.data ||
+        !response.data.data ||
+        !Array.isArray(response.data.data)
+      ) {
+        console.log("No seasons data found in response");
         setData([]);
         return;
       }
 
-      const parsedData = z.array(seasonSchema).parse(response.data);
+      const parsedData = z.array(seasonSchema).parse(response.data.data);
       setData(parsedData);
     } catch (error) {
       console.error("Failed to fetch seasons:", error);

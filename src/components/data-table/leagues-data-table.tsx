@@ -318,14 +318,17 @@ export function LeaguesDataTable({
 
   const groupedRows = React.useMemo(() => {
     const groups = new Map<string, { name: string; rows: Row<League>[] }>();
-    table.getRowModel().rows.forEach((row: Row<League>) => {
+    // Get fresh row model inside the memo to ensure we have latest data
+    const rowModel = table.getRowModel();
+    rowModel.rows.forEach((row: Row<League>) => {
       const name: string = row.original?.name ?? "Untitled";
       const key = name.trim().toLowerCase();
       if (!groups.has(key)) groups.set(key, { name, rows: [] });
       groups.get(key)!.rows.push(row);
     });
     return Array.from(groups.values());
-  }, [table]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
