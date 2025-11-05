@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import { useSession } from "@/lib/auth-client";
 
 interface SocketContextType {
@@ -65,7 +66,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setIsConnected(false);
     });
 
-    socketInstance.on("connect_error", (error) => {
+    socketInstance.on("connect_error", (error: Error) => {
       console.error("❌ Socket connection error:", error);
       setIsConnected(false);
     });
