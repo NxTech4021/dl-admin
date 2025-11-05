@@ -101,10 +101,41 @@ export const seasonSchema = z.object({
       id: z.string(),
       name: z.string().nullable(),
       genderRestriction: z.string().optional(),
+      gender_category: z.string().optional(),
+      game_type: z.string().optional(),
       matchFormat: z.string().nullable().optional(),
     })
     .nullable()
     .optional(),
+  partnerships: z
+    .array(
+      z.object({
+        id: z.string(),
+        captainId: z.string(),
+        partnerId: z.string(),
+        seasonId: z.string(),
+        divisionId: z.string().nullable().optional(),
+        status: z.string(),
+        captain: z.object({
+          id: z.string(),
+          name: z.string().nullable().optional(),
+          email: z.string().optional(),
+          username: z.string().optional(),
+          displayUsername: z.string().nullable().optional(),
+          image: z.string().nullable().optional(),
+        }),
+        partner: z.object({
+          id: z.string(),
+          name: z.string().nullable().optional(),
+          email: z.string().optional(),
+          username: z.string().optional(),
+          displayUsername: z.string().nullable().optional(),
+          image: z.string().nullable().optional(),
+        }),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export type Season = z.infer<typeof seasonSchema>;

@@ -72,18 +72,54 @@ const divisionSchema = z
     divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
     genderCategory: z.enum(["male", "female", "mixed"]),
-    maxSinglesPlayers: z.number().int().positive().optional().nullable(),
-    maxDoublesTeams: z.number().int().positive().optional().nullable(),
+    maxSinglesPlayers: z.preprocess(
+      (val) => {
+        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
+          return null;
+        }
+        const num = typeof val === "string" ? Number(val) : val;
+        return Number.isNaN(num) ? null : num;
+      },
+      z.number().int().positive().nullable().optional()
+    ),
+    maxDoublesTeams: z.preprocess(
+      (val) => {
+        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
+          return null;
+        }
+        const num = typeof val === "string" ? Number(val) : val;
+        return Number.isNaN(num) ? null : num;
+      },
+      z.number().int().positive().nullable().optional()
+    ),
     autoAssignmentEnabled: z.boolean().default(false).optional(),
     isActive: z.boolean().default(true).optional(),
-    prizePoolTotal: z.number().int().nonnegative().optional().nullable(),
+    prizePoolTotal: z.preprocess(
+      (val) => {
+        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
+          return null;
+        }
+        const num = typeof val === "string" ? Number(val) : val;
+        return Number.isNaN(num) ? null : num;
+      },
+      z.number().int().nonnegative().nullable().optional()
+    ),
     sponsorName: z.string().optional().nullable(),
     description: z.string().optional().nullable(),
-    threshold: z.number().int().nonnegative().optional().nullable(),
+    threshold: z.preprocess(
+      (val) => {
+        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
+          return null;
+        }
+        const num = typeof val === "string" ? Number(val) : val;
+        return Number.isNaN(num) ? null : num;
+      },
+      z.number().int().nonnegative().nullable().optional()
+    ),
   })
   .superRefine((val, ctx) => {
     if (val.gameType === "singles") {
-      if (!val.maxSinglesPlayers) {
+      if (!val.maxSinglesPlayers || val.maxSinglesPlayers === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["maxSinglesPlayers"],
@@ -92,7 +128,7 @@ const divisionSchema = z
       }
     }
     if (val.gameType === "doubles") {
-      if (!val.maxDoublesTeams) {
+      if (!val.maxDoublesTeams || val.maxDoublesTeams === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["maxDoublesTeams"],
@@ -274,11 +310,18 @@ export default function DivisionCreateModal({
 
   const handleNextToPreview = async () => {
     const valid = await trigger();
-    if (!valid) return;
-    if (isValid) {
+    if (valid) {
       setCurrentStep("preview");
     } else {
-      toast.error("Please fix form errors before previewing.");
+      // Show specific validation errors
+      const errorMessages = Object.values(errors)
+        .map((error: any) => error?.message)
+        .filter(Boolean);
+      if (errorMessages.length > 0) {
+        toast.error(errorMessages[0] || "Please fix form errors before previewing.");
+      } else {
+        toast.error("Please fix form errors before previewing.");
+      }
     }
   };
 
@@ -683,7 +726,6 @@ export default function DivisionCreateModal({
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
                       Rating Threshold
-                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
@@ -691,6 +733,11 @@ export default function DivisionCreateModal({
                       className="h-11"
                       placeholder="e.g 100"
                     />
+                    {errors.threshold && (
+                      <p className="text-xs text-destructive mt-1">
+                        {errors.threshold.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -716,7 +763,23 @@ export default function DivisionCreateModal({
                 </div>
               </div>
 
-              {/* Error */}
+              {/* Validation Errors Summary */}
+              {Object.keys(errors).length > 0 && (
+                <div className="flex flex-col gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
+                      <IconX className="h-2.5 w-2.5" />
+                    </div>
+                    <span className="font-medium">Please fix the following errors:</span>
+                  </div>
+                  <ul className="list-disc list-inside ml-6 space-y-1">
+                    {Object.entries(errors).map(([key, error]: [string, any]) => (
+                      <li key={key}>{error?.message || `${key} is invalid`}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {error && (
                 <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
                   <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
