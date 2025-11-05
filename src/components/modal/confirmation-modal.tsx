@@ -16,7 +16,7 @@ interface ConfirmationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
@@ -43,6 +43,8 @@ export function ConfirmationModal({
     }`} />
   );
 
+  const isDescriptionString = typeof description === 'string';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -55,9 +57,15 @@ export function ConfirmationModal({
             </div>
             <DialogTitle className="text-lg">{title}</DialogTitle>
           </div>
-          <DialogDescription className="text-sm text-muted-foreground">
-            {description}
-          </DialogDescription>
+          {isDescriptionString ? (
+            <DialogDescription className="text-sm text-muted-foreground">
+              {description}
+            </DialogDescription>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              {description}
+            </div>
+          )}
         </DialogHeader>
         <DialogFooter className="flex gap-2 sm:gap-2">
           <Button

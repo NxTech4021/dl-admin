@@ -654,6 +654,8 @@ export default function SeasonPlayersCard({
         seasonId={seasonId}
         onAssigned={onMembershipUpdated}
         adminId={adminId || ""}
+        getSportRating={getSportRating}
+        gameType={getGameType()}
       />
     </>
   );
