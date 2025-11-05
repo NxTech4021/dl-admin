@@ -1,6 +1,6 @@
 import * as React from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { PlayerProfileData } from "../types";
+import { PlayerProfileData } from "../utils/types";
 
 export function usePlayerProfile(playerId: string) {
   const [profile, setProfile] = React.useState<PlayerProfileData | null>(null);

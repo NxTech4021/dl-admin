@@ -135,4 +135,11 @@ export const endpoints = {
     markRead: (id: string) => `/api/notifications/${id}/read`,
     markAllRead: "/api/notifications/mark-all-read",
   },
+
+  pairing: {
+    getRequests: "/api/pairing/requests",
+    acceptRequest: (requestId: string) => `/api/pairing/request/${requestId}/accept`,
+    denyRequest: (requestId: string) => `/api/pairing/request/${requestId}/deny`,
+    cancelRequest: (requestId: string) => `/api/pairing/request/${requestId}`,
+  },
 };

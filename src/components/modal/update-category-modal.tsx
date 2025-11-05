@@ -68,16 +68,14 @@ export function EditCategoryModal({
 
   const generateCategoryName = useCallback(
     (gender: GenderType, gameType: GameType) => {
-      let genderPrefix;
+      let genderPrefix: string;
       if (gender === "MIXED") {
         genderPrefix = "Mixed";
-      } else if (gender === "MALE") {
+      } else if (gender === "MEN") {
         genderPrefix = "Men's";
-      } else if (gender === "FEMALE") {
-        genderPrefix = "Women's";
       } else {
-        // For MEN/WOMEN types (already in correct format)
-        genderPrefix = `${gender.charAt(0)}${gender.slice(1).toLowerCase()}'s`;
+        // gender === "WOMEN"
+        genderPrefix = "Women's";
       }
       // Game type should be plural: Singles, Doubles
       const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";

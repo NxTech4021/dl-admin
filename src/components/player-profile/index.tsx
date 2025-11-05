@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   IconUserCircle,
   IconActivity,
@@ -10,9 +11,9 @@ import {
   IconDatabase,
   IconMessage,
 } from "@tabler/icons-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlayerProfileProps } from "./types";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { PlayerProfileProps } from "./utils/types";
 import { usePlayerProfile } from "./hooks/use-player-profile";
 import { usePlayerHistory } from "./hooks/use-player-history";
 import { usePlayerPairingRequests } from "./hooks/use-player-pairing-requests";

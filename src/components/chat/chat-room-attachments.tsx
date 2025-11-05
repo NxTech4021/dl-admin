@@ -35,22 +35,22 @@ export default function ChatRoomAttachments({ attachments = [] }: ChatRoomAttach
     </Button>
   );
 
-//   const renderContent = (
-//     <ScrollArea className="px-2 py-2.5 max-h-64">
-//       <div className="flex flex-col">
-//         {attachments?.map((attachment, index) => (
-//           <div
-//             key={attachment.name + index}
-//             className="flex items-center space-x-3 mb-2"
-//           >
-//             <div className="w-10 h-10 flex-shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
-//               {/* <FileThumbnail
-//                 imageView
-//                 file={attachment.preview}
-//                 onDownload={() => console.info("DOWNLOAD")}
-//                 className="w-7 h-7"
-//               /> */}
-//             </div>
+  const renderContent = (
+    <ScrollArea className="px-2 py-2.5 max-h-64">
+      <div className="flex flex-col">
+        {attachments?.map((attachment, index) => (
+          <div
+            key={attachment.name + index}
+            className="flex items-center space-x-3 mb-2"
+          >
+            <div className="w-10 h-10 flex-shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
+              {/* <FileThumbnail
+                imageView
+                file={attachment.preview}
+                onDownload={() => console.info("DOWNLOAD")}
+                className="w-7 h-7"
+              /> */}
+            </div>
 
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-medium truncate">
@@ -66,9 +66,9 @@ export default function ChatRoomAttachments({ attachments = [] }: ChatRoomAttach
     </ScrollArea>
   );
 
-//   return (
-//     <div className="flex flex-col">
-//       {renderBtn}
+  return (
+    <div className="flex flex-col">
+      {renderBtn}
 
       <div
         className={cn(

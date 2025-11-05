@@ -35,6 +35,8 @@ interface CategoryData {
   seasons: Array<{
     id: string;
     name: string;
+    startDate?: Date | null;
+    endDate?: Date | null;
   }>;
   createdAt: Date;
   updatedAt: Date;
@@ -107,7 +109,30 @@ export function CategorySelector({
   );
 
   const handleCategorySelect = (category: CategoryData) => {
-    onChange(category.name || "", category);
+    // Transform CategoryData to match CategorySchema
+    // Map "OPEN" to "MIXED" to match schema requirements
+    const genderRestriction: "MALE" | "FEMALE" | "MIXED" = 
+      category.genderRestriction === "OPEN" ? "MIXED" : category.genderRestriction;
+    
+    const categorySchema: CategorySchema = {
+      id: category.id,
+      name: category.name,
+      genderRestriction,
+      matchFormat: category.matchFormat,
+      game_type: category.game_type,
+      gender_category: category.gender_category,
+      isActive: category.isActive,
+      categoryOrder: category.categoryOrder,
+      seasons: category.seasons.map((season) => ({
+        id: season.id,
+        name: season.name,
+        startDate: season.startDate ?? null,
+        endDate: season.endDate ?? null,
+      })),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    };
+    onChange(category.name || "", categorySchema);
     setIsOpen(false);
     setSearchTerm("");
   };
