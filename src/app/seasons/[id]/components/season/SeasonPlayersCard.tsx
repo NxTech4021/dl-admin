@@ -127,9 +127,11 @@ export default function SeasonPlayersCard({
     if (categoryGameType) {
       const normalized = String(categoryGameType).toUpperCase().trim();
       if (normalized === "DOUBLES") {
+        console.log("Game type determined from category:", normalized);
         return "DOUBLES";
       }
       if (normalized === "SINGLES") {
+        console.log("Game type determined from category:", normalized);
         return "SINGLES";
       }
     }
@@ -154,7 +156,7 @@ export default function SeasonPlayersCard({
         return "DOUBLES";
       }
       
-      // Check if all divisions are singles
+      // Check if any division is singles
       const singlesDivision = divisions.find((div: any) => {
         const divGameType = div.gameType || (div as any).game_type;
         if (divGameType) {
@@ -169,7 +171,11 @@ export default function SeasonPlayersCard({
     }
     
     // If no clear indicator, return null (will show N/A)
-    console.warn("Could not determine game type from category, partnerships, or divisions");
+    console.warn("Could not determine game type from category, partnerships, or divisions", {
+      categoryGameType: season?.category?.game_type,
+      hasPartnerships: !!(season?.partnerships && season.partnerships.length > 0),
+      divisionsCount: divisions?.length || 0,
+    });
     return null;
   };
 
@@ -222,14 +228,29 @@ export default function SeasonPlayersCard({
         : questionnaireResponse.result.singles,
     });
 
-    // Get the appropriate rating - DO NOT use fallback for doubles seasons
-    const rating = isDoubles
-      ? questionnaireResponse.result.doubles
-      : questionnaireResponse.result.singles;
+    // Get the appropriate rating based on game type
+    let rating: number | null | undefined;
+    
+    if (isDoubles) {
+      // For doubles seasons, use doubles rating
+      rating = questionnaireResponse.result.doubles;
+    } else {
+      // For singles seasons, use singles rating
+      rating = questionnaireResponse.result.singles;
+      
+      // If singles rating is not available, check if there's a general rating field as fallback
+      // This handles cases where the rating might be stored differently
+      if (!rating || rating === 0) {
+        // Check for a general 'rating' field that might contain the singles rating
+        const generalRating = (questionnaireResponse.result as any).rating;
+        if (generalRating && generalRating > 0) {
+          rating = generalRating;
+        }
+      }
+    }
 
     if (!rating || rating === 0) {
-      // For doubles seasons, we must use doubles rating - no fallback to singles
-      // For singles seasons, we must use singles rating - no fallback to doubles
+      // Log warning for debugging
       console.warn("Rating not available:", {
         gameType,
         isDoubles,
@@ -237,6 +258,9 @@ export default function SeasonPlayersCard({
         hasDoubles: !!questionnaireResponse.result.doubles,
         singlesValue: questionnaireResponse.result.singles,
         doublesValue: questionnaireResponse.result.doubles,
+        generalRating: (questionnaireResponse.result as any).rating,
+        userId: member.userId,
+        userName: member.user?.name,
       });
       return {
         display: "N/A",
