@@ -69,19 +69,19 @@ import {
   ACTION_MESSAGES,
   FILTER_OPTIONS,
   formatCount,
-} from './constants';
+} from "./constants";
 
 // League Name Cell Component
 const LeagueNameCell = ({ league }: { league: League }) => {
   const router = useRouter();
-  
+
   return (
     <div className="flex items-center gap-3">
       <div className="p-2 bg-primary/10 rounded-lg">
         <IconTrophy className="size-4 text-primary" />
       </div>
       <div>
-        <div 
+        <div
           className="font-semibold cursor-pointer hover:text-primary hover:underline group-hover:underline transition-colors"
           onClick={(e) => {
             e.stopPropagation();
@@ -101,7 +101,7 @@ const LeagueNameCell = ({ league }: { league: League }) => {
 // Dynamic columns based on selection state
 const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
   const baseColumns: ColumnDef<League>[] = [];
-  
+
   // Add selection column only when enabled
   if (enableRowSelection) {
     baseColumns.push({
@@ -113,7 +113,9 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
           />
         </div>
@@ -150,18 +152,18 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
         const sport = row.original.sportType;
         const sportColor = getSportColor(sport);
         const sportLabel = getSportLabel(sport);
-        
+
         return (
           <div
             className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
-            style={{ 
+            style={{
               color: sportColor,
-              borderColor: sportColor + '40',
-              backgroundColor: sportColor + '08'
+              borderColor: sportColor + "40",
+              backgroundColor: sportColor + "08",
             }}
           >
-            <div 
-              className="w-2.5 h-2.5 rounded-full mr-2" 
+            <div
+              className="w-2.5 h-2.5 rounded-full mr-2"
               style={{ backgroundColor: sportColor }}
             />
             {sportLabel}
@@ -188,7 +190,10 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
       cell: ({ row }) => {
         const status = row.original.status;
         return (
-          <Badge variant={getStatusBadgeVariant('LEAGUE', status)} className="capitalize">
+          <Badge
+            variant={getStatusBadgeVariant("LEAGUE", status)}
+            className="capitalize"
+          >
             {status.toLowerCase()}
           </Badge>
         );
@@ -202,7 +207,7 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
     //     const gameType = row.original.gameType;
     //     const gameTypeOptions = getGameTypeOptionsForSport(sport);
     //     const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
-        
+
     //     return (
     //       <div className="flex items-center gap-2">
     //         <IconUsers className="size-4 text-muted-foreground" />
@@ -249,9 +254,9 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
           </div>
         );
       },
-    },
+    }
   );
-  
+
   return baseColumns;
 };
 
@@ -262,26 +267,31 @@ interface LeaguesDataTableProps {
   onDataChange?: () => void; // Callback to refresh data after operations
 }
 
-export function LeaguesDataTable({ 
-  data, 
-  isLoading = false, 
+export function LeaguesDataTable({
+  data,
+  isLoading = false,
   createLeagueButton,
-  onDataChange
+  onDataChange,
 }: LeaguesDataTableProps) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
+  const [expandedGroups, setExpandedGroups] = React.useState<
+    Record<string, boolean>
+  >({});
   const [showTools, setShowTools] = React.useState(false);
 
   // Use the confirmation modal hook
   const confirmation = useConfirmationModal();
 
   const columns = getColumns(true);
-  
+
   const table = useReactTable({
     data,
     columns,
@@ -315,7 +325,7 @@ export function LeaguesDataTable({
       groups.get(key)!.rows.push(row);
     });
     return Array.from(groups.values());
-  }, [table.getRowModel().rows]);
+  }, [table]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -345,45 +355,49 @@ export function LeaguesDataTable({
   // Delete leagues function
   const deleteLeagues = async (leagueIds: string[]) => {
     confirmation.setLoading(true);
-    
+
     try {
       // Delete leagues one by one
-      const deletePromises = leagueIds.map(id => 
+      const deletePromises = leagueIds.map((id) =>
         axiosInstance.delete(endpoints.league.delete(id))
       );
-      
+
       await Promise.all(deletePromises);
-      
+
       toast.success(ACTION_MESSAGES.SUCCESS.DELETE);
-      
+
       // Clear selection
       setRowSelection({});
-      
+
       // Refresh data
       onDataChange?.();
-      
+
       // Close modal
       confirmation.hideConfirmation();
-      
     } catch (error: any) {
       console.error("Failed to delete leagues:", error);
-      toast.error(error.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED);
+      toast.error(
+        error.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED
+      );
     } finally {
       confirmation.setLoading(false);
     }
   };
 
   const handleBulkAction = (action: string) => {
-    const selectedIds = selectedRows.map(row => row.original.id);
-    const selectedNames = selectedRows.map(row => row.original.name);
-    
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    const selectedNames = selectedRows.map((row) => row.original.name);
+
     switch (action) {
       case "delete":
         confirmation.showConfirmation({
-          title: `Delete ${selectedIds.length} League${selectedIds.length > 1 ? 's' : ''}`,
-          description: selectedIds.length === 1 
-            ? `Are you sure you want to delete "${selectedNames[0]}"? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`
-            : `Are you sure you want to delete ${selectedIds.length} leagues? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`,
+          title: `Delete ${selectedIds.length} League${
+            selectedIds.length > 1 ? "s" : ""
+          }`,
+          description:
+            selectedIds.length === 1
+              ? `Are you sure you want to delete "${selectedNames[0]}"? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`
+              : `Are you sure you want to delete ${selectedIds.length} leagues? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`,
           onConfirm: () => deleteLeagues(selectedIds),
           variant: "destructive",
           confirmText: "Delete",
@@ -440,7 +454,11 @@ export function LeaguesDataTable({
                 size="sm"
                 onClick={() => toggleAllGroups(!allExpanded)}
                 disabled={!multiGroupKeys.length}
-                aria-label={allExpanded ? "Collapse all league groups" : "Expand all league groups"}
+                aria-label={
+                  allExpanded
+                    ? "Collapse all league groups"
+                    : "Expand all league groups"
+                }
               >
                 {allExpanded ? (
                   <IconArrowsMinimize className="h-4 w-4" />
@@ -469,7 +487,9 @@ export function LeaguesDataTable({
                         table.getColumn("status")?.getFilterValue() === status
                       }
                       onCheckedChange={(checked) =>
-                        table.getColumn("status")?.setFilterValue(checked ? status : "")
+                        table
+                          .getColumn("status")
+                          ?.setFilterValue(checked ? status : "")
                       }
                     >
                       {status.toLowerCase()}
@@ -508,13 +528,13 @@ export function LeaguesDataTable({
             </>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {/* Create League Button */}
           {!selectedRows.length && createLeagueButton && (
             <div>{createLeagueButton}</div>
           )}
-          
+
           {selectedRows.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
@@ -569,7 +589,7 @@ export function LeaguesDataTable({
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
-                groupedRows.map((group) => {
+              groupedRows.map((group) => {
                 const key = group.name.trim().toLowerCase();
                 const isMulti = group.rows.length > 1;
                 const isExpanded = expandedGroups[key] ?? true;
@@ -585,20 +605,26 @@ export function LeaguesDataTable({
                       onClick={(e) => {
                         // Don't navigate if clicking on checkbox or interactive elements
                         const target = e.target as HTMLElement;
-                        if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                        if (
+                          target.closest("button") ||
+                          target.closest('input[type="checkbox"]') ||
+                          target.closest('[role="button"]')
+                        ) {
                           return;
                         }
                         router.push(`/league/view/${league.id}`);
                       }}
                     >
-                      {single.getVisibleCells().map((cell: Cell<League, unknown>) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                      {single
+                        .getVisibleCells()
+                        .map((cell: Cell<League, unknown>) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
                     </TableRow>
                   );
                 }
@@ -614,11 +640,14 @@ export function LeaguesDataTable({
                           className="flex items-center gap-2 font-semibold"
                         >
                           <IconChevronDown
-                            className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                            className={`h-4 w-4 transition-transform ${
+                              isExpanded ? "rotate-0" : "-rotate-90"
+                            }`}
                           />
                           {group.name}
                           <span className="ml-2 text-xs text-muted-foreground">
-                            {group.rows.length} league{group.rows.length !== 1 ? 's' : ''}
+                            {group.rows.length} league
+                            {group.rows.length !== 1 ? "s" : ""}
                           </span>
                         </button>
                       </TableCell>
@@ -636,30 +665,36 @@ export function LeaguesDataTable({
                             onClick={(e) => {
                               // Don't navigate if clicking on checkbox or interactive elements
                               const target = e.target as HTMLElement;
-                              if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="button"]')) {
+                              if (
+                                target.closest("button") ||
+                                target.closest('input[type="checkbox"]') ||
+                                target.closest('[role="button"]')
+                              ) {
                                 return;
                               }
                               router.push(`/league/view/${league.id}`);
                             }}
                           >
-                            {row.getVisibleCells().map((cell: Cell<League, unknown>) => (
-                              <TableCell key={cell.id}>
-                                {/* Indent first column content for hierarchy visual */}
-                                {cell.column.id === "name" ? (
-                                  <div className="pl-6">
-                                    {flexRender(
+                            {row
+                              .getVisibleCells()
+                              .map((cell: Cell<League, unknown>) => (
+                                <TableCell key={cell.id}>
+                                  {/* Indent first column content for hierarchy visual */}
+                                  {cell.column.id === "name" ? (
+                                    <div className="pl-6">
+                                      {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext()
+                                      )}
+                                    </div>
+                                  ) : (
+                                    flexRender(
                                       cell.column.columnDef.cell,
                                       cell.getContext()
-                                    )}
-                                  </div>
-                                ) : (
-                                  flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                  )
-                                )}
-                              </TableCell>
-                            ))}
+                                    )
+                                  )}
+                                </TableCell>
+                              ))}
                           </TableRow>
                         );
                       })}

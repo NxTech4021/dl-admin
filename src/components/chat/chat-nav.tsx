@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -8,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   ChevronLeft,
@@ -92,10 +91,15 @@ export default function ChatNav({
     onCloseMobile,
   } = useCollapseNav();
 
-  const { value: showNewChatModal, onTrue: openNewChatModal, onFalse: closeNewChatModal } = useBoolean(false);
+  const {
+    value: showNewChatModal,
+    onTrue: openNewChatModal,
+    onFalse: closeNewChatModal,
+  } = useBoolean(false);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filteredConversations, setFilteredConversations] = useState<Conversation[]>(conversations);
+  const [filteredConversations, setFilteredConversations] =
+    useState<Conversation[]>(conversations);
 
   // Filter conversations based on search query
   useEffect(() => {
@@ -104,9 +108,10 @@ export default function ChatNav({
     } else {
       const filtered = conversations.filter((conversation: Conversation) => {
         const displayName = conversation.displayName || "";
-        const participantNames = conversation.participants
-          ?.map((p) => p.displayName || p.name || "")
-          .join(" ") || "";
+        const participantNames =
+          conversation.participants
+            ?.map((p) => p.displayName || p.name || "")
+            .join(" ") || "";
 
         const searchText = (displayName + " " + participantNames).toLowerCase();
         return searchText.includes(searchQuery.toLowerCase());
@@ -209,20 +214,18 @@ export default function ChatNav({
 
   const renderConversationsList = () => (
     <>
-      {filteredConversations.length > 0 ? (
-        filteredConversations.map((conversation: Conversation) => (
-          <ChatNavItem
-            key={conversation.id}
-            collapse={collapseDesktop}
-            conversation={conversation}
-            selected={conversation.id === selectedConversationId}
-            onCloseMobile={onCloseMobile}
-            // onClick={() => handleConversationClick(conversation.id)}
-          />
-        ))
-      ) : (
-        renderEmptyState()
-      )}
+      {filteredConversations.length > 0
+        ? filteredConversations.map((conversation: Conversation) => (
+            <ChatNavItem
+              key={conversation.id}
+              collapse={collapseDesktop}
+              conversation={conversation}
+              selected={conversation.id === selectedConversationId}
+              onCloseMobile={onCloseMobile}
+              // onClick={() => handleConversationClick(conversation.id)}
+            />
+          ))
+        : renderEmptyState()}
     </>
   );
 
@@ -238,7 +241,9 @@ export default function ChatNav({
         variant="ghost"
         size="icon"
         onClick={handleToggleNav}
-        aria-label={collapseDesktop ? "Expand navigation" : "Collapse navigation"}
+        aria-label={
+          collapseDesktop ? "Expand navigation" : "Collapse navigation"
+        }
       >
         {collapseDesktop ? (
           <ChevronRight className="w-4 h-4" />
@@ -305,17 +310,17 @@ export default function ChatNav({
       {renderSearch()}
 
       {/* Conversations List */}
-        <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="px-2 space-y-1">
             {loading ? renderSkeleton() : renderConversationsList()}
           </div>
         </ScrollArea>
       </div>
-      
+
       {/* New Chat Button */}
       {renderComposeButton()}
-      
+
       <NewChatModal
         open={showNewChatModal}
         onOpenChange={closeNewChatModal}

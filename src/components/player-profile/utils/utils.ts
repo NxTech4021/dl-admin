@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Get initials from a full name
  */
@@ -60,4 +58,3 @@ export const formatAnswerValue = (value: any): string => {
   }
   return String(value);
 };
-

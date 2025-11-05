@@ -398,7 +398,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 divisions={divisions}
                 seasonId={season.id}
                 adminId={userId}
-                season={season}
+                season={season as any}
                 onMembershipUpdated={handleMembershipUpdated}
               />
             </TabsContent>

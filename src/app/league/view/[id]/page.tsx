@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -179,7 +178,7 @@ type SeasonStatsSummary = {
 async function getLeague(id: string) {
   try {
     const response = await axiosInstance.get(endpoints.league.getById(id));
-    return response.data?.data?.league
+    return response.data?.data?.league;
   } catch (error) {
     console.error("Error fetching league:", error);
     return null;
@@ -226,12 +225,13 @@ export default function LeagueViewPage({
   }, [leagueId, refreshTrigger]);
 
   // All hooks must be called before any early returns
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const seasons = leagueData?.seasons || [];
   const sponsorships = leagueData?.sponsorships || [];
 
-  console.log("leagues", leagueData)
-  console.log("seasons ", seasons)
-  
+  console.log("leagues", leagueData);
+  console.log("seasons ", seasons);
+
   const {
     uniqueMemberCount,
     totalSeasonParticipation,
@@ -354,7 +354,6 @@ export default function LeagueViewPage({
     };
   }, [seasons]);
 
-
   const handleSave = async () => {
     try {
       const payload = {
@@ -476,7 +475,8 @@ export default function LeagueViewPage({
     };
   }
 
-  const statusValue = (isEditing ? editedData.status : leagueData?.status) || "";
+  const statusValue =
+    (isEditing ? editedData.status : leagueData?.status) || "";
   const locationLabel =
     (isEditing ? editedData.location : leagueData?.location) ||
     "Location not set";
@@ -666,44 +666,44 @@ export default function LeagueViewPage({
                 <TabsContent value="overview" className="space-y-8">
                   <SectionCard className="space-y-6">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-3">
-                      {isEditing ? (
-                        <Input
-                          value={editedData.name}
-                          onChange={(e) =>
-                            setEditedData({
-                              ...editedData,
+                      <div className="space-y-3">
+                        {isEditing ? (
+                          <Input
+                            value={editedData.name}
+                            onChange={(e) =>
+                              setEditedData({
+                                ...editedData,
                                 name: e.target.value,
-                            })
-                          }
-                          placeholder="League name"
-                          className="text-3xl font-semibold tracking-tight h-auto py-2 px-3"
-                        />
-                      ) : (
-                        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                          {leagueData.name}
-                        </h1>
-                      )}
-                        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        {statusValue ? (
-                          getStatusBadge(statusValue)
+                              })
+                            }
+                            placeholder="League name"
+                            className="text-3xl font-semibold tracking-tight h-auto py-2 px-3"
+                          />
                         ) : (
-                          <Badge variant="outline">Not set</Badge>
+                          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                            {leagueData.name}
+                          </h1>
                         )}
-                      <Badge
-                        variant="outline"
-                        className="flex items-center gap-1 font-normal"
-                      >
-                        <IconMapPin className="h-3.5 w-3.5" />
-                        {locationLabel}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="flex items-center gap-1 font-normal"
-                      >
-                        <IconTrophy className="h-3.5 w-3.5" />
-                        {sportLabel}
-                      </Badge>
+                        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                          {statusValue ? (
+                            getStatusBadge(statusValue)
+                          ) : (
+                            <Badge variant="outline">Not set</Badge>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 font-normal"
+                          >
+                            <IconMapPin className="h-3.5 w-3.5" />
+                            {locationLabel}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 font-normal"
+                          >
+                            <IconTrophy className="h-3.5 w-3.5" />
+                            {sportLabel}
+                          </Badge>
                           {leagueData.joinType ? (
                             <Badge
                               variant="outline"
@@ -713,51 +713,51 @@ export default function LeagueViewPage({
                               {formatEnumLabel(leagueData.joinType)}
                             </Badge>
                           ) : null}
-                  </div>
-                </div>
-              </div>
+                        </div>
+                      </div>
+                    </div>
 
-                      {isEditing ? (
+                    {isEditing ? (
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                              Status
-                            </p>
-                              <Select
-                                value={editedData.status}
-                                onValueChange={(value) =>
-                                  setEditedData({
-                                    ...editedData,
-                                    status: value,
-                                  })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {FILTER_OPTIONS.LEAGUE_STATUS.map((status) => (
-                                    <SelectItem key={status} value={status}>
+                            Status
+                          </p>
+                          <Select
+                            value={editedData.status}
+                            onValueChange={(value) =>
+                              setEditedData({
+                                ...editedData,
+                                status: value,
+                              })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FILTER_OPTIONS.LEAGUE_STATUS.map((status) => (
+                                <SelectItem key={status} value={status}>
                                   {formatEnumLabel(status)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                          </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="space-y-2">
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                              Location
-                            </p>
-                              <Input
-                                value={editedData.location}
-                                onChange={(e) =>
-                                  setEditedData({
-                                    ...editedData,
-                                    location: e.target.value,
-                                  })
-                                }
-                                placeholder="Enter location"
-                              />
+                            Location
+                          </p>
+                          <Input
+                            value={editedData.location}
+                            onChange={(e) =>
+                              setEditedData({
+                                ...editedData,
+                                location: e.target.value,
+                              })
+                            }
+                            placeholder="Enter location"
+                          />
                         </div>
                       </div>
                     ) : null}
@@ -794,21 +794,24 @@ export default function LeagueViewPage({
                           }
                           className="min-h-[120px]"
                           placeholder="Enter league description..."
-                              />
-                            ) : (
+                        />
+                      ) : (
                         <p className="text-sm leading-relaxed text-muted-foreground">
-                          {leagueData.description || "No description provided yet."}
-                              </p>
-                            )}
-                          </div>
+                          {leagueData.description ||
+                            "No description provided yet."}
+                        </p>
+                      )}
+                    </div>
                   </SectionCard>
 
                   <SectionCard className="space-y-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <IconChartBar className="h-5 w-5 text-primary" />
-                        <h3 className="text-base font-semibold">Snapshot Metrics</h3>
-                        </div>
+                        <h3 className="text-base font-semibold">
+                          Snapshot Metrics
+                        </h3>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Key indicators drawn from league activity.
                       </p>
@@ -822,7 +825,9 @@ export default function LeagueViewPage({
                             className="rounded-xl border border-border/60 bg-background/50 p-4"
                           >
                             <div className="flex items-center gap-2 mb-2">
-                              <IconComponent className={`h-4 w-4 ${metric.iconColor}`} />
+                              <IconComponent
+                                className={`h-4 w-4 ${metric.iconColor}`}
+                              />
                               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 {metric.label}
                               </p>
@@ -843,7 +848,9 @@ export default function LeagueViewPage({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <IconCalendar className="h-5 w-5 text-primary" />
-                        <h3 className="text-base font-semibold">Season Highlights</h3>
+                        <h3 className="text-base font-semibold">
+                          Season Highlights
+                        </h3>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Track momentum across all connected seasons.
@@ -860,21 +867,26 @@ export default function LeagueViewPage({
                           </div>
                           <div className="rounded-xl border border-border/60 bg-background/50 p-4">
                             <ul className="space-y-3 text-sm">
-                              {["ACTIVE", "UPCOMING", "FINISHED", "CANCELLED"].map(
-                                (status) => (
-                                  <li
-                                    key={status}
-                                    className="flex items-center justify-between"
-                                  >
-                                    <span>{formatEnumLabel(status)}</span>
-                                    <span className="font-semibold">
-                                      {formatNumber(seasonStatusCounts?.[status] ?? 0)}
-                          </span>
-                                  </li>
-                                )
-                              )}
+                              {[
+                                "ACTIVE",
+                                "UPCOMING",
+                                "FINISHED",
+                                "CANCELLED",
+                              ].map((status) => (
+                                <li
+                                  key={status}
+                                  className="flex items-center justify-between"
+                                >
+                                  <span>{formatEnumLabel(status)}</span>
+                                  <span className="font-semibold">
+                                    {formatNumber(
+                                      seasonStatusCounts?.[status] ?? 0
+                                    )}
+                                  </span>
+                                </li>
+                              ))}
                             </ul>
-                        </div>
+                          </div>
                         </div>
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
@@ -885,29 +897,37 @@ export default function LeagueViewPage({
                           </div>
                           <div className="rounded-xl border border-border/60 bg-background/50 p-4 space-y-3 text-sm">
                             <div className="flex items-start justify-between gap-2">
-                              <span className="text-muted-foreground">Next season start</span>
+                              <span className="text-muted-foreground">
+                                Next season start
+                              </span>
                               <span className="font-medium text-right">
                                 {seasonSummary.nextSeason
-                                  ? `${seasonSummary.nextSeason.name} · ${formatDateTime(
+                                  ? `${
+                                      seasonSummary.nextSeason.name
+                                    } · ${formatDateTime(
                                       seasonSummary.nextSeason.startDate
                                     )}`
                                   : "None scheduled"}
                               </span>
                             </div>
                             <div className="flex items-start justify-between gap-2">
-                          <span className="text-muted-foreground">
+                              <span className="text-muted-foreground">
                                 Registration deadline
-                          </span>
+                              </span>
                               <span className="font-medium text-right">
                                 {seasonSummary.nextRegistration
-                                  ? `${seasonSummary.nextRegistration.name} · ${formatDateTime(
+                                  ? `${
+                                      seasonSummary.nextRegistration.name
+                                    } · ${formatDateTime(
                                       seasonSummary.nextRegistration.deadline
                                     )}`
                                   : "No upcoming deadline"}
-                          </span>
-                        </div>
+                              </span>
+                            </div>
                             <div className="flex items-start justify-between gap-2">
-                              <span className="text-muted-foreground">Active seasons</span>
+                              <span className="text-muted-foreground">
+                                Active seasons
+                              </span>
                               <span className="font-medium text-right">
                                 {seasonSummary.activeSeasonNames.length
                                   ? seasonSummary.activeSeasonNames.join(", ")
@@ -918,22 +938,24 @@ export default function LeagueViewPage({
                         </div>
                       </div>
                     ) : (
-                          <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         Seasons will appear here once created.
-                              </p>
-                            )}
+                      </p>
+                    )}
                   </SectionCard>
 
                   <SectionCard className="space-y-6">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <IconUsers className="h-5 w-5 text-primary" />
-                        <h3 className="text-base font-semibold">Membership Insights</h3>
-                        </div>
+                        <h3 className="text-base font-semibold">
+                          Membership Insights
+                        </h3>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Understand registration and payment health.
                       </p>
-                  </div>
+                    </div>
                     {totalSeasonParticipation ? (
                       <div className="grid gap-6 md:grid-cols-2">
                         <div className="space-y-3">
@@ -945,9 +967,12 @@ export default function LeagueViewPage({
                           </div>
                           <ul className="space-y-2 text-sm">
                             {membershipStatusDisplayOrder.map((status) => {
-                              const count = membershipStatusCountsSafe?.[status] ?? 0;
+                              const count =
+                                membershipStatusCountsSafe?.[status] ?? 0;
                               const percentage = totalSeasonParticipation
-                                ? Math.round((count / totalSeasonParticipation) * 100)
+                                ? Math.round(
+                                    (count / totalSeasonParticipation) * 100
+                                  )
                                 : 0;
 
                               return (
@@ -959,14 +984,17 @@ export default function LeagueViewPage({
                                   <span className="text-muted-foreground">
                                     {formatNumber(count)}
                                     {count ? ` • ${percentage}%` : ""}
-                          </span>
+                                  </span>
                                 </li>
                               );
                             })}
                             {additionalMembershipStatuses.map((status) => {
-                              const count = membershipStatusCountsSafe[status] ?? 0;
+                              const count =
+                                membershipStatusCountsSafe[status] ?? 0;
                               const percentage = totalSeasonParticipation
-                                ? Math.round((count / totalSeasonParticipation) * 100)
+                                ? Math.round(
+                                    (count / totalSeasonParticipation) * 100
+                                  )
                                 : 0;
 
                               return (
@@ -994,9 +1022,12 @@ export default function LeagueViewPage({
                           {totalPaymentsTracked ? (
                             <ul className="space-y-2 text-sm">
                               {paymentStatusDisplayOrder.map((status) => {
-                                const count = paymentStatusCountsSafe?.[status] ?? 0;
+                                const count =
+                                  paymentStatusCountsSafe?.[status] ?? 0;
                                 const percentage = count
-                                  ? Math.round((count / totalPaymentsTracked) * 100)
+                                  ? Math.round(
+                                      (count / totalPaymentsTracked) * 100
+                                    )
                                   : 0;
 
                                 return (
@@ -1005,15 +1036,16 @@ export default function LeagueViewPage({
                                     className="flex items-center justify-between"
                                   >
                                     <span>{formatEnumLabel(status)}</span>
-                          <span className="text-muted-foreground">
+                                    <span className="text-muted-foreground">
                                       {formatNumber(count)}
                                       {count ? ` • ${percentage}%` : ""}
-                          </span>
+                                    </span>
                                   </li>
                                 );
                               })}
                               {additionalPaymentStatuses.map((status) => {
-                                const count = paymentStatusCountsSafe[status] ?? 0;
+                                const count =
+                                  paymentStatusCountsSafe[status] ?? 0;
                                 const percentage = Math.round(
                                   (count / totalPaymentsTracked) * 100
                                 );
@@ -1026,7 +1058,7 @@ export default function LeagueViewPage({
                                     <span>{formatEnumLabel(status)}</span>
                                     <span className="text-muted-foreground">
                                       {formatNumber(count)} • {percentage}%
-                          </span>
+                                    </span>
                                   </li>
                                 );
                               })}
@@ -1040,22 +1072,25 @@ export default function LeagueViewPage({
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Membership data will populate after players join seasons.
+                        Membership data will populate after players join
+                        seasons.
                       </p>
                     )}
                   </SectionCard>
 
                   <SectionCard className="space-y-6">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <IconBuilding className="h-5 w-5 text-primary" />
-                            <h3 className="text-base font-semibold">Sponsorships</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                        Manage partners supporting this league.
-                          </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <IconBuilding className="h-5 w-5 text-primary" />
+                          <h3 className="text-base font-semibold">
+                            Sponsorships
+                          </h3>
                         </div>
+                        <p className="text-sm text-muted-foreground">
+                          Manage partners supporting this league.
+                        </p>
+                      </div>
                       <Badge
                         variant="outline"
                         className="text-xs uppercase tracking-wide"
@@ -1064,14 +1099,14 @@ export default function LeagueViewPage({
                           ? `${formatNumber(sponsorCount)} linked`
                           : "No sponsors yet"}
                       </Badge>
-                  </div>
-                      <LeagueSponsorsSection
-                        sponsorships={sponsorships}
-                        leagueId={leagueId}
-                        onSponsorDeleted={() => {
-                          setRefreshTrigger((prev) => prev + 1);
-                        }}
-                      />
+                    </div>
+                    <LeagueSponsorsSection
+                      sponsorships={sponsorships}
+                      leagueId={leagueId}
+                      onSponsorDeleted={() => {
+                        setRefreshTrigger((prev) => prev + 1);
+                      }}
+                    />
                   </SectionCard>
                 </TabsContent>
 
@@ -1096,15 +1131,15 @@ export default function LeagueViewPage({
                         All seasons and tournaments for this league.
                       </p>
                     </div>
-                      <LeagueSeasonsWrapper
-                        seasons={seasons}
-                        leagueId={leagueId}
-                        leagueName={leagueData.name}
-                        onRefresh={() => {
-                          setActiveTab("seasons");
-                          setRefreshTrigger((prev) => prev + 1);
-                        }}
-                      />
+                    <LeagueSeasonsWrapper
+                      seasons={seasons}
+                      leagueId={leagueId}
+                      leagueName={leagueData.name}
+                      onRefresh={() => {
+                        setActiveTab("seasons");
+                        setRefreshTrigger((prev) => prev + 1);
+                      }}
+                    />
                   </SectionCard>
                 </TabsContent>
               </div>

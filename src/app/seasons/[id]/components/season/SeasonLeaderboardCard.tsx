@@ -1,19 +1,32 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { IconTrophy, IconMedal, IconTarget } from '@tabler/icons-react';
-import axiosInstance, { endpoints } from '@/lib/endpoints';
-import { z } from 'zod';
+import React, { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { IconTrophy, IconMedal, IconTarget } from "@tabler/icons-react";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { z } from "zod";
 
 // Division schema for validation
 export const divisionLevelEnum = z.enum([
   "beginner",
-  "intermediate", 
+  "intermediate",
   "advanced",
 ]);
 export const gameTypeEnum = z.enum(["singles", "doubles"]);
@@ -60,12 +73,20 @@ interface SeasonLeaderboardCardProps {
 // Mock data for each division
 const generateMockPlayers = (divisionId: string): LeaderboardPlayer[] => {
   const playerNames = [
-    'John Smith', 'Sarah Johnson', 'Mike Chen', 'Emma Davis', 'Alex Rodriguez',
-    'Lisa Wang', 'David Brown', 'Maria Garcia', 'James Wilson', 'Anna Taylor'
+    "John Smith",
+    "Sarah Johnson",
+    "Mike Chen",
+    "Emma Davis",
+    "Alex Rodriguez",
+    "Lisa Wang",
+    "David Brown",
+    "Maria Garcia",
+    "James Wilson",
+    "Anna Taylor",
   ];
-  
+
   const players: LeaderboardPlayer[] = [];
-  
+
   for (let i = 0; i < 5; i++) {
     const name = playerNames[i];
     const matchesPlayed = Math.floor(Math.random() * 8) + 8; // 8-15 matches
@@ -73,7 +94,7 @@ const generateMockPlayers = (divisionId: string): LeaderboardPlayer[] => {
     const losses = matchesPlayed - wins;
     const points = wins * 3; // 3 points per win
     const winRate = Math.round((wins / matchesPlayed) * 100);
-    
+
     players.push({
       id: `${divisionId}-player-${i + 1}`,
       name,
@@ -85,7 +106,7 @@ const generateMockPlayers = (divisionId: string): LeaderboardPlayer[] => {
       winRate,
     });
   }
-  
+
   // Sort by points (descending), then by win rate
   return players.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
@@ -95,9 +116,9 @@ const generateMockPlayers = (divisionId: string): LeaderboardPlayer[] => {
 
 const getInitials = (name: string): string => {
   return name
-    .split(' ')
-    .map(word => word.charAt(0))
-    .join('')
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 };
@@ -124,44 +145,56 @@ const getPositionBadge = (position: number) => {
       );
     default:
       return (
-        <span className="text-muted-foreground font-medium">
-          #{position}
-        </span>
+        <span className="text-muted-foreground font-medium">#{position}</span>
       );
   }
 };
 
 const getAvatarColor = (name: string): string => {
   const colors = [
-    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
-    'bg-red-500', 'bg-yellow-500', 'bg-teal-500', 'bg-orange-500', 'bg-cyan-500'
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-purple-500",
+    "bg-pink-500",
+    "bg-indigo-500",
+    "bg-red-500",
+    "bg-yellow-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-cyan-500",
   ];
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = name
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
 };
 
-export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCardProps) {
+export default function SeasonLeaderboardCard({
+  seasonId,
+}: SeasonLeaderboardCardProps) {
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDivisionId, setSelectedDivisionId] = useState<string>('');
+  const [selectedDivisionId, setSelectedDivisionId] = useState<string>("");
 
   const fetchDivisions = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.get(`${endpoints.division.getAll}?seasonId=${seasonId}`);
+      const response = await axiosInstance.get(
+        `${endpoints.division.getAll}?seasonId=${seasonId}`
+      );
       if (!response.data || !Array.isArray(response.data)) {
         setDivisions([]);
         return;
       }
       const parsed = z.array(divisionSchema).parse(response.data);
       setDivisions(parsed);
-      
+
       // Set first division as selected if available
       if (parsed.length > 0 && !selectedDivisionId) {
         setSelectedDivisionId(parsed[0].id);
       }
     } catch (error) {
-      console.error('Failed to fetch divisions:', error);
+      console.error("Failed to fetch divisions:", error);
       setDivisions([]);
     } finally {
       setIsLoading(false);
@@ -169,13 +202,39 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
   };
 
   useEffect(() => {
+    const fetchDivisions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.get(
+          `${endpoints.division.getAll}?seasonId=${seasonId}`
+        );
+        if (!response.data || !Array.isArray(response.data)) {
+          setDivisions([]);
+          return;
+        }
+        const parsed = z.array(divisionSchema).parse(response.data);
+        setDivisions(parsed);
+
+        // Set first division as selected if available
+        if (parsed.length > 0 && !selectedDivisionId) {
+          setSelectedDivisionId(parsed[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch divisions:", error);
+        setDivisions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     if (seasonId) {
       fetchDivisions();
     }
-  }, [seasonId]);
+  }, [seasonId, selectedDivisionId]);
 
-  const selectedDivision = divisions.find(d => d.id === selectedDivisionId);
-  const mockPlayers = selectedDivision ? generateMockPlayers(selectedDivisionId) : [];
+  const selectedDivision = divisions.find((d) => d.id === selectedDivisionId);
+  const mockPlayers = selectedDivision
+    ? generateMockPlayers(selectedDivisionId)
+    : [];
 
   if (isLoading) {
     return (
@@ -226,7 +285,10 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
           <IconTrophy className="size-5" />
           Leaderboard
         </CardTitle>
-        <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
+        <Select
+          value={selectedDivisionId}
+          onValueChange={setSelectedDivisionId}
+        >
           <SelectTrigger className="w-[300px]">
             <SelectValue placeholder="Choose a division">
               {selectedDivision && (
@@ -235,7 +297,11 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
                     <IconTarget className="size-3 text-primary" />
                   </div>
                   <div className="font-medium text-sm">
-                    {selectedDivision.name} <span className="text-xs text-muted-foreground capitalize">({selectedDivision.divisionLevel} • {selectedDivision.gameType})</span>
+                    {selectedDivision.name}{" "}
+                    <span className="text-xs text-muted-foreground capitalize">
+                      ({selectedDivision.divisionLevel} •{" "}
+                      {selectedDivision.gameType})
+                    </span>
                   </div>
                 </div>
               )}
@@ -249,7 +315,10 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
                     <IconTarget className="size-4 text-primary" />
                   </div>
                   <div className="font-medium text-sm">
-                    {division.name} <span className="text-xs text-muted-foreground capitalize">({division.divisionLevel} • {division.gameType})</span>
+                    {division.name}{" "}
+                    <span className="text-xs text-muted-foreground capitalize">
+                      ({division.divisionLevel} • {division.gameType})
+                    </span>
                   </div>
                 </div>
               </SelectItem>
@@ -278,7 +347,9 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
                     <TableHead className="w-[60px] text-center">W</TableHead>
                     <TableHead className="w-[60px] text-center">L</TableHead>
                     <TableHead className="w-[80px] text-center">Pts</TableHead>
-                    <TableHead className="w-[100px] text-center">Win Rate</TableHead>
+                    <TableHead className="w-[100px] text-center">
+                      Win Rate
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -291,12 +362,18 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
                         <div className="flex items-center gap-3">
                           <Avatar className="size-10">
                             <AvatarImage src={player.avatarUrl || undefined} />
-                            <AvatarFallback className={`text-white text-sm font-semibold ${getAvatarColor(player.name)}`}>
+                            <AvatarFallback
+                              className={`text-white text-sm font-semibold ${getAvatarColor(
+                                player.name
+                              )}`}
+                            >
                               {getInitials(player.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium text-sm">{player.name}</div>
+                            <div className="font-medium text-sm">
+                              {player.name}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -335,8 +412,12 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
             {/* Additional Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{mockPlayers.length}</div>
-                <div className="text-sm text-muted-foreground">Total Players</div>
+                <div className="text-2xl font-bold text-primary">
+                  {mockPlayers.length}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Total Players
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
@@ -346,9 +427,15 @@ export default function SeasonLeaderboardCard({ seasonId }: SeasonLeaderboardCar
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {Math.round(mockPlayers.reduce((sum, p) => sum + p.winRate, 0) / mockPlayers.length)}%
+                  {Math.round(
+                    mockPlayers.reduce((sum, p) => sum + p.winRate, 0) /
+                      mockPlayers.length
+                  )}
+                  %
                 </div>
-                <div className="text-sm text-muted-foreground">Avg Win Rate</div>
+                <div className="text-sm text-muted-foreground">
+                  Avg Win Rate
+                </div>
               </div>
             </div>
           </div>

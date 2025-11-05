@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export interface PlayerProfileData {
   id: string;
   name: string;
@@ -123,4 +121,3 @@ export interface SeasonHistory {
 export interface PlayerProfileProps {
   playerId: string;
 }
-

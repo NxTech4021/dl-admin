@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -112,7 +111,6 @@ export function LeagueSponsorsSection({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getTierBadgeVariant = (tier: string) => {
     switch (tier?.toUpperCase()) {
       case "PLATINUM":

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -117,7 +116,7 @@ export default function SeasonCreateModal({
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [isEntryFeeFocused, setIsEntryFeeFocused] = useState(false);
-  
+
   // Category creation state
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
 
@@ -175,7 +174,7 @@ export default function SeasonCreateModal({
         const result = response.data;
         const categoriesData = result.data || [];
         setAllCategories(categoriesData);
-        
+
         // Auto-select the most recently created category
         if (categoriesData.length > 0) {
           // Sort by createdAt if available, otherwise use the last item
@@ -185,7 +184,7 @@ export default function SeasonCreateModal({
             return bDate - aDate; // Most recent first
           });
           const latestCategory = sortedCategories[0];
-          
+
           if (latestCategory?.id) {
             setForm((prev) => ({
               ...prev,
@@ -197,7 +196,7 @@ export default function SeasonCreateModal({
     } catch (error) {
       console.error("Failed to refresh categories:", error);
     }
-    
+
     setIsCreateCategoryOpen(false);
     setIsCategoryDropdownOpen(false);
   };

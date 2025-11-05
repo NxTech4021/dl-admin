@@ -16,7 +16,7 @@ interface ProfileCardProps {
     image?: string | null;
     status?: string | null;
   } | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   onSave: (data: any) => void;
   saving: boolean;
 }

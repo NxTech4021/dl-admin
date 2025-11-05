@@ -507,7 +507,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
 
     setIsDeleting(true);
     let successCount = 0;
-    let failedCategories: string[] = [];
+    const failedCategories: string[] = [];
 
     try {
       for (let i = 0; i < selectedIds.length; i++) {

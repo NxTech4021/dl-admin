@@ -30,7 +30,6 @@ export default function ChangePasswordForm() {
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       if (err.response) {

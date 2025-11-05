@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -83,7 +82,7 @@ import {
   RESPONSIVE_CLASSES,
   ACTION_MESSAGES,
   COLUMN_WIDTHS,
-} from './constants';
+} from "./constants";
 
 const DetailRow = ({
   label,
@@ -128,77 +127,88 @@ export function DivisionsDataTable() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Fetching divisions from:', endpoints.division.getAll);
+      console.log("Fetching divisions from:", endpoints.division.getAll);
       const response = await axiosInstance.get(endpoints.division.getAll);
-      
-      console.log('Raw response:', response.data);
-      
+
+      console.log("Raw response:", response.data);
+
       if (!response.data) {
-        console.error('No data received from API');
+        console.error("No data received from API");
         setData([]);
-        setError('No data received from server');
-        toast.error('No data received from server');
+        setError("No data received from server");
+        toast.error("No data received from server");
         return;
       }
 
       // Handle different response formats
       let divisionsArray = response.data;
-      
+
       // Check if response has a 'data' property (nested structure)
       if (response.data.data && Array.isArray(response.data.data)) {
         divisionsArray = response.data.data;
-      } 
+      }
       // Check if response has a 'divisions' property
-      else if (response.data.divisions && Array.isArray(response.data.divisions)) {
+      else if (
+        response.data.divisions &&
+        Array.isArray(response.data.divisions)
+      ) {
         divisionsArray = response.data.divisions;
-      } 
+      }
       // Check if response.data is directly an array
       else if (Array.isArray(response.data)) {
         divisionsArray = response.data;
-      } 
+      }
       // Invalid format
       else {
-        console.error('Response data is not in expected format:', response.data);
+        console.error(
+          "Response data is not in expected format:",
+          response.data
+        );
         setData([]);
-        setError('Invalid data format from server');
-        toast.error('Invalid data format from server');
+        setError("Invalid data format from server");
+        toast.error("Invalid data format from server");
         return;
       }
 
-      console.log('Divisions array before parsing:', divisionsArray);
-      
+      console.log("Divisions array before parsing:", divisionsArray);
+
       // Parse and validate with Zod
       try {
         const parsed = z.array(divisionSchema).parse(divisionsArray);
-        console.log('Successfully parsed divisions:', parsed);
+        console.log("Successfully parsed divisions:", parsed);
         setData(parsed);
       } catch (parseError: any) {
-        console.error('Zod validation error:', parseError);
-        console.error('Zod error details:', JSON.stringify(parseError.errors, null, 2));
-        
+        console.error("Zod validation error:", parseError);
+        console.error(
+          "Zod error details:",
+          JSON.stringify(parseError.errors, null, 2)
+        );
+
         // Show more detailed error
-        const errorMessage = parseError.errors?.[0]?.message || 'Data validation failed';
-        const errorPath = parseError.errors?.[0]?.path?.join('.') || '';
+        const errorMessage =
+          parseError.errors?.[0]?.message || "Data validation failed";
+        const errorPath = parseError.errors?.[0]?.path?.join(".") || "";
         setError(`Data validation error at ${errorPath}: ${errorMessage}`);
         toast.error(`Data validation error: ${errorMessage}`);
-        
+
         // Try to set data anyway for debugging
         setData(divisionsArray);
       }
     } catch (error: any) {
-      console.error('Failed to load divisions:', error);
-      console.error('Error details:', {
+      console.error("Failed to load divisions:", error);
+      console.error("Error details:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
         statusText: error.response?.statusText,
       });
-      
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error 
-        || error.message 
-        || ACTION_MESSAGES.ERROR.LOAD_FAILED;
-      
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        ACTION_MESSAGES.ERROR.LOAD_FAILED;
+
       setData([]);
       setError(errorMessage);
       toast.error(errorMessage);
@@ -233,18 +243,17 @@ export function DivisionsDataTable() {
       const response = await axiosInstance.delete(
         endpoints.division.delete(deleteDivision.id)
       );
-      toast.success(
-        response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE
-      );
+      toast.success(response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE);
       await fetchDivisions();
       setDeleteDivision(null);
       setIsDeleteOpen(false);
     } catch (error: any) {
-      console.error('Delete error:', error);
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error 
-        || error.message 
-        || ACTION_MESSAGES.ERROR.DELETE_FAILED;
+      console.error("Delete error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        ACTION_MESSAGES.ERROR.DELETE_FAILED;
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -279,8 +288,8 @@ export function DivisionsDataTable() {
     };
   }, [editDivision]);
 
-  const columns = React.useMemo<ColumnDef<Division>[]>
-    (() => [
+  const columns = React.useMemo<ColumnDef<Division>[]>(
+    () => [
       {
         id: "select",
         header: ({ table }) => (
@@ -357,7 +366,9 @@ export function DivisionsDataTable() {
                 </Badge>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="capitalize">{getGameTypeLabel(division.gameType)}</span>
+                <span className="capitalize">
+                  {getGameTypeLabel(division.gameType)}
+                </span>
                 <span>•</span>
                 <span className="capitalize">
                   {getGenderCategoryLabel(division.genderCategory)}
@@ -389,7 +400,7 @@ export function DivisionsDataTable() {
         cell: ({ row }) => {
           const division = row.original;
           const gameType = division.gameType;
-          
+
           if (gameType === "singles") {
             return (
               <div className="flex items-center gap-2">
@@ -416,13 +427,15 @@ export function DivisionsDataTable() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Singles</span>
                   <span className="text-sm font-medium">
-                    {formatCount(division.currentSinglesCount)} / {renderValue(division.maxSingles)}
+                    {formatCount(division.currentSinglesCount)} /{" "}
+                    {renderValue(division.maxSingles)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Doubles</span>
                   <span className="text-sm font-medium">
-                    {formatCount(division.currentDoublesCount)} / {renderValue(division.maxDoublesTeams)}
+                    {formatCount(division.currentDoublesCount)} /{" "}
+                    {renderValue(division.maxDoublesTeams)}
                   </span>
                 </div>
               </div>
@@ -435,9 +448,11 @@ export function DivisionsDataTable() {
         header: "Sponsor & Prize",
         cell: ({ row }) => (
           <div className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">{renderValue(row.original.sponsoredDivisionName)}</span>
+            <span className="font-medium">
+              {renderValue(row.original.sponsoredDivisionName)}
+            </span>
             <span className="text-xs text-green-600 font-medium">
-              {formatCurrency(row.original.prizePoolTotal, 'MYR')}
+              {formatCurrency(row.original.prizePoolTotal, "MYR")}
             </span>
           </div>
         ),
@@ -448,7 +463,10 @@ export function DivisionsDataTable() {
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <Badge
-              variant={getStatusBadgeVariant('DIVISION', row.original.isActive ? 'ACTIVE' : 'INACTIVE')}
+              variant={getStatusBadgeVariant(
+                "DIVISION",
+                row.original.isActive ? "ACTIVE" : "INACTIVE"
+              )}
               className="capitalize"
             >
               {row.original.isActive ? "Active" : "Inactive"}
@@ -569,7 +587,9 @@ export function DivisionsDataTable() {
         )}
 
         {/* Search and Selection Info */}
-        <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}>
+        <div
+          className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}
+        >
           <div className="flex items-center space-x-2">
             <Input
               placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.DIVISIONS}
@@ -585,7 +605,9 @@ export function DivisionsDataTable() {
         </div>
 
         {/* Table Container */}
-        <div className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}>
+        <div
+          className={`rounded-md border bg-background ${RESPONSIVE_CLASSES.MARGIN}`}
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -648,7 +670,9 @@ export function DivisionsDataTable() {
         </div>
 
         {/* Pagination */}
-        <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}>
+        <div
+          className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}
+        >
           <div className="text-sm text-muted-foreground">
             Showing {table.getRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} division(s)
@@ -698,11 +722,15 @@ export function DivisionsDataTable() {
               <div className="grid gap-3 rounded-lg border bg-muted/30 p-4">
                 <DetailRow
                   label="Season"
-                  value={(viewDivision as any).season?.name ?? renderValue(null)}
+                  value={
+                    (viewDivision as any).season?.name ?? renderValue(null)
+                  }
                 />
                 <DetailRow
                   label="Season dates"
-                  value={`${formatTableDate((viewDivision as any).season?.startDate)} - ${formatTableDate(
+                  value={`${formatTableDate(
+                    (viewDivision as any).season?.startDate
+                  )} - ${formatTableDate(
                     (viewDivision as any).season?.endDate
                   )}`}
                 />
@@ -740,7 +768,7 @@ export function DivisionsDataTable() {
                 />
                 <DetailRow
                   label="Prize pool"
-                  value={formatCurrency(viewDivision.prizePoolTotal, 'MYR')}
+                  value={formatCurrency(viewDivision.prizePoolTotal, "MYR")}
                 />
                 <DetailRow
                   label="Sponsor"
@@ -756,7 +784,10 @@ export function DivisionsDataTable() {
                   label="Status"
                   value={
                     <Badge
-                      variant={getStatusBadgeVariant('DIVISION', viewDivision.isActive ? 'ACTIVE' : 'INACTIVE')}
+                      variant={getStatusBadgeVariant(
+                        "DIVISION",
+                        viewDivision.isActive ? "ACTIVE" : "INACTIVE"
+                      )}
                       className="capitalize"
                     >
                       {viewDivision.isActive ? "Active" : "Inactive"}

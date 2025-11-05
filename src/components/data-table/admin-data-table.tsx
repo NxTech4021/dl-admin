@@ -79,7 +79,6 @@ const handleResendInvite = async (adminId: string) => {
       adminId,
     });
     toast.success(res.data.message || "Invite resent successfully!");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     toast.error(err.response?.data?.message || "Failed to resend invite");
   }

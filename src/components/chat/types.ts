@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { UserStatus } from "./constants";
 
 // Base User Interface
@@ -157,7 +158,10 @@ export interface UseMessagesReturn {
   messages: Message[];
   loading: boolean;
   error: string | null;
-  sendMessage: (content: string, senderId: string) => Promise<Message | undefined>;
+  sendMessage: (
+    content: string,
+    senderId: string
+  ) => Promise<Message | undefined>;
   markAsRead: (messageId: string) => Promise<void>;
   refetch: () => void;
 }
@@ -226,7 +230,6 @@ export interface ChatNavAccountProps {
   onLogoutClick?: () => void;
   collapsed?: boolean;
 }
-
 
 export interface ChatMessageInputProps {
   selectedConversationId?: string;
@@ -329,15 +332,14 @@ export interface SendMessageApiResponse extends ChatApiResponse<Message> {}
 
 // Enums
 export enum MessageType {
-  TEXT = 'text',
-  IMAGE = 'image',
-  FILE = 'file',
-  AUDIO = 'audio',
-  VIDEO = 'video',
+  TEXT = "text",
+  IMAGE = "image",
+  FILE = "file",
+  AUDIO = "audio",
+  VIDEO = "video",
 }
 
-
 export enum ThreadMemberRole {
-  ADMIN = 'admin',
-  MEMBER = 'player',
+  ADMIN = "admin",
+  MEMBER = "player",
 }

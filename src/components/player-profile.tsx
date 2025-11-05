@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -47,8 +46,8 @@ import {
 } from "@/components/ui/collapsible";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
-import LeagueHistory from './player-profile/league-history-card';
-import SeasonHistory from './player-profile/season-history-card';
+import LeagueHistory from "./player-profile/league-history-card";
+import SeasonHistory from "./player-profile/season-history-card";
 
 interface PlayerProfileData {
   id: string;
@@ -161,13 +160,13 @@ const formatAnswerValue = (value: any): string => {
 export function PlayerProfile({ playerId }: PlayerProfileProps) {
   const [profile, setProfile] = React.useState<PlayerProfileData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  
+
   // History data states
   const [leagueHistory, setLeagueHistory] = React.useState<any[] | null>(null);
   const [seasonHistory, setSeasonHistory] = React.useState<any[] | null>(null);
   const [historyLoading, setHistoryLoading] = React.useState({
     leagues: false,
-    seasons: false
+    seasons: false,
   });
 
   React.useEffect(() => {
@@ -176,7 +175,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get(endpoints.player.getById(playerId));
+        const response = await axiosInstance.get(
+          endpoints.player.getById(playerId)
+        );
         if (response.status !== 200) {
           throw new Error("Failed to fetch profile");
         }
@@ -195,33 +196,37 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
   // Data fetching functions for history tabs
   const fetchLeagueHistory = async () => {
     if (leagueHistory) return; // Already loaded
-    
-    setHistoryLoading(prev => ({ ...prev, leagues: true }));
+
+    setHistoryLoading((prev) => ({ ...prev, leagues: true }));
     try {
-      const response = await axiosInstance.get(endpoints.player.getLeagueHistory(playerId));
+      const response = await axiosInstance.get(
+        endpoints.player.getLeagueHistory(playerId)
+      );
       if (response.status === 200) {
         setLeagueHistory(response.data.data.leagues);
       }
     } catch (error) {
-      console.error('Failed to load league history:', error);
+      console.error("Failed to load league history:", error);
     } finally {
-      setHistoryLoading(prev => ({ ...prev, leagues: false }));
+      setHistoryLoading((prev) => ({ ...prev, leagues: false }));
     }
   };
 
   const fetchSeasonHistory = async () => {
     if (seasonHistory) return; // Already loaded
-    
-    setHistoryLoading(prev => ({ ...prev, seasons: true }));
+
+    setHistoryLoading((prev) => ({ ...prev, seasons: true }));
     try {
-      const response = await axiosInstance.get(endpoints.player.getSeasonHistory(playerId));
+      const response = await axiosInstance.get(
+        endpoints.player.getSeasonHistory(playerId)
+      );
       if (response.status === 200) {
         setSeasonHistory(response.data.data.seasons);
       }
     } catch (error) {
-      console.error('Failed to load season history:', error);
+      console.error("Failed to load season history:", error);
     } finally {
-      setHistoryLoading(prev => ({ ...prev, seasons: false }));
+      setHistoryLoading((prev) => ({ ...prev, seasons: false }));
     }
   };
 
@@ -308,27 +313,27 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Left Column: Main Profile Card */}
           <div className="md:col-span-1 space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <Avatar className="size-20">
-                <AvatarImage
-                  src={profile.image || undefined}
-                  alt={profile.name}
-                />
-                <AvatarFallback className="text-xl">
-                  {getInitials(profile.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
-                <div>
-                  <CardTitle className="text-2xl">{profile.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    @{profile.username}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* <Badge
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <Avatar className="size-20">
+                    <AvatarImage
+                      src={profile.image || undefined}
+                      alt={profile.name}
+                    />
+                    <AvatarFallback className="text-xl">
+                      {getInitials(profile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <div>
+                      <CardTitle className="text-2xl">{profile.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        @{profile.username}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* <Badge
                       variant={
                         profile.status === "active" ? "default" : "secondary"
                       }
@@ -336,646 +341,654 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     >
                       {profile.status}
                       </Badge> */}
-                  {profile.emailVerified && (
-                    <Badge variant="outline" className="text-green-600">
-                      <IconShield className="size-3 mr-1" />
-                      Verified
-                    </Badge>
+                      {profile.emailVerified && (
+                        <Badge variant="outline" className="text-green-600">
+                          <IconShield className="size-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                      {profile.completedOnboarding && (
+                        <Badge variant="outline" className="text-blue-600">
+                          <IconUserCheck className="size-3 mr-1" />
+                          Onboarded
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconMail className="size-4" />
+                    <span>{profile.email}</span>
+                  </div>
+                  {profile.phoneNumber && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <IconPhone className="size-4" />
+                      <span>{profile.phoneNumber}</span>
+                    </div>
                   )}
-                  {profile.completedOnboarding && (
-                    <Badge variant="outline" className="text-blue-600">
-                      <IconUserCheck className="size-3 mr-1" />
-                      Onboarded
-                    </Badge>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconMapPin className="size-4" />
+                    <span>{profile.area || "Location not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconUserCircle className="size-4" />
+                    <span className="capitalize">
+                      {profile.gender || "Gender not set"}
+                    </span>
+                  </div>
+                  {profile.dateOfBirth && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <IconCake className="size-4" />
+                      <span>{formatDate(profile.dateOfBirth)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <IconCalendar className="size-4" />
+                    <span>Joined on {formatDate(profile.registeredDate)}</span>
+                  </div>
+                  {profile.lastLogin && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <IconClock className="size-4" />
+                      <span>Last login: {formatDate(profile.lastLogin)}</span>
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <IconMail className="size-4" />
-                <span>{profile.email}</span>
-              </div>
-              {profile.phoneNumber && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconPhone className="size-4" />
-                  <span>{profile.phoneNumber}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <IconMapPin className="size-4" />
-                <span>{profile.area || "Location not set"}</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <IconUserCircle className="size-4" />
-                <span className="capitalize">
-                  {profile.gender || "Gender not set"}
-                </span>
-              </div>
-              {profile.dateOfBirth && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconCake className="size-4" />
-                  <span>{formatDate(profile.dateOfBirth)}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <IconCalendar className="size-4" />
-                <span>Joined on {formatDate(profile.registeredDate)}</span>
-              </div>
-              {profile.lastLogin && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <IconClock className="size-4" />
-                  <span>Last login: {formatDate(profile.lastLogin)}</span>
-                </div>
-              )}
-            </div>
 
-            {profile.bio && (
-              <div className="pt-3 border-t">
-                <p className="text-sm text-muted-foreground italic">
-                  &quot;{profile.bio}&quot;
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                {profile.bio && (
+                  <div className="pt-3 border-t">
+                    <p className="text-sm text-muted-foreground italic">
+                      &quot;{profile.bio}&quot;
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Right Column: Ratings and History */}
-      <div className="md:col-span-2 space-y-6">
+          {/* Right Column: Ratings and History */}
+          <div className="md:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconTrophy className="size-5" />
+                  Skill Ratings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {profile.questionnaires && profile.questionnaires.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {profile.questionnaires.map((q, index) => (
+                      <div
+                        key={index}
+                        className="rounded-lg border p-4 space-y-4"
+                      >
+                        {/* Sport Header */}
+                        <div className="text-center">
+                          <h4 className="text-lg font-semibold capitalize text-primary">
+                            {q.sport}
+                          </h4>
+                          <div className="flex items-center justify-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              v{q.qVersion}
+                            </Badge>
+                            {q.completedAt ? (
+                              <Badge
+                                variant="default"
+                                className="text-xs bg-green-600 text-white border-green-600"
+                              >
+                                <IconUserCheck className="size-3 mr-1" />
+                                Completed
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">
+                                In Progress
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Ratings Display */}
+                        {q.result ? (
+                          <div className="space-y-3">
+                            {/* Singles Rating */}
+                            {q.result.singles && (
+                              <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <IconTarget className="size-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                      Singles Rating
+                                    </span>
+                                  </div>
+                                  <span className="text-xl font-bold text-blue-600">
+                                    {q.result.singles}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Doubles Rating */}
+                            {q.result.doubles && (
+                              <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <IconTarget className="size-4 text-green-600" />
+                                    <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                                      Doubles Rating
+                                    </span>
+                                  </div>
+                                  <span className="text-xl font-bold text-green-600">
+                                    {q.result.doubles}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Additional Info */}
+                            <div className="pt-2 border-t space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                  Confidence:
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs capitalize ${
+                                    q.result.confidence === "high"
+                                      ? "text-green-600 border-green-200"
+                                      : q.result.confidence === "medium"
+                                      ? "text-yellow-600 border-yellow-200"
+                                      : q.result.confidence === "low"
+                                      ? "text-red-600 border-red-200"
+                                      : ""
+                                  }`}
+                                >
+                                  {q.result.confidence}
+                                </Badge>
+                              </div>
+                              {q.result.source && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Source:
+                                  </span>
+                                  <span className="text-xs capitalize font-medium">
+                                    {q.result.source}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                  Started:
+                                </span>
+                                <span className="text-xs">
+                                  {formatDate(q.startedAt)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">
+                              No rating data available
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Started: {formatDate(q.startedAt)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <IconTrophy className="size-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No questionnaire data available
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconListCheck className="size-5" />
+                  Questionnaire History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sport</TableHead>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Started</TableHead>
+                      <TableHead>Completed</TableHead>
+                      <TableHead>Singles</TableHead>
+                      <TableHead>Doubles</TableHead>
+                      <TableHead>Confidence</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {profile.questionnaires.map((q, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="capitalize font-medium">
+                          {q.sport}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            v{q.qVersion}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(q.startedAt)}
+                        </TableCell>
+                        <TableCell>
+                          {q.completedAt ? (
+                            <div className="flex items-center gap-2">
+                              <IconUserCheck className="size-4 text-green-600" />
+                              <span className="text-sm">
+                                {formatDate(q.completedAt)}
+                              </span>
+                            </div>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Incomplete
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {q.result?.singles || "N/A"}
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {q.result?.doubles || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`capitalize text-xs ${
+                              q.result?.confidence === "high"
+                                ? "text-green-600"
+                                : q.result?.confidence === "medium"
+                                ? "text-yellow-600"
+                                : q.result?.confidence === "low"
+                                ? "text-red-600"
+                                : ""
+                            }`}
+                          >
+                            {q.result?.confidence || "N/A"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </TabsContent>
+
+      {/* ACTIVITY & SECURITY TAB */}
+      <TabsContent value="activity">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Login Methods Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IconShield className="size-5 text-blue-600" />
+                Login Methods
+              </CardTitle>
+              <CardDescription>
+                Authentication providers linked to this account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {profile.accounts && profile.accounts.length > 0 ? (
+                <div className="space-y-3">
+                  {profile.accounts.map((acc, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                          <IconShield className="size-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium capitalize">
+                            {acc.providerId}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Linked on {formatDate(acc.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-200"
+                      >
+                        Active
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <IconShield className="size-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    No login methods found
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Active Sessions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IconClock className="size-5 text-green-600" />
+                Active Sessions
+              </CardTitle>
+              <CardDescription>
+                Current active sessions across devices
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {profile.sessions && profile.sessions.length > 0 ? (
+                <div className="space-y-3">
+                  {profile.sessions.map((sess, i) => (
+                    <div key={i} className="p-3 rounded-lg border bg-muted/30">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/20">
+                            <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                          </div>
+                          <span className="text-sm font-medium">
+                            Active Session
+                          </span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {formatDate(sess.expiresAt)}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Device:</span>
+                          <span className="truncate">
+                            {sess.userAgent || "Unknown device"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">IP:</span>
+                          <span className="font-mono text-xs">
+                            {sess.ipAddress || "Unknown"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <IconClock className="size-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    No active sessions found
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      {/* MATCHES TAB */}
+      <TabsContent value="matches">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <IconTrophy className="size-5" />
-              Skill Ratings
+              <IconTarget className="size-5" />
+              Match History
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {profile.questionnaires && profile.questionnaires.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {profile.questionnaires.map((q, index) => (
-                  <div
-                    key={index}
-                    className="rounded-lg border p-4 space-y-4"
-                  >
-                    {/* Sport Header */}
-                    <div className="text-center">
-                      <h4 className="text-lg font-semibold capitalize text-primary">
-                        {q.sport}
-                      </h4>
-                      <div className="flex items-center justify-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          v{q.qVersion}
+            {profile.matches && profile.matches.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sport</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>Outcome</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Duration</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profile.matches.map((match) => (
+                    <TableRow key={match.id}>
+                      <TableCell className="capitalize font-medium">
+                        {match.sport}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {match.matchType}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {match.playerScore} - {match.opponentScore}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            match.outcome === "win"
+                              ? "default"
+                              : match.outcome === "loss"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {match.outcome}
                         </Badge>
-                        {q.completedAt ? (
-                          <Badge
-                            variant="default"
-                            className="text-xs bg-green-600 text-white border-green-600"
-                          >
-                            <IconUserCheck className="size-3 mr-1" />
-                            Completed
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">
-                            In Progress
-                          </Badge>
-                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(match.matchDate)}</TableCell>
+                      <TableCell>{match.location || "N/A"}</TableCell>
+                      <TableCell>
+                        {match.duration ? `${match.duration} min` : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No match history found for this player.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* LEAGUE HISTORY TAB */}
+      <TabsContent value="league_history" onFocus={fetchLeagueHistory}>
+        <LeagueHistory
+          leagues={leagueHistory}
+          isLoading={historyLoading.leagues}
+        />
+      </TabsContent>
+
+      {/* SEASON HISTORY TAB */}
+      <TabsContent value="season_history" onFocus={fetchSeasonHistory}>
+        <SeasonHistory
+          seasons={seasonHistory}
+          isLoading={historyLoading.seasons}
+        />
+      </TabsContent>
+
+      {/* ACHIEVEMENTS TAB */}
+      <TabsContent value="achievements">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <IconStar className="size-5" />
+              Achievements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {profile.achievements && profile.achievements.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {profile.achievements.map((achievement) => (
+                  <Card key={achievement.id} className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">{achievement.title}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {achievement.points} pts
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {achievement.description}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <Badge variant="secondary" className="capitalize">
+                          {achievement.category}
+                        </Badge>
+                        <span>
+                          Unlocked: {formatDate(achievement.unlockedAt)}
+                        </span>
                       </div>
                     </div>
-
-                    {/* Ratings Display */}
-                    {q.result ? (
-                      <div className="space-y-3">
-                        {/* Singles Rating */}
-                        {q.result.singles && (
-                          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <IconTarget className="size-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                  Singles Rating
-                                </span>
-                              </div>
-                              <span className="text-xl font-bold text-blue-600">
-                                {q.result.singles}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Doubles Rating */}
-                        {q.result.doubles && (
-                          <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <IconTarget className="size-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                                  Doubles Rating
-                                </span>
-                              </div>
-                              <span className="text-xl font-bold text-green-600">
-                                {q.result.doubles}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Additional Info */}
-                        <div className="pt-2 border-t space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Confidence:
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs capitalize ${q.result.confidence === "high"
-                                  ? "text-green-600 border-green-200"
-                                  : q.result.confidence === "medium"
-                                    ? "text-yellow-600 border-yellow-200"
-                                    : q.result.confidence === "low"
-                                      ? "text-red-600 border-red-200"
-                                      : ""
-                                }`}
-                            >
-                              {q.result.confidence}
-                            </Badge>
-                          </div>
-                          {q.result.source && (
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Source:
-                              </span>
-                              <span className="text-xs capitalize font-medium">
-                                {q.result.source}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Started:
-                            </span>
-                            <span className="text-xs">
-                              {formatDate(q.startedAt)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-muted-foreground">
-                          No rating data available
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Started: {formatDate(q.startedAt)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  </Card>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <IconTrophy className="size-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No questionnaire data available
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No achievements unlocked yet.
+              </p>
             )}
           </CardContent>
         </Card>
+      </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <IconListCheck className="size-5" />
-              Questionnaire History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sport</TableHead>
-                  <TableHead>Version</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Completed</TableHead>
-                  <TableHead>Singles</TableHead>
-                  <TableHead>Doubles</TableHead>
-                  <TableHead>Confidence</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {profile.questionnaires.map((q, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="capitalize font-medium">
-                      {q.sport}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        v{q.qVersion}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(q.startedAt)}
-                    </TableCell>
-                    <TableCell>
-                      {q.completedAt ? (
-                        <div className="flex items-center gap-2">
-                          <IconUserCheck className="size-4 text-green-600" />
-                          <span className="text-sm">
-                            {formatDate(q.completedAt)}
-                          </span>
-                        </div>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">
-                          Incomplete
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {q.result?.singles || "N/A"}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {q.result?.doubles || "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`capitalize text-xs ${q.result?.confidence === "high"
-                            ? "text-green-600"
-                            : q.result?.confidence === "medium"
-                              ? "text-yellow-600"
-                              : q.result?.confidence === "low"
-                                ? "text-red-600"
-                                : ""
-                          }`}
-                      >
-                        {q.result?.confidence || "N/A"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  </TabsContent>
-
-  {/* ACTIVITY & SECURITY TAB */}
-  <TabsContent value="activity">
-    <div className="grid gap-6 md:grid-cols-2">
-      {/* Login Methods Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconShield className="size-5 text-blue-600" />
-            Login Methods
-          </CardTitle>
-          <CardDescription>
-            Authentication providers linked to this account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {profile.accounts && profile.accounts.length > 0 ? (
-            <div className="space-y-3">
-              {profile.accounts.map((acc, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20">
-                      <IconShield className="size-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium capitalize">
-                        {acc.providerId}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Linked on {formatDate(acc.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-green-600 border-green-200"
-                  >
-                    Active
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <IconShield className="size-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                No login methods found
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Active Sessions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconClock className="size-5 text-green-600" />
-            Active Sessions
-          </CardTitle>
-          <CardDescription>
-            Current active sessions across devices
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {profile.sessions && profile.sessions.length > 0 ? (
-            <div className="space-y-3">
-              {profile.sessions.map((sess, i) => (
-                <div key={i} className="p-3 rounded-lg border bg-muted/30">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/20">
-                        <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                      </div>
-                      <span className="text-sm font-medium">
-                        Active Session
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {formatDate(sess.expiresAt)}
-                    </Badge>
-                  </div>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Device:</span>
-                      <span className="truncate">
-                        {sess.userAgent || "Unknown device"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">IP:</span>
-                      <span className="font-mono text-xs">
-                        {sess.ipAddress || "Unknown"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <IconClock className="size-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                No active sessions found
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  </TabsContent>
-
-  {/* MATCHES TAB */}
-  <TabsContent value="matches">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconTarget className="size-5" />
-          Match History
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {profile.matches && profile.matches.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sport</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Outcome</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Duration</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {profile.matches.map((match) => (
-                <TableRow key={match.id}>
-                  <TableCell className="capitalize font-medium">
-                    {match.sport}
-                  </TableCell>
-                  <TableCell className="capitalize">
-                    {match.matchType}
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    {match.playerScore} - {match.opponentScore}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        match.outcome === "win"
-                          ? "default"
-                          : match.outcome === "loss"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                      className="capitalize"
-                    >
-                      {match.outcome}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(match.matchDate)}</TableCell>
-                  <TableCell>{match.location || "N/A"}</TableCell>
-                  <TableCell>
-                    {match.duration ? `${match.duration} min` : "N/A"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No match history found for this player.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  </TabsContent>
-
-  {/* LEAGUE HISTORY TAB */}
-  <TabsContent value="league_history" onFocus={fetchLeagueHistory}>
-    <LeagueHistory leagues={leagueHistory} isLoading={historyLoading.leagues} />
-  </TabsContent>
-
-  {/* SEASON HISTORY TAB */}
-  <TabsContent value="season_history" onFocus={fetchSeasonHistory}>
-    <SeasonHistory seasons={seasonHistory} isLoading={historyLoading.seasons} />
-  </TabsContent>
-
-  {/* ACHIEVEMENTS TAB */}
-  <TabsContent value="achievements">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconStar className="size-5" />
-          Achievements
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {profile.achievements && profile.achievements.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {profile.achievements.map((achievement) => (
-              <Card key={achievement.id} className="p-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">{achievement.title}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {achievement.points} pts
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {achievement.description}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <Badge variant="secondary" className="capitalize">
-                      {achievement.category}
-                    </Badge>
-                    <span>
-                      Unlocked: {formatDate(achievement.unlockedAt)}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No achievements unlocked yet.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  </TabsContent>
-
-  {/* RAW QUESTIONNAIRE DATA TAB */}
-  <TabsContent value="raw_data">
-    <div className="space-y-6">
-      {/* <div className="text-center space-y-2">
+      {/* RAW QUESTIONNAIRE DATA TAB */}
+      <TabsContent value="raw_data">
+        <div className="space-y-6">
+          {/* <div className="text-center space-y-2">
             <h2 className="text-2xl font-semibold">Questionnaire Responses</h2>
             <p className="text-muted-foreground">
               Detailed answers from player assessments
             </p>
           </div> */}
 
-      {profile.questionnaires.length > 0 ? (
-        <div className="space-y-6">
-          {profile.questionnaires.map((q, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg capitalize">
-                      {q.sport} Questionnaire
-                    </CardTitle>
-                    <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">
-                        Version {q.qVersion}
-                      </Badge>
-                      <span>Started {formatDate(q.startedAt)}</span>
-                      {q.completedAt && (
-                        <>
-                          <span>•</span>
-                          <span>Completed {formatDate(q.completedAt)}</span>
-                        </>
+          {profile.questionnaires.length > 0 ? (
+            <div className="space-y-6">
+              {profile.questionnaires.map((q, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg capitalize">
+                          {q.sport} Questionnaire
+                        </CardTitle>
+                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">
+                            Version {q.qVersion}
+                          </Badge>
+                          <span>Started {formatDate(q.startedAt)}</span>
+                          {q.completedAt && (
+                            <>
+                              <span>•</span>
+                              <span>Completed {formatDate(q.completedAt)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {q.completedAt ? (
+                        <Badge className="bg-green-600 text-white">
+                          <IconUserCheck className="size-3 mr-1" />
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">In Progress</Badge>
                       )}
                     </div>
-                  </div>
-                  {q.completedAt ? (
-                    <Badge className="bg-green-600 text-white">
-                      <IconUserCheck className="size-3 mr-1" />
-                      Completed
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">In Progress</Badge>
-                  )}
-                </div>
-              </CardHeader>
+                  </CardHeader>
 
-              <CardContent className="pt-0">
-                <Collapsible>
-                  <CollapsibleTrigger className="flex w-full items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                    <span className="text-sm font-medium">
-                      View Responses
-                    </span>
-                    <IconChevronDown className="size-4 transition-transform data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4">
-                    <div className="space-y-4">
-                      {Object.entries(q.answersJson).map(([key, value]) => (
-                        <div key={key} className="border rounded-lg p-4">
-                          <h4 className="font-medium text-sm mb-3 text-foreground">
-                            {formatQuestionKey(key)}
-                          </h4>
-                          <div className="text-sm">
-                            {typeof value === "object" && value !== null ? (
-                              <div className="space-y-3">
-                                {Object.entries(value).map(
-                                  ([subKey, subValue]) => (
-                                    <div
-                                      key={subKey}
-                                      className="flex items-start gap-3"
-                                    >
-                                      <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2"></div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-xs text-muted-foreground mb-1">
-                                          {subKey
-                                            .replace(/_/g, " ")
-                                            .replace(/([A-Z])/g, " $1")
-                                            .replace(/^./, (str) =>
-                                              str.toUpperCase()
-                                            )}
+                  <CardContent className="pt-0">
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex w-full items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                        <span className="text-sm font-medium">
+                          View Responses
+                        </span>
+                        <IconChevronDown className="size-4 transition-transform data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <div className="space-y-4">
+                          {Object.entries(q.answersJson).map(([key, value]) => (
+                            <div key={key} className="border rounded-lg p-4">
+                              <h4 className="font-medium text-sm mb-3 text-foreground">
+                                {formatQuestionKey(key)}
+                              </h4>
+                              <div className="text-sm">
+                                {typeof value === "object" && value !== null ? (
+                                  <div className="space-y-3">
+                                    {Object.entries(value).map(
+                                      ([subKey, subValue]) => (
+                                        <div
+                                          key={subKey}
+                                          className="flex items-start gap-3"
+                                        >
+                                          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2"></div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-xs text-muted-foreground mb-1">
+                                              {subKey
+                                                .replace(/_/g, " ")
+                                                .replace(/([A-Z])/g, " $1")
+                                                .replace(/^./, (str) =>
+                                                  str.toUpperCase()
+                                                )}
+                                            </div>
+                                            <div className="text-sm break-words">
+                                              {String(subValue)}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="text-sm break-words">
-                                          {String(subValue)}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-sm break-words">
+                                    {formatAnswerValue(value)}
+                                  </div>
                                 )}
                               </div>
-                            ) : (
-                              <div className="text-sm break-words">
-                                {formatAnswerValue(value)}
-                              </div>
-                            )}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <IconDatabase className="size-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No Questionnaire Data
+                </h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  This player hasn&apos;t completed any questionnaires yet.
+                </p>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
-      ) : (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <IconDatabase className="size-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
-              No Questionnaire Data
-            </h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              This player hasn&apos;t completed any questionnaires yet.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
       </TabsContent>
     </Tabs>
   );

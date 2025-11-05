@@ -26,7 +26,6 @@ import type {
   Conversation,
   ChatParticipant,
   Thread,
-
 } from "@/components/chat/types";
 
 export default function ChatView() {
@@ -95,13 +94,14 @@ export default function ChatView() {
     }));
 
     // Get last message for preview
-    const lastMessage = thread.messages.length > 0
-      ? {
-          content: thread.messages[0].content,
-          createdAt: thread.messages[0].createdAt,
-          sender: { name: thread.messages[0].sender.name },
-        }
-      : null;
+    const lastMessage =
+      thread.messages.length > 0
+        ? {
+            content: thread.messages[0].content,
+            createdAt: thread.messages[0].createdAt,
+            sender: { name: thread.messages[0].sender.name },
+          }
+        : null;
 
     return {
       id: thread.id,
@@ -203,7 +203,8 @@ export default function ChatView() {
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-medium">Messages</h3>
           <span className="text-sm text-muted-foreground">
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+            {conversations.length} conversation
+            {conversations.length !== 1 ? "s" : ""}
           </span>
         </div>
       )}
@@ -218,7 +219,8 @@ export default function ChatView() {
             <div className="text-6xl mb-4">💬</div>
             <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
             <p className="text-sm">
-              Choose a chat from the sidebar to start messaging, or create a new conversation.
+              Choose a chat from the sidebar to start messaging, or create a new
+              conversation.
             </p>
           </div>
         </div>

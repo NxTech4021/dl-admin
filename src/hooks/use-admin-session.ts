@@ -42,7 +42,6 @@ export function useAdminSession(): UseAdminSessionReturn {
       } else {
         setUser(null);
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       // Don't treat 401 as an error - it just means not logged in
       if (err.response?.status === 401) {

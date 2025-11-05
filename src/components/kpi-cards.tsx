@@ -99,7 +99,7 @@ function KPICard({
   previousValue,
   icon: Icon,
   format = "number",
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   trend,
 }: KPICardProps) {
   const numValue = typeof value === "string" ? parseFloat(value) : value;
@@ -173,7 +173,6 @@ function SportKPICard({
     ? calculateTrend(revenue, previousRevenue)
     : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getSportIcon = (sport: string) => {
     // You can replace these with actual sport icons
     return Target;

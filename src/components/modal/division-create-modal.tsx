@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// @ts-expect-error
+
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,7 +62,7 @@ type DivisionCreateModalProps = {
   mode?: "create" | "edit";
   division?: DivisionBase | null;
   seasonId?: string;
-  adminId?: string; 
+  adminId?: string;
 };
 
 const divisionSchema = z
@@ -72,50 +72,58 @@ const divisionSchema = z
     divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
     genderCategory: z.enum(["male", "female", "mixed"]),
-    maxSinglesPlayers: z.preprocess(
-      (val) => {
-        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
-          return null;
-        }
-        const num = typeof val === "string" ? Number(val) : val;
-        return Number.isNaN(num) ? null : num;
-      },
-      z.number().int().positive().nullable().optional()
-    ),
-    maxDoublesTeams: z.preprocess(
-      (val) => {
-        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
-          return null;
-        }
-        const num = typeof val === "string" ? Number(val) : val;
-        return Number.isNaN(num) ? null : num;
-      },
-      z.number().int().positive().nullable().optional()
-    ),
+    maxSinglesPlayers: z.preprocess((val) => {
+      if (
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        Number.isNaN(val)
+      ) {
+        return null;
+      }
+      const num = typeof val === "string" ? Number(val) : val;
+      return Number.isNaN(num) ? null : num;
+    }, z.number().int().positive().nullable().optional()),
+    maxDoublesTeams: z.preprocess((val) => {
+      if (
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        Number.isNaN(val)
+      ) {
+        return null;
+      }
+      const num = typeof val === "string" ? Number(val) : val;
+      return Number.isNaN(num) ? null : num;
+    }, z.number().int().positive().nullable().optional()),
     autoAssignmentEnabled: z.boolean().default(false).optional(),
     isActive: z.boolean().default(true).optional(),
-    prizePoolTotal: z.preprocess(
-      (val) => {
-        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
-          return null;
-        }
-        const num = typeof val === "string" ? Number(val) : val;
-        return Number.isNaN(num) ? null : num;
-      },
-      z.number().int().nonnegative().nullable().optional()
-    ),
+    prizePoolTotal: z.preprocess((val) => {
+      if (
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        Number.isNaN(val)
+      ) {
+        return null;
+      }
+      const num = typeof val === "string" ? Number(val) : val;
+      return Number.isNaN(num) ? null : num;
+    }, z.number().int().nonnegative().nullable().optional()),
     sponsorName: z.string().optional().nullable(),
     description: z.string().optional().nullable(),
-    threshold: z.preprocess(
-      (val) => {
-        if (val === undefined || val === null || val === "" || Number.isNaN(val)) {
-          return null;
-        }
-        const num = typeof val === "string" ? Number(val) : val;
-        return Number.isNaN(num) ? null : num;
-      },
-      z.number().int().nonnegative().nullable().optional()
-    ),
+    threshold: z.preprocess((val) => {
+      if (
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        Number.isNaN(val)
+      ) {
+        return null;
+      }
+      const num = typeof val === "string" ? Number(val) : val;
+      return Number.isNaN(num) ? null : num;
+    }, z.number().int().nonnegative().nullable().optional()),
   })
   .superRefine((val, ctx) => {
     if (val.gameType === "singles") {
@@ -148,29 +156,30 @@ export default function DivisionCreateModal({
   mode = "create",
   division,
   seasonId,
-  adminId
+  adminId,
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [seasons, setSeasons] = useState<Array<{
-    id: string;
-    name: string;
-    category?: {
+  const [seasons, setSeasons] = useState<
+    Array<{
       id: string;
-      name: string | null;
-      game_type?: "SINGLES" | "DOUBLES" | null;
-      gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
-    } | null;
-    categories?: Array<{
-      id: string;
-      name: string | null;
-      game_type?: "SINGLES" | "DOUBLES" | null;
-      gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
-    }>;
-  }>>([]);
+      name: string;
+      category?: {
+        id: string;
+        name: string | null;
+        game_type?: "SINGLES" | "DOUBLES" | null;
+        gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+      } | null;
+      categories?: Array<{
+        id: string;
+        name: string | null;
+        game_type?: "SINGLES" | "DOUBLES" | null;
+        gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+      }>;
+    }>
+  >([]);
 
-  
   const {
     register,
     handleSubmit,
@@ -181,7 +190,7 @@ export default function DivisionCreateModal({
     trigger,
     formState: { errors, isValid },
   } = useForm<DivisionFormValues>({
-    resolver: zodResolver(divisionSchema),
+    resolver: zodResolver(divisionSchema as any),
     mode: "onChange",
     defaultValues: {
       name: "",
@@ -206,9 +215,10 @@ export default function DivisionCreateModal({
   const selectedSeasonId = watch("seasonId");
   const selectedSeason = seasons.find((s) => s.id === selectedSeasonId);
   // Get category from either category (singular) or first item in categories array
-  const seasonCategory = selectedSeason?.category || 
-    (selectedSeason?.categories && selectedSeason.categories.length > 0 
-      ? selectedSeason.categories[0] 
+  const seasonCategory =
+    selectedSeason?.category ||
+    (selectedSeason?.categories && selectedSeason.categories.length > 0
+      ? selectedSeason.categories[0]
       : null);
   const hasCategory = Boolean(
     seasonCategory?.game_type && seasonCategory?.gender_category
@@ -218,7 +228,9 @@ export default function DivisionCreateModal({
     const fetchSeasons = async () => {
       try {
         const res = await axiosInstance.get(endpoints.season.getAll);
-        const seasonsData = Array.isArray(res.data) ? res.data : res.data?.seasons ?? [];
+        const seasonsData = Array.isArray(res.data)
+          ? res.data
+          : res.data?.seasons ?? [];
         setSeasons(seasonsData);
       } catch (err: any) {
         try {
@@ -258,9 +270,15 @@ export default function DivisionCreateModal({
   // Auto-fill gameType and genderCategory when season is selected
   useEffect(() => {
     if (seasonCategory?.game_type && seasonCategory?.gender_category) {
-      const gameTypeLower = seasonCategory.game_type.toLowerCase() as "singles" | "doubles";
-      const genderCategoryLower = seasonCategory.gender_category.toLowerCase() as "male" | "female" | "mixed";
-      
+      const gameTypeLower = seasonCategory.game_type.toLowerCase() as
+        | "singles"
+        | "doubles";
+      const genderCategoryLower =
+        seasonCategory.gender_category.toLowerCase() as
+          | "male"
+          | "female"
+          | "mixed";
+
       setValue("gameType", gameTypeLower);
       setValue("genderCategory", genderCategoryLower);
       trigger(["gameType", "genderCategory"]);
@@ -288,8 +306,7 @@ export default function DivisionCreateModal({
             ? division.maxDoublesTeams
             : undefined,
         autoAssignmentEnabled: Boolean(division.autoAssignmentEnabled),
-        isActive:
-          division.isActive !== undefined ? division.isActive : true,
+        isActive: division.isActive !== undefined ? division.isActive : true,
         prizePoolTotal:
           division.prizePoolTotal !== undefined &&
           division.prizePoolTotal !== null
@@ -306,7 +323,7 @@ export default function DivisionCreateModal({
     if (!open) {
       resetModal();
     }
-  }, [open, isEditMode, division, resetModal]);
+  }, [open, isEditMode, division, resetModal, reset]);
 
   const handleNextToPreview = async () => {
     const valid = await trigger();
@@ -318,7 +335,9 @@ export default function DivisionCreateModal({
         .map((error: any) => error?.message)
         .filter(Boolean);
       if (errorMessages.length > 0) {
-        toast.error(errorMessages[0] || "Please fix form errors before previewing.");
+        toast.error(
+          errorMessages[0] || "Please fix form errors before previewing."
+        );
       } else {
         toast.error("Please fix form errors before previewing.");
       }
@@ -344,7 +363,7 @@ export default function DivisionCreateModal({
         isActive: Boolean(data.isActive),
       };
 
-      console.log("payload", payload)
+      console.log("payload", payload);
       const toNumberOrNull = (value: unknown) => {
         if (value === undefined || value === null || value === "") {
           return null;
@@ -377,7 +396,7 @@ export default function DivisionCreateModal({
         res = await axiosInstance.post(endpoints.division.create, payload);
         toast.success(res.data?.message ?? "Division created");
       }
-      
+
       onDivisionCreated?.();
       refreshNotifications();
       resetModal();
@@ -515,7 +534,14 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="seasonId"
-                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
+                      render={({
+                        field,
+                      }: {
+                        field: {
+                          value: string;
+                          onChange: (value: string) => void;
+                        };
+                      }) => (
                         <Select
                           value={field.value}
                           onValueChange={(val) => field.onChange(val)}
@@ -566,7 +592,14 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="divisionLevel"
-                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
+                      render={({
+                        field,
+                      }: {
+                        field: {
+                          value: string;
+                          onChange: (value: string) => void;
+                        };
+                      }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
@@ -594,13 +627,25 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="gameType"
-                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
+                      render={({
+                        field,
+                      }: {
+                        field: {
+                          value: string;
+                          onChange: (value: string) => void;
+                        };
+                      }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
                           disabled={hasCategory}
                         >
-                          <SelectTrigger className={cn("h-11 w-full", hasCategory && "opacity-50 cursor-not-allowed")}>
+                          <SelectTrigger
+                            className={cn(
+                              "h-11 w-full",
+                              hasCategory && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
                             <SelectValue placeholder="Select game type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -620,13 +665,25 @@ export default function DivisionCreateModal({
                     <Controller
                       control={control}
                       name="genderCategory"
-                      render={({ field }: { field: { value: string; onChange: (value: string) => void } }) => (
+                      render={({
+                        field,
+                      }: {
+                        field: {
+                          value: string;
+                          onChange: (value: string) => void;
+                        };
+                      }) => (
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
                           disabled={hasCategory}
                         >
-                          <SelectTrigger className={cn("h-11 w-full", hasCategory && "opacity-50 cursor-not-allowed")}>
+                          <SelectTrigger
+                            className={cn(
+                              "h-11 w-full",
+                              hasCategory && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
@@ -770,12 +827,18 @@ export default function DivisionCreateModal({
                     <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
                       <IconX className="h-2.5 w-2.5" />
                     </div>
-                    <span className="font-medium">Please fix the following errors:</span>
+                    <span className="font-medium">
+                      Please fix the following errors:
+                    </span>
                   </div>
                   <ul className="list-disc list-inside ml-6 space-y-1">
-                    {Object.entries(errors).map(([key, error]: [string, any]) => (
-                      <li key={key}>{error?.message || `${key} is invalid`}</li>
-                    ))}
+                    {Object.entries(errors).map(
+                      ([key, error]: [string, any]) => (
+                        <li key={key}>
+                          {error?.message || `${key} is invalid`}
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
               )}
