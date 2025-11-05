@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ import type {
   Thread,
 } from "@/components/chat/types";
 
-export default function ChatView() {
+function ChatViewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -304,5 +304,38 @@ export default function ChatView() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export default function ChatView() {
+  return (
+    <Suspense
+      fallback={
+        <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+              "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
+          <AppSidebar variant="inset" />
+          <SidebarInset>
+            <SiteHeader />
+            <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+              <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">Chat</h4>
+              <Card className="flex items-center justify-center h-[72vh]">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              </Card>
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      }
+    >
+      <ChatViewContent />
+    </Suspense>
   );
 }
