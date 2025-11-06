@@ -19,15 +19,24 @@ export interface ThreadMember {
   user: ChatUser;
 }
 
+export interface MessageReply {
+  id: string;
+  content: string;
+  sender: ChatUser;
+  // senderName: string;
+}
+
 export interface Message {
   id: string;
   threadId: string;
   senderId: string;
   content: string;
-  messageType: string;
   createdAt: string;
   sender: ChatUser;
   readBy?: any[];
+  repliesTo?: MessageReply;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Thread {
@@ -205,19 +214,24 @@ export function useMessages(threadId?: string) {
   }, [threadId]);
 
   const sendMessage = useCallback(
-    async (content: string, senderId: string) => {
+    async (content: string, senderId: string, repliesToId?: string) => {
       if (!threadId) return;
 
       try {
-        console.log("Sending message:", { threadId, senderId, content });
+        console.log("Sending message:", { threadId, senderId, content, repliesToId });
+
+        const payload: any = {
+          senderId,
+          content,
+        };
+        
+        if (repliesToId) {
+          payload.repliesToId = repliesToId;
+        }
 
         const response = await axiosInstance.post(
           endpoints.chat.sendMessage(threadId),
-          {
-            senderId,
-            content,
-            messageType: "text",
-          }
+          payload
         );
 
         console.log("Send message response:", response.data);
@@ -251,6 +265,49 @@ export function useMessages(threadId?: string) {
     [threadId]
   );
 
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!threadId) return;
+
+      try {
+        console.log("Deleting message:", messageId);
+
+        const response = await axiosInstance.delete(
+          endpoints.chat.deleteMessage(messageId)
+        );
+
+        console.log("Delete message response:", response.data);
+
+        // Optimistically update the UI
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  isDeleted: true,
+                  deletedAt: new Date().toISOString(),
+                  content: "This message has been deleted",
+                }
+              : msg
+          )
+        );
+
+        toast.success("Message deleted successfully");
+        return true;
+      } catch (err: any) {
+        console.error("Error deleting message:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to delete message";
+        toast.error(errorMessage);
+        throw err;
+      }
+    },
+    [threadId]
+  );
+
   // Socket event listeners for real-time messages
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -261,6 +318,25 @@ export function useMessages(threadId?: string) {
       // Only add message if it belongs to current thread
       if (message.threadId === threadId) {
         setMessages((prev) => [...prev, message]);
+      }
+    };
+
+    const handleMessageDeleted = (data: { messageId: string; threadId: string }) => {
+      console.log("🗑️ Message deleted:", data);
+
+      if (data.threadId === threadId) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === data.messageId
+              ? {
+                  ...msg,
+                  isDeleted: true,
+                  deletedAt: new Date().toISOString(),
+                  content: "This message has been deleted",
+                }
+              : msg
+          )
+        );
       }
     };
 
@@ -304,11 +380,13 @@ export function useMessages(threadId?: string) {
     };
 
     socket.on("new_message", handleNewMessage);
+    socket.on("message_deleted", handleMessageDeleted);
     socket.on("message_sent", handleMessageSent);
     socket.on("message_read", handleMessageRead);
 
     return () => {
       socket.off("new_message", handleNewMessage);
+      socket.off("message_deleted", handleMessageDeleted);
       socket.off("message_sent", handleMessageSent);
       socket.off("message_read", handleMessageRead);
     };
@@ -350,6 +428,7 @@ export function useMessages(threadId?: string) {
     loading,
     error,
     sendMessage,
+    deleteMessage,
     markAsRead,
     refetch: fetchMessages,
   };

@@ -108,16 +108,16 @@ export const SOCKET_EVENTS = {
 } as const;
 
 // Message Types
-export const MESSAGE_TYPES = {
-  TEXT: 'text',
-  IMAGE: 'image',
-  FILE: 'file',
-  AUDIO: 'audio',
-  VIDEO: 'video',
-  SYSTEM: 'system',
-} as const;
+// export const MESSAGE_TYPES = {
+//   TEXT: 'text',
+//   IMAGE: 'image',
+//   FILE: 'file',
+//   AUDIO: 'audio',
+//   VIDEO: 'video',
+//   SYSTEM: 'system',
+// } as const;
 
-export type MessageType = typeof MESSAGE_TYPES[keyof typeof MESSAGE_TYPES];
+// export type MessageType = typeof MESSAGE_TYPES[keyof typeof MESSAGE_TYPES];
 
 // Thread Types
 export const THREAD_TYPES = {

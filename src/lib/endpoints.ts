@@ -123,7 +123,7 @@ export const endpoints = {
     getMessages: (threadId: string) => `/api/chat/threads/${threadId}/messages`,
     markAsRead: (messageId: string) => `/api/chat/messages/${messageId}/read`,
     getAvailableUsers: (userId: string) => `/api/chat/threads/users/available/${userId}`,
-
+    deleteMessage: (messageId: string) => `/api/chat/threads/messages/${messageId}`,
     // Add contacts endpoints
     getContacts: (userId: string) => `/api/users/${userId}/contacts`,
     getAllUsers: "/api/users",
