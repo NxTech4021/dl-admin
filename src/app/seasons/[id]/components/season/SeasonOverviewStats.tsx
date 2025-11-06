@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Season } from "@/ZodSchema/season-schema";
+import { Season } from "@/constants/zod/season-schema";
 import {
   IconUsers,
   IconTrophy,

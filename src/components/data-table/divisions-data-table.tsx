@@ -25,7 +25,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { divisionSchema, Division } from "@/ZodSchema/division-schema";
+import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 import { z } from "zod";
 

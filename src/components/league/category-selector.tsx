@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { Category as CategorySchema } from "@/ZodSchema/category-schema";
+import { Category as CategorySchema } from "@/constants/zod/category-schema";
 
 interface CategorySelectorProps {
   value: string;

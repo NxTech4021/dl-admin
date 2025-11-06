@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSportComparisonData } from "@/data/mock-chart-data";
+import { getSportComparisonData } from "@/constants/data/mock-chart-data";
 
 const chartConfig = {
   payingMembers: {

@@ -37,7 +37,7 @@ import { IconLoader2, IconX } from "@tabler/icons-react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { Category } from "@/ZodSchema/category-schema";
+import { Category } from "@/constants/zod/category-schema";
 
 type GameType = "SINGLES" | "DOUBLES";
 type GenderType = "MALE" | "FEMALE" | "MIXED" | "MEN" | "WOMEN";

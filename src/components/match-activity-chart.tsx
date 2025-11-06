@@ -40,7 +40,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getMatchActivityData } from "@/data/mock-chart-data";
+import { getMatchActivityData } from "@/constants/data/mock-chart-data";
 
 const chartConfig = {
   tennisLeague: {

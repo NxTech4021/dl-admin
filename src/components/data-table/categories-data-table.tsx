@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/table";
 
 import axiosInstance from "@/lib/endpoints";
-import { categorySchema, Category } from "@/ZodSchema/category-schema";
+import { categorySchema, Category } from "@/constants/zod/category-schema";
 import { endpoints } from "@/lib/endpoints";
 import dynamic from "next/dynamic";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";

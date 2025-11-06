@@ -51,18 +51,14 @@ import {
   IconArrowsMinimize,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { League } from "@/ZodSchema/league-schema";
+import { League } from "@/constants/zod/league-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
-
+import { getSportLabel, getSportColor } from "@/constants/sports";
 import {
   formatTableDate,
   formatLocation,
   getStatusBadgeVariant,
-  getSportColor,
-  getSportLabel,
-  getGameTypeLabel,
-  getGameTypeOptionsForSport,
   LOADING_STATES,
   TABLE_ANIMATIONS,
   RESPONSIVE_CLASSES,

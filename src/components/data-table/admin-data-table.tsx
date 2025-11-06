@@ -21,8 +21,7 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from "@tanstack/react-table";
-import { z } from "zod";
+} from "@tanstack/react-table";;
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,25 +45,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
-
-// Admin schema
-export const adminSchema = z.object({
-  id: z.string(),
-  email: z.string().email(),
-  name: z.string(),
-  role: z.string().optional(),
-  status: z.enum(["PENDING", "ACTIVE", "SUSPENDED"]),
-  createdAt: z.string(),
-  image: z.string().optional(),
-  updatedAt: z.string().optional(),
-  expiresAt: z.string().optional(),
-});
+import { Admin } from "@/constants/zod/admin-schema";
+import { getStatusBadgeVariant, CUSTOM_BADGE_COLORS } from "./constants";
 
 type AdminsDataTableProps = {
   data: Admin[];
 };
 
-export type Admin = z.infer<typeof adminSchema>;
 
 const getInitials = (name: string) =>
   name
@@ -84,18 +71,6 @@ const handleResendInvite = async (adminId: string) => {
   }
 };
 
-const getStatusBadgeVariant = (status: Admin["status"]) => {
-  switch (status) {
-    case "ACTIVE":
-      return "bg-green-300 text-black-800";
-    case "PENDING":
-      return "bg-yellow-300 text-black-800";
-    case "SUSPENDED":
-      return "bg-red-300 text-white-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
 const columns: ColumnDef<Admin>[] = [
   {
     id: "select",
@@ -161,30 +136,22 @@ const columns: ColumnDef<Admin>[] = [
     },
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
+  accessorKey: "status",
+  header: "Status",
+  cell: ({ row }) => {
+    const status = row.original.status;
+    const customColor = CUSTOM_BADGE_COLORS.ADMIN_STATUS[status];
+    
+    return (
       <Badge
-        className={`capitalize ${getStatusBadgeVariant(row.original.status)}`}
+        variant={getStatusBadgeVariant('ADMIN', status)}
+        className={`capitalize ${customColor || ''}`}
       >
-        {row.original.status}
+        {status}
       </Badge>
-    ),
+    );
   },
-  // {
-  //   accessorKey: "role",
-  //   header: "Role",
-  //   cell: ({ row }) => {
-  //     const role = row.original.role
-  //     return role ? (
-  //       <Badge variant="outline" className="capitalize text-xs">
-  //         {role.toLowerCase()} {/* or just {role} if you don’t want lowercase */}
-  //       </Badge>
-  //     ) : (
-  //       <span className="text-muted-foreground text-xs italic">Pending</span>
-  //     )
-  //   },
-  // },
+},
   {
     id: "actions",
     cell: ({ row }) => {

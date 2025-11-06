@@ -29,8 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Membership } from "@/ZodSchema/season-schema";
-import { Division } from "@/ZodSchema/division-schema";
+import { Membership } from "@/constants/zod/season-schema";
+import { Division } from "@/constants/zod/division-schema";
 import {
   IconUser,
   IconStar,

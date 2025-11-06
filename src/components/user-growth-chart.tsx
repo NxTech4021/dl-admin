@@ -16,7 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { getUserGrowthData, getUserGrowthThisWeekData } from "@/data/mock-chart-data";
+import { getUserGrowthData, getUserGrowthThisWeekData } from "@/constants/data/mock-chart-data";
 
 // === Chart configuration
 const chartConfig = {

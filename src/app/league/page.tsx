@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { League, leagueSchema } from "@/ZodSchema/league-schema";
+import { League, leagueSchema } from "@/constants/zod/league-schema";
 import {
   IconTrophy,
   IconPlus,
@@ -159,7 +159,6 @@ export default function Page() {
 
   const leagues = data;
 
-  console.log("leagues Data", leagues);
   return (
     <SidebarProvider
       style={

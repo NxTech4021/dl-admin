@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Season, seasonSchema } from "@/ZodSchema/season-schema";
+import { Season, seasonSchema } from "@/constants/zod/season-schema";
 import {
   IconCalendar,
   IconPlus,
@@ -60,24 +60,32 @@ export default function Page() {
 
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
-    let response;
     try {
-      response = await axiosInstance.get(endpoints.season.getAll);
+      const response = await axiosInstance.get(endpoints.season.getAll);
 
-      console.log("seasons ", response.data);
-
-      // Handle ApiResponse structure from backend
-      if (
-        !response.data ||
-        !response.data.data ||
-        !Array.isArray(response.data.data)
-      ) {
-        console.log("No seasons data found in response");
+      let seasonsData: any[] = [];
+      
+      // Check if data is directly an array
+      if (Array.isArray(response.data)) {
+        seasonsData = response.data;
+      } 
+      // Check if data is wrapped in a data property
+      else if (response.data?.data && Array.isArray(response.data.data)) {
+        seasonsData = response.data.data;
+      }
+      // Check if there's a seasons property
+      else if (response.data?.seasons && Array.isArray(response.data.seasons)) {
+        seasonsData = response.data.seasons;
+      }
+      if (!seasonsData || seasonsData.length === 0) {
+        console.log("No seasons data found");
         setData([]);
         return;
       }
 
-      const parsedData = z.array(seasonSchema).parse(response.data.data);
+      // Validate and parse the data
+      const parsedData = z.array(seasonSchema).parse(seasonsData);
+      console.log("Parsed seasons:", parsedData);
       setData(parsedData);
     } catch (error) {
       console.error("Failed to fetch seasons:", error);
@@ -91,9 +99,9 @@ export default function Page() {
     fetchSeasons();
   }, [fetchSeasons]);
 
-  const handleSeasonCreated = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
+  // const handleSeasonCreated = () => {
+  //   setRefreshKey((prev) => prev + 1);
+  // };
 
   const handleViewSeason = (seasonId: string) => {
     router.push(`/seasons/${seasonId}`);

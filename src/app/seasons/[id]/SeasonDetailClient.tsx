@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { notFound } from "next/navigation";
-import { Season, seasonSchema } from "@/ZodSchema/season-schema";
-import { divisionSchema, Division } from "@/ZodSchema/division-schema";
+import { Season, seasonSchema } from "@/constants/zod/season-schema";
+import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { z } from "zod";
 import { toast } from "sonner";
