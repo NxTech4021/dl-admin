@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Season } from "@/ZodSchema/season-schema";
+import { Season } from "@/constants/zod/season-schema";
 import { format } from "date-fns";
 import { IconEdit, IconInfoCircle } from "@tabler/icons-react";
 import SeasonEditModal from "@/components/modal/season-edit-modal";

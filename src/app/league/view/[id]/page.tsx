@@ -50,42 +50,44 @@ import {
   formatLocation,
   FILTER_OPTIONS,
 } from "@/components/data-table/constants";
+import { getStatusBadgeVariant } from "@/components/data-table/constants";
+import { getSportLabel } from "@/constants/sports";
 
-function getStatusBadge(status: string) {
-  const variants: Record<string, { variant: string; className: string }> = {
-    ACTIVE: {
-      variant: "default",
-      className: "bg-green-500 hover:bg-green-600 text-white",
-    },
-    ONGOING: {
-      variant: "default",
-      className: "bg-green-500 hover:bg-green-600 text-white",
-    },
-    UPCOMING: {
-      variant: "secondary",
-      className: "bg-blue-500 hover:bg-blue-600 text-white",
-    },
-    FINISHED: { variant: "outline", className: "border-gray-400" },
-    INACTIVE: { variant: "outline", className: "border-gray-300" },
-    CANCELLED: { variant: "destructive", className: "" },
-    SUSPENDED: {
-      variant: "default",
-      className: "bg-orange-500 hover:bg-orange-600 text-white",
-    },
-  };
+// function getStatusBadge(status: string) {
+//   const variants: Record<string, { variant: string; className: string }> = {
+//     ACTIVE: {
+//       variant: "default",
+//       className: "bg-green-500 hover:bg-green-600 text-white",
+//     },
+//     ONGOING: {
+//       variant: "default",
+//       className: "bg-green-500 hover:bg-green-600 text-white",
+//     },
+//     UPCOMING: {
+//       variant: "secondary",
+//       className: "bg-blue-500 hover:bg-blue-600 text-white",
+//     },
+//     FINISHED: { variant: "outline", className: "border-gray-400" },
+//     INACTIVE: { variant: "outline", className: "border-gray-300" },
+//     CANCELLED: { variant: "destructive", className: "" },
+//     SUSPENDED: {
+//       variant: "default",
+//       className: "bg-orange-500 hover:bg-orange-600 text-white",
+//     },
+//   };
 
-  const config = variants[status] || { variant: "outline", className: "" };
-  return <Badge className={config.className}>{status}</Badge>;
-}
+//   const config = variants[status] || { variant: "outline", className: "" };
+//   return <Badge className={config.className}>{status}</Badge>;
+// }
 
-function getSportLabel(sport: string) {
-  const map: Record<string, string> = {
-    TENNIS: "Tennis",
-    PICKLEBALL: "Pickleball",
-    PADEL: "Padel",
-  };
-  return map[sport] || sport;
-}
+// function getSportLabel(sport: string) {
+//   const map: Record<string, string> = {
+//     TENNIS: "Tennis",
+//     PICKLEBALL: "Pickleball",
+//     PADEL: "Padel",
+//   };
+//   return map[sport] || sport;
+// }
 
 function formatDateTime(dateString: string) {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -685,11 +687,13 @@ export default function LeagueViewPage({
                           </h1>
                         )}
                         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                          {statusValue ? (
-                            getStatusBadge(statusValue)
-                          ) : (
-                            <Badge variant="outline">Not set</Badge>
-                          )}
+                            {statusValue ? (
+                              <Badge variant={getStatusBadgeVariant('LEAGUE', statusValue)}>
+                                {formatEnumLabel(statusValue)}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Not set</Badge>
+                            )}
                           <Badge
                             variant="outline"
                             className="flex items-center gap-1 font-normal"

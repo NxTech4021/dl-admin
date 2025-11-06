@@ -24,7 +24,7 @@ import {
   IconAlertCircle,
   IconEye
 } from '@tabler/icons-react';
-import { WithdrawalRequest } from '@/ZodSchema/season-schema';
+import { WithdrawalRequest } from '@/constants/zod/season-schema';
 import { toast } from 'sonner';
 
 interface WithdrawalRequestsCardProps {

@@ -50,25 +50,16 @@ export const STATUS_BADGE_VARIANTS = {
 
 
 export const CUSTOM_BADGE_COLORS = {
-  ADMIN_STATUS: {
-    ACTIVE: 'bg-green-300 text-black-800',
+   ADMIN_STATUS: {
+    ACTIVE: 'bg-green-500 text-white',
     PENDING: 'bg-yellow-300 text-black-800',
     SUSPENDED: 'bg-red-300 text-white-800',
   },
-} as const;
-
-// Sport Colors
-export const SPORT_COLORS = {
-  TENNIS: '#518516ff',
-  PICKLEBALL: '#8e41e6ff',
-  PADEL: '#3880c0ff',
-} as const;
-
-// Sport Display Names
-export const SPORT_LABELS = {
-  TENNIS: 'Tennis',
-  PICKLEBALL: 'Pickleball',
-  PADEL: 'Padel',
+  WITHDRAWAL_STATUS: {
+    PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    APPROVED: 'bg-green-100 text-green-800 border-green-200',
+    REJECTED: 'bg-red-100 text-red-800 border-red-200',
+  },
 } as const;
 
 // Game Type Labels
@@ -186,14 +177,6 @@ export const getStatusBadgeVariant = (
 ) => {
   const variants = STATUS_BADGE_VARIANTS[entity];
   return variants[status as keyof typeof variants] || 'outline';
-};
-
-export const getSportColor = (sport: string): string => {
-  return SPORT_COLORS[sport as keyof typeof SPORT_COLORS];
-};
-
-export const getSportLabel = (sport: string): string => {
-  return SPORT_LABELS[sport as keyof typeof SPORT_LABELS] || sport;
 };
 
 export const getGameTypeLabel = (gameType: string): string => {

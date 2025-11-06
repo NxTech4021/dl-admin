@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import DivisionCreateModal from "@/components/modal/division-create-modal";
-import { Division } from "@/ZodSchema/division-schema";
+import { Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 
 interface SeasonDivisionsCardProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Season } from '@/ZodSchema/season-schema';
+import { Season } from '@/constants/zod/season-schema';
 
 interface SeasonMetricsCardProps {
   season: Season;
