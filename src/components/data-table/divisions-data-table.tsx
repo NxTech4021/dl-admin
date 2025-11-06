@@ -82,6 +82,7 @@ import {
   RESPONSIVE_CLASSES,
   ACTION_MESSAGES,
   COLUMN_WIDTHS,
+  getStatusBadgeColor,
 } from "./constants";
 
 const DetailRow = ({
@@ -462,15 +463,12 @@ export function DivisionsDataTable() {
         header: "Status",
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant={getStatusBadgeVariant(
-                "DIVISION",
-                row.original.isActive ? "ACTIVE" : "INACTIVE"
-              )}
-              className="capitalize"
-            >
-              {row.original.isActive ? "Active" : "Inactive"}
-            </Badge>
+          <Badge
+            variant={getStatusBadgeVariant("DIVISION", row.original.isActive ? "ACTIVE" : "INACTIVE")}
+            className={`capitalize ${getStatusBadgeColor("DIVISION", row.original.isActive ? "ACTIVE" : "INACTIVE")}`}
+          >
+            {row.original.isActive ? "Active" : "Inactive"}
+          </Badge>
             {row.original.autoAssignmentEnabled && (
               <Badge variant="secondary" className="text-xs">
                 Auto assign

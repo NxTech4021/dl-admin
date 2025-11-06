@@ -18,8 +18,7 @@ export const COLUMN_WIDTHS = {
 
 // Badge Variants for Status
 export const STATUS_BADGE_VARIANTS = {
-  
-    SEASON: {
+  SEASON: {
     UPCOMING: 'secondary',
     ACTIVE: 'default',
     FINISHED: 'outline',
@@ -43,23 +42,59 @@ export const STATUS_BADGE_VARIANTS = {
   },
 
   DIVISION: {
-    ACTIVE: 'outline',
-    INACTIVE: 'default',
+    ACTIVE: 'default',
+    INACTIVE: 'outline',
+  },
+
+  WITHDRAWAL: {
+    PENDING: 'secondary',
+    APPROVED: 'default',
+    REJECTED: 'destructive',
   },
 } as const;
 
+// Centralized Color Palette for All Badges
+export const STATUS_BADGE_COLORS = {
+  SEASON: {
+    UPCOMING: 'bg-blue-500 hover:bg-blue-600 text-white border-transparent',
+    ACTIVE: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    FINISHED: 'bg-gray-400 hover:bg-gray-500 text-white border-gray-400',
+    CANCELLED: 'bg-red-500 hover:bg-red-600 text-white border-transparent',
+  },
+  
+  LEAGUE: {
+    ACTIVE: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    ONGOING: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    UPCOMING: 'bg-blue-500 hover:bg-blue-600 text-white border-transparent',
+    FINISHED: 'bg-gray-400 hover:bg-gray-500 text-white border-gray-400',
+    INACTIVE: 'bg-gray-300 hover:bg-gray-400 text-gray-700 border-gray-300',
+    CANCELLED: 'bg-red-500 hover:bg-red-600 text-white border-transparent',
+    SUSPENDED: 'bg-orange-500 hover:bg-orange-600 text-white border-transparent',
+  },
+  
+  ADMIN: {
+    PENDING: 'bg-yellow-300 hover:bg-yellow-400 text-gray-900 border-yellow-300',
+    ACTIVE: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    SUSPENDED: 'bg-red-400 hover:bg-red-500 text-white border-transparent',
+  },
 
+  DIVISION: {
+    ACTIVE: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    INACTIVE: 'bg-gray-300 hover:bg-gray-400 text-gray-700 border-gray-300',
+  },
+
+  WITHDRAWAL: {
+    PENDING: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-200',
+    APPROVED: 'bg-green-100 hover:bg-green-200 text-green-800 border-green-200',
+    REJECTED: 'bg-red-100 hover:bg-red-200 text-red-800 border-red-200',
+  },
+} as const;
+
+// Legacy support - keep for backward compatibility but mark as deprecated
+/** @deprecated Use STATUS_BADGE_COLORS instead */
 export const CUSTOM_BADGE_COLORS = {
-   ADMIN_STATUS: {
-    ACTIVE: 'bg-green-500 text-white',
-    PENDING: 'bg-yellow-300 text-black-800',
-    SUSPENDED: 'bg-red-300 text-white-800',
-  },
-  WITHDRAWAL_STATUS: {
-    PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    APPROVED: 'bg-green-100 text-green-800 border-green-200',
-    REJECTED: 'bg-red-100 text-red-800 border-red-200',
-  },
+  ADMIN_STATUS: STATUS_BADGE_COLORS.ADMIN,
+  WITHDRAWAL_STATUS: STATUS_BADGE_COLORS.WITHDRAWAL,
 } as const;
 
 // Game Type Labels
@@ -67,7 +102,6 @@ export const GAME_TYPE_LABELS = {
   SINGLES: 'Singles',
   DOUBLES: 'Doubles',
   MIXED: 'Mixed Doubles',
-  // Alternative casing
   singles: 'Singles',
   doubles: 'Doubles',
   mixed: 'Mixed Doubles',
@@ -145,7 +179,6 @@ export const TABLE_ICONS = {
   USER_X: 'IconUserX',
 } as const;
 
-
 export const ACTION_MESSAGES = {
   DELETE_CONFIRM: 'Are you sure you want to delete this item?',
   BULK_DELETE_CONFIRM: (count: number) => `Delete ${count} items requires confirmation`,
@@ -170,13 +203,51 @@ export const ACTION_MESSAGES = {
   },
 } as const;
 
-// Utility Functions
+// ===== UTILITY FUNCTIONS =====
+
+/**
+ * Get the badge variant for a given entity and status
+ * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param status - The status value
+ * @returns The badge variant
+ */
 export const getStatusBadgeVariant = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
   status: string
 ) => {
   const variants = STATUS_BADGE_VARIANTS[entity];
   return variants[status as keyof typeof variants] || 'outline';
+};
+
+/**
+ * Get the badge color classes for a given entity and status
+ * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param status - The status value
+ * @returns The color class string
+ */
+export const getStatusBadgeColor = (
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  status: string
+): string => {
+  const colors = STATUS_BADGE_COLORS[entity];
+  return colors[status as keyof typeof colors] || '';
+};
+
+/**
+ * Get complete badge props (variant + color) for a given entity and status
+ * Use this for the simplest implementation
+ * @param entity - The entity type
+ * @param status - The status value
+ * @returns Object with variant and className
+ */
+export const getStatusBadgeProps = (
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  status: string
+) => {
+  return {
+    variant: getStatusBadgeVariant(entity, status),
+    className: getStatusBadgeColor(entity, status),
+  };
 };
 
 export const getGameTypeLabel = (gameType: string): string => {
@@ -191,7 +262,6 @@ export const getGenderCategoryLabel = (category: string | null | undefined): str
   if (!category) return 'Missing Category';
   return GENDER_CATEGORY_LABELS[category as keyof typeof GENDER_CATEGORY_LABELS] || category;
 };
-
 
 export const formatTableDate = (date: Date | string | null | undefined): string => {
   if (!date) return 'Not set';

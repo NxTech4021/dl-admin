@@ -67,6 +67,7 @@ import {
   ACTION_MESSAGES,
   COLUMN_WIDTHS,
 } from "./constants";
+import { StatusBadge } from "../ui/status-badge";
 
 // Season Name Cell Component
 const SeasonNameCell = ({ season }: { season: Season }) => {
@@ -271,12 +272,13 @@ const columns: ColumnDef<Season>[] = [
     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     
     return (
-      <Badge 
-        variant={getStatusBadgeVariant('SEASON', status)} 
-        className={`capitalize ${isActive ? 'bg-green-500 text-white border-transparent' : ''}`}
-      >
-        {statusLabel}
-      </Badge>
+      // <Badge 
+      //   variant={getStatusBadgeVariant('SEASON', status)} 
+      //   className={`capitalize ${isActive ? 'bg-green-500 text-white border-transparent' : ''}`}
+      // >
+      //   {statusLabel}
+      // </Badge>
+      <StatusBadge entity="SEASON" status={status} />
     );
   },
 },
