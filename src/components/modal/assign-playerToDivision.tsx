@@ -19,8 +19,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { IconLoader2 } from "@tabler/icons-react";
-import { Membership } from "@/ZodSchema/season-schema";
-import { Division } from "@/ZodSchema/division-schema";
+import { Membership } from "@/constants/zod/season-schema";
+import { Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";

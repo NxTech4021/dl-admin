@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/hover-card";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { sponsorSchema, Sponsor } from "@/ZodSchema/sponsor-schema";
+import { sponsorSchema, Sponsor } from "@/constants/zod/sponsor-schema";
 import dynamic from "next/dynamic";
 
 const SponsorEditModal = dynamic(

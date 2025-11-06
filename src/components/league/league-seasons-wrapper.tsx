@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
-import { Season } from "@/ZodSchema/season-schema";
+import { Season } from "@/constants/zod/season-schema";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";

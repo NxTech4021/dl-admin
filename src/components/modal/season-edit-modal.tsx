@@ -33,7 +33,7 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { Season } from "@/ZodSchema/season-schema";
+import { Season } from "@/constants/zod/season-schema";
 
 interface SeasonFormData {
   name: string;

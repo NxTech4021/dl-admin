@@ -37,7 +37,7 @@ import { IconLoader2, IconX } from "@tabler/icons-react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { Sponsor } from "@/ZodSchema/sponsor-schema";
+import { Sponsor } from "@/constants/zod/sponsor-schema";
 
 type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
 

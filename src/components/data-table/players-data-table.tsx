@@ -57,8 +57,9 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Player, playerSchema } from "@/ZodSchema/player-schema";
+import { Player, playerSchema } from "@/constants/zod/player-schema";
 import axios from "axios";
+import { getSportLabel, getSportColor } from "@/constants/sports";
 
 import {
   formatTableDate,
@@ -67,10 +68,6 @@ import {
   LOADING_STATES,
   TABLE_ANIMATIONS,
   RESPONSIVE_CLASSES,
-  ACTION_MESSAGES,
-  COLUMN_WIDTHS,
-  getSportColor,
-  getSportLabel,
 } from './constants';
 
 
