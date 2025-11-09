@@ -25,6 +25,10 @@ export const fetcher = async (args: unknown) => {
 };
 
 export const endpoints = {
+  user: {
+    trackLogin: "/api/admin/activity/tracklogin",
+  },
+
   admin: {
     getInvite: "/api/admin/get-invite",
     getSession: "/api/admin/session",
