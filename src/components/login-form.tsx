@@ -4,6 +4,7 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -27,6 +28,7 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter ();
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -51,7 +53,7 @@ export function LoginForm({
     }
 
     console.log("✅ SUCCESS BETTER AUTH", data);
-    window.location.href = "/dashboard";
+    router.push("/dashboard");
   } catch (err) {
     console.error("Login error:", err);
     toast.error("Something went wrong. Please try again.");
