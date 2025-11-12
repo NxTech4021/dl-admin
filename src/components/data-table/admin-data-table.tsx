@@ -22,7 +22,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";;
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -46,7 +45,7 @@ import { useEffect, useState } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import { Admin } from "@/constants/zod/admin-schema";
-import { getStatusBadgeVariant, CUSTOM_BADGE_COLORS } from "./constants";
+import { StatusBadge } from "../ui/status-badge";
 
 type AdminsDataTableProps = {
   data: Admin[];
@@ -140,16 +139,7 @@ const columns: ColumnDef<Admin>[] = [
   header: "Status",
   cell: ({ row }) => {
     const status = row.original.status;
-    const customColor = CUSTOM_BADGE_COLORS.ADMIN_STATUS[status];
-    
-    return (
-      <Badge
-        variant={getStatusBadgeVariant('ADMIN', status)}
-        className={`capitalize ${customColor || ''}`}
-      >
-        {status}
-      </Badge>
-    );
+    return <StatusBadge entity="ADMIN" status={status} />;
   },
 },
   {

@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 // UI Components
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card } from "@/components/ui/card";
-// import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 // Chat Components
 import ChatNav from "@/components/chat/chat-nav";
@@ -35,6 +35,9 @@ function ChatViewContent() {
   const user = session?.user;
 
   const selectedConversationId = searchParams.get("id") || "";
+  
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState<any>(null);
 
   // Fetch data
   const {
@@ -48,6 +51,7 @@ function ChatViewContent() {
     messages,
     loading: messagesLoading,
     sendMessage,
+    deleteMessage, // Add this from the hook
     error: messagesError,
     refetch: refetchMessages,
   } = useMessages(selectedConversationId || undefined);
@@ -63,6 +67,11 @@ function ChatViewContent() {
       toast.error("Failed to load messages");
     }
   }, [threadsError, messagesError]);
+
+  // Clear reply when conversation changes
+  useEffect(() => {
+    setReplyingTo(null);
+  }, [selectedConversationId]);
 
   // Transform threads to conversations for UI
   const conversations: Conversation[] = threads.map((thread: Thread) => {
@@ -88,7 +97,7 @@ function ChatViewContent() {
       image: member.user.image,
       displayName: member.user.name,
       photoURL: member.user.image,
-      status: "online" as const, // TODO: Implement real status
+      status: "online" as const,
       role: member.role,
       isCurrentUser: member.userId === user?.id,
     }));
@@ -126,7 +135,36 @@ function ChatViewContent() {
   const participants = currentConversation?.participants || [];
   const showDetails = !!currentConversation;
 
-  // Handlers
+  // Handler for replying to a message
+  const handleReply = useCallback((message: any) => {
+    setReplyingTo(message);
+  }, []);
+
+  // Handler for canceling reply
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+  }, []);
+
+  // Handler for deleting a message
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!deleteMessage) {
+        toast.error("Delete functionality not available");
+        return;
+      }
+
+      try {
+        await deleteMessage(messageId);
+        toast.success("Message deleted successfully");
+      } catch (error) {
+        console.error("Failed to delete message:", error);
+        // Error toast is already shown in the hook
+      }
+    },
+    [deleteMessage]
+  );
+
+  // Handler for sending messages with reply support
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!user?.id || !selectedConversationId) {
@@ -135,13 +173,17 @@ function ChatViewContent() {
       }
 
       try {
-        await sendMessage(content, user.id);
+        // Include replyToId if replying
+        await sendMessage(content, user.id, replyingTo?.id);
+        
+        // Clear reply after sending
+        setReplyingTo(null);
       } catch (error) {
         console.error("Failed to send message:", error);
         toast.error("Failed to send message. Please try again.");
       }
     },
-    [sendMessage, user?.id, selectedConversationId]
+    [sendMessage, user?.id, selectedConversationId, replyingTo]
   );
 
   const handleConversationSelect = useCallback(
@@ -211,6 +253,7 @@ function ChatViewContent() {
     </div>
   );
 
+
   const renderMessages = () => {
     if (!selectedConversationId || !currentConversation) {
       return (
@@ -234,11 +277,16 @@ function ChatViewContent() {
           participants={participants}
           loading={messagesLoading}
           threadId={selectedConversationId}
+          onReply={handleReply}
+          onDelete={handleDeleteMessage}
         />
+        
         <ChatMessageInput
           selectedConversationId={selectedConversationId}
           disabled={!selectedConversationId || messagesLoading}
           onSendMessage={handleSendMessage}
+          replyingTo={replyingTo} 
+          onCancelReply={handleCancelReply}
         />
       </div>
     );

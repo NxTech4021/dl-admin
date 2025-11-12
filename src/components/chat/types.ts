@@ -42,11 +42,14 @@ export interface Message {
   threadId: string;
   senderId: string;
   content: string;
-  messageType: string;
   createdAt: string;
-  updatedAt?: string;
-  sender: ChatUser;
-  readBy?: MessageRead[];
+  isDeleted?: boolean;
+  sender: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  repliesTo?: Message; 
 }
 
 // Message Read Status
@@ -201,7 +204,6 @@ export interface CreateThreadData {
 export interface SendMessageData {
   senderId: string;
   content: string;
-  messageType?: string;
 }
 
 export interface ChatNavProps {
@@ -329,15 +331,6 @@ export interface MessagesApiResponse extends ChatApiResponse<Message[]> {}
 export interface UsersApiResponse extends ChatApiResponse<AvailableUser[]> {}
 export interface CreateThreadApiResponse extends ChatApiResponse<Thread> {}
 export interface SendMessageApiResponse extends ChatApiResponse<Message> {}
-
-// Enums
-export enum MessageType {
-  TEXT = "text",
-  IMAGE = "image",
-  FILE = "file",
-  AUDIO = "audio",
-  VIDEO = "video",
-}
 
 export enum ThreadMemberRole {
   ADMIN = "admin",

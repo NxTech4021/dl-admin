@@ -66,6 +66,7 @@ import {
   FILTER_OPTIONS,
   formatCount,
 } from "./constants";
+import { StatusBadge } from "../ui/status-badge";
 
 // League Name Cell Component
 const LeagueNameCell = ({ league }: { league: League }) => {
@@ -186,12 +187,13 @@ const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
       cell: ({ row }) => {
         const status = row.original.status;
         return (
-          <Badge
-            variant={getStatusBadgeVariant("LEAGUE", status)}
-            className="capitalize"
-          >
-            {status.toLowerCase()}
-          </Badge>
+          // <Badge
+          //   variant={getStatusBadgeVariant("LEAGUE", status)}
+          //   className="capitalize"
+          // >
+          //   {status.toLowerCase()}
+          // </Badge>
+          <StatusBadge entity="LEAGUE" status={status} />
         );
       },
     },

@@ -63,6 +63,10 @@ export default function Page() {
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
 
+      console.log("response", response)
+      console.log("response data", response.data)
+      console.log("response without destructure ", response.data.data)
+
       let seasonsData: any[] = [];
       
       // Check if data is directly an array

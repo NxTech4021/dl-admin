@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Send, Smile } from "lucide-react";
+import { Send, Smile, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,12 +24,16 @@ interface ChatMessageInputProps {
   selectedConversationId?: string;
   disabled?: boolean;
   onSendMessage?: (content: string) => Promise<void>;
+  replyingTo?: any;
+  onCancelReply?: () => void;
 }
 
 export default function ChatMessageInput({
   selectedConversationId,
   disabled = false,
   onSendMessage,
+  replyingTo,
+  onCancelReply,
 }: ChatMessageInputProps) {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -38,6 +42,13 @@ export default function ChatMessageInput({
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const { setTyping } = useTypingIndicator(selectedConversationId);
+
+  // Auto-focus when replying
+  useEffect(() => {
+    if (replyingTo && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [replyingTo]);
 
   const handleSend = useCallback(async () => {
     if (!message.trim() || !onSendMessage || isSending) return;
@@ -49,6 +60,7 @@ export default function ChatMessageInput({
 
     try {
       await onSendMessage(messageToSend);
+      // Reply will be cleared in the parent component after successful send
     } catch (error) {
       console.error("Failed to send message:", error);
       setMessage(messageToSend);
@@ -63,8 +75,13 @@ export default function ChatMessageInput({
         event.preventDefault();
         handleSend();
       }
+      // ESC to cancel reply
+      if (event.key === "Escape" && replyingTo && onCancelReply) {
+        event.preventDefault();
+        onCancelReply();
+      }
     },
-    [handleSend]
+    [handleSend, replyingTo, onCancelReply]
   );
 
   const adjustTextareaHeight = useCallback(() => {
@@ -138,91 +155,125 @@ export default function ChatMessageInput({
 
   const isDisabled = disabled || !selectedConversationId || isSending;
 
-  return (
-    <div className="border-t bg-background px-4 py-3">
-      <div className="flex items-center gap-3">
-        {/* Attachment Button */}
-        {/* <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-          disabled={isDisabled}
-        >
-          <Paperclip className="h-4 w-4" />
-        </Button> */}
+  // Reply Preview Component
+  const renderReplyPreview = () => {
+    if (!replyingTo) return null;
 
-        {/* Message Input */}
-        <div className="flex-1 relative">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              selectedConversationId
-                ? "Type a message..."
-                : "Select a conversation to start messaging"
-            }
-            className={cn(
-              "min-h-[40px] max-h-[120px] resize-none pr-12 py-2.5",
-              "border-border focus:border-primary"
-            )}
-            disabled={isDisabled}
-            rows={1}
-          />
+    return (
+      <div className="border-t bg-muted/30 px-4 py-3">
+        <div className="flex items-start gap-3">
+          {/* Reply indicator line */}
+          <div className="w-1 bg-primary rounded-full h-12 flex-shrink-0 mt-1"></div>
 
-          {/* Emoji Button */}
-          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-            <PopoverTrigger asChild>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-primary">
+                Replying to {replyingTo.sender?.name || "User"}
+              </p>
               <Button
+                size="sm"
                 variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                disabled={isDisabled}
+                onClick={onCancelReply}
+                className="h-6 w-6 p-0 flex-shrink-0 hover:bg-muted-foreground/20"
               >
-                <Smile className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0 border-none shadow-lg"
-              side="top"
-              align="end"
-              sideOffset={5}
-            >
-              <EmojiPicker
-                onEmojiClick={handleEmojiClick}
-                autoFocusSearch={false}
-                height={400}
-                width={350}
-                previewConfig={{
-                  showPreview: false,
-                }}
-                skinTonesDisabled
-                searchDisabled={false}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+            </div>
 
-        {/* Send Button */}
-        <Button
-          onClick={handleSend}
-          disabled={isDisabled || !message.trim()}
-          size="icon"
-          className={cn(
-            "h-10 w-10 flex-shrink-0 bg-brand-light text-white",
-            "hover:bg-brand-dark transition-colors duration-200",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            "disabled:hover:bg-brand-light"
-          )}
-        >
-          <Send
+            <div className="bg-background/50 rounded-lg px-3 py-2 border">
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {replyingTo.content || "Message"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-background">
+      {/* Reply Preview */}
+      {renderReplyPreview()}
+
+      {/* Message Input */}
+      <div className="border-t px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Message Input */}
+          <div className="flex-1 relative">
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                replyingTo
+                  ? `Reply to ${replyingTo.sender?.name || "message"}...`
+                  : selectedConversationId
+                  ? "Type a message..."
+                  : "Select a conversation to start messaging"
+              }
+              className={cn(
+                "min-h-[40px] max-h-[120px] resize-none pr-12 py-2.5",
+                "border-border focus:border-primary"
+              )}
+              disabled={isDisabled}
+              rows={1}
+            />
+
+            {/* Emoji Button */}
+            <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                  disabled={isDisabled}
+                >
+                  <Smile className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0 border-none shadow-lg"
+                side="top"
+                align="end"
+                sideOffset={5}
+              >
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  autoFocusSearch={false}
+                  height={400}
+                  width={350}
+                  previewConfig={{
+                    showPreview: false,
+                  }}
+                  skinTonesDisabled
+                  searchDisabled={false}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Send Button */}
+          <Button
+            onClick={handleSend}
+            disabled={isDisabled || !message.trim()}
+            size="icon"
             className={cn(
-              "h-4 w-4 transition-transform",
-              isSending && "animate-pulse"
+              "h-10 w-10 flex-shrink-0 bg-brand-light text-white",
+              "hover:bg-brand-dark transition-colors duration-200",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              "disabled:hover:bg-brand-light"
             )}
-          />
-        </Button>
+          >
+            <Send
+              className={cn(
+                "h-4 w-4 transition-transform",
+                isSending && "animate-pulse"
+              )}
+            />
+          </Button>
+        </div>
       </div>
     </div>
   );

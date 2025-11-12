@@ -4,6 +4,7 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 export function LoginForm({
   className,
@@ -26,85 +28,40 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter ();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // setError("");
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
+  try {
     const { data, error } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: "/dashboard",
     });
 
     if (error) {
-      console.log(error);
       toast.error(error.message || error?.statusText);
-      setLoading(false);
       return;
     }
 
-    console.log("SUCCESS BETTER AUTH", data);
+    // Track login on backend
+    if (data?.user?.id) {
+      await axiosInstance.put(endpoints.user.trackLogin, {
+        userId: data.user.id,
+      });
+    }
+
+    console.log("✅ SUCCESS BETTER AUTH", data);
+    router.push("/dashboard");
+  } catch (err) {
+    console.error("Login error:", err);
+    toast.error("Something went wrong. Please try again.");
+  } finally {
     setLoading(false);
+  }
+};
 
-    // if (error) {
-    //   toast.error("Error login");
-    //   return;
-    //   console.log("ERROR BETTER AUTH", error);
-    // }
-
-    // try {
-    //   const response = await axios.post(
-    //     `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/adminlogin`,
-    //     { email, password },
-    //     {
-    //       withCredentials: true, // ensures cookies are sent/received
-    //     }
-    //   );
-
-    //   const { data } = response;
-    //   console.log("Login response:", data);
-
-    //   if (data) {
-    //     // Redirect to dashboard on successful login
-    //     router.push("/");
-    //     router.refresh();
-    //   }
-    // } catch (err: any) {
-    //   // Extract error message from backend response
-    //   if (err.response?.data?.message) {
-    //     // Use the specific error message from the backend
-    //     const backendMessage = err.response.data.message;
-    //     if (
-    //       backendMessage === "Invalid credentials" ||
-    //       backendMessage === "Email and password are required"
-    //     ) {
-    //       setError("Wrong email or password");
-    //     } else if (backendMessage === "Sorry you do not have permission") {
-    //       setError("You don't have permission to access this admin panel");
-    //     } else {
-    //       setError(backendMessage);
-    //     }
-    //   } else if (
-    //     err.response?.status === 400 ||
-    //     err.response?.status === 401 ||
-    //     err.response?.status === 403
-    //   ) {
-    //     setError("Wrong email or password");
-    //   } else if (
-    //     err.code === "ECONNREFUSED" ||
-    //     err.message.includes("Network Error")
-    //   ) {
-    //     setError("Unable to connect to server. Please try again later.");
-    //   } else {
-    //     setError("An unexpected error occurred. Please try again.");
-    //   }
-    //   console.error("Login error:", err);
-    // } finally {
-    //   setLoading(false);
-    // }
-  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>

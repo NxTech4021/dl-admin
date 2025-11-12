@@ -6,27 +6,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { isToday, isYesterday, format } from 'date-fns';
 import ChatMessageItem from './chat-message-item';
 import TypingIndicator from './typing-indicator';
+import { Message } from './types';
 import { Loader2 } from 'lucide-react';
 
-interface Message {
-  id: string;
-  threadId: string;
-  senderId: string;
-  content: string;
-  messageType: string;
-  createdAt: string;
-  sender: {
-    id: string;
-    name: string;
-    image?: string;
-  };
-}
+// interface Message {
+//   id: string;
+//   threadId: string;
+//   senderId: string;
+//   content: string;
+//   createdAt: string;
+//   sender: {
+//     id: string;
+//     name: string;
+//     image?: string;
+//   };
+//   replyTo?: any;
+//   isDeleted?: boolean;
+// }
 
 interface ChatMessageListProps {
   messages: Message[];
   participants: any[];
   loading?: boolean;
   threadId?: string;
+  onReply?: (message: any) => void;
+  onDelete?: (messageId: string) => void;
 }
 
 const MessageSkeleton = () => (
@@ -64,7 +68,9 @@ export default function ChatMessageList({
   messages = [], 
   participants = [],
   loading = false,
-  threadId 
+  threadId,
+  onReply,
+  onDelete,
 }: ChatMessageListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -148,6 +154,8 @@ export default function ChatMessageList({
                   key={message.id} 
                   message={message} 
                   participants={participants}
+                  onReply={onReply}
+                  onDelete={onDelete}
                 />
               ))}
             </div>
@@ -170,6 +178,7 @@ export default function ChatMessageList({
         <button
           onClick={scrollToBottom}
           className="absolute bottom-4 right-4 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:bg-primary/90 transition-colors"
+          aria-label="Scroll to bottom"
         >
           <svg 
             className="h-4 w-4" 
