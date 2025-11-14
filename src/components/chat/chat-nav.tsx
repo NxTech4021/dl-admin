@@ -22,7 +22,7 @@ import type {
   Conversation,
   UseCollapseNavReturn,
   UseBooleanReturn,
-} from "./types";
+} from "../../constants/types/chat";
 
 // Components
 import ChatNavAccount from "./chat-nav-account";

@@ -53,42 +53,6 @@ import {
 import { getStatusBadgeVariant } from "@/components/data-table/constants";
 import { getSportLabel } from "@/constants/sports";
 
-// function getStatusBadge(status: string) {
-//   const variants: Record<string, { variant: string; className: string }> = {
-//     ACTIVE: {
-//       variant: "default",
-//       className: "bg-green-500 hover:bg-green-600 text-white",
-//     },
-//     ONGOING: {
-//       variant: "default",
-//       className: "bg-green-500 hover:bg-green-600 text-white",
-//     },
-//     UPCOMING: {
-//       variant: "secondary",
-//       className: "bg-blue-500 hover:bg-blue-600 text-white",
-//     },
-//     FINISHED: { variant: "outline", className: "border-gray-400" },
-//     INACTIVE: { variant: "outline", className: "border-gray-300" },
-//     CANCELLED: { variant: "destructive", className: "" },
-//     SUSPENDED: {
-//       variant: "default",
-//       className: "bg-orange-500 hover:bg-orange-600 text-white",
-//     },
-//   };
-
-//   const config = variants[status] || { variant: "outline", className: "" };
-//   return <Badge className={config.className}>{status}</Badge>;
-// }
-
-// function getSportLabel(sport: string) {
-//   const map: Record<string, string> = {
-//     TENNIS: "Tennis",
-//     PICKLEBALL: "Pickleball",
-//     PADEL: "Padel",
-//   };
-//   return map[sport] || sport;
-// }
-
 function formatDateTime(dateString: string) {
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",

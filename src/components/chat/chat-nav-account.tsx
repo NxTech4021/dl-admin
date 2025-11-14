@@ -19,7 +19,8 @@ import {
   type UserStatus 
 } from './constants';
 
-import { ChatNavAccountProps } from './types';
+import { ChatNavAccountProps } from '../../constants/types/chat';
+
 
 
 export default function ChatNavAccount({ 

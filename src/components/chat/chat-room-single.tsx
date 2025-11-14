@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronDown, ChevronRight, MapPin, Phone, Mail, User } from "lucide-react"
-import { ChatRoomSingleProps } from "./types"
+import { ChatRoomSingleProps } from "../../constants/types/chat"
 import { getStatusColor } from "./constants"
 
 const getInitials = (name: string) => {

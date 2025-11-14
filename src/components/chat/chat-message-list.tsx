@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { isToday, isYesterday, format } from 'date-fns';
 import ChatMessageItem from './chat-message-item';
 import TypingIndicator from './typing-indicator';
-import { Message } from './types';
+import { Message } from '../../constants/types/chat';
 import { Loader2 } from 'lucide-react';
 
 // interface Message {
