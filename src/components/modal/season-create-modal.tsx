@@ -38,12 +38,14 @@ import {
   ChevronsUpDown,
   Plus,
 } from "lucide-react";
+import { IconBuilding } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Badge } from "../ui/badge";
 import { Category } from "../league/league-seasons-wrapper";
 import CategoryCreateModal from "./category-create-modal";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SeasonFormData {
   name: string;
@@ -57,23 +59,9 @@ interface SeasonFormData {
   paymentRequired: boolean;
   promoCodeSupported: boolean;
   withdrawalEnabled: boolean;
+  hasSponsor: boolean;
+  existingSponsorId: string;
 }
-
-// interface Category {
-//   id: string;
-//   name: string | null;
-//   genderRestriction: string;
-//   matchFormat: string | null;
-//   game_type: string | null;
-//   leagues: Array<{
-//     id: string;
-//     name: string;
-//   }>;
-//   seasons: Array<{
-//     id: string;
-//     name: string;
-//   }>;
-// }
 
 interface DateErrors {
   startDate?: string;
@@ -92,7 +80,7 @@ interface SeasonCreateModalProps {
 
 type ToggleFields = Extract<
   keyof SeasonFormData,
-  "isActive" | "paymentRequired" | "promoCodeSupported" | "withdrawalEnabled"
+  "isActive" | "paymentRequired" | "promoCodeSupported" | "withdrawalEnabled" | "hasSponsor"
 >;
 type DateFields = Extract<
   keyof SeasonFormData,
@@ -120,6 +108,13 @@ export default function SeasonCreateModal({
   // Category creation state
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
 
+  // Sponsor state
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(false);
+  const [sponsorInputValue, setSponsorInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSponsors, setFilteredSponsors] = useState<any[]>([]);
+
   const [form, setForm] = useState<SeasonFormData>({
     name: "",
     startDate: undefined,
@@ -132,7 +127,37 @@ export default function SeasonCreateModal({
     paymentRequired: false,
     promoCodeSupported: false,
     withdrawalEnabled: false,
+    hasSponsor: false, // Add this
+    existingSponsorId: "", // Add this
   });
+
+  // Fetch sponsors when hasSponsor is enabled
+  useEffect(() => {
+    console.log("hasSponsor value:", form.hasSponsor);
+    if (form.hasSponsor) {
+      console.log("Fetching sponsors...");
+      setSponsorsLoading(true);
+      axiosInstance
+        .get(endpoints.sponsors.getAll)
+        .then((res) => {
+          console.log("Sponsors response:", res.data);
+          const api = res.data;
+          const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as any[];
+          const mapped = sponsorships.map((s: any) => ({
+            id: s.id,
+            name: s.sponsoredName || "Unnamed Sponsor",
+          }));
+          setSponsors(mapped);
+          console.log("Mapped sponsors:", mapped);
+        })
+        .catch((error) => {
+          console.error("Error fetching sponsors:", error);
+          setSponsors([]);
+          toast.error("Failed to load sponsors");
+        })
+        .finally(() => setSponsorsLoading(false));
+    }
+  }, [form.hasSponsor]);
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -165,9 +190,40 @@ export default function SeasonCreateModal({
     );
   }, [allCategories, categorySearch]);
 
+  // Handle sponsor input change
+  const handleSponsorInputChange = (value: string) => {
+    setSponsorInputValue(value);
+
+    if (value.trim() === "") {
+      setFilteredSponsors([]);
+      setShowSuggestions(false);
+      setForm((prev) => ({ ...prev, existingSponsorId: "" }));
+      return;
+    }
+
+    const filtered = sponsors.filter((sponsor) =>
+      sponsor.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredSponsors(filtered);
+    setShowSuggestions(true);
+  };
+
+  // Handle sponsor selection
+  const handleSponsorSelect = (sponsor: any) => {
+    setSponsorInputValue(sponsor.name);
+    setForm((prev) => ({ ...prev, existingSponsorId: sponsor.id }));
+    setShowSuggestions(false);
+  };
+
+  // Handle input blur
+  const handleSponsorInputBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
   // Handle category created callback
   const handleCategoryCreated = async () => {
-    // Refresh categories list
     try {
       const response = await axiosInstance.get(endpoints.categories.getAll);
       if (response.status === 200) {
@@ -175,13 +231,11 @@ export default function SeasonCreateModal({
         const categoriesData = result.data || [];
         setAllCategories(categoriesData);
 
-        // Auto-select the most recently created category
         if (categoriesData.length > 0) {
-          // Sort by createdAt if available, otherwise use the last item
           const sortedCategories = [...categoriesData].sort((a, b) => {
             const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return bDate - aDate; // Most recent first
+            return bDate - aDate;
           });
           const latestCategory = sortedCategories[0];
 
@@ -215,11 +269,16 @@ export default function SeasonCreateModal({
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
+      hasSponsor: false,
+      existingSponsorId: "",
     });
     setError("");
     setCategorySearch("");
     setIsCategoryDropdownOpen(false);
     setIsCreateCategoryOpen(false);
+    setSponsorInputValue("");
+    setShowSuggestions(false);
+    setFilteredSponsors([]);
   };
 
   // Helper function to get sport type badge variant
@@ -342,20 +401,27 @@ export default function SeasonCreateModal({
         throw new Error(errorMessage);
       }
 
-      const seasonData = {
+      const seasonData: any = {
         name: form.name,
         description: form.description || null,
         entryFee: Number(form.entryFee),
         startDate: form.startDate!.toISOString(),
         endDate: form.endDate!.toISOString(),
         regiDeadline: form.regiDeadline!.toISOString(),
-        categoryId: form.categoryId, // Backend now accepts single categoryId
+        categoryId: form.categoryId,
         leagueIds: [leagueId],
         isActive: form.isActive,
         paymentRequired: form.paymentRequired,
         promoCodeSupported: form.promoCodeSupported,
         withdrawalEnabled: form.withdrawalEnabled,
       };
+
+      // Add sponsor if selected
+      if (form.hasSponsor && form.existingSponsorId) {
+        seasonData.sponsorId = form.existingSponsorId;
+      }
+
+      console.log("Season data being sent:", seasonData);
 
       const response = await axiosInstance.post(
         endpoints.season.create,
@@ -388,7 +454,8 @@ export default function SeasonCreateModal({
         form.endDate &&
         form.regiDeadline &&
         form.entryFee &&
-        Object.keys(dateErrors).length === 0
+        Object.keys(dateErrors).length === 0 &&
+        (!form.hasSponsor || form.existingSponsorId) // Sponsor validation
     );
   }, [form, dateErrors]);
 
@@ -592,6 +659,88 @@ export default function SeasonCreateModal({
                 </div>
               </div>
 
+              {/* Sponsor Section */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="hasSponsor"
+                    checked={form.hasSponsor}
+                    onCheckedChange={(checked) =>
+                      handleChange("hasSponsor", checked as boolean)
+                    }
+                  />
+                  <Label
+                    htmlFor="hasSponsor"
+                    className="text-sm font-medium flex items-center gap-2"
+                  >
+                    <IconBuilding className="h-4 w-4" />
+                    This season has a sponsor
+                  </Label>
+                </div>
+
+                {form.hasSponsor && (
+                  <div className="space-y-4 pl-6 border-l-2 border-primary/20 bg-muted/30 p-4 rounded-lg">
+                    <div className="space-y-2 relative">
+                      <Label htmlFor="existingSponsor" className="text-sm font-medium">
+                        Select Existing Sponsor *
+                      </Label>
+                      {sponsorsLoading ? (
+                        <div className="flex items-center justify-center h-11 border rounded-md">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-muted-foreground">
+                            Loading sponsors...
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <Input
+                            id="existingSponsor"
+                            placeholder="Type to search sponsors..."
+                            value={sponsorInputValue}
+                            onChange={(e) =>
+                              handleSponsorInputChange(e.target.value)
+                            }
+                            onFocus={() => {
+                              if (sponsorInputValue.trim() !== "") {
+                                setShowSuggestions(true);
+                              }
+                            }}
+                            onBlur={handleSponsorInputBlur}
+                            className="h-11"
+                          />
+
+                          {/* Suggestions dropdown */}
+                          {showSuggestions && filteredSponsors.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                              {filteredSponsors.map((sponsor) => (
+                                <div
+                                  key={sponsor.id}
+                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  onClick={() => handleSponsorSelect(sponsor)}
+                                >
+                                  {sponsor.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* No results message */}
+                          {showSuggestions &&
+                            filteredSponsors.length === 0 &&
+                            sponsorInputValue.trim() !== "" && (
+                              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                                <div className="px-4 py-2 text-sm text-gray-500">
+                                  No sponsors found
+                                </div>
+                              </div>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Schedule */}
               <div className="grid gap-4 md:grid-cols-3">
                 {[
@@ -705,6 +854,15 @@ export default function SeasonCreateModal({
                       ?.name || "None"}
                   </Badge>
                 </div>
+                {form.hasSponsor && form.existingSponsorId && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Sponsor</p>
+                    <Badge variant="outline" className="text-sm">
+                      <IconBuilding className="h-3 w-3 mr-1" />
+                      {sponsorInputValue || "Sponsor Selected"}
+                    </Badge>
+                  </div>
+                )}
               </div>
 
               {/* Schedule */}
