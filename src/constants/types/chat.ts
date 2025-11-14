@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { UserStatus } from "./constants";
+import { UserStatus } from "@/components/chat/constants";
 
 // Base User Interface
 export interface ChatUser {
@@ -79,7 +79,6 @@ export interface Thread {
   };
 }
 
-// Conversation Interface (for UI display)
 export interface Conversation {
   id: string;
   type: "direct" | "group";
