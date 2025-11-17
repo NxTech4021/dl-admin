@@ -61,6 +61,9 @@ export default function ChatMessageInput({
     try {
       await onSendMessage(messageToSend);
       // Reply will be cleared in the parent component after successful send
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
     } catch (error) {
       console.error("Failed to send message:", error);
       setMessage(messageToSend);
