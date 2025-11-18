@@ -28,7 +28,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,9 +56,10 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { Player, playerSchema } from "@/constants/zod/player-schema";
-import axios from "axios";
+import { Player } from "@/constants/zod/player-schema";
+import { usePlayers } from "@/hooks/use-queries";
 import { getSportLabel, getSportColor } from "@/constants/sports";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 import {
   formatTableDate,
@@ -285,8 +285,10 @@ const columns: ColumnDef<Player>[] = [
 ];
 
 export function PlayersDataTable() {
-  const [data, setData] = React.useState<Player[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  // React Query for data fetching
+  const { data: queryData, isLoading, isError, error, refetch } = usePlayers();
+  const data = queryData ?? [];
+
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -297,6 +299,29 @@ export function PlayersDataTable() {
   const [sportFilter, setSportFilter] = React.useState<string>("all");
   const [locationFilter, setLocationFilter] = React.useState<string>("all");
   const [showFilters, setShowFilters] = React.useState<boolean>(false);
+
+  // Error state UI
+  if (isError) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Failed to load players</h3>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "An error occurred while fetching data."}
+            </p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Get unique sports and locations for filter options
   const uniqueSports = React.useMemo(() => {
@@ -344,27 +369,6 @@ export function PlayersDataTable() {
   const hasActiveFilters =
     sportFilter !== "all" || locationFilter !== "all" || globalFilter !== "";
 
-  React.useEffect(() => {
-    const fetchPlayers = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/`
-        );
-        if (response.status !== 200) {
-          throw new Error("Network response was not ok");
-        }
-        const result = await response.data;
-        const parsedData = z.array(playerSchema).parse(result.data);
-        setData(parsedData);
-      } catch (error) {
-        console.error("Failed to fetch players:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchPlayers();
-  }, []);
 
   const table = useReactTable({
     data: filteredData,
