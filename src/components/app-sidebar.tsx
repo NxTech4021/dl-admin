@@ -11,6 +11,7 @@ import {
   IconCalendar,
   IconCategory,
   IconShield,
+  IconBug,
 } from "@tabler/icons-react";
 import { Settings, Tags, CreditCard } from "lucide-react";
 import Image from "next/image";
@@ -99,6 +100,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         name: "Admins",
         url: "/admin",
         icon: IconShield,
+      },
+      {
+        name: "Bug Reports",
+        url: "/bugs",
+        icon: IconBug,
       },
     ],
     utilities: [
