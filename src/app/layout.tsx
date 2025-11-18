@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SocketProvider } from "@/context/socket-context";
+import { QueryProvider } from "@/lib/query-client";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -34,10 +36,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SocketProvider>
-         {children}
-        </SocketProvider>
-      
+        <ErrorBoundary>
+          <QueryProvider>
+            <SocketProvider>
+              {children}
+            </SocketProvider>
+          </QueryProvider>
+        </ErrorBoundary>
         <Toaster position="bottom-right" />
       </body>
     </html>
