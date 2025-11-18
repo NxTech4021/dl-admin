@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SocketProvider } from "@/context/socket-context";
 import { QueryProvider } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
           </QueryProvider>
         </ErrorBoundary>
         <Toaster position="bottom-right" />
+        <BugReportWidget />
       </body>
     </html>
   );
