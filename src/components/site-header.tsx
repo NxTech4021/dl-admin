@@ -16,6 +16,7 @@ const pageMap = {
   "/seasons": "Seasons",
   "/divisions": "Divisions",
   "/settings": "Settings",
+  "/bugs": "Bug Reports",
 } as const;
 
 type BreadcrumbItem = { label: string; href?: string };

@@ -9,7 +9,11 @@ export const playerSchema = z.object({
   emailVerified: z.boolean(),
   image: z.string().nullable(),
   area: z.string().nullish(),
-  gender: z.enum(["male", "female"]).nullable(),
+  gender: z.string().nullable().transform(val => {
+    if (!val) return null;
+    const lower = val.toLowerCase();
+    return lower === "male" || lower === "female" ? lower : null;
+  }),
   dateOfBirth: z.coerce.date().nullable(),
   registeredDate: z.coerce.date(),
   lastLoginDate: z.coerce.date().nullish(),
