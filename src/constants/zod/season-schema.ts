@@ -101,8 +101,10 @@ export const seasonSchema = z.object({
       id: z.string(),
       name: z.string().nullable(),
       genderRestriction: z.string().optional(),
-      gender_category: z.string().optional(),
-      game_type: z.string().optional(),
+      gender_category: z.string().nullable().optional(),
+      genderCategory: z.string().nullable().optional(),
+      game_type: z.string().nullable().optional(),
+      gameType: z.string().nullable().optional(),
       matchFormat: z.string().nullable().optional(),
     })
     .nullable()
