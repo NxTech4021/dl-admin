@@ -63,16 +63,32 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
 
   const fetchAppData = async () => {
     try {
+      console.log("🔍 Fetching apps from:", `${apiUrl}/api/bug/apps`);
+
       // Fetch apps to get DLA app ID
       const appsRes = await fetch(`${apiUrl}/api/bug/apps`, {
         credentials: "include",
       });
-      if (!appsRes.ok) return;
+
+      console.log("📡 Apps response status:", appsRes.status);
+
+      if (!appsRes.ok) {
+        const errorText = await appsRes.text();
+        console.error("❌ Failed to fetch apps:", appsRes.status, errorText);
+        return;
+      }
 
       const apps = await appsRes.json();
-      const dlaApp = apps.find((app: any) => app.code === APP_CODE);
-      if (!dlaApp) return;
+      console.log("📦 Apps received:", apps);
 
+      const dlaApp = apps.find((app: any) => app.code === APP_CODE);
+
+      if (!dlaApp) {
+        console.error(`❌ App with code "${APP_CODE}" not found in apps:`, apps.map((a: any) => a.code));
+        return;
+      }
+
+      console.log("✅ Found DLA app:", dlaApp);
       setAppId(dlaApp.id);
 
       // Fetch modules for this app
@@ -81,10 +97,13 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
       });
       if (modulesRes.ok) {
         const modulesData = await modulesRes.json();
+        console.log("📋 Modules loaded:", modulesData.length);
         setModules(modulesData);
+      } else {
+        console.error("❌ Failed to fetch modules:", modulesRes.status);
       }
     } catch (error) {
-      console.error("Failed to fetch app data:", error);
+      console.error("💥 Failed to fetch app data:", error);
     }
   };
 
