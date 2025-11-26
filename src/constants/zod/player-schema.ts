@@ -28,7 +28,17 @@ export const playerSchema = z.object({
       })
     )
     .nullable(),
-  status: z.enum(["active", "inactive", "suspended"]).nullish(),
+  status: z
+    .string()
+    .nullable()
+    .transform((val) => {
+      if (!val) return null;
+      const lower = val.toLowerCase();
+      if (lower === "active" || lower === "inactive" || lower === "suspended") {
+        return lower as "active" | "inactive" | "suspended";
+      }
+      return null;
+    }),
   completedOnboarding: z.boolean().default(false),
 });
 

@@ -300,29 +300,6 @@ export function PlayersDataTable() {
   const [locationFilter, setLocationFilter] = React.useState<string>("all");
   const [showFilters, setShowFilters] = React.useState<boolean>(false);
 
-  // Error state UI
-  if (isError) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">Failed to load players</h3>
-            <p className="text-sm text-muted-foreground">
-              {error instanceof Error ? error.message : "An error occurred while fetching data."}
-            </p>
-          </div>
-          <Button onClick={() => refetch()} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   // Get unique sports and locations for filter options
   const uniqueSports = React.useMemo(() => {
     const sportsSet = new Set<string>();
@@ -369,7 +346,6 @@ export function PlayersDataTable() {
   const hasActiveFilters =
     sportFilter !== "all" || locationFilter !== "all" || globalFilter !== "";
 
-
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -394,6 +370,29 @@ export function PlayersDataTable() {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     globalFilterFn: "includesString",
   });
+
+  // Error state UI - must be after all hooks
+  if (isError) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Failed to load players</h3>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "An error occurred while fetching data."}
+            </p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
