@@ -80,6 +80,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconCategory,
       },
       {
+        name: "Matches",
+        url: "/matches",
+        icon: IconTrophy,
+      },
+      {
         name: "Payments",
         url: "/payments",
         icon: IconTax,
