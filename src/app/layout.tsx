@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SocketProvider } from "@/context/socket-context";
 import { QueryProvider } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
@@ -39,9 +38,7 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <QueryProvider>
-            <SocketProvider>
-              {children}
-            </SocketProvider>
+            {children}
           </QueryProvider>
         </ErrorBoundary>
         <Toaster position="bottom-right" />
