@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSportComparisonData } from "@/constants/data/mock-chart-data";
+import { formatValue as formatCurrency } from "@/lib/utils/format";
 
 const chartConfig = {
   payingMembers: {
@@ -51,21 +52,16 @@ export function SportComparisonChart({
     React.useState<MetricType>("payingMembers");
 
   // using mock data
-  const chartData = React.useMemo(() => 
-    getSportComparisonData(chartRange, historyRange), 
+  const chartData = React.useMemo(() =>
+    getSportComparisonData(chartRange, historyRange),
     [chartRange, historyRange]
   );
 
-  const formatValue = (value: number, metric: MetricType) => {
+  const formatMetricValue = (value: number, metric: MetricType) => {
     if (metric === "revenue") {
-      return new Intl.NumberFormat("en-MY", {
-        style: "currency",
-        currency: "MYR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
+      return formatCurrency(value, "currency");
     }
-    return new Intl.NumberFormat("en-US").format(value);
+    return formatCurrency(value, "number");
   };
 
   const getYAxisDomain = (metric: MetricType) => {
@@ -132,7 +128,7 @@ export function SportComparisonChart({
               <span className="text-sm font-medium">Total Revenue</span>
             </div>
             <div className="text-2xl font-bold">
-              {formatValue(totalRevenue, "revenue")}
+              {formatMetricValue(totalRevenue, "revenue")}
             </div>
             <div className="text-xs text-muted-foreground">
               Combined from all sports
@@ -196,7 +192,7 @@ export function SportComparisonChart({
                           style={{ backgroundColor: sportData?.fill }}
                         />
                         <span className="font-medium">
-                          {formatValue(value as number, activeMetric)}
+                          {formatMetricValue(value as number, activeMetric)}
                         </span>
                       </div>,
                       <span
@@ -244,7 +240,7 @@ export function SportComparisonChart({
                 <div>
                   <p className="text-muted-foreground">Revenue</p>
                   <p className="font-semibold">
-                    {formatValue(sport.revenue, "revenue")}
+                    {formatMetricValue(sport.revenue, "revenue")}
                   </p>
                 </div>
               </div>
