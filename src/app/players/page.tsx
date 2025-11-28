@@ -1,13 +1,15 @@
+"use client";
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-
+import { PageHeader } from "@/components/ui/page-header";
 import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react";
-import { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { PlayerStatsRefactored } from "@/components/player-stats-refactored";
 
-// CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
+// Dynamic imports for performance
 const PlayersDataTable = dynamic(
   () =>
     import("@/components/data-table/players-data-table").then((mod) => ({
@@ -17,29 +19,6 @@ const PlayersDataTable = dynamic(
     loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
   }
 );
-
-const PlayerStats = dynamic(
-  () =>
-    import("@/components/player-stats").then((mod) => ({
-      default: mod.PlayerStats,
-    })),
-  {
-    loading: () => <div className="h-32 animate-pulse bg-muted rounded-lg" />,
-  }
-);
-
-// STANDARD: Enable Static Generation with ISR
-export const revalidate = 300; // Revalidate every 5 minutes (players data changes less frequently)
-
-export const metadata: Metadata = {
-  title: "Players",
-  description: "DeuceLeague Players Management",
-  icons: {
-    icon: "/dl-logo.svg",
-    shortcut: "/dl-logo.svg",
-    apple: "/dl-logo.svg",
-  },
-};
 
 export default function Page() {
   return (
@@ -56,46 +35,31 @@ export default function Page() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Description */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconUsers className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Players
-                          </h1>
-                        </div>
-                        {/* <p className="text-muted-foreground">
-                          Manage and view all registered players
-                        </p> */}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                        </Button>
-                        <Button size="sm">
-                          <IconPlus className="mr-2 size-4" />
-                          Add Player
-                        </Button>
-                      </div>
-                    </div>
+            {/* Industry-Standard Page Header */}
+            <PageHeader
+              icon={IconUsers}
+              title="Players"
+              description="Manage and view all registered players in the system"
+              actions={
+                <>
+                  <Button variant="outline" size="sm">
+                    <IconDownload className="mr-2 size-4" />
+                    Export
+                  </Button>
+                  <Button size="sm">
+                    <IconPlus className="mr-2 size-4" />
+                    Add Player
+                  </Button>
+                </>
+              }
+            >
+              {/* Statistics Cards */}
+              <PlayerStatsRefactored />
+            </PageHeader>
 
-                    {/* Statistics */}
-                    <PlayerStats />
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Table */}
-              <div className="flex-1">
-                <PlayersDataTable />
-              </div>
+            {/* Data Table */}
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <PlayersDataTable />
             </div>
           </div>
         </div>
