@@ -8,7 +8,13 @@ module.exports = {
     // Exclude node_modules and other unnecessary directories for faster scanning
   ],
   theme: {
-    extend: {},
+    extend: {
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+    },
   },
   plugins: [],
 }
