@@ -258,12 +258,12 @@ export const ACTION_MESSAGES = {
 
 /**
  * Get the badge variant for a given entity and status
- * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param entity - The entity type
  * @param status - The status value
  * @returns The badge variant
  */
 export const getStatusBadgeVariant = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ) => {
   const variants = STATUS_BADGE_VARIANTS[entity];
@@ -272,12 +272,12 @@ export const getStatusBadgeVariant = (
 
 /**
  * Get the badge color classes for a given entity and status
- * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param entity - The entity type
  * @param status - The status value
  * @returns The color class string
  */
 export const getStatusBadgeColor = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ): string => {
   const colors = STATUS_BADGE_COLORS[entity];
@@ -292,7 +292,7 @@ export const getStatusBadgeColor = (
  * @returns Object with variant and className
  */
 export const getStatusBadgeProps = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ) => {
   return {
