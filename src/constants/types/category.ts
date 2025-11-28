@@ -35,6 +35,6 @@ export interface CategoryFormData {
   categoryOrder: number;
 }
 
-export interface CreateCategoryData extends CategoryFormData {}
+export type CreateCategoryData = CategoryFormData;
 
-export interface UpdateCategoryData extends Partial<CategoryFormData> {}
+export type UpdateCategoryData = Partial<CategoryFormData>;
