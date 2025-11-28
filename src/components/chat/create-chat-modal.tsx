@@ -16,8 +16,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { AvailableUser, useAvailableUsers } from '@/app/chat/hooks/chat';
-import { useCreateThread } from '@/app/chat/hooks/chat';
+import { useAvailableUsers, useCreateThread } from '@/app/chat/hooks/chat';
+import type { AvailableUser } from '@/constants/types/chat';
 import { toast } from 'sonner';
 
 interface NewChatModalProps {
