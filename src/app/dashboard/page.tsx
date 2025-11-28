@@ -5,11 +5,18 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, RefreshCw, Keyboard } from "lucide-react";
 import dynamic from "next/dynamic";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
 
@@ -89,6 +96,71 @@ export default function Page() {
   >("monthly");
 
   const [historyRange, setHistoryRange] = useState<1 | 3 | 6>(3);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if not typing in input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Show keyboard help with ?
+      if (e.key === "?" && e.shiftKey) {
+        e.preventDefault();
+        setShowKeyboardHelp(true);
+        return;
+      }
+
+      // Chart range shortcuts: M, A, W
+      if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        setChartRange("monthly");
+      } else if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        setChartRange("average");
+      } else if (e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        setChartRange("thisWeek");
+      }
+      // History range shortcuts: 1, 2, 3 (mapping to 1, 3, 6 months)
+      else if (e.key === "1") {
+        e.preventDefault();
+        setHistoryRange(1);
+      } else if (e.key === "2") {
+        e.preventDefault();
+        setHistoryRange(3);
+      } else if (e.key === "3") {
+        e.preventDefault();
+        setHistoryRange(6);
+      }
+      // Refresh with R
+      else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        handleRefresh();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, []);
+
+  const handleRefresh = () => {
+    setLastUpdated(new Date());
+    // In real app, this would trigger data refetch
+  };
+
+  const formatLastUpdated = () => {
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - lastUpdated.getTime()) / 1000);
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return lastUpdated.toLocaleTimeString();
+  };
 
   return (
     <SidebarProvider
@@ -122,38 +194,95 @@ export default function Page() {
               role="toolbar"
               aria-label="Chart filter controls"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Chart Range:
-                </span>
-                <Tabs
-                  value={chartRange}
-                  onValueChange={(value) =>
-                    setChartRange(value as "monthly" | "average" | "thisWeek")
-                  }
-                >
-                  <TabsList>
-                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                    <TabsTrigger value="average">Average / Week</TabsTrigger>
-                    <TabsTrigger value="thisWeek">This Week</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Chart Range:
+                  </span>
+                  <Tabs
+                    value={chartRange}
+                    onValueChange={(value) =>
+                      setChartRange(value as "monthly" | "average" | "thisWeek")
+                    }
+                  >
+                    <TabsList>
+                      <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                      <TabsTrigger value="average">Average / Week</TabsTrigger>
+                      <TabsTrigger value="thisWeek">This Week</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Historical Range:
+                  </span>
+                  <Tabs
+                    value={historyRange.toString()}
+                    onValueChange={(value) => setHistoryRange(Number(value) as 1 | 3 | 6)}
+                  >
+                    <TabsList>
+                      <TabsTrigger value="1">1 Month</TabsTrigger>
+                      <TabsTrigger value="3">3 Months</TabsTrigger>
+                      <TabsTrigger value="6">6 Months</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Historical Range:
-                </span>
-                <Tabs
-                  value={historyRange.toString()}
-                  onValueChange={(value) => setHistoryRange(Number(value) as 1 | 3 | 6)}
-                >
-                  <TabsList>
-                    <TabsTrigger value="1">1 Month</TabsTrigger>
-                    <TabsTrigger value="3">3 Months</TabsTrigger>
-                    <TabsTrigger value="6">6 Months</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Last updated: {formatLastUpdated()}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRefresh}
+                          className="h-7 w-7 p-0"
+                          aria-label="Refresh dashboard data"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Refresh (R)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                <TooltipProvider>
+                  <Tooltip open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1.5"
+                        aria-label="Keyboard shortcuts"
+                      >
+                        <Keyboard className="h-3 w-3" />
+                        <span className="text-xs">?</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="w-64" side="bottom" align="end">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-sm">Keyboard Shortcuts</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">M</kbd> Monthly</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">A</kbd> Average</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">W</kbd> This Week</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">1</kbd> 1 Month</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">2</kbd> 3 Months</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">3</kbd> 6 Months</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">R</kbd> Refresh</div>
+                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">?</kbd> Help</div>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </section>
 
