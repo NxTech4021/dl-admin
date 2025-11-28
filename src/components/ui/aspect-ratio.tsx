@@ -1,11 +1,12 @@
 "use client"
 
-import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio"
+// OPTIMIZATION: Named imports instead of wildcard
+import { Root as AspectRatioRoot } from "@radix-ui/react-aspect-ratio"
 
 function AspectRatio({
   ...props
-}: React.ComponentProps<typeof AspectRatioPrimitive.Root>) {
-  return <AspectRatioPrimitive.Root data-slot="aspect-ratio" {...props} />
+}: React.ComponentProps<typeof AspectRatioRoot>) {
+  return <AspectRatioRoot data-slot="aspect-ratio" {...props} />
 }
 
 export { AspectRatio }
