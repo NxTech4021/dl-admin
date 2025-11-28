@@ -44,12 +44,14 @@ export interface Message {
   content: string;
   createdAt: string;
   isDeleted?: boolean;
+  deletedAt?: string;
   sender: {
     id: string;
     name: string;
     image?: string;
   };
-  repliesTo?: Message; 
+  repliesTo?: Message;
+  readBy?: any[];
 }
 
 // Message Read Status
