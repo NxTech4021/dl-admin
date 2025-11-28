@@ -43,6 +43,53 @@ interface KPICardProps {
 
 // formatValue function moved to @/lib/utils/format
 
+// Mock 7-day trend data generator
+function generate7DayTrend(currentValue: number, trend: "up" | "down" | "neutral"): number[] {
+  const data: number[] = [];
+  let value = currentValue * 0.85; // Start at 85% of current
+
+  for (let i = 0; i < 7; i++) {
+    const variance = (Math.random() - 0.5) * 0.05; // ±5% variance
+    const trendFactor = trend === "up" ? 0.025 : trend === "down" ? -0.025 : 0;
+    value = value * (1 + trendFactor + variance);
+    data.push(Math.round(value));
+  }
+
+  // Ensure last value matches current
+  data[6] = currentValue;
+  return data;
+}
+
+// Simple sparkline component
+function Sparkline({ data, trend }: { data: number[]; trend: "up" | "down" | "neutral" }) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+
+  const points = data
+    .map((value, index) => {
+      const x = (index / (data.length - 1)) * 60;
+      const y = 20 - ((value - min) / range) * 18;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const color = trend === "up" ? "#22c55e" : trend === "down" ? "#ef4444" : "#6b7280";
+
+  return (
+    <svg width="60" height="20" className="ml-auto" aria-hidden="true">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function calculateTrend(
   current: number,
   previous: number
@@ -99,7 +146,15 @@ function KPICard({
         <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{formatValue(value, format)}</div>
+        <div className="flex items-center justify-between">
+          <div className="text-2xl font-bold">{formatValue(value, format)}</div>
+          {trendData && (
+            <Sparkline
+              data={generate7DayTrend(numValue, trendData.trend)}
+              trend={trendData.trend}
+            />
+          )}
+        </div>
         {trendData && (
           <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
             {trendData.trend === "up" ? (
