@@ -1,16 +1,21 @@
 "use client"
 
 import * as React from "react"
-import * as AvatarPrimitive from "@radix-ui/react-avatar"
+// OPTIMIZATION: Named imports instead of wildcard
+import {
+  Root as AvatarRoot,
+  Image as AvatarImagePrimitive,
+  Fallback as AvatarFallbackPrimitive,
+} from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
 function Avatar({
   className,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+}: React.ComponentProps<typeof AvatarRoot>) {
   return (
-    <AvatarPrimitive.Root
+    <AvatarRoot
       data-slot="avatar"
       className={cn(
         "relative flex size-8 shrink-0 overflow-hidden rounded-full",
@@ -24,9 +29,9 @@ function Avatar({
 function AvatarImage({
   className,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+}: React.ComponentProps<typeof AvatarImagePrimitive>) {
   return (
-    <AvatarPrimitive.Image
+    <AvatarImagePrimitive
       data-slot="avatar-image"
       className={cn("aspect-square size-full", className)}
       {...props}
@@ -37,9 +42,9 @@ function AvatarImage({
 function AvatarFallback({
   className,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: React.ComponentProps<typeof AvatarFallbackPrimitive>) {
   return (
-    <AvatarPrimitive.Fallback
+    <AvatarFallbackPrimitive
       data-slot="avatar-fallback"
       className={cn(
         "bg-muted flex size-full items-center justify-center rounded-full",
