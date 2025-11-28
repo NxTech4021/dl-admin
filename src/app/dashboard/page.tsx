@@ -8,8 +8,7 @@ import { TopKPICards } from "@/components/kpi-cards";
 import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
@@ -119,64 +118,42 @@ export default function Page() {
 
             {/* Chart Filters */}
             <section
-              className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-muted/30 p-6 mx-6"
+              className="flex flex-wrap items-center justify-between gap-6 rounded-lg border bg-muted/30 p-6 mx-6"
               role="toolbar"
               aria-label="Chart filter controls"
             >
-              <div className="flex items-center gap-2" role="group" aria-labelledby="chart-range-label">
-                <span id="chart-range-label" className="text-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">
                   Chart Range:
                 </span>
-
-                {["monthly", "average", "thisWeek"].map((opt) => (
-                  <Button
-                    key={opt}
-                    size="sm"
-                    variant={chartRange === opt ? "default" : "outline"}
-                    className={cn(
-                      "capitalize",
-                      chartRange === opt && "bg-primary text-primary-foreground"
-                    )}
-                    onClick={() =>
-                      setChartRange(opt as "monthly" | "average" | "thisWeek")
-                    }
-                    aria-label={`View ${opt === "average" ? "weekly average" : opt === "thisWeek" ? "this week" : "monthly"} data`}
-                    aria-pressed={chartRange === opt}
-                    role="radio"
-                    aria-checked={chartRange === opt}
-                  >
-                    {opt === "average"
-                      ? "Average / Week"
-                      : opt === "thisWeek"
-                      ? "This Week"
-                      : "Monthly"}
-                  </Button>
-                ))}
+                <Tabs
+                  value={chartRange}
+                  onValueChange={(value) =>
+                    setChartRange(value as "monthly" | "average" | "thisWeek")
+                  }
+                >
+                  <TabsList>
+                    <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    <TabsTrigger value="average">Average / Week</TabsTrigger>
+                    <TabsTrigger value="thisWeek">This Week</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
 
-              <div className="flex items-center gap-2" role="group" aria-labelledby="history-range-label">
-                <span id="history-range-label" className="text-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">
                   Historical Range:
                 </span>
-
-                {[1, 3, 6].map((month) => (
-                  <Button
-                    key={month}
-                    size="sm"
-                    variant={historyRange === month ? "default" : "outline"}
-                    className={cn(
-                      historyRange === month &&
-                        "bg-primary text-primary-foreground"
-                    )}
-                    onClick={() => setHistoryRange(month as 1 | 3 | 6)}
-                    aria-label={`View ${month} month${month > 1 ? "s" : ""} of historical data`}
-                    aria-pressed={historyRange === month}
-                    role="radio"
-                    aria-checked={historyRange === month}
-                  >
-                    {month} Month{month > 1 ? "s" : ""}
-                  </Button>
-                ))}
+                <Tabs
+                  value={historyRange.toString()}
+                  onValueChange={(value) => setHistoryRange(Number(value) as 1 | 3 | 6)}
+                >
+                  <TabsList>
+                    <TabsTrigger value="1">1 Month</TabsTrigger>
+                    <TabsTrigger value="3">3 Months</TabsTrigger>
+                    <TabsTrigger value="6">6 Months</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
             </section>
 
