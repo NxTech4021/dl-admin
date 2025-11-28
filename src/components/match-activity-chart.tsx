@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getMatchActivityData } from "@/constants/data/mock-chart-data";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   tennisLeague: {
@@ -99,6 +100,10 @@ export function MatchActivityChart({
 
   const [chartType, setChartType] = React.useState<ChartType>("line");
 
+  const [hiddenSeries, setHiddenSeries] = React.useState<Set<string>>(
+    new Set()
+  );
+
   // Use static mock data based on current props
   const chartData = React.useMemo(
     () => getMatchActivityData(chartRange, historyRange),
@@ -129,7 +134,9 @@ export function MatchActivityChart({
 
   const aggregatedData = React.useMemo(() => {
     return chartData.map((item) => {
-      const keys = getDataKeys(sportFilter);
+      const keys = getDataKeys(sportFilter).filter(
+        (key) => !hiddenSeries.has(key)
+      );
 
       const total = keys.reduce(
         (sum, key) => sum + (item[key as keyof typeof item] as number),
@@ -138,7 +145,7 @@ export function MatchActivityChart({
 
       return { ...item, total };
     });
-  }, [chartData, sportFilter]);
+  }, [chartData, sportFilter, hiddenSeries]);
 
   const filteredConfig = getFilteredConfig(sportFilter);
 
@@ -179,6 +186,18 @@ export function MatchActivityChart({
   };
 
   const ChartComponent = chartType === "line" ? LineChart : BarChart;
+
+  const toggleSeries = (seriesKey: string) => {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(seriesKey)) {
+        next.delete(seriesKey);
+      } else {
+        next.add(seriesKey);
+      }
+      return next;
+    });
+  };
 
   return (
     <Card>
@@ -389,7 +408,46 @@ export function MatchActivityChart({
             />
 
             {sportFilter === "all" && (
-              <ChartLegend content={<ChartLegendContent />} />
+              <ChartLegend
+                content={({ payload }) => {
+                  if (!payload?.length) return null;
+
+                  return (
+                    <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
+                      {payload.map((item) => {
+                        const key = String(item.dataKey || item.value);
+                        const isHidden = hiddenSeries.has(key);
+                        const itemConfig =
+                          chartConfig[key as keyof typeof chartConfig];
+
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => toggleSeries(key)}
+                            className={cn(
+                              "flex items-center gap-1.5 cursor-pointer transition-opacity hover:opacity-100",
+                              isHidden && "opacity-30"
+                            )}
+                            aria-label={`${isHidden ? "Show" : "Hide"} ${itemConfig?.label}`}
+                            aria-pressed={!isHidden}
+                          >
+                            <div
+                              className="h-2 w-2 shrink-0 rounded-[2px]"
+                              style={{
+                                backgroundColor: item.color,
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {itemConfig?.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                }}
+              />
             )}
 
             {chartType === "line"
@@ -401,6 +459,8 @@ export function MatchActivityChart({
                     stroke={`var(--color-${key})`}
                     strokeWidth={2}
                     dot={false}
+                    opacity={hiddenSeries.has(key) ? 0 : 1}
+                    hide={hiddenSeries.has(key)}
                   />
                 ))
               : dataKeys.map((key, index) => (
@@ -410,6 +470,8 @@ export function MatchActivityChart({
                     fill={`var(--color-${key})`}
                     radius={[2, 2, 0, 0]}
                     stackId="matches"
+                    opacity={hiddenSeries.has(key) ? 0 : 1}
+                    hide={hiddenSeries.has(key)}
                   />
                 ))}
           </ChartComponent>
