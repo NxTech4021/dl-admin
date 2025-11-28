@@ -11,6 +11,7 @@ import {
   UserCheck,
   CreditCard,
 } from "lucide-react";
+import { formatValue } from "@/lib/utils/format";
 
 // Static mock data - replace with real API calls (realistic for 100+ member app)
 const mockKPIData = {
@@ -59,27 +60,7 @@ interface KPICardProps {
   trend?: "up" | "down" | "neutral";
 }
 
-function formatValue(
-  value: string | number,
-  format: "number" | "currency" | "percentage" = "number"
-): string {
-  const numValue = typeof value === "string" ? parseFloat(value) : value;
-
-  switch (format) {
-    case "currency":
-      return new Intl.NumberFormat("en-MY", {
-        style: "currency",
-        currency: "MYR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(numValue);
-    case "percentage":
-      return `${numValue.toFixed(1)}%`;
-    case "number":
-    default:
-      return new Intl.NumberFormat("en-US").format(numValue);
-  }
-}
+// formatValue function moved to @/lib/utils/format
 
 function calculateTrend(
   current: number,
