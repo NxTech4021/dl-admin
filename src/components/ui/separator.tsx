@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import * as SeparatorPrimitive from "@radix-ui/react-separator"
+// OPTIMIZATION: Named imports instead of wildcard
+import { Root as SeparatorRoot } from "@radix-ui/react-separator"
 
 import { cn } from "@/lib/utils"
 
@@ -10,9 +11,9 @@ function Separator({
   orientation = "horizontal",
   decorative = true,
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+}: React.ComponentProps<typeof SeparatorRoot>) {
   return (
-    <SeparatorPrimitive.Root
+    <SeparatorRoot
       data-slot="separator"
       decorative={decorative}
       orientation={orientation}
