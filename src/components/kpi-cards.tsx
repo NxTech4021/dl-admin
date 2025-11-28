@@ -89,12 +89,12 @@ function KPICard({
     : null;
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{formatValue(value, format)}</div>
@@ -168,15 +168,15 @@ function SportKPICard({
   const SportIcon = getSportIcon(sport);
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center space-x-2">
-          <SportIcon className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg font-semibold capitalize">
+          <SportIcon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+          <CardTitle className="text-lg font-semibold capitalize group-hover:text-primary transition-colors">
             {sport}
           </CardTitle>
         </div>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs group-hover:border-primary transition-colors">
           Sport
         </Badge>
       </CardHeader>
