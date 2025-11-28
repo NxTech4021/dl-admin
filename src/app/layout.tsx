@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
+import { CommandPalette } from "@/components/command-palette";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -41,6 +42,7 @@ export default function RootLayout({
             {children}
           </QueryProvider>
         </ErrorBoundary>
+        <CommandPalette />
         <Toaster position="bottom-right" />
         <BugReportWidget />
       </body>
