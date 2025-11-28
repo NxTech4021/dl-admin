@@ -33,9 +33,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
+import { useNotifications } from "@/hooks/use-notifications";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, isPending } = authClient.useSession();
+  const { unreadCount } = useNotifications();
 
   if (isPending) return <div>Loading...</div>;
   if (!session) return redirect("/login");
@@ -92,10 +94,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Feedback",
             url: "/feedback",
             icon: MessageSquare,
-            badge: {
-              count: 3,
+            badge: unreadCount > 0 ? {
+              count: unreadCount,
               variant: "warning" as const,
-            },
+            } : undefined,
           },
         ],
       },
@@ -121,9 +123,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Chats",
             url: "/chat",
             icon: MessageCircle,
-            badge: {
+            badge: unreadCount > 0 ? {
               dot: true,
-            },
+            } : undefined,
           },
           {
             title: "Bug Reports",
