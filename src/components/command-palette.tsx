@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   CommandDialog,
   CommandEmpty,
@@ -26,8 +26,9 @@ import {
   Tags,
   Settings,
   Handshake,
-  Search,
   Clock,
+  Zap,
+  Keyboard,
 } from "lucide-react";
 import { ICON_SIZES } from "@/lib/constants/ui";
 import { useModals } from "@/contexts/modal-context";
@@ -157,11 +158,14 @@ interface QuickAction {
   action: () => void;
   icon: React.ComponentType<{ className?: string }>;
   keywords?: string[];
+  shortcut?: string;
 }
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
+  const [mode, setMode] = React.useState<"all" | "actions">("all");
   const router = useRouter();
+  const pathname = usePathname();
   const { openSeasonCreate, openPlayerCreate, openMatchCreate } = useModals();
   const [recentPages, setRecentPages] = React.useState<string[]>([]);
 
@@ -177,18 +181,37 @@ export function CommandPalette() {
     }
   }, []);
 
-  // Keyboard shortcut to open
+  // Keyboard shortcuts
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+      // Cmd/Ctrl + K: Open full command palette
+      if (e.key === "k" && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         e.preventDefault();
+        setMode("all");
         setOpen((open) => !open);
+      }
+      // Cmd/Ctrl + Shift + P: Open quick actions only
+      else if (
+        e.key === "p" &&
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey
+      ) {
+        e.preventDefault();
+        setMode("actions");
+        setOpen(true);
+      }
+      // Cmd/Ctrl + /: Go to Dashboard (quick navigation)
+      else if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (pathname !== "/dashboard") {
+          router.push("/dashboard");
+        }
       }
     };
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [pathname, router]);
 
   const handleNavigate = (url: string) => {
     setOpen(false);
@@ -211,6 +234,7 @@ export function CommandPalette() {
       },
       icon: Calendar,
       keywords: ["create", "add", "new", "season"],
+      shortcut: "S",
     },
     {
       title: "Add Player",
@@ -220,6 +244,7 @@ export function CommandPalette() {
       },
       icon: Users,
       keywords: ["create", "add", "new", "register", "player"],
+      shortcut: "P",
     },
     {
       title: "Create Match",
@@ -229,6 +254,7 @@ export function CommandPalette() {
       },
       icon: Swords,
       keywords: ["create", "add", "new", "schedule", "match", "game"],
+      shortcut: "M",
     },
   ];
 
@@ -246,9 +272,16 @@ export function CommandPalette() {
     .map((url) => navigationItems.find((item) => item.url === url))
     .filter(Boolean) as NavItem[];
 
+  // Show only quick actions when in actions mode
+  const showNavigation = mode === "all";
+  const placeholderText =
+    mode === "actions"
+      ? "Type to search quick actions..."
+      : "Search navigation, actions...";
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search navigation, actions..." />
+      <CommandInput placeholder={placeholderText} />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
@@ -262,57 +295,83 @@ export function CommandPalette() {
             >
               <action.icon className={ICON_SIZES.nav} />
               <span>{action.title}</span>
+              {action.shortcut && (
+                <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  {action.shortcut}
+                </kbd>
+              )}
             </CommandItem>
           ))}
         </CommandGroup>
 
-        <CommandSeparator />
-
-        {/* Recent Pages */}
-        {recentPageDetails.length > 0 && (
+        {showNavigation && (
           <>
-            <CommandGroup heading="Recent">
-              {recentPageDetails.map((item) => (
-                <CommandItem
-                  key={item.url}
-                  onSelect={() => handleNavigate(item.url)}
-                >
-                  <Clock className={ICON_SIZES.nav} />
-                  <span>{item.title}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
             <CommandSeparator />
+
+            {/* Recent Pages */}
+            {recentPageDetails.length > 0 && (
+              <>
+                <CommandGroup heading="Recent">
+                  {recentPageDetails.map((item) => (
+                    <CommandItem
+                      key={item.url}
+                      onSelect={() => handleNavigate(item.url)}
+                    >
+                      <Clock className={ICON_SIZES.nav} />
+                      <span>{item.title}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
+
+            {/* Navigation Items by Group */}
+            {Object.entries(groupedItems).map(([group, items]) => (
+              <CommandGroup key={group} heading={group}>
+                {items.map((item) => (
+                  <CommandItem
+                    key={item.url}
+                    onSelect={() => handleNavigate(item.url)}
+                    keywords={item.keywords}
+                  >
+                    <item.icon className={ICON_SIZES.nav} />
+                    <span>{item.title}</span>
+                    {item.url === "/dashboard" && (
+                      <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                        <span className="text-xs">⌘</span>/
+                      </kbd>
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+
+            <CommandSeparator />
+
+            {/* Keyboard Hints */}
+            <CommandGroup heading="Keyboard Shortcuts">
+              <CommandItem disabled>
+                <Keyboard className={ICON_SIZES.nav} />
+                <span className="text-muted-foreground text-xs">
+                  ⌘K or Ctrl+K - Open command palette
+                </span>
+              </CommandItem>
+              <CommandItem disabled>
+                <Zap className={ICON_SIZES.nav} />
+                <span className="text-muted-foreground text-xs">
+                  ⌘⇧P or Ctrl+Shift+P - Quick actions only
+                </span>
+              </CommandItem>
+              <CommandItem disabled>
+                <LayoutDashboard className={ICON_SIZES.nav} />
+                <span className="text-muted-foreground text-xs">
+                  ⌘/ or Ctrl+/ - Jump to Dashboard
+                </span>
+              </CommandItem>
+            </CommandGroup>
           </>
         )}
-
-        {/* Navigation Items by Group */}
-        {Object.entries(groupedItems).map(([group, items]) => (
-          <CommandGroup key={group} heading={group}>
-            {items.map((item) => (
-              <CommandItem
-                key={item.url}
-                onSelect={() => handleNavigate(item.url)}
-                keywords={item.keywords}
-              >
-                <item.icon className={ICON_SIZES.nav} />
-                <span>{item.title}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ))}
-
-        <CommandSeparator />
-
-        {/* Keyboard Hints */}
-        <CommandGroup heading="Tips">
-          <CommandItem disabled>
-            <Search className={ICON_SIZES.nav} />
-            <span className="text-muted-foreground text-xs">
-              Use ⌘K or Ctrl+K to open this menu anytime
-            </span>
-          </CommandItem>
-        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
