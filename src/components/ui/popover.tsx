@@ -1,20 +1,27 @@
 "use client"
 
 import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+// OPTIMIZATION: Named imports instead of wildcard
+import {
+  Root as PopoverRoot,
+  Trigger as PopoverTriggerPrimitive,
+  Portal as PopoverPortalPrimitive,
+  Content as PopoverContentPrimitive,
+  Anchor as PopoverAnchorPrimitive,
+} from "@radix-ui/react-popover"
 
 import { cn } from "@/lib/utils"
 
 function Popover({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+}: React.ComponentProps<typeof PopoverRoot>) {
+  return <PopoverRoot data-slot="popover" {...props} />
 }
 
 function PopoverTrigger({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+}: React.ComponentProps<typeof PopoverTriggerPrimitive>) {
+  return <PopoverTriggerPrimitive data-slot="popover-trigger" {...props} />
 }
 
 function PopoverContent({
@@ -22,10 +29,10 @@ function PopoverContent({
   align = "center",
   sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: React.ComponentProps<typeof PopoverContentPrimitive>) {
   return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
+    <PopoverPortalPrimitive>
+      <PopoverContentPrimitive
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
@@ -35,14 +42,14 @@ function PopoverContent({
         )}
         {...props}
       />
-    </PopoverPrimitive.Portal>
+    </PopoverPortalPrimitive>
   )
 }
 
 function PopoverAnchor({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
+}: React.ComponentProps<typeof PopoverAnchorPrimitive>) {
+  return <PopoverAnchorPrimitive data-slot="popover-anchor" {...props} />
 }
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
