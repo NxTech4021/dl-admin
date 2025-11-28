@@ -660,7 +660,7 @@ export default function BugDashboard() {
                       <SelectItem value="IN_REVIEW">In Review</SelectItem>
                       <SelectItem value="RESOLVED">Resolved</SelectItem>
                       <SelectItem value="CLOSED">Closed</SelectItem>
-                      <SelectItem value="WONT_FIX">Won't Fix</SelectItem>
+                      <SelectItem value="WONT_FIX">Won&apos;t Fix</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
