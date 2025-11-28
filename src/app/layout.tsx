@@ -4,6 +4,8 @@ import { QueryProvider } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
 import { CommandPalette } from "@/components/command-palette";
+import { ModalProvider } from "@/contexts/modal-context";
+import { GlobalModals } from "@/components/global-modals";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -39,10 +41,13 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <QueryProvider>
-            {children}
+            <ModalProvider>
+              {children}
+              <CommandPalette />
+              <GlobalModals />
+            </ModalProvider>
           </QueryProvider>
         </ErrorBoundary>
-        <CommandPalette />
         <Toaster position="bottom-right" />
         <BugReportWidget />
       </body>
