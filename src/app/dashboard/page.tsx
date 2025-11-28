@@ -181,30 +181,33 @@ export default function Page() {
             </section>
 
             {/* Charts Section */}
-            <section className="grid gap-6 lg:grid-cols-2 px-6">
-              <ChartErrorBoundary chartName="User Growth Chart">
-                <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
-                  <UserGrowthChart
-                    chartRange={chartRange}
-                    historyRange={historyRange}
-                  />
-                </Suspense>
-              </ChartErrorBoundary>
+            <section className="space-y-6 px-6">
+              <h2 className="text-2xl font-semibold tracking-tight">Analytics Overview</h2>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <ChartErrorBoundary chartName="User Growth Chart">
+                  <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
+                    <UserGrowthChart
+                      chartRange={chartRange}
+                      historyRange={historyRange}
+                    />
+                  </Suspense>
+                </ChartErrorBoundary>
 
-              <ChartErrorBoundary chartName="Sport Comparison Chart">
-                <Suspense fallback={<ChartSkeleton height="h-[350px]" name="Sport Comparison Chart" />}>
-                  <SportComparisonChart
-                    chartRange={chartRange}
-                    historyRange={historyRange}
-                  />
-                </Suspense>
-              </ChartErrorBoundary>
+                <ChartErrorBoundary chartName="Sport Comparison Chart">
+                  <Suspense fallback={<ChartSkeleton height="h-[350px]" name="Sport Comparison Chart" />}>
+                    <SportComparisonChart
+                      chartRange={chartRange}
+                      historyRange={historyRange}
+                    />
+                  </Suspense>
+                </ChartErrorBoundary>
+              </div>
             </section>
 
             {/* Match Activity */}
             <section className="space-y-6 px-6 pb-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Match Activity</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">Match Activity</h2>
 
                 <div className="text-sm text-muted-foreground">
                   Weekly match trends across all sports
