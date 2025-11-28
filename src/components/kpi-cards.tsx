@@ -101,9 +101,15 @@ function KPICard({
         {trendData && (
           <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
             {trendData.trend === "up" ? (
-              <TrendingUp className="h-3 w-3 text-green-500" />
+              <>
+                <TrendingUp className="h-3 w-3 text-green-500" aria-hidden="true" />
+                <span className="sr-only">Increase</span>
+              </>
             ) : trendData.trend === "down" ? (
-              <TrendingDown className="h-3 w-3 text-red-500" />
+              <>
+                <TrendingDown className="h-3 w-3 text-red-500" aria-hidden="true" />
+                <span className="sr-only">Decrease</span>
+              </>
             ) : null}
             <span
               className={
