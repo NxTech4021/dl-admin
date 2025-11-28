@@ -1,20 +1,15 @@
 "use client";
 
 import { AppSidebar } from "@/components/app-sidebar";
-
 import { SiteHeader } from "@/components/site-header";
-
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-
+import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
-
+import { IconLayoutDashboard } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
-
 import { Suspense, useState } from "react";
-
 import { Button } from "@/components/ui/button";
-
-import { cn } from "@/lib/utils"; // make sure you have this helper
+import { cn } from "@/lib/utils";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
 
@@ -93,42 +88,18 @@ export default function Page() {
         <SiteHeader />
 
         <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-            {/* Page Header */}
-
-            {/* === Page Header === */}
-
-            <div className="flex flex-col space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-
-              <p className="text-muted-foreground">
-                Monitor key metrics and performance across all sports.
-              </p>
-            </div>
-
-            {/* Top KPI Cards - Load immediately */}
-
-            {/* === KPI Cards === */}
-
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                  Key Performance Indicators
-                </h2>
-
-                <div className="text-sm text-muted-foreground">
-                  Overview of platform-wide metrics
-                </div>
-              </div>
-
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            {/* Industry-Standard Page Header */}
+            <PageHeader
+              icon={IconLayoutDashboard}
+              title="Dashboard"
+              description="Monitor key metrics and performance across all sports"
+            >
               <TopKPICards />
-            </section>
+            </PageHeader>
 
-            {/* Charts Section - Standard Suspense Pattern */}
-
-            {/* === Chart Filters === */}
-
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4">
+            {/* Chart Filters */}
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 mx-4 lg:mx-6">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   Chart Range:
@@ -179,9 +150,8 @@ export default function Page() {
               </div>
             </section>
 
-            {/* === Charts Section === */}
-
-            <section className="grid gap-6 lg:grid-cols-2">
+            {/* Charts Section */}
+            <section className="grid gap-6 lg:grid-cols-2 px-4 lg:px-6">
               <Suspense fallback={<ChartSkeleton height="h-[450px]" />}>
                 <UserGrowthChart
                   chartRange={chartRange}
@@ -197,11 +167,8 @@ export default function Page() {
               </Suspense>
             </section>
 
-            {/* Match Activity Chart - Standard Suspense Pattern */}
-
-            {/* === Match Activity === */}
-
-            <section className="space-y-4">
+            {/* Match Activity */}
+            <section className="space-y-4 px-4 lg:px-6 pb-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Match Activity</h2>
 
