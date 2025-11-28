@@ -1,18 +1,23 @@
 "use client"
 
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+// OPTIMIZATION: Named imports instead of wildcard
+import {
+  Root as CollapsibleRoot,
+  CollapsibleTrigger as CollapsibleTriggerPrimitive,
+  CollapsibleContent as CollapsibleContentPrimitive,
+} from "@radix-ui/react-collapsible"
 
 function Collapsible({
   ...props
-}: React.ComponentProps<typeof CollapsiblePrimitive.Root>) {
-  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />
+}: React.ComponentProps<typeof CollapsibleRoot>) {
+  return <CollapsibleRoot data-slot="collapsible" {...props} />
 }
 
 function CollapsibleTrigger({
   ...props
-}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger>) {
+}: React.ComponentProps<typeof CollapsibleTriggerPrimitive>) {
   return (
-    <CollapsiblePrimitive.CollapsibleTrigger
+    <CollapsibleTriggerPrimitive
       data-slot="collapsible-trigger"
       {...props}
     />
@@ -21,9 +26,9 @@ function CollapsibleTrigger({
 
 function CollapsibleContent({
   ...props
-}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) {
+}: React.ComponentProps<typeof CollapsibleContentPrimitive>) {
   return (
-    <CollapsiblePrimitive.CollapsibleContent
+    <CollapsibleContentPrimitive
       data-slot="collapsible-content"
       {...props}
     />
