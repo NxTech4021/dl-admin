@@ -13,8 +13,8 @@ function makeQueryClient() {
         gcTime: 10 * 60 * 1000,
         // Retry failed requests up to 2 times
         retry: 2,
-        // Refetch on window focus (good for dashboards)
-        refetchOnWindowFocus: true,
+        // Disable refetch on window focus in development (improves DX)
+        refetchOnWindowFocus: process.env.NODE_ENV === "production",
         // Don't refetch on mount if data is fresh
         refetchOnMount: false,
       },
