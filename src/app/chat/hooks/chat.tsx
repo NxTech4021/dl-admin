@@ -3,63 +3,13 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useSocket } from "@/context/socket-context";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-
-export interface ChatUser {
-  id: string;
-  name: string;
-  username?: string;
-  email?:string;
-  phoneNumber?:string;
-  image?: string;
-}
-
-export interface ThreadMember {
-  userId: string;
-  role?: string;
-  user: ChatUser;
-}
-
-export interface MessageReply {
-  id: string;
-  content: string;
-  sender: ChatUser;
-  // senderName: string;
-}
-
-export interface Message {
-  id: string;
-  threadId: string;
-  senderId: string;
-  content: string;
-  createdAt: string;
-  sender: ChatUser;
-  readBy?: any[];
-  repliesTo?: MessageReply;
-  isDeleted?: boolean;
-  deletedAt?: string;
-}
-
-export interface Thread {
-  id: string;
-  name?: string;
-  avatarUrl?: string;
-  isGroup: boolean;
-  createdAt: string;
-  updatedAt: string;
-  members: ThreadMember[];
-  messages: Message[];
-  _count: {
-    messages: number;
-  };
-}
-
-export interface AvailableUser {
-  id: string;
-  name: string;
-  username?: string;
-  image?: string;
-  email?: string;
-}
+import type {
+  ChatUser,
+  ThreadMember,
+  Message,
+  Thread,
+  AvailableUser,
+} from "@/constants/types/chat";
 
 export function useChatData(userId?: string) {
   const [threads, setThreads] = useState<Thread[]>([]);
