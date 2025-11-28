@@ -26,11 +26,11 @@ import {
   Tags,
   Settings,
   Handshake,
-  Plus,
   Search,
-  FileText,
+  Clock,
 } from "lucide-react";
 import { ICON_SIZES } from "@/lib/constants/ui";
+import { useModals } from "@/contexts/modal-context";
 
 interface NavItem {
   title: string;
@@ -162,6 +162,20 @@ interface QuickAction {
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
+  const { openSeasonCreate, openPlayerCreate, openMatchCreate } = useModals();
+  const [recentPages, setRecentPages] = React.useState<string[]>([]);
+
+  // Load recent pages from localStorage
+  React.useEffect(() => {
+    const stored = localStorage.getItem("recentPages");
+    if (stored) {
+      try {
+        setRecentPages(JSON.parse(stored));
+      } catch {
+        setRecentPages([]);
+      }
+    }
+  }, []);
 
   // Keyboard shortcut to open
   React.useEffect(() => {
@@ -178,40 +192,43 @@ export function CommandPalette() {
 
   const handleNavigate = (url: string) => {
     setOpen(false);
+
+    // Add to recent pages
+    const updated = [url, ...recentPages.filter((p) => p !== url)].slice(0, 5);
+    setRecentPages(updated);
+    localStorage.setItem("recentPages", JSON.stringify(updated));
+
     router.push(url);
   };
 
-  // Quick actions - these would typically open modals or perform actions
+  // Quick actions - open modals for create operations
   const quickActions: QuickAction[] = [
     {
       title: "New Season",
       action: () => {
         setOpen(false);
-        // TODO: Open create season modal
-        console.log("Create season");
+        openSeasonCreate();
       },
-      icon: Plus,
-      keywords: ["create", "add", "new"],
+      icon: Calendar,
+      keywords: ["create", "add", "new", "season"],
     },
     {
       title: "Add Player",
       action: () => {
         setOpen(false);
-        // TODO: Open add player modal
-        console.log("Add player");
+        openPlayerCreate();
       },
-      icon: Plus,
-      keywords: ["create", "add", "new", "register"],
+      icon: Users,
+      keywords: ["create", "add", "new", "register", "player"],
     },
     {
       title: "Create Match",
       action: () => {
         setOpen(false);
-        // TODO: Open create match modal
-        console.log("Create match");
+        openMatchCreate();
       },
-      icon: Plus,
-      keywords: ["create", "add", "new", "schedule"],
+      icon: Swords,
+      keywords: ["create", "add", "new", "schedule", "match", "game"],
     },
   ];
 
@@ -223,6 +240,11 @@ export function CommandPalette() {
     acc[item.group].push(item);
     return acc;
   }, {} as Record<string, NavItem[]>);
+
+  // Get recent page details
+  const recentPageDetails = recentPages
+    .map((url) => navigationItems.find((item) => item.url === url))
+    .filter(Boolean) as NavItem[];
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -245,6 +267,24 @@ export function CommandPalette() {
         </CommandGroup>
 
         <CommandSeparator />
+
+        {/* Recent Pages */}
+        {recentPageDetails.length > 0 && (
+          <>
+            <CommandGroup heading="Recent">
+              {recentPageDetails.map((item) => (
+                <CommandItem
+                  key={item.url}
+                  onSelect={() => handleNavigate(item.url)}
+                >
+                  <Clock className={ICON_SIZES.nav} />
+                  <span>{item.title}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         {/* Navigation Items by Group */}
         {Object.entries(groupedItems).map(([group, items]) => (
