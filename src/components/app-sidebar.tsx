@@ -208,6 +208,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           label={data.systemSection.label}
           items={data.systemSection.items}
           className="mt-auto border-t pt-4"
+          collapsible={false}
         />
       </SidebarContent>
 
