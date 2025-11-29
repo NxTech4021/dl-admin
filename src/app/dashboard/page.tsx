@@ -6,7 +6,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
 import { KeyInsights } from "@/components/key-insights";
-import { LayoutDashboard, RefreshCw, Keyboard } from "lucide-react";
+import { LayoutDashboard, RefreshCw, Keyboard, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -187,6 +188,42 @@ export default function Page() {
     return lastUpdated.toLocaleTimeString();
   };
 
+  const getDataQuality = () => {
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - lastUpdated.getTime()) / 1000);
+
+    // Fresh data (< 5 minutes)
+    if (diff < 300) {
+      return {
+        status: "excellent",
+        label: "Excellent",
+        icon: CheckCircle2,
+        variant: "default" as const,
+        description: "Data is fresh and up-to-date",
+      };
+    }
+
+    // Good data (5-30 minutes)
+    if (diff < 1800) {
+      return {
+        status: "good",
+        label: "Good",
+        icon: CheckCircle2,
+        variant: "secondary" as const,
+        description: "Data is recent",
+      };
+    }
+
+    // Stale data (> 30 minutes)
+    return {
+      status: "stale",
+      label: "Stale",
+      icon: AlertTriangle,
+      variant: "destructive" as const,
+      description: "Data may be outdated, consider refreshing",
+    };
+  };
+
   return (
     <SidebarProvider
       style={
@@ -256,6 +293,23 @@ export default function Page() {
               </div>
 
               <div className="flex items-center gap-3">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant={getDataQuality().variant} className="gap-1.5 cursor-help">
+                        {(() => {
+                          const QualityIcon = getDataQuality().icon;
+                          return <QualityIcon className="h-3 w-3" />;
+                        })()}
+                        {getDataQuality().label}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{getDataQuality().description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>Last updated: {formatLastUpdated()}</span>
                   <TooltipProvider>
