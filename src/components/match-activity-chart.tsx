@@ -46,38 +46,32 @@ import { cn } from "@/lib/utils";
 const chartConfig = {
   tennisLeague: {
     label: "Tennis League",
-
-    color: "#ABFE4D",
+    color: "hsl(var(--chart-tennis-league))",
   },
 
   tennisFriendly: {
     label: "Tennis Friendly",
-
-    color: "#8FE83A",
+    color: "hsl(var(--chart-tennis-friendly))",
   },
 
   pickleballLeague: {
     label: "Pickleball League",
-
-    color: "#A04DFE",
+    color: "hsl(var(--chart-pickleball-league))",
   },
 
   pickleballFriendly: {
     label: "Pickleball Friendly",
-
-    color: "#B366FF",
+    color: "hsl(var(--chart-pickleball-friendly))",
   },
 
   padelLeague: {
     label: "Padel League",
-
-    color: "#4DABFE",
+    color: "hsl(var(--chart-padel-league))",
   },
 
   padelFriendly: {
     label: "Padel Friendly",
-
-    color: "#6BB6FF",
+    color: "hsl(var(--chart-padel-friendly))",
   },
 } satisfies ChartConfig;
 
@@ -490,7 +484,7 @@ export function MatchActivityChart({
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}League` as keyof typeof chartConfig
-                      ]?.color || "#374F35",
+                      ]?.color || "hsl(var(--chart-sport-members))",
                   }}
                 />
 
@@ -521,7 +515,7 @@ export function MatchActivityChart({
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}Friendly` as keyof typeof chartConfig
-                      ]?.color || "#512546",
+                      ]?.color || "hsl(var(--chart-sport-revenue))",
                   }}
                 />
 
