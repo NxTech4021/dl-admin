@@ -78,9 +78,21 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  
-  --brand-light: oklch(61.59% 0.13937 239.453); 
-  --brand-dark: oklch(34.156% 0.10612 253.247);  
+
+  --brand-light: oklch(61.59% 0.13937 239.453);
+  --brand-dark: oklch(34.156% 0.10612 253.247);
+
+  /* Dashboard chart colors - light mode */
+  --chart-user-total: oklch(0.646 0.222 254.6);
+  --chart-user-paying: oklch(0.828 0.189 84.429);
+  --chart-sport-members: oklch(0.398 0.07 227.392);
+  --chart-sport-revenue: oklch(0.488 0.15 330.8);
+  --chart-tennis-league: oklch(0.75 0.25 130);
+  --chart-tennis-friendly: oklch(0.72 0.23 128);
+  --chart-pickleball-league: oklch(0.65 0.25 300);
+  --chart-pickleball-friendly: oklch(0.7 0.22 302);
+  --chart-padel-league: oklch(0.65 0.22 240);
+  --chart-padel-friendly: oklch(0.7 0.2 242);
 }
 
 .dark {
@@ -115,9 +127,21 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  
-  --brand-light: oklch(61.59% 0.13937 239.453); 
-  --brand-dark: oklch(34.156% 0.10612 253.247);  
+
+  --brand-light: oklch(61.59% 0.13937 239.453);
+  --brand-dark: oklch(34.156% 0.10612 253.247);
+
+  /* Dashboard chart colors - dark mode */
+  --chart-user-total: oklch(0.7 0.22 264);
+  --chart-user-paying: oklch(0.75 0.18 90);
+  --chart-sport-members: oklch(0.6 0.15 240);
+  --chart-sport-revenue: oklch(0.65 0.2 320);
+  --chart-tennis-league: oklch(0.72 0.22 125);
+  --chart-tennis-friendly: oklch(0.68 0.2 127);
+  --chart-pickleball-league: oklch(0.7 0.22 295);
+  --chart-pickleball-friendly: oklch(0.68 0.2 297);
+  --chart-padel-league: oklch(0.7 0.2 245);
+  --chart-padel-friendly: oklch(0.68 0.18 247);
 }
 
 @layer base {
