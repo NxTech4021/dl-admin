@@ -122,8 +122,29 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
+  /* WCAG AA compliant keyboard focus indicators */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary/70 ring-2 ring-primary/50;
+  }
+
+  /* Enhanced focus for interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary ring-2 ring-primary/50;
+  }
+
+  /* Focus within for containers */
+  select:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    @apply ring-2 ring-primary/70 outline-none;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
