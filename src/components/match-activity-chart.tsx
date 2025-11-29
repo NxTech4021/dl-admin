@@ -296,6 +296,7 @@ export function MatchActivityChart({
         </div>
 
         <ChartContainer
+          key={`${sportFilter}-${chartType}`}
           config={filteredConfig}
           className="aspect-auto h-[280px] sm:h-[320px] md:h-[350px] w-full"
         >
