@@ -3,12 +3,14 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
   CheckCircle2,
   Lightbulb,
+  ArrowLeftRight,
 } from "lucide-react";
 
 type InsightType = "positive" | "negative" | "warning" | "info";
@@ -38,6 +40,8 @@ export function KeyInsights({
   activeUsers = 0,
   previousActiveUsers = 0,
 }: KeyInsightsProps) {
+  const [showComparison, setShowComparison] = React.useState(false);
+
   const insights = React.useMemo<Insight[]>(() => {
     const results: Insight[] = [];
 
@@ -160,15 +164,89 @@ export function KeyInsights({
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-MY", {
+      style: "currency",
+      currency: "MYR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat("en-US").format(value);
+  };
+
   return (
     <Card>
       <CardHeader className="border-b">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <CardTitle>Key Insights</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <CardTitle>Key Insights</CardTitle>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowComparison(!showComparison)}
+            className="gap-2"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            {showComparison ? "Hide" : "Show"} Comparison
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        {showComparison && (
+          <div className="mb-6 overflow-hidden rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Metric</th>
+                  <th className="px-4 py-3 text-right font-medium">Current</th>
+                  <th className="px-4 py-3 text-right font-medium">Previous</th>
+                  <th className="px-4 py-3 text-right font-medium">Change</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium">Total Revenue</td>
+                  <td className="px-4 py-3 text-right">{formatCurrency(totalRevenue)}</td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">{formatCurrency(previousRevenue)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Badge variant={totalRevenue > previousRevenue ? "default" : "destructive"} className="text-xs">
+                      {totalRevenue > previousRevenue ? "+" : ""}
+                      {previousRevenue ? ((( totalRevenue - previousRevenue) / previousRevenue) * 100).toFixed(1) : "0"}%
+                    </Badge>
+                  </td>
+                </tr>
+                <tr className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium">Total Matches</td>
+                  <td className="px-4 py-3 text-right">{formatNumber(totalMatches)}</td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">{formatNumber(previousMatches)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Badge variant={totalMatches > previousMatches ? "default" : "destructive"} className="text-xs">
+                      {totalMatches > previousMatches ? "+" : ""}
+                      {previousMatches ? (((totalMatches - previousMatches) / previousMatches) * 100).toFixed(1) : "0"}%
+                    </Badge>
+                  </td>
+                </tr>
+                <tr className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium">Active Users</td>
+                  <td className="px-4 py-3 text-right">{formatNumber(activeUsers)}</td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">{formatNumber(previousActiveUsers)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Badge variant={activeUsers > previousActiveUsers ? "default" : "destructive"} className="text-xs">
+                      {activeUsers > previousActiveUsers ? "+" : ""}
+                      {previousActiveUsers ? (((activeUsers - previousActiveUsers) / previousActiveUsers) * 100).toFixed(1) : "0"}%
+                    </Badge>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2">
           {insights.map((insight) => (
             <div
