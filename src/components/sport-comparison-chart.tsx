@@ -29,11 +29,11 @@ import { formatValue as formatCurrency } from "@/lib/utils/format";
 const chartConfig = {
   payingMembers: {
     label: "Paying Members",
-    color: "hsl(var(--chart-sport-members))",
+    color: "var(--chart-sport-members)",
   },
   revenue: {
     label: "Revenue (RM)",
-    color: "hsl(var(--chart-sport-revenue))",
+    color: "var(--chart-sport-revenue)",
   },
 } satisfies ChartConfig;
 
