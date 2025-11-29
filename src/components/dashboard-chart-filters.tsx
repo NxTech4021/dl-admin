@@ -117,8 +117,8 @@ export function DashboardChartFilters({
         />
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <span className="hidden sm:inline text-xs text-muted-foreground">Updated: {formatLastUpdated()}</span>
-          <span className="sm:hidden">Updated: {formatLastUpdated().split(' ').pop()}</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground" suppressHydrationWarning>Updated: {formatLastUpdated()}</span>
+          <span className="sm:hidden" suppressHydrationWarning>Updated: {formatLastUpdated().split(' ').pop()}</span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
