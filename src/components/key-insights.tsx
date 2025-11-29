@@ -4,6 +4,7 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   TrendingUp,
   TrendingDown,
@@ -41,6 +42,14 @@ export function KeyInsights({
   previousActiveUsers = 0,
 }: KeyInsightsProps) {
   const [showComparison, setShowComparison] = React.useState(false);
+
+  const hasData =
+    totalRevenue > 0 ||
+    previousRevenue > 0 ||
+    totalMatches > 0 ||
+    previousMatches > 0 ||
+    activeUsers > 0 ||
+    previousActiveUsers > 0;
 
   const insights = React.useMemo<Insight[]>(() => {
     const results: Insight[] = [];
@@ -197,7 +206,15 @@ export function KeyInsights({
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        {showComparison && (
+        {!hasData ? (
+          <EmptyState
+            icon={Lightbulb}
+            title="No Data Available"
+            description="Insights will appear here once you have revenue, matches, and user activity data."
+          />
+        ) : (
+          <>
+            {showComparison && (
           <div className="mb-6 overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
@@ -272,6 +289,8 @@ export function KeyInsights({
             </div>
           ))}
         </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
