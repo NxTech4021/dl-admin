@@ -182,20 +182,20 @@ export function getUserGrowthData(historyRange: HistoryRange): UserGrowthData[] 
 }
 
 // Helper function for "thisWeek" user growth data
-export function getUserGrowthThisWeekData(baseData: UserGrowthData[]): UserGrowthData {
+export function getUserGrowthThisWeekData(baseData: UserGrowthData[]): UserGrowthData[] {
   const latestMonth = baseData[baseData.length - 1] || { totalUsers: 185, payingMembers: 83 };
   // Deterministic calculation - no Math.random()
   const weeklyUsers = Math.round(latestMonth.totalUsers / 4.3 * 1.0); // ~1.0 multiplier
   const weeklyMembers = Math.round(latestMonth.payingMembers / 4.3 * 1.0);
-  
-  // Get current date in a deterministic way (same on server and client)
-  const now = new Date();
-  const weekStr = `Week of ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  
-  return {
+
+  // Use deterministic "This Week" label to avoid hydration mismatch
+  const weekStr = "This Week";
+
+  // Return array format to match chart expectations
+  return [{
     month: weekStr,
     totalUsers: weeklyUsers,
     payingMembers: weeklyMembers,
-  };
+  }];
 }
 

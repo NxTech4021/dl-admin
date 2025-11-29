@@ -81,10 +81,8 @@ export function UserGrowthChart({
     }
 
     if (chartRange === "thisWeek") {
-      // using mock data
-      const weeklyData = getUserGrowthThisWeekData(chartData);
-      
-      return [weeklyData];
+      // using mock data - returns array
+      return getUserGrowthThisWeekData(chartData);
     }
 
     // Default monthly
