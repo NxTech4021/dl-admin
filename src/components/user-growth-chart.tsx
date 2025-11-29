@@ -145,7 +145,6 @@ export function UserGrowthChart({
 
         {/* === Chart === */}
         <ChartContainer
-          key={`${chartRange}-${historyRange}`} // Force re-render when props change
           config={chartConfig}
           className="aspect-auto h-[300px] sm:h-[400px] md:h-[450px] w-full"
         >
