@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
 import { LayoutDashboard, RefreshCw, Keyboard } from "lucide-react";
 import dynamic from "next/dynamic";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
 
@@ -99,6 +100,34 @@ export default function Page() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
+  // Handler functions
+  const handleRefresh = useCallback(() => {
+    setLastUpdated(new Date());
+    toast.success("Dashboard refreshed", {
+      description: "All data has been updated",
+    });
+    // In real app, this would trigger data refetch
+  }, []);
+
+  const handleChartRangeChange = useCallback((value: "monthly" | "average" | "thisWeek") => {
+    setChartRange(value);
+    const labels = {
+      monthly: "Monthly view",
+      average: "Average per week view",
+      thisWeek: "This week view",
+    };
+    toast.info("Chart range updated", {
+      description: `Switched to ${labels[value]}`,
+    });
+  }, []);
+
+  const handleHistoryRangeChange = useCallback((value: 1 | 3 | 6) => {
+    setHistoryRange(value);
+    toast.info("Historical range updated", {
+      description: `Showing ${value} month${value > 1 ? "s" : ""} of data`,
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -117,24 +146,24 @@ export default function Page() {
       // Chart range shortcuts: M, A, W
       if (e.key === "m" || e.key === "M") {
         e.preventDefault();
-        setChartRange("monthly");
+        handleChartRangeChange("monthly");
       } else if (e.key === "a" || e.key === "A") {
         e.preventDefault();
-        setChartRange("average");
+        handleChartRangeChange("average");
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
-        setChartRange("thisWeek");
+        handleChartRangeChange("thisWeek");
       }
       // History range shortcuts: 1, 2, 3 (mapping to 1, 3, 6 months)
       else if (e.key === "1") {
         e.preventDefault();
-        setHistoryRange(1);
+        handleHistoryRangeChange(1);
       } else if (e.key === "2") {
         e.preventDefault();
-        setHistoryRange(3);
+        handleHistoryRangeChange(3);
       } else if (e.key === "3") {
         e.preventDefault();
-        setHistoryRange(6);
+        handleHistoryRangeChange(6);
       }
       // Refresh with R
       else if (e.key === "r" || e.key === "R") {
@@ -145,12 +174,7 @@ export default function Page() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, []);
-
-  const handleRefresh = () => {
-    setLastUpdated(new Date());
-    // In real app, this would trigger data refetch
-  };
+  }, [handleChartRangeChange, handleHistoryRangeChange, handleRefresh]);
 
   const formatLastUpdated = () => {
     const now = new Date();
@@ -202,7 +226,7 @@ export default function Page() {
                   <Tabs
                     value={chartRange}
                     onValueChange={(value) =>
-                      setChartRange(value as "monthly" | "average" | "thisWeek")
+                      handleChartRangeChange(value as "monthly" | "average" | "thisWeek")
                     }
                   >
                     <TabsList>
@@ -219,7 +243,7 @@ export default function Page() {
                   </span>
                   <Tabs
                     value={historyRange.toString()}
-                    onValueChange={(value) => setHistoryRange(Number(value) as 1 | 3 | 6)}
+                    onValueChange={(value) => handleHistoryRangeChange(Number(value) as 1 | 3 | 6)}
                   >
                     <TabsList>
                       <TabsTrigger value="1">1 Month</TabsTrigger>
