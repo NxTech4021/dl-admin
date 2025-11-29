@@ -10,6 +10,7 @@ import { AnimatedContainer } from "@/components/ui/animated-container";
 import { FilterPreset } from "@/components/dashboard-filter-presets";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
 import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
+import { ChartSkeleton } from "@/components/ui/chart-skeleton";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { useDashboardExport } from "@/hooks/use-dashboard-export";
 import { LayoutDashboard } from "lucide-react";
@@ -51,36 +52,6 @@ const MatchActivityChart = dynamic(() =>
 
   historyRange?: 1 | 3 | 6;
 }>;
-
-// STANDARD: Reusable loading component
-
-// === Loading Skeleton ===
-
-const ChartSkeleton = ({ height, name }: { height: string; name?: string }) => (
-  <div
-    className={`${height} relative overflow-hidden rounded-lg border bg-card`}
-    role="status"
-    aria-label={name ? `Loading ${name}` : "Loading chart"}
-  >
-    {/* Shimmer effect */}
-    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-muted/50 to-transparent" />
-
-    {/* Skeleton content */}
-    <div className="flex h-full flex-col p-6">
-      <div className="space-y-3">
-        <div className="h-6 w-48 animate-pulse rounded bg-muted" />
-        <div className="h-4 w-32 animate-pulse rounded bg-muted/70" />
-      </div>
-      <div className="mt-6 flex-1 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-16 animate-pulse rounded bg-muted" />
-          <div className="h-16 animate-pulse rounded bg-muted" />
-        </div>
-        <div className="h-full min-h-[200px] animate-pulse rounded bg-muted/50" />
-      </div>
-    </div>
-  </div>
-);
 
 // STANDARD: Enable Static Generation with ISR
 
