@@ -9,6 +9,7 @@ import { KeyInsights } from "@/components/key-insights";
 import { AnimatedContainer } from "@/components/ui/animated-container";
 import { FilterPreset } from "@/components/dashboard-filter-presets";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
+import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -266,14 +267,7 @@ export default function Page() {
               <section className="space-y-4 sm:space-y-6 px-4 sm:px-6">
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics Overview</h2>
                 <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 relative">
-                {isChartLoading && (
-                  <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                      <span className="text-sm text-muted-foreground">Updating charts...</span>
-                    </div>
-                  </div>
-                )}
+                <ChartLoadingOverlay isLoading={isChartLoading} />
                 <ChartErrorBoundary chartName="User Growth Chart">
                   <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
                     <UserGrowthChart
@@ -307,14 +301,7 @@ export default function Page() {
               </div>
 
               <div className="relative">
-                {isChartLoading && (
-                  <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                      <span className="text-sm text-muted-foreground">Updating charts...</span>
-                    </div>
-                  </div>
-                )}
+                <ChartLoadingOverlay isLoading={isChartLoading} />
                 <ChartErrorBoundary chartName="Match Activity Chart">
                   <Suspense fallback={<ChartSkeleton height="h-[400px]" name="Match Activity Chart" />}>
                     <MatchActivityChart
