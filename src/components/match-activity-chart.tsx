@@ -480,10 +480,10 @@ export function MatchActivityChart({
 
         {sportFilter !== "all" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
-            <div className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{
                     backgroundColor:
                       chartConfig[
@@ -492,10 +492,10 @@ export function MatchActivityChart({
                   }}
                 />
 
-                <span className="font-medium">League Matches</span>
+                <span className="text-sm font-medium">League Matches</span>
               </div>
 
-              <div className="text-xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
                     sum +
@@ -506,15 +506,15 @@ export function MatchActivityChart({
                 )}
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground leading-tight">
                 Official league matches
               </div>
             </div>
 
-            <div className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{
                     backgroundColor:
                       chartConfig[
@@ -523,10 +523,10 @@ export function MatchActivityChart({
                   }}
                 />
 
-                <span className="font-medium">Friendly Matches</span>
+                <span className="text-sm font-medium">Friendly Matches</span>
               </div>
 
-              <div className="text-xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
                     sum +
@@ -537,7 +537,7 @@ export function MatchActivityChart({
                 )}
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground leading-tight">
                 Casual friendly matches
               </div>
             </div>

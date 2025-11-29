@@ -221,32 +221,31 @@ export function SportComparisonChart({
           {chartData.map((sport) => (
             <div
               key={sport.sport}
-              className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50"
+              className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{ backgroundColor: sport.fill }}
                 />
-                <span className="font-medium">{sport.sport}</span>
+                <span className="text-sm font-medium">{sport.sport}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Members</p>
-                  <p className="font-semibold">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">Members</p>
+                  <p className="text-sm font-semibold truncate">
                     {sport.payingMembers.toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Revenue</p>
-                  <p className="font-semibold">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">Revenue</p>
+                  <p className="text-sm font-semibold truncate">
                     {formatMetricValue(sport.revenue, "revenue")}
                   </p>
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {((sport.payingMembers / totalMembers) * 100).toFixed(1)}% of
-                total members
+              <div className="text-xs text-muted-foreground leading-tight">
+                {((sport.payingMembers / totalMembers) * 100).toFixed(1)}% of total
               </div>
             </div>
           ))}
