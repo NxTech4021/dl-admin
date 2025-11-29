@@ -201,8 +201,8 @@ export function KeyInsights({
             className="gap-1 sm:gap-2 text-xs sm:text-sm shrink-0"
           >
             <ArrowLeftRight className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline">{showComparison ? "Hide" : "Show"} Comparison</span>
-            <span className="xs:hidden">{showComparison ? "Hide" : "Show"}</span>
+            <span className="hidden sm:inline">{showComparison ? "Hide" : "Show"} Comparison</span>
+            <span className="sm:hidden">{showComparison ? "Hide" : "Show"}</span>
           </Button>
         </div>
       </CardHeader>
