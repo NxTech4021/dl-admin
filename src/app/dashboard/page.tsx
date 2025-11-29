@@ -323,7 +323,7 @@ export default function Page() {
               aria-label="Chart filter controls"
             >
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                     Chart Range:
                   </span>
@@ -333,7 +333,7 @@ export default function Page() {
                       handleChartRangeChange(value as "monthly" | "average" | "thisWeek")
                     }
                   >
-                    <TabsList className="grid grid-cols-3 w-full xs:w-auto">
+                    <TabsList className="grid grid-cols-3 w-full sm:w-auto">
                       <TabsTrigger value="monthly" className="text-xs sm:text-sm">Monthly</TabsTrigger>
                       <TabsTrigger value="average" className="text-xs sm:text-sm">Average</TabsTrigger>
                       <TabsTrigger value="thisWeek" className="text-xs sm:text-sm">Week</TabsTrigger>
@@ -341,7 +341,7 @@ export default function Page() {
                   </Tabs>
                 </div>
 
-                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                     Historical Range:
                   </span>
@@ -349,7 +349,7 @@ export default function Page() {
                     value={historyRange.toString()}
                     onValueChange={(value) => handleHistoryRangeChange(Number(value) as 1 | 3 | 6)}
                   >
-                    <TabsList className="grid grid-cols-3 w-full xs:w-auto">
+                    <TabsList className="grid grid-cols-3 w-full sm:w-auto">
                       <TabsTrigger value="1" className="text-xs sm:text-sm">1mo</TabsTrigger>
                       <TabsTrigger value="3" className="text-xs sm:text-sm">3mo</TabsTrigger>
                       <TabsTrigger value="6" className="text-xs sm:text-sm">6mo</TabsTrigger>
@@ -416,7 +416,7 @@ export default function Page() {
                         aria-label="Export dashboard data"
                       >
                         <Download className="h-3 w-3" />
-                        <span className="hidden xs:inline text-xs">Export</span>
+                        <span className="hidden sm:inline text-xs">Export</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
