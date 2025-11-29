@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
 import { KeyInsights } from "@/components/key-insights";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 import { LayoutDashboard, RefreshCw, Keyboard, CheckCircle2, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
@@ -311,13 +312,13 @@ export default function Page() {
 
             {/* Chart Filters */}
             <section
-              className="flex flex-wrap items-center justify-between gap-6 rounded-lg border bg-muted/30 p-6 mx-6"
+              className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-4 sm:gap-6 rounded-lg border bg-muted/30 p-4 sm:p-6 mx-4 sm:mx-6"
               role="toolbar"
               aria-label="Chart filter controls"
             >
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 w-full sm:w-auto">
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                     Chart Range:
                   </span>
                   <Tabs
@@ -326,32 +327,32 @@ export default function Page() {
                       handleChartRangeChange(value as "monthly" | "average" | "thisWeek")
                     }
                   >
-                    <TabsList>
-                      <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                      <TabsTrigger value="average">Average / Week</TabsTrigger>
-                      <TabsTrigger value="thisWeek">This Week</TabsTrigger>
+                    <TabsList className="grid grid-cols-3 w-full xs:w-auto">
+                      <TabsTrigger value="monthly" className="text-xs sm:text-sm">Monthly</TabsTrigger>
+                      <TabsTrigger value="average" className="text-xs sm:text-sm">Average</TabsTrigger>
+                      <TabsTrigger value="thisWeek" className="text-xs sm:text-sm">Week</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-muted-foreground">
+                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 w-full sm:w-auto">
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                     Historical Range:
                   </span>
                   <Tabs
                     value={historyRange.toString()}
                     onValueChange={(value) => handleHistoryRangeChange(Number(value) as 1 | 3 | 6)}
                   >
-                    <TabsList>
-                      <TabsTrigger value="1">1 Month</TabsTrigger>
-                      <TabsTrigger value="3">3 Months</TabsTrigger>
-                      <TabsTrigger value="6">6 Months</TabsTrigger>
+                    <TabsList className="grid grid-cols-3 w-full xs:w-auto">
+                      <TabsTrigger value="1" className="text-xs sm:text-sm">1mo</TabsTrigger>
+                      <TabsTrigger value="3" className="text-xs sm:text-sm">3mo</TabsTrigger>
+                      <TabsTrigger value="6" className="text-xs sm:text-sm">6mo</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -369,8 +370,9 @@ export default function Page() {
                   </Tooltip>
                 </TooltipProvider>
 
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Last updated: {formatLastUpdated()}</span>
+                <div className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+                  <span className="hidden sm:inline">Last updated: {formatLastUpdated()}</span>
+                  <span className="sm:hidden">Updated: {formatLastUpdated().split(' ').pop()}</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -378,7 +380,7 @@ export default function Page() {
                           variant="ghost"
                           size="sm"
                           onClick={handleRefresh}
-                          className="h-7 w-7 p-0"
+                          className="h-6 w-6 sm:h-7 sm:w-7 p-0 touch-manipulation"
                           aria-label="Refresh dashboard data"
                         >
                           <RefreshCw className="h-3 w-3" />
@@ -398,11 +400,11 @@ export default function Page() {
                         variant="outline"
                         size="sm"
                         onClick={handleExportCSV}
-                        className="h-7 gap-1.5"
+                        className="h-6 sm:h-7 gap-1 sm:gap-1.5 text-xs touch-manipulation"
                         aria-label="Export dashboard data"
                       >
                         <Download className="h-3 w-3" />
-                        <span className="text-xs">Export</span>
+                        <span className="hidden xs:inline text-xs">Export</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -417,7 +419,7 @@ export default function Page() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 gap-1.5"
+                        className="h-6 sm:h-7 gap-1 sm:gap-1.5 touch-manipulation hidden sm:flex"
                         aria-label="Keyboard shortcuts"
                       >
                         <Keyboard className="h-3 w-3" />
@@ -445,21 +447,24 @@ export default function Page() {
             </section>
 
             {/* Key Insights Section */}
-            <section className="px-6">
-              <KeyInsights
-                totalRevenue={45250}
-                previousRevenue={38400}
-                totalMatches={324}
-                previousMatches={289}
-                activeUsers={856}
-                previousActiveUsers={792}
-              />
-            </section>
+            <AnimatedContainer delay={0.1}>
+              <section className="px-4 sm:px-6">
+                <KeyInsights
+                  totalRevenue={45250}
+                  previousRevenue={38400}
+                  totalMatches={324}
+                  previousMatches={289}
+                  activeUsers={856}
+                  previousActiveUsers={792}
+                />
+              </section>
+            </AnimatedContainer>
 
             {/* Charts Section */}
-            <section className="space-y-6 px-6">
-              <h2 className="text-2xl font-semibold tracking-tight">Analytics Overview</h2>
-              <div className="grid gap-6 lg:grid-cols-2">
+            <AnimatedContainer delay={0.2}>
+              <section className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics Overview</h2>
+                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
                 <ChartErrorBoundary chartName="User Growth Chart">
                   <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
                     <UserGrowthChart
@@ -478,14 +483,16 @@ export default function Page() {
                   </Suspense>
                 </ChartErrorBoundary>
               </div>
-            </section>
+              </section>
+            </AnimatedContainer>
 
             {/* Match Activity */}
-            <section className="space-y-6 px-6 pb-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold tracking-tight">Match Activity</h2>
+            <AnimatedContainer delay={0.3}>
+              <section className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-6 sm:pb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Match Activity</h2>
 
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   Weekly match trends across all sports
                 </div>
               </div>
@@ -498,7 +505,8 @@ export default function Page() {
                   />
                 </Suspense>
               </ChartErrorBoundary>
-            </section>
+              </section>
+            </AnimatedContainer>
           </div>
         </div>
       </SidebarInset>
