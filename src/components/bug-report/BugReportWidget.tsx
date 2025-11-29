@@ -62,29 +62,77 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
   }, []);
 
   const fetchAppData = async () => {
+    // Silently fail if backend is unavailable - bug reporting is optional
     try {
-      // Fetch apps to get DLA app ID
+      if (!apiUrl) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Bug reporting: API URL not configured");
+        }
+        return;
+      }
+
+      // Fetch apps to get DLA app ID with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
       const appsRes = await fetch(`${apiUrl}/api/bug/apps`, {
         credentials: "include",
+        signal: controller.signal,
       });
-      if (!appsRes.ok) return;
+
+      clearTimeout(timeoutId);
+
+      if (!appsRes.ok) {
+        if (process.env.NODE_ENV === "development") {
+          const errorText = await appsRes.text();
+          console.warn("Bug reporting unavailable:", appsRes.status, errorText);
+        }
+        return;
+      }
 
       const apps = await appsRes.json();
-      const dlaApp = apps.find((app: any) => app.code === APP_CODE);
-      if (!dlaApp) return;
 
+      const dlaApp = apps.find((app: any) => app.code === APP_CODE);
+
+      if (!dlaApp) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`Bug reporting: App "${APP_CODE}" not found`);
+        }
+        return;
+      }
+
+      console.log("✅ Found DLA app:", dlaApp);
       setAppId(dlaApp.id);
 
       // Fetch modules for this app
+      const moduleController = new AbortController();
+      const moduleTimeoutId = setTimeout(() => moduleController.abort(), 5000);
+
       const modulesRes = await fetch(`${apiUrl}/api/bug/apps/${dlaApp.id}/modules`, {
         credentials: "include",
+        signal: moduleController.signal,
       });
+
+      clearTimeout(moduleTimeoutId);
+
       if (modulesRes.ok) {
         const modulesData = await modulesRes.json();
         setModules(modulesData);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Bug reporting: Modules loaded");
+        }
       }
-    } catch (error) {
-      console.error("Failed to fetch app data:", error);
+    } catch (error: any) {
+      // Silently fail - bug reporting is optional, don't disrupt user experience
+      if (process.env.NODE_ENV === "development") {
+        if (error.name === "AbortError") {
+          console.warn("Bug reporting: Request timeout");
+        } else if (error.message?.includes("fetch")) {
+          console.warn("Bug reporting: Backend unavailable");
+        } else {
+          console.warn("Bug reporting:", error.message);
+        }
+      }
     }
   };
 

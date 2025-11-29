@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SocketProvider } from "@/context/socket-context";
 import { QueryProvider } from "@/lib/query-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
-import { Toaster } from "sonner";
+import { CommandPalette } from "@/components/command-palette";
+import { ModalProvider } from "@/contexts/modal-context";
+import { GlobalModals } from "@/components/global-modals";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,9 +41,11 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <QueryProvider>
-            <SocketProvider>
+            <ModalProvider>
               {children}
-            </SocketProvider>
+              <CommandPalette />
+              <GlobalModals />
+            </ModalProvider>
           </QueryProvider>
         </ErrorBoundary>
         <Toaster position="bottom-right" />

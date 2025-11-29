@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  IconDotsVertical,
-  IconLogout,
-  IconUserCircle,
-} from "@tabler/icons-react";
+  MoreVertical,
+  LogOut,
+  UserCircle,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,21 +28,17 @@ type User = typeof authClient.$Infer.Session.user;
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
-  // const { logout } = useAdminSession();
-  // const router = useRouter();
 
   const getInitials = (name: string) => {
     return name
       .split(' ')
       .map(word => word.charAt(0).toUpperCase())
       .join('')
-      .slice(0, 2); // Limit to 2 characters
+      .slice(0, 2);
   };
 
   const handleLogout = async () => {
     await authClient.signOut();
-
-    // await logout();
   };
 
   return (
@@ -54,17 +50,17 @@ export function NavUser({ user }: { user: User }) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.image || ""} alt={user.name} />
                 <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <span className="truncate font-semibold">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <MoreVertical className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -80,7 +76,7 @@ export function NavUser({ user }: { user: User }) {
                   <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-semibold">{user.name}</span>
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email}
                   </span>
@@ -89,24 +85,16 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <a href="/admin/account" className="flex items-center gap-2">
-                <IconUserCircle className="size-4" />
-                Account
-              </a>
-            </DropdownMenuItem>
-              {/* <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem> */}
-              {/* <DropdownMenuItem>
-                <IconNotification />
-                Notifications
-              </DropdownMenuItem> */}
+              <DropdownMenuItem asChild>
+                <a href="/admin/account" className="flex items-center gap-2 cursor-pointer">
+                  <UserCircle className="size-4" />
+                  Account
+                </a>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <IconLogout />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <LogOut className="size-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

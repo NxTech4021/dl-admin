@@ -1,6 +1,5 @@
 import { LoginForm } from "@/components/login-form";
 import Image from "next/image";
-import { Toaster } from "sonner";
 
 export default function LoginPage() {
   return (
@@ -19,7 +18,6 @@ export default function LoginPage() {
           </span>
         </a>
         <LoginForm />
-        <Toaster />
       </div>
     </div>
   );

@@ -38,6 +38,25 @@ export const endpoints = {
     createSuperadmin: "/api/admin/superadmin",
     updatepassword: "/api/admin/updatepassword",
     sendInvite: "/api/admin/invite",
+
+    // Match management
+    matches: {
+      getAll: "/api/admin/matches",
+      getStats: "/api/admin/matches/stats",
+      getById: (id: string) => `/api/admin/matches/${id}`,
+      voidMatch: (id: string) => `/api/admin/matches/${id}/void`,
+      editResult: (id: string) => `/api/admin/matches/${id}/edit-result`,
+      convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
+      reviewCancellation: (id: string) => `/api/admin/matches/${id}/review-cancellation`,
+      messageParticipants: (id: string) => `/api/admin/matches/${id}/message-participants`,
+    },
+
+    // Dispute management
+    disputes: {
+      getAll: "/api/admin/disputes",
+      getById: (id: string) => `/api/admin/disputes/${id}`,
+      resolve: (id: string) => `/api/admin/disputes/${id}/resolve`,
+    },
   },
 
   player: {

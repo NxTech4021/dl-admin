@@ -1,11 +1,10 @@
 "use client";
 
-import { type Icon } from "@tabler/icons-react";
-
+import { type LucideIcon } from "lucide-react";
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
-
+import { cn } from "@/lib/utils";
+import { ICON_SIZES, TYPOGRAPHY } from "@/lib/constants/ui";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -14,89 +13,58 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string;
+interface NavMainItem {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  variant?: "default" | "prominent";
+}
 
-    url: string;
+interface NavMainProps {
+  items: NavMainItem[];
+}
 
-    icon?: Icon;
-
-    hasNotification?: boolean;
-
-    notificationCount?: number;
-  }[];
-}) {
+export function NavMain({ items }: NavMainProps) {
   const pathname = usePathname();
 
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
+    <SidebarGroup className="px-3 py-3">
+      <SidebarGroupContent>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            {/* <SidebarMenuButton
+          {items.map((item) => {
+            const isActive = pathname === item.url;
+            const isProminent = item.variant === "prominent";
 
-              tooltip="Quick Create"
-
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-
-            >
-
-              <IconCirclePlusFilled />
-
-              <span>Quick Create</span>
-
-            </SidebarMenuButton> */}
-
-            {/* <Button
-
-              size="icon"
-
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-
-              variant="outline"
-
-            >
-
-              <IconMail />
-
-              <span className="sr-only">Inbox</span>
-
-            </Button> */}
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                tooltip={item.title}
-                asChild
-                isActive={pathname === item.url}
-              >
-                <Link
-                  href={item.url}
-                  className="flex items-center justify-between w-full"
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  asChild
+                  isActive={isActive}
+                  size={isProminent ? "lg" : "default"}
+                  className={cn(
+                    "relative",
+                    isProminent && "bg-primary/10 hover:bg-primary/20 font-semibold",
+                    isActive && !isProminent && "border-l-4 border-primary pl-[calc(0.75rem-4px)]"
+                  )}
                 >
-                  <div className="flex items-center gap-2">
-                    {item.icon && <item.icon />}
-
-                    <span>{item.title}</span>
-                  </div>
-
-                  {item.notificationCount ? (
-                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                      {item.notificationCount}
+                  <Link href={item.url} className="flex items-center gap-3">
+                    {item.icon && (
+                      <item.icon
+                        className={cn(
+                          isProminent ? ICON_SIZES.header : ICON_SIZES.nav
+                        )}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className={isActive || isProminent ? TYPOGRAPHY.menuItemActive : TYPOGRAPHY.menuItem}>
+                      {item.title}
                     </span>
-                  ) : item.hasNotification ? (
-                    <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />
-                  ) : null}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

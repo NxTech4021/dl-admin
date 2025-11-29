@@ -51,6 +51,31 @@ export const STATUS_BADGE_VARIANTS = {
     APPROVED: 'default',
     REJECTED: 'destructive',
   },
+
+  MATCH: {
+    DRAFT: 'secondary',
+    SCHEDULED: 'default',
+    ONGOING: 'default',
+    COMPLETED: 'outline',
+    UNFINISHED: 'secondary',
+    CANCELLED: 'destructive',
+    VOID: 'destructive',
+  },
+
+  INVITATION: {
+    PENDING: 'secondary',
+    ACCEPTED: 'default',
+    DECLINED: 'destructive',
+    EXPIRED: 'outline',
+    CANCELLED: 'destructive',
+  },
+
+  DISPUTE: {
+    OPEN: 'destructive',
+    UNDER_REVIEW: 'secondary',
+    RESOLVED: 'default',
+    REJECTED: 'outline',
+  },
 } as const;
 
 // Centralized Color Palette for All Badges
@@ -87,6 +112,31 @@ export const STATUS_BADGE_COLORS = {
     PENDING: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-200',
     APPROVED: 'bg-green-100 hover:bg-green-200 text-green-800 border-green-200',
     REJECTED: 'bg-red-100 hover:bg-red-200 text-red-800 border-red-200',
+  },
+
+  MATCH: {
+    DRAFT: 'bg-gray-400 hover:bg-gray-500 text-white border-gray-400',
+    SCHEDULED: 'bg-blue-500 hover:bg-blue-600 text-white border-transparent',
+    ONGOING: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    COMPLETED: 'bg-gray-300 hover:bg-gray-400 text-gray-700 border-gray-300',
+    UNFINISHED: 'bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-yellow-400',
+    CANCELLED: 'bg-red-500 hover:bg-red-600 text-white border-transparent',
+    VOID: 'bg-red-700 hover:bg-red-800 text-white border-transparent',
+  },
+
+  INVITATION: {
+    PENDING: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-200',
+    ACCEPTED: 'bg-green-100 hover:bg-green-200 text-green-800 border-green-200',
+    DECLINED: 'bg-red-100 hover:bg-red-200 text-red-800 border-red-200',
+    EXPIRED: 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200',
+    CANCELLED: 'bg-red-200 hover:bg-red-300 text-red-900 border-red-300',
+  },
+
+  DISPUTE: {
+    OPEN: 'bg-red-500 hover:bg-red-600 text-white border-transparent',
+    UNDER_REVIEW: 'bg-orange-500 hover:bg-orange-600 text-white border-transparent',
+    RESOLVED: 'bg-green-500 hover:bg-green-600 text-white border-transparent',
+    REJECTED: 'bg-gray-400 hover:bg-gray-500 text-white border-gray-400',
   },
 } as const;
 
@@ -153,6 +203,7 @@ export const LOADING_STATES = {
     LEAGUES: 'Search leagues...',
     DIVISIONS: 'Search divisions by name, game type...',
     ADMINS: 'Search admins by name or email...',
+    MATCHES: 'Search matches by player name, venue, division...',
   },
 } as const;
 
@@ -207,12 +258,12 @@ export const ACTION_MESSAGES = {
 
 /**
  * Get the badge variant for a given entity and status
- * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param entity - The entity type
  * @param status - The status value
  * @returns The badge variant
  */
 export const getStatusBadgeVariant = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ) => {
   const variants = STATUS_BADGE_VARIANTS[entity];
@@ -221,12 +272,12 @@ export const getStatusBadgeVariant = (
 
 /**
  * Get the badge color classes for a given entity and status
- * @param entity - The entity type (SEASON, LEAGUE, ADMIN, DIVISION, WITHDRAWAL)
+ * @param entity - The entity type
  * @param status - The status value
  * @returns The color class string
  */
 export const getStatusBadgeColor = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ): string => {
   const colors = STATUS_BADGE_COLORS[entity];
@@ -241,7 +292,7 @@ export const getStatusBadgeColor = (
  * @returns Object with variant and className
  */
 export const getStatusBadgeProps = (
-  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL',
+  entity: 'SEASON' | 'LEAGUE' | 'ADMIN' | 'DIVISION' | 'WITHDRAWAL' | 'MATCH' | 'INVITATION' | 'DISPUTE',
   status: string
 ) => {
   return {
@@ -349,6 +400,9 @@ export const FILTER_OPTIONS = {
   LEAGUE_STATUS: ['ACTIVE', 'UPCOMING', 'ONGOING', 'FINISHED', 'INACTIVE', 'CANCELLED', 'SUSPENDED'],
   SEASON_STATUS: ['UPCOMING', 'ACTIVE', 'FINISHED', 'CANCELLED'],
   ADMIN_STATUS: ['PENDING', 'ACTIVE', 'SUSPENDED'],
+  MATCH_STATUS: ['DRAFT', 'SCHEDULED', 'ONGOING', 'COMPLETED', 'UNFINISHED', 'CANCELLED', 'VOID'],
+  MATCH_TYPE: ['SINGLES', 'DOUBLES'],
+  MATCH_FORMAT: ['STANDARD', 'ONE_SET'],
   SPORTS: ['TENNIS', 'PICKLEBALL', 'PADEL'],
   GAME_TYPES: ['SINGLES', 'DOUBLES', 'MIXED'],
   DIVISION_LEVELS: ['beginner', 'intermediate', 'advanced'],
@@ -370,3 +424,46 @@ export const TABLE_ANIMATIONS = {
   TRANSITION: 'transition-colors',
   FADE_IN: 'animate-in fade-in-0 duration-200',
 } as const;
+
+// Match-specific labels
+export const MATCH_STATUS_LABELS = {
+  DRAFT: 'Draft',
+  SCHEDULED: 'Scheduled',
+  ONGOING: 'In Progress',
+  COMPLETED: 'Completed',
+  UNFINISHED: 'Unfinished',
+  CANCELLED: 'Cancelled',
+  VOID: 'Voided',
+} as const;
+
+export const CANCELLATION_REASON_LABELS = {
+  PERSONAL_EMERGENCY: 'Personal Emergency',
+  INJURY: 'Injury',
+  WEATHER: 'Weather',
+  SCHEDULING_CONFLICT: 'Scheduling Conflict',
+  ILLNESS: 'Illness',
+  WORK_COMMITMENT: 'Work Commitment',
+  FAMILY_EMERGENCY: 'Family Emergency',
+  OTHER: 'Other',
+} as const;
+
+export const WALKOVER_REASON_LABELS = {
+  NO_SHOW: 'No Show',
+  LATE_CANCELLATION: 'Late Cancellation',
+  INJURY: 'Injury',
+  PERSONAL_EMERGENCY: 'Personal Emergency',
+  OTHER: 'Other',
+} as const;
+
+// Helper functions
+export const getMatchStatusLabel = (status: string): string => {
+  return MATCH_STATUS_LABELS[status as keyof typeof MATCH_STATUS_LABELS] || status;
+};
+
+export const getCancellationReasonLabel = (reason: string): string => {
+  return CANCELLATION_REASON_LABELS[reason as keyof typeof CANCELLATION_REASON_LABELS] || reason;
+};
+
+export const getWalkoverReasonLabel = (reason: string): string => {
+  return WALKOVER_REASON_LABELS[reason as keyof typeof WALKOVER_REASON_LABELS] || reason;
+};

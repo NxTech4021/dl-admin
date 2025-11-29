@@ -21,8 +21,8 @@ const AdminsDataTable = dynamic(() => import("@/components/data-table/admin-data
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
 });
 
-// Import the type separately to avoid bundling the entire component
-import type { Admin } from "@/components/data-table/admin-data-table";
+// Import the type from the zod schema (flattened for UI)
+import type { Admin } from "@/constants/zod/admin-schema";
 
 
 

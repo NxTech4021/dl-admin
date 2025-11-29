@@ -24,15 +24,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSportComparisonData } from "@/constants/data/mock-chart-data";
+import { formatValue as formatCurrency } from "@/lib/utils/format";
 
 const chartConfig = {
   payingMembers: {
     label: "Paying Members",
-    color: "#374F35",
+    color: "var(--chart-sport-members)",
   },
   revenue: {
     label: "Revenue (RM)",
-    color: "#512546",
+    color: "var(--chart-sport-revenue)",
   },
 } satisfies ChartConfig;
 
@@ -51,26 +52,24 @@ export function SportComparisonChart({
     React.useState<MetricType>("payingMembers");
 
   // using mock data
-  const chartData = React.useMemo(() => 
-    getSportComparisonData(chartRange, historyRange), 
+  const chartData = React.useMemo(() =>
+    getSportComparisonData(chartRange, historyRange),
     [chartRange, historyRange]
   );
 
-  const formatValue = (value: number, metric: MetricType) => {
+  const formatMetricValue = (value: number, metric: MetricType) => {
     if (metric === "revenue") {
-      return new Intl.NumberFormat("en-MY", {
-        style: "currency",
-        currency: "MYR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
+      return formatCurrency(value, "currency");
     }
-    return new Intl.NumberFormat("en-US").format(value);
+    return formatCurrency(value, "number");
   };
 
   const getYAxisDomain = (metric: MetricType) => {
     const values = chartData.map((item) => item[metric]);
     const max = Math.max(...values);
+    if (!isFinite(max) || max <= 0) {
+      return [0, 100];
+    }
     return [0, Math.ceil(max * 1.1)];
   };
 
@@ -97,7 +96,7 @@ export function SportComparisonChart({
           onValueChange={(value) => setActiveMetric(value as MetricType)}
         >
           <SelectTrigger
-            className="w-[160px] rounded-lg sm:ml-auto"
+            className="w-full sm:w-[160px] h-9 sm:h-10 rounded-lg sm:ml-auto touch-manipulation"
             aria-label="Select metric"
           >
             <SelectValue placeholder="Select metric" />
@@ -113,7 +112,7 @@ export function SportComparisonChart({
         </Select>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -132,7 +131,7 @@ export function SportComparisonChart({
               <span className="text-sm font-medium">Total Revenue</span>
             </div>
             <div className="text-2xl font-bold">
-              {formatValue(totalRevenue, "revenue")}
+              {formatMetricValue(totalRevenue, "revenue")}
             </div>
             <div className="text-xs text-muted-foreground">
               Combined from all sports
@@ -196,7 +195,7 @@ export function SportComparisonChart({
                           style={{ backgroundColor: sportData?.fill }}
                         />
                         <span className="font-medium">
-                          {formatValue(value as number, activeMetric)}
+                          {formatMetricValue(value as number, activeMetric)}
                         </span>
                       </div>,
                       <span
@@ -221,36 +220,35 @@ export function SportComparisonChart({
           </BarChart>
         </ChartContainer>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
           {chartData.map((sport) => (
             <div
               key={sport.sport}
-              className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50"
+              className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{ backgroundColor: sport.fill }}
                 />
-                <span className="font-medium">{sport.sport}</span>
+                <span className="text-sm font-medium">{sport.sport}</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Members</p>
-                  <p className="font-semibold">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">Members</p>
+                  <p className="text-sm font-semibold truncate">
                     {sport.payingMembers.toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Revenue</p>
-                  <p className="font-semibold">
-                    {formatValue(sport.revenue, "revenue")}
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-0.5">Revenue</p>
+                  <p className="text-sm font-semibold truncate">
+                    {formatMetricValue(sport.revenue, "revenue")}
                   </p>
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {((sport.payingMembers / totalMembers) * 100).toFixed(1)}% of
-                total members
+              <div className="text-xs text-muted-foreground leading-tight">
+                {((sport.payingMembers / totalMembers) * 100).toFixed(1)}% of total
               </div>
             </div>
           ))}

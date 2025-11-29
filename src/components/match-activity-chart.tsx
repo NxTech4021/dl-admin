@@ -41,42 +41,37 @@ import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getMatchActivityData } from "@/constants/data/mock-chart-data";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   tennisLeague: {
     label: "Tennis League",
-
-    color: "#ABFE4D",
+    color: "var(--chart-tennis-league)",
   },
 
   tennisFriendly: {
     label: "Tennis Friendly",
-
-    color: "#8FE83A",
+    color: "var(--chart-tennis-friendly)",
   },
 
   pickleballLeague: {
     label: "Pickleball League",
-
-    color: "#A04DFE",
+    color: "var(--chart-pickleball-league)",
   },
 
   pickleballFriendly: {
     label: "Pickleball Friendly",
-
-    color: "#B366FF",
+    color: "var(--chart-pickleball-friendly)",
   },
 
   padelLeague: {
     label: "Padel League",
-
-    color: "#4DABFE",
+    color: "var(--chart-padel-league)",
   },
 
   padelFriendly: {
     label: "Padel Friendly",
-
-    color: "#6BB6FF",
+    color: "var(--chart-padel-friendly)",
   },
 } satisfies ChartConfig;
 
@@ -98,6 +93,10 @@ export function MatchActivityChart({
   const [sportFilter, setSportFilter] = React.useState<SportFilter>("all");
 
   const [chartType, setChartType] = React.useState<ChartType>("line");
+
+  const [hiddenSeries, setHiddenSeries] = React.useState<Set<string>>(
+    new Set()
+  );
 
   // Use static mock data based on current props
   const chartData = React.useMemo(
@@ -129,7 +128,9 @@ export function MatchActivityChart({
 
   const aggregatedData = React.useMemo(() => {
     return chartData.map((item) => {
-      const keys = getDataKeys(sportFilter);
+      const keys = getDataKeys(sportFilter).filter(
+        (key) => !hiddenSeries.has(key)
+      );
 
       const total = keys.reduce(
         (sum, key) => sum + (item[key as keyof typeof item] as number),
@@ -138,7 +139,7 @@ export function MatchActivityChart({
 
       return { ...item, total };
     });
-  }, [chartData, sportFilter]);
+  }, [chartData, sportFilter, hiddenSeries]);
 
   const filteredConfig = getFilteredConfig(sportFilter);
 
@@ -149,13 +150,15 @@ export function MatchActivityChart({
     0
   );
 
-  const avgMatchesPerWeek = Math.round(totalMatches / aggregatedData.length);
+  const avgMatchesPerWeek = aggregatedData.length > 0
+    ? Math.round(totalMatches / aggregatedData.length)
+    : 0;
 
-  const latestWeek = aggregatedData[aggregatedData.length - 1];
+  const latestWeek = aggregatedData[aggregatedData.length - 1] || { total: 0 };
 
   const previousWeek = aggregatedData[aggregatedData.length - 2];
 
-  const weeklyGrowth = previousWeek
+  const weeklyGrowth = previousWeek && previousWeek.total > 0
     ? ((latestWeek.total - previousWeek.total) / previousWeek.total) * 100
     : 0;
 
@@ -180,6 +183,18 @@ export function MatchActivityChart({
 
   const ChartComponent = chartType === "line" ? LineChart : BarChart;
 
+  const toggleSeries = (seriesKey: string) => {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(seriesKey)) {
+        next.delete(seriesKey);
+      } else {
+        next.add(seriesKey);
+      }
+      return next;
+    });
+  };
+
   return (
     <Card>
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
@@ -197,12 +212,12 @@ export function MatchActivityChart({
           </CardDescription>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select
             value={sportFilter}
             onValueChange={(value) => setSportFilter(value as SportFilter)}
           >
-            <SelectTrigger className="w-[120px] rounded-lg">
+            <SelectTrigger className="w-full sm:w-[120px] h-9 sm:h-10 rounded-lg touch-manipulation">
               <SelectValue />
             </SelectTrigger>
 
@@ -231,16 +246,17 @@ export function MatchActivityChart({
             onValueChange={(value) => value && setChartType(value as ChartType)}
             variant="outline"
             size="sm"
+            className="shrink-0"
           >
-            <ToggleGroupItem value="line">Line</ToggleGroupItem>
+            <ToggleGroupItem value="line" className="h-9 sm:h-10 touch-manipulation">Line</ToggleGroupItem>
 
-            <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
+            <ToggleGroupItem value="bar" className="h-9 sm:h-10 touch-manipulation">Bar</ToggleGroupItem>
           </ToggleGroup>
         </div>
       </CardHeader>
 
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-xs">
@@ -280,8 +296,9 @@ export function MatchActivityChart({
         </div>
 
         <ChartContainer
+          key={`${sportFilter}-${chartType}`}
           config={filteredConfig}
-          className="aspect-auto h-[350px] w-full"
+          className="aspect-auto h-[280px] sm:h-[320px] md:h-[350px] w-full"
         >
           <ChartComponent
             accessibilityLayer
@@ -389,50 +406,93 @@ export function MatchActivityChart({
             />
 
             {sportFilter === "all" && (
-              <ChartLegend content={<ChartLegendContent />} />
+              <ChartLegend
+                content={({ payload }) => {
+                  if (!payload?.length) return null;
+
+                  return (
+                    <div className="flex items-center justify-center gap-3 sm:gap-4 pt-3 flex-wrap">
+                      {payload.map((item) => {
+                        const key = String(item.dataKey || item.value);
+                        const isHidden = hiddenSeries.has(key);
+                        const itemConfig =
+                          chartConfig[key as keyof typeof chartConfig];
+
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => toggleSeries(key)}
+                            className={cn(
+                              "flex items-center gap-1.5 cursor-pointer transition-opacity hover:opacity-100 min-h-[40px] touch-manipulation px-2 py-1.5",
+                              isHidden && "opacity-30"
+                            )}
+                            aria-label={`${isHidden ? "Show" : "Hide"} ${itemConfig?.label}`}
+                            aria-pressed={!isHidden}
+                          >
+                            <div
+                              className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                              style={{
+                                backgroundColor: item.color,
+                              }}
+                            />
+                            <span className="text-xs sm:text-sm text-muted-foreground">
+                              {itemConfig?.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                }}
+              />
             )}
 
             {chartType === "line"
-              ? dataKeys.map((key, index) => (
-                  <Line
-                    key={key}
-                    dataKey={key}
-                    type="monotone"
-                    stroke={`var(--color-${key})`}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                ))
-              : dataKeys.map((key, index) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    fill={`var(--color-${key})`}
-                    radius={[2, 2, 0, 0]}
-                    stackId="matches"
-                  />
-                ))}
+              ? dataKeys
+                  .filter((key) => !hiddenSeries.has(key))
+                  .map((key) => (
+                    <Line
+                      key={key}
+                      dataKey={key}
+                      type="monotone"
+                      stroke={`var(--color-${key})`}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  ))
+              : dataKeys
+                  .filter((key) => !hiddenSeries.has(key))
+                  .map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      fill={`var(--color-${key})`}
+                      radius={[2, 2, 0, 0]}
+                      stackId="matches"
+                    />
+                  ))}
           </ChartComponent>
         </ChartContainer>
 
         {sportFilter !== "all" && (
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
-            <div className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50">
-              <div className="flex items-center space-x-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}League` as keyof typeof chartConfig
-                      ]?.color || "#374F35",
+                      ]?.color || "var(--chart-sport-members)",
                   }}
                 />
 
-                <span className="font-medium">League Matches</span>
+                <span className="text-sm font-medium">League Matches</span>
               </div>
 
-              <div className="text-xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
                     sum +
@@ -443,27 +503,27 @@ export function MatchActivityChart({
                 )}
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground leading-tight">
                 Official league matches
               </div>
             </div>
 
-            <div className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+              <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
                   style={{
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}Friendly` as keyof typeof chartConfig
-                      ]?.color || "#512546",
+                      ]?.color || "var(--chart-sport-revenue)",
                   }}
                 />
 
-                <span className="font-medium">Friendly Matches</span>
+                <span className="text-sm font-medium">Friendly Matches</span>
               </div>
 
-              <div className="text-xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
                     sum +
@@ -474,7 +534,7 @@ export function MatchActivityChart({
                 )}
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground leading-tight">
                 Casual friendly matches
               </div>
             </div>

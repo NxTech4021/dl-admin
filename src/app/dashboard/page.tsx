@@ -1,20 +1,22 @@
 "use client";
 
 import { AppSidebar } from "@/components/app-sidebar";
-
 import { SiteHeader } from "@/components/site-header";
-
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-
+import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
-
+import { KeyInsights } from "@/components/key-insights";
+import { AnimatedContainer } from "@/components/ui/animated-container";
+import { FilterPreset } from "@/components/dashboard-filter-presets";
+import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
+import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
+import { DashboardChart } from "@/components/ui/dashboard-chart";
+import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
+import { useDashboardExport } from "@/hooks/use-dashboard-export";
+import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
-
-import { Suspense, useState } from "react";
-
-import { Button } from "@/components/ui/button";
-
-import { cn } from "@/lib/utils"; // make sure you have this helper
+import { useState, useCallback } from "react";
+import { toast } from "sonner";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
 
@@ -50,23 +52,14 @@ const MatchActivityChart = dynamic(() =>
   historyRange?: 1 | 3 | 6;
 }>;
 
-// STANDARD: Reusable loading component
-
-// === Loading Skeleton ===
-
-const ChartSkeleton = ({ height }: { height: string }) => (
-  <div
-    className={`${height} animate-pulse bg-muted rounded-lg flex items-center justify-center`}
-  >
-    <div className="text-muted-foreground text-sm">Loading chart...</div>
-  </div>
-);
-
 // STANDARD: Enable Static Generation with ISR
 
 // Note: metadata and revalidate exports are not allowed in client components
 
 // These should be moved to a layout.tsx file if needed
+
+// === Constants ===
+const CHART_LOADING_DELAY_MS = 300;
 
 export default function Page() {
   // === NEW STATE ===
@@ -76,6 +69,59 @@ export default function Page() {
   >("monthly");
 
   const [historyRange, setHistoryRange] = useState<1 | 3 | 6>(3);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isChartLoading, setIsChartLoading] = useState(false);
+
+  // Handler functions
+  const handleRefresh = useCallback(() => {
+    setLastUpdated(new Date());
+    toast.success("Dashboard refreshed", {
+      description: "All data has been updated",
+    });
+    // In real app, this would trigger data refetch
+  }, []);
+
+  const handleChartRangeChange = useCallback((value: "monthly" | "average" | "thisWeek") => {
+    setIsChartLoading(true);
+    setChartRange(value);
+    const labels = {
+      monthly: "Monthly view",
+      average: "Average per week view",
+      thisWeek: "This week view",
+    };
+    toast.info("Chart range updated", {
+      description: `Switched to ${labels[value]}`,
+    });
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
+  }, []);
+
+  const handleHistoryRangeChange = useCallback((value: 1 | 3 | 6) => {
+    setIsChartLoading(true);
+    setHistoryRange(value);
+    toast.info("Historical range updated", {
+      description: `Showing ${value} month${value > 1 ? "s" : ""} of data`,
+    });
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
+  }, []);
+
+  const handleApplyPreset = useCallback((preset: FilterPreset) => {
+    setIsChartLoading(true);
+    setChartRange(preset.chartRange);
+    setHistoryRange(preset.historyRange);
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
+  }, []);
+
+  // Keyboard shortcuts
+  useDashboardKeyboard({
+    onChartRangeChange: handleChartRangeChange,
+    onHistoryRangeChange: handleHistoryRangeChange,
+    onRefresh: handleRefresh,
+    onShowKeyboardHelp: () => setShowKeyboardHelp(true),
+  });
+
+  // CSV export
+  const { exportDashboardCSV } = useDashboardExport();
 
   return (
     <SidebarProvider
@@ -93,130 +139,89 @@ export default function Page() {
         <SiteHeader />
 
         <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-            {/* Page Header */}
-
-            {/* === Page Header === */}
-
-            <div className="flex flex-col space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-
-              <p className="text-muted-foreground">
-                Monitor key metrics and performance across all sports.
-              </p>
-            </div>
-
-            {/* Top KPI Cards - Load immediately */}
-
-            {/* === KPI Cards === */}
-
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                  Key Performance Indicators
-                </h2>
-
-                <div className="text-sm text-muted-foreground">
-                  Overview of platform-wide metrics
-                </div>
-              </div>
-
+          <div className="@container/main flex flex-1 flex-col gap-6">
+            {/* Industry-Standard Page Header */}
+            <PageHeader
+              icon={LayoutDashboard}
+              title="Dashboard"
+              description="Monitor key metrics and performance across all sports"
+            >
               <TopKPICards />
-            </section>
+            </PageHeader>
 
-            {/* Charts Section - Standard Suspense Pattern */}
+            {/* Chart Filters */}
+            <DashboardChartFilters
+              chartRange={chartRange}
+              historyRange={historyRange}
+              lastUpdated={lastUpdated}
+              showKeyboardHelp={showKeyboardHelp}
+              onChartRangeChange={handleChartRangeChange}
+              onHistoryRangeChange={handleHistoryRangeChange}
+              onRefresh={handleRefresh}
+              onExport={exportDashboardCSV}
+              onApplyPreset={handleApplyPreset}
+              onKeyboardHelpChange={setShowKeyboardHelp}
+            />
 
-            {/* === Chart Filters === */}
-
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Chart Range:
-                </span>
-
-                {["monthly", "average", "thisWeek"].map((opt) => (
-                  <Button
-                    key={opt}
-                    size="sm"
-                    variant={chartRange === opt ? "default" : "outline"}
-                    className={cn(
-                      "capitalize",
-
-                      chartRange === opt && "bg-primary text-primary-foreground"
-                    )}
-                    onClick={() =>
-                      setChartRange(opt as "monthly" | "average" | "thisWeek")
-                    }
-                  >
-                    {opt === "average"
-                      ? "Average / Week"
-                      : opt === "thisWeek"
-                      ? "This Week"
-                      : "Monthly"}
-                  </Button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Historical Range:
-                </span>
-
-                {[1, 3, 6].map((month) => (
-                  <Button
-                    key={month}
-                    size="sm"
-                    variant={historyRange === month ? "default" : "outline"}
-                    className={cn(
-                      historyRange === month &&
-                        "bg-primary text-primary-foreground"
-                    )}
-                    onClick={() => setHistoryRange(month as 1 | 3 | 6)}
-                  >
-                    {month} Month{month > 1 ? "s" : ""}
-                  </Button>
-                ))}
-              </div>
-            </section>
-
-            {/* === Charts Section === */}
-
-            <section className="grid gap-6 lg:grid-cols-2">
-              <Suspense fallback={<ChartSkeleton height="h-[450px]" />}>
-                <UserGrowthChart
-                  chartRange={chartRange}
-                  historyRange={historyRange}
+            {/* Key Insights Section */}
+            <AnimatedContainer delay={0.1}>
+              <section className="px-4 sm:px-6">
+                <KeyInsights
+                  totalRevenue={45250}
+                  previousRevenue={38400}
+                  totalMatches={324}
+                  previousMatches={289}
+                  activeUsers={856}
+                  previousActiveUsers={792}
                 />
-              </Suspense>
+              </section>
+            </AnimatedContainer>
 
-              <Suspense fallback={<ChartSkeleton height="h-[350px]" />}>
-                <SportComparisonChart
-                  chartRange={chartRange}
-                  historyRange={historyRange}
-                />
-              </Suspense>
-            </section>
+            {/* Charts Section */}
+            <AnimatedContainer delay={0.2}>
+              <section className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics Overview</h2>
+                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 relative">
+                <ChartLoadingOverlay isLoading={isChartLoading} />
+                <DashboardChart name="User Growth Chart" height="h-[450px]">
+                  <UserGrowthChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
 
-            {/* Match Activity Chart - Standard Suspense Pattern */}
+                <DashboardChart name="Sport Comparison Chart" height="h-[350px]">
+                  <SportComparisonChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
+              </div>
+              </section>
+            </AnimatedContainer>
 
-            {/* === Match Activity === */}
+            {/* Match Activity */}
+            <AnimatedContainer delay={0.3}>
+              <section className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-6 sm:pb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Match Activity</h2>
 
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Match Activity</h2>
-
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   Weekly match trends across all sports
                 </div>
               </div>
 
-              <Suspense fallback={<ChartSkeleton height="h-[400px]" />}>
-                <MatchActivityChart
-                  chartRange={chartRange}
-                  historyRange={historyRange}
-                />
-              </Suspense>
-            </section>
+              <div className="relative">
+                <ChartLoadingOverlay isLoading={isChartLoading} />
+                <DashboardChart name="Match Activity Chart" height="h-[400px]">
+                  <MatchActivityChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
+              </div>
+              </section>
+            </AnimatedContainer>
           </div>
         </div>
       </SidebarInset>

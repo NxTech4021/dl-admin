@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/chart";
 import { getUserGrowthData, getUserGrowthThisWeekData } from "@/constants/data/mock-chart-data";
 
+// === Constants
+const WEEKS_PER_MONTH = 4.3;
+
 // === Chart configuration
 const chartConfig = {
   users: {
@@ -25,11 +28,11 @@ const chartConfig = {
   },
   totalUsers: {
     label: "Total Users",
-    color: "#3B82F6",
+    color: "var(--chart-user-total)",
   },
   payingMembers: {
     label: "Paying Members",
-    color: "#FACC15", // changed to yellow
+    color: "var(--chart-user-paying)",
   },
 } satisfies ChartConfig;
 
@@ -71,17 +74,15 @@ export function UserGrowthChart({
       // Calculate weekly averages (divide monthly data by ~4.3 weeks)
       return chartData.map((item, index) => ({
         ...item,
-        totalUsers: Math.round(item.totalUsers / 4.3),
-        payingMembers: Math.round(item.payingMembers / 4.3),
+        totalUsers: Math.round(item.totalUsers / WEEKS_PER_MONTH),
+        payingMembers: Math.round(item.payingMembers / WEEKS_PER_MONTH),
         month: `Week ${index + 1}`,
       }));
     }
 
     if (chartRange === "thisWeek") {
-      // using mock data
-      const weeklyData = getUserGrowthThisWeekData(chartData);
-      
-      return [weeklyData];
+      // using mock data - returns array
+      return getUserGrowthThisWeekData(chartData);
     }
 
     // Default monthly
@@ -119,15 +120,15 @@ export function UserGrowthChart({
         </div>
       </CardHeader>
 
-      <CardContent className="px-4 py-6 sm:px-8 sm:py-8">
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {/* === Totals === */}
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Total Users</span>
             </div>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold">
               {total.totalUsers.toLocaleString()}
             </div>
           </div>
@@ -136,7 +137,7 @@ export function UserGrowthChart({
               <UserCheck className="h-4 w-4 text-yellow-500" />
               <span className="text-sm font-medium">Paying Members</span>
             </div>
-            <div className="text-2xl font-bold text-yellow-500">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-500">
               {total.payingMembers.toLocaleString()}
             </div>
           </div>
@@ -144,9 +145,8 @@ export function UserGrowthChart({
 
         {/* === Chart === */}
         <ChartContainer
-          key={`${chartRange}-${historyRange}`} // Force re-render when props change
           config={chartConfig}
-          className="aspect-auto h-[450px] w-full"
+          className="aspect-auto h-[300px] sm:h-[400px] md:h-[450px] w-full"
         >
           <LineChart
             accessibilityLayer

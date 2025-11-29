@@ -1,5 +1,3 @@
-//@ts-nocheck
-
 "use client";
 
 import { useCallback, useEffect, useState, Suspense } from "react";
@@ -28,7 +26,7 @@ import type {
   Conversation,
   ChatParticipant,
   Thread,
-} from "@/components/chat/types";
+} from "@/constants/types/chat";
 
 function ChatViewContent() {
   const searchParams = useSearchParams();

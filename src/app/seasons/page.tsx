@@ -1,32 +1,27 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatsCard } from "@/components/ui/stats-card";
+import { StatsGrid } from "@/components/ui/stats-grid";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Season, seasonSchema } from "@/constants/zod/season-schema";
 import {
   IconCalendar,
-  IconPlus,
   IconDownload,
   IconStar,
   IconCurrency,
   IconUsers,
+  IconTrophy,
 } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useRouter } from "next/navigation";
-import { useSocket } from "@/context/socket-context";
 
-// CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
+// Dynamic imports for performance
 const SeasonsDataTable = dynamic(
   () =>
     import("@/components/data-table/seasons-data-table").then((mod) => ({
@@ -37,42 +32,25 @@ const SeasonsDataTable = dynamic(
   }
 );
 
-const SeasonCreateModal = dynamic(
-  () =>
-    import("@/components/modal/season-create-modal").then((mod) => ({
-      default: mod.default,
-    })),
-  {
-    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
-  }
-);
-
-
-// Note: Metadata and revalidate are not available in client components
-// These would need to be moved to a layout.tsx file if needed
-
 export default function Page() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = React.useState<Season[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const router = useRouter();
 
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
 
-      console.log("response", response)
-      console.log("response data", response.data)
-      console.log("response without destructure ", response.data.data)
-
       let seasonsData: any[] = [];
-      
+
       // Check if data is directly an array
       if (Array.isArray(response.data)) {
         seasonsData = response.data;
-      } 
+      }
       // Check if data is wrapped in a data property
       else if (response.data?.data && Array.isArray(response.data.data)) {
         seasonsData = response.data.data;
@@ -81,18 +59,37 @@ export default function Page() {
       else if (response.data?.seasons && Array.isArray(response.data.seasons)) {
         seasonsData = response.data.seasons;
       }
+
       if (!seasonsData || seasonsData.length === 0) {
-        console.log("No seasons data found");
         setData([]);
         return;
       }
 
       // Validate and parse the data
       const parsedData = z.array(seasonSchema).parse(seasonsData);
-      console.log("Parsed seasons:", parsedData);
       setData(parsedData);
-    } catch (error) {
-      console.error("Failed to fetch seasons:", error);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch seasons:", err);
+
+      // Provide user-friendly error messages
+      if (err instanceof z.ZodError) {
+        setError("Invalid data format");
+        console.error("Validation errors:", err.issues);
+      } else if (err instanceof Error) {
+        if (err.message.includes("Network Error")) {
+          setError("Network error");
+        } else if (err.message.includes("timeout")) {
+          setError("Request timeout");
+        } else if (err.message.includes("401") || err.message.includes("403")) {
+          setError("Access denied");
+        } else {
+          setError("Failed to load");
+        }
+      } else {
+        setError("Unexpected error");
+      }
+
       setData([]);
     } finally {
       setIsLoading(false);
@@ -103,16 +100,28 @@ export default function Page() {
     fetchSeasons();
   }, [fetchSeasons]);
 
-  // const handleSeasonCreated = () => {
-  //   setRefreshKey((prev) => prev + 1);
-  // };
-
   const handleViewSeason = (seasonId: string) => {
     router.push(`/seasons/${seasonId}`);
   };
+
   const seasons = data;
 
-  console.log("seasons data", seasons);
+  // Calculate stats
+  const totalSeasons = seasons.length;
+  const activeSeasons = seasons.filter((s) => s.status === "ACTIVE").length;
+  const totalParticipants = seasons.reduce(
+    (total, season) => total + (season.memberships?.length || 0),
+    0
+  );
+  const totalRevenue = seasons.reduce((total, season) => {
+    const fee = parseFloat((season?.entryFee as unknown as string) || "0") || 0;
+    const participants = season.memberships?.length || 0;
+    return total + fee * participants;
+  }, 0);
+  const averageParticipants = totalSeasons > 0
+    ? Math.round(totalParticipants / totalSeasons)
+    : 0;
+
   return (
     <SidebarProvider
       style={
@@ -127,150 +136,75 @@ export default function Page() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Description */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconCalendar className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Seasons Management
-                          </h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                          Manage league seasons and tournaments
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                        </Button>
-                        {/* <SeasonCreateModal
-                          open={isCreateModalOpen}
-                          onOpenChange={setIsCreateModalOpen}
-                          onSeasonCreated={handleSeasonCreated}
-                        >
-                          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                            <IconPlus className="mr-2 size-4" />
-                            Create Season
-                          </Button>
-                        </SeasonCreateModal> */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Industry-Standard Page Header */}
+            <PageHeader
+              icon={IconCalendar}
+              title="Seasons Management"
+              description="Manage league seasons and tournaments"
+              actions={
+                <>
+                  <Button variant="outline" size="sm">
+                    <IconDownload className="mr-2 size-4" />
+                    Export
+                  </Button>
+                  {/* <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                    <IconPlus className="mr-2 size-4" />
+                    Create Season
+                  </Button> */}
+                </>
+              }
+            >
+              <StatsGrid>
+                <StatsCard
+                  title="Total Seasons"
+                  value={totalSeasons}
+                  description={`${activeSeasons} currently active`}
+                  icon={IconTrophy}
+                  iconColor="text-primary"
+                  loading={isLoading}
+                  error={error}
+                  onRetry={fetchSeasons}
+                />
+                <StatsCard
+                  title="Total Participants"
+                  value={totalParticipants}
+                  description="Across all seasons"
+                  icon={IconUsers}
+                  iconColor="text-blue-500"
+                  loading={isLoading}
+                  error={error}
+                  onRetry={fetchSeasons}
+                />
+                <StatsCard
+                  title="Total Revenue"
+                  value={totalRevenue}
+                  description="From all season entry fees"
+                  icon={IconCurrency}
+                  iconColor="text-green-500"
+                  loading={isLoading}
+                  error={error}
+                  onRetry={fetchSeasons}
+                />
+                <StatsCard
+                  title="Average per Season"
+                  value={averageParticipants}
+                  description="Players per season"
+                  icon={IconStar}
+                  iconColor="text-yellow-500"
+                  loading={isLoading}
+                  error={error}
+                  onRetry={fetchSeasons}
+                />
+              </StatsGrid>
+            </PageHeader>
 
-              <div className="flex-1 px-4 lg:px-6 py-6">
-                <div className="space-y-6">
-                  {/* League Overview Cards */}
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Seasons
-                        </CardTitle>
-                        {/* <IconTrophy className="h-4 w-4 text-muted-foreground" /> */}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {seasons.length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {seasons.filter((s) => s.status === "ACTIVE").length}{" "}
-                          currently active
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Participants
-                        </CardTitle>
-                        <IconUsers className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {" "}
-                          {seasons.reduce(
-                            (total, season) =>
-                              total + (season.memberships?.length || 0),
-                            0
-                          )}{" "}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Across all seasons
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Revenue
-                        </CardTitle>
-                        <IconCurrency className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {" "}
-                          {seasons.reduce((total, season) => {
-                            const fee =
-                              parseFloat(
-                                (season?.entryFee as unknown as string) || "0"
-                              ) || 0;
-                            const participants =
-                              season.memberships?.length || 0;
-                            return total + fee * participants;
-                          }, 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          From all season entry fees
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Average per Season
-                        </CardTitle>
-                        <IconStar className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {" "}
-                          {seasons.length > 0
-                            ? Math.round(
-                                seasons.reduce(
-                                  (total, season) =>
-                                    total + (season.memberships?.length || 0),
-                                  0
-                                ) / seasons.length
-                              )
-                            : 0}{" "}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Players per season
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Data Table */}
-                <div className="flex-1 mt-10">
-                  <SeasonsDataTable
-                    key={refreshKey}
-                    data={seasons}
-                    isLoading={isLoading}
-                    onViewSeason={handleViewSeason}
-                  />
-                </div>
-              </div>
+            {/* Data Table */}
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <SeasonsDataTable
+                data={seasons}
+                isLoading={isLoading}
+                onViewSeason={handleViewSeason}
+              />
             </div>
           </div>
         </div>

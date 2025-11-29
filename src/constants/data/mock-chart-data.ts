@@ -182,20 +182,22 @@ export function getUserGrowthData(historyRange: HistoryRange): UserGrowthData[] 
 }
 
 // Helper function for "thisWeek" user growth data
-export function getUserGrowthThisWeekData(baseData: UserGrowthData[]): UserGrowthData {
+export function getUserGrowthThisWeekData(baseData: UserGrowthData[]): UserGrowthData[] {
   const latestMonth = baseData[baseData.length - 1] || { totalUsers: 185, payingMembers: 83 };
   // Deterministic calculation - no Math.random()
   const weeklyUsers = Math.round(latestMonth.totalUsers / 4.3 * 1.0); // ~1.0 multiplier
   const weeklyMembers = Math.round(latestMonth.payingMembers / 4.3 * 1.0);
-  
-  // Get current date in a deterministic way (same on server and client)
-  const now = new Date();
-  const weekStr = `Week of ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  
-  return {
-    month: weekStr,
-    totalUsers: weeklyUsers,
-    payingMembers: weeklyMembers,
-  };
+
+  // Return daily data for the week to show line progression
+  // Line charts need at least 2 points to render lines
+  return [
+    { month: "Mon", totalUsers: Math.round(weeklyUsers * 0.8), payingMembers: Math.round(weeklyMembers * 0.8) },
+    { month: "Tue", totalUsers: Math.round(weeklyUsers * 0.85), payingMembers: Math.round(weeklyMembers * 0.85) },
+    { month: "Wed", totalUsers: Math.round(weeklyUsers * 0.9), payingMembers: Math.round(weeklyMembers * 0.9) },
+    { month: "Thu", totalUsers: Math.round(weeklyUsers * 0.95), payingMembers: Math.round(weeklyMembers * 0.95) },
+    { month: "Fri", totalUsers: weeklyUsers, payingMembers: weeklyMembers },
+    { month: "Sat", totalUsers: Math.round(weeklyUsers * 1.05), payingMembers: Math.round(weeklyMembers * 1.05) },
+    { month: "Sun", totalUsers: Math.round(weeklyUsers * 1.1), payingMembers: Math.round(weeklyMembers * 1.1) },
+  ];
 }
 
