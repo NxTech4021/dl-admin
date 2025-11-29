@@ -393,10 +393,10 @@ export default function Page() {
                           variant="ghost"
                           size="sm"
                           onClick={handleRefresh}
-                          className="h-6 w-6 sm:h-7 sm:w-7 p-0 touch-manipulation"
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 touch-manipulation"
                           aria-label="Refresh dashboard data"
                         >
-                          <RefreshCw className="h-3 w-3" />
+                          <RefreshCw className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -419,10 +419,10 @@ export default function Page() {
                         variant="outline"
                         size="sm"
                         onClick={handleExportCSV}
-                        className="h-6 sm:h-7 gap-1 sm:gap-1.5 text-xs touch-manipulation"
+                        className="h-8 sm:h-9 gap-1 sm:gap-1.5 text-xs touch-manipulation"
                         aria-label="Export dashboard data"
                       >
-                        <Download className="h-3 w-3" />
+                        <Download className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline text-xs">Export</span>
                       </Button>
                     </TooltipTrigger>
@@ -438,10 +438,10 @@ export default function Page() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 sm:h-7 gap-1 sm:gap-1.5 touch-manipulation hidden sm:flex"
+                        className="h-8 sm:h-9 gap-1 sm:gap-1.5 touch-manipulation hidden sm:flex"
                         aria-label="Keyboard shortcuts"
                       >
-                        <Keyboard className="h-3 w-3" />
+                        <Keyboard className="h-3.5 w-3.5" />
                         <span className="text-xs">?</span>
                       </Button>
                     </TooltipTrigger>
