@@ -448,29 +448,29 @@ export function MatchActivityChart({
             )}
 
             {chartType === "line"
-              ? dataKeys.map((key, index) => (
-                  <Line
-                    key={key}
-                    dataKey={key}
-                    type="monotone"
-                    stroke={`var(--color-${key})`}
-                    strokeWidth={2}
-                    dot={false}
-                    opacity={hiddenSeries.has(key) ? 0 : 1}
-                    hide={hiddenSeries.has(key)}
-                  />
-                ))
-              : dataKeys.map((key, index) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    fill={`var(--color-${key})`}
-                    radius={[2, 2, 0, 0]}
-                    stackId="matches"
-                    opacity={hiddenSeries.has(key) ? 0 : 1}
-                    hide={hiddenSeries.has(key)}
-                  />
-                ))}
+              ? dataKeys
+                  .filter((key) => !hiddenSeries.has(key))
+                  .map((key) => (
+                    <Line
+                      key={key}
+                      dataKey={key}
+                      type="monotone"
+                      stroke={`var(--color-${key})`}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  ))
+              : dataKeys
+                  .filter((key) => !hiddenSeries.has(key))
+                  .map((key) => (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      fill={`var(--color-${key})`}
+                      radius={[2, 2, 0, 0]}
+                      stackId="matches"
+                    />
+                  ))}
           </ChartComponent>
         </ChartContainer>
 
