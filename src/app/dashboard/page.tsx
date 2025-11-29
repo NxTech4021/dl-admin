@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
+import { KeyInsights } from "@/components/key-insights";
 import { LayoutDashboard, RefreshCw, Keyboard } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect, useCallback } from "react";
@@ -308,6 +309,18 @@ export default function Page() {
                   </Tooltip>
                 </TooltipProvider>
               </div>
+            </section>
+
+            {/* Key Insights Section */}
+            <section className="px-6">
+              <KeyInsights
+                totalRevenue={45250}
+                previousRevenue={38400}
+                totalMatches={324}
+                previousMatches={289}
+                activeUsers={856}
+                previousActiveUsers={792}
+              />
             </section>
 
             {/* Charts Section */}
