@@ -103,6 +103,7 @@ export default function Page() {
   const [historyRange, setHistoryRange] = useState<1 | 3 | 6>(3);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isChartLoading, setIsChartLoading] = useState(false);
 
   // Handler functions
   const handleRefresh = useCallback(() => {
@@ -114,6 +115,7 @@ export default function Page() {
   }, []);
 
   const handleChartRangeChange = useCallback((value: "monthly" | "average" | "thisWeek") => {
+    setIsChartLoading(true);
     setChartRange(value);
     const labels = {
       monthly: "Monthly view",
@@ -123,18 +125,23 @@ export default function Page() {
     toast.info("Chart range updated", {
       description: `Switched to ${labels[value]}`,
     });
+    setTimeout(() => setIsChartLoading(false), 300);
   }, []);
 
   const handleHistoryRangeChange = useCallback((value: 1 | 3 | 6) => {
+    setIsChartLoading(true);
     setHistoryRange(value);
     toast.info("Historical range updated", {
       description: `Showing ${value} month${value > 1 ? "s" : ""} of data`,
     });
+    setTimeout(() => setIsChartLoading(false), 300);
   }, []);
 
   const handleApplyPreset = useCallback((preset: FilterPreset) => {
+    setIsChartLoading(true);
     setChartRange(preset.chartRange);
     setHistoryRange(preset.historyRange);
+    setTimeout(() => setIsChartLoading(false), 300);
   }, []);
 
   // Keyboard shortcuts
@@ -476,7 +483,15 @@ export default function Page() {
             <AnimatedContainer delay={0.2}>
               <section className="space-y-4 sm:space-y-6 px-4 sm:px-6">
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics Overview</h2>
-                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+                <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 relative">
+                {isChartLoading && (
+                  <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                      <span className="text-sm text-muted-foreground">Updating charts...</span>
+                    </div>
+                  </div>
+                )}
                 <ChartErrorBoundary chartName="User Growth Chart">
                   <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
                     <UserGrowthChart
@@ -509,14 +524,24 @@ export default function Page() {
                 </div>
               </div>
 
-              <ChartErrorBoundary chartName="Match Activity Chart">
-                <Suspense fallback={<ChartSkeleton height="h-[400px]" name="Match Activity Chart" />}>
-                  <MatchActivityChart
-                    chartRange={chartRange}
-                    historyRange={historyRange}
-                  />
-                </Suspense>
-              </ChartErrorBoundary>
+              <div className="relative">
+                {isChartLoading && (
+                  <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                      <span className="text-sm text-muted-foreground">Updating charts...</span>
+                    </div>
+                  </div>
+                )}
+                <ChartErrorBoundary chartName="Match Activity Chart">
+                  <Suspense fallback={<ChartSkeleton height="h-[400px]" name="Match Activity Chart" />}>
+                    <MatchActivityChart
+                      chartRange={chartRange}
+                      historyRange={historyRange}
+                    />
+                  </Suspense>
+                </ChartErrorBoundary>
+              </div>
               </section>
             </AnimatedContainer>
           </div>
