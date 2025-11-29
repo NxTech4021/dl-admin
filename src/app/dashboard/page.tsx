@@ -10,13 +10,12 @@ import { AnimatedContainer } from "@/components/ui/animated-container";
 import { FilterPreset } from "@/components/dashboard-filter-presets";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
 import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
-import { ChartSkeleton } from "@/components/ui/chart-skeleton";
+import { DashboardChart } from "@/components/ui/dashboard-chart";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { useDashboardExport } from "@/hooks/use-dashboard-export";
 import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
-import { Suspense, useState, useCallback } from "react";
-import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
@@ -184,23 +183,19 @@ export default function Page() {
                 <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics Overview</h2>
                 <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 relative">
                 <ChartLoadingOverlay isLoading={isChartLoading} />
-                <ChartErrorBoundary chartName="User Growth Chart">
-                  <Suspense fallback={<ChartSkeleton height="h-[450px]" name="User Growth Chart" />}>
-                    <UserGrowthChart
-                      chartRange={chartRange}
-                      historyRange={historyRange}
-                    />
-                  </Suspense>
-                </ChartErrorBoundary>
+                <DashboardChart name="User Growth Chart" height="h-[450px]">
+                  <UserGrowthChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
 
-                <ChartErrorBoundary chartName="Sport Comparison Chart">
-                  <Suspense fallback={<ChartSkeleton height="h-[350px]" name="Sport Comparison Chart" />}>
-                    <SportComparisonChart
-                      chartRange={chartRange}
-                      historyRange={historyRange}
-                    />
-                  </Suspense>
-                </ChartErrorBoundary>
+                <DashboardChart name="Sport Comparison Chart" height="h-[350px]">
+                  <SportComparisonChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
               </div>
               </section>
             </AnimatedContainer>
@@ -218,14 +213,12 @@ export default function Page() {
 
               <div className="relative">
                 <ChartLoadingOverlay isLoading={isChartLoading} />
-                <ChartErrorBoundary chartName="Match Activity Chart">
-                  <Suspense fallback={<ChartSkeleton height="h-[400px]" name="Match Activity Chart" />}>
-                    <MatchActivityChart
-                      chartRange={chartRange}
-                      historyRange={historyRange}
-                    />
-                  </Suspense>
-                </ChartErrorBoundary>
+                <DashboardChart name="Match Activity Chart" height="h-[400px]">
+                  <MatchActivityChart
+                    chartRange={chartRange}
+                    historyRange={historyRange}
+                  />
+                </DashboardChart>
               </div>
               </section>
             </AnimatedContainer>
