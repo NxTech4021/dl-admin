@@ -43,14 +43,18 @@ interface KPICardProps {
 
 // formatValue function moved to @/lib/utils/format
 
-// Mock 7-day trend data generator
+// Mock 7-day trend data generator - DETERMINISTIC (no Math.random)
 function generate7DayTrend(currentValue: number, trend: "up" | "down" | "neutral"): number[] {
   const data: number[] = [];
-  let value = currentValue * 0.85; // Start at 85% of current
+  const startValue = currentValue * 0.85; // Start at 85% of current
 
+  // Use deterministic variance pattern based on day index
+  const variancePattern = [0.02, -0.01, 0.03, -0.02, 0.01, 0.02, 0]; // Predefined pattern
+  const trendFactor = trend === "up" ? 0.025 : trend === "down" ? -0.025 : 0;
+
+  let value = startValue;
   for (let i = 0; i < 7; i++) {
-    const variance = (Math.random() - 0.5) * 0.05; // ±5% variance
-    const trendFactor = trend === "up" ? 0.025 : trend === "down" ? -0.025 : 0;
+    const variance = variancePattern[i];
     value = value * (1 + trendFactor + variance);
     data.push(Math.round(value));
   }

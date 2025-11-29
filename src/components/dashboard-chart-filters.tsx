@@ -39,20 +39,13 @@ export function DashboardChartFilters({
   onKeyboardHelpChange,
 }: DashboardChartFiltersProps) {
   const getDataQuality = () => {
-    const random = Math.random();
-    if (random > 0.7) {
-      return {
-        variant: "default" as const,
-        label: "Live",
-        icon: CheckCircle2,
-        tooltip: "Data is live and up-to-date",
-      };
-    }
+    // Always return "Live" to avoid hydration mismatch
+    // In production, this would be based on actual data freshness state
     return {
-      variant: "secondary" as const,
-      label: "Cached",
-      icon: AlertTriangle,
-      tooltip: "Data may be slightly delayed",
+      variant: "default" as const,
+      label: "Live",
+      icon: CheckCircle2,
+      tooltip: "Data is live and up-to-date",
     };
   };
 
