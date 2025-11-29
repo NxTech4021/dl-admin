@@ -372,7 +372,7 @@ export default function Page() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant={getDataQuality().variant} className="gap-1.5 cursor-help">
+                      <Badge variant={getDataQuality().variant} className="gap-2 cursor-help">
                         {(() => {
                           const QualityIcon = getDataQuality().icon;
                           return <QualityIcon className="h-3 w-3" />;
@@ -422,7 +422,7 @@ export default function Page() {
                         variant="outline"
                         size="sm"
                         onClick={handleExportCSV}
-                        className="h-8 sm:h-9 gap-1 sm:gap-1.5 text-xs touch-manipulation"
+                        className="h-8 sm:h-9 gap-2 text-xs touch-manipulation"
                         aria-label="Export dashboard data"
                       >
                         <Download className="h-3.5 w-3.5" />
@@ -441,7 +441,7 @@ export default function Page() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 sm:h-9 gap-1 sm:gap-1.5 touch-manipulation hidden sm:flex"
+                        className="h-8 sm:h-9 gap-2 touch-manipulation hidden sm:flex"
                         aria-label="Keyboard shortcuts"
                       >
                         <Keyboard className="h-3.5 w-3.5" />
