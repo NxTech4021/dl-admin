@@ -7,20 +7,12 @@ import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
 import { KeyInsights } from "@/components/key-insights";
 import { AnimatedContainer } from "@/components/ui/animated-container";
-import { DashboardFilterPresets, FilterPreset } from "@/components/dashboard-filter-presets";
-import { LayoutDashboard, RefreshCw, Keyboard, CheckCircle2, AlertTriangle, Download } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { FilterPreset } from "@/components/dashboard-filter-presets";
+import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
+import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Suspense, useState, useEffect, useCallback } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 // STANDARD: Individual dynamic imports - recommended by Next.js docs
@@ -195,52 +187,6 @@ export default function Page() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [handleChartRangeChange, handleHistoryRangeChange, handleRefresh]);
 
-  const formatLastUpdated = () => {
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - lastUpdated.getTime()) / 1000);
-
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return lastUpdated.toLocaleTimeString();
-  };
-
-  const getDataQuality = () => {
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - lastUpdated.getTime()) / 1000);
-
-    // Fresh data (< 5 minutes)
-    if (diff < 300) {
-      return {
-        status: "excellent",
-        label: "Excellent",
-        icon: CheckCircle2,
-        variant: "default" as const,
-        description: "Data is fresh and up-to-date",
-      };
-    }
-
-    // Good data (5-30 minutes)
-    if (diff < 1800) {
-      return {
-        status: "good",
-        label: "Good",
-        icon: CheckCircle2,
-        variant: "secondary" as const,
-        description: "Data is recent",
-      };
-    }
-
-    // Stale data (> 30 minutes)
-    return {
-      status: "stale",
-      label: "Stale",
-      icon: AlertTriangle,
-      variant: "destructive" as const,
-      description: "Data may be outdated, consider refreshing",
-    };
-  };
-
   const handleExportCSV = useCallback(() => {
     // Mock dashboard data for export
     const exportData = [
@@ -327,146 +273,18 @@ export default function Page() {
             </PageHeader>
 
             {/* Chart Filters */}
-            <section
-              className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-4 sm:gap-6 rounded-lg border bg-muted/30 p-4 sm:p-6 mx-4 sm:mx-6"
-              role="toolbar"
-              aria-label="Chart filter controls"
-            >
-              <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    Chart Range:
-                  </span>
-                  <Tabs
-                    value={chartRange}
-                    onValueChange={(value) =>
-                      handleChartRangeChange(value as "monthly" | "average" | "thisWeek")
-                    }
-                  >
-                    <TabsList className="grid grid-cols-3 w-full sm:w-auto">
-                      <TabsTrigger value="monthly" className="text-xs sm:text-sm">Monthly</TabsTrigger>
-                      <TabsTrigger value="average" className="text-xs sm:text-sm">Average</TabsTrigger>
-                      <TabsTrigger value="thisWeek" className="text-xs sm:text-sm">Week</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    Historical Range:
-                  </span>
-                  <Tabs
-                    value={historyRange.toString()}
-                    onValueChange={(value) => handleHistoryRangeChange(Number(value) as 1 | 3 | 6)}
-                  >
-                    <TabsList className="grid grid-cols-3 w-full sm:w-auto">
-                      <TabsTrigger value="1" className="text-xs sm:text-sm">1mo</TabsTrigger>
-                      <TabsTrigger value="3" className="text-xs sm:text-sm">3mo</TabsTrigger>
-                      <TabsTrigger value="6" className="text-xs sm:text-sm">6mo</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant={getDataQuality().variant} className="gap-2 cursor-help">
-                        {(() => {
-                          const QualityIcon = getDataQuality().icon;
-                          return <QualityIcon className="h-3 w-3" />;
-                        })()}
-                        {getDataQuality().label}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{getDataQuality().description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <div className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
-                  <span className="hidden sm:inline">Last updated: {formatLastUpdated()}</span>
-                  <span className="sm:hidden">Updated: {formatLastUpdated().split(' ').pop()}</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRefresh}
-                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 touch-manipulation"
-                          aria-label="Refresh dashboard data"
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Refresh (R)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-
-                <DashboardFilterPresets
-                  currentChartRange={chartRange}
-                  currentHistoryRange={historyRange}
-                  onApplyPreset={handleApplyPreset}
-                />
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleExportCSV}
-                        className="h-8 sm:h-9 gap-2 text-xs touch-manipulation"
-                        aria-label="Export dashboard data"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline text-xs">Export</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Export as CSV</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                  <Tooltip open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 sm:h-9 gap-2 touch-manipulation hidden sm:flex"
-                        aria-label="Keyboard shortcuts"
-                      >
-                        <Keyboard className="h-3.5 w-3.5" />
-                        <span className="text-xs">?</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="w-64" side="bottom" align="end">
-                      <div className="space-y-2">
-                        <p className="font-semibold text-sm">Keyboard Shortcuts</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">M</kbd> Monthly</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">A</kbd> Average</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">W</kbd> This Week</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">1</kbd> 1 Month</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">2</kbd> 3 Months</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">3</kbd> 6 Months</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">R</kbd> Refresh</div>
-                          <div><kbd className="px-1.5 py-0.5 bg-muted rounded">?</kbd> Help</div>
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </section>
+            <DashboardChartFilters
+              chartRange={chartRange}
+              historyRange={historyRange}
+              lastUpdated={lastUpdated}
+              showKeyboardHelp={showKeyboardHelp}
+              onChartRangeChange={handleChartRangeChange}
+              onHistoryRangeChange={handleHistoryRangeChange}
+              onRefresh={handleRefresh}
+              onExport={handleExportCSV}
+              onApplyPreset={handleApplyPreset}
+              onKeyboardHelpChange={setShowKeyboardHelp}
+            />
 
             {/* Key Insights Section */}
             <AnimatedContainer delay={0.1}>
