@@ -119,15 +119,15 @@ export function UserGrowthChart({
         </div>
       </CardHeader>
 
-      <CardContent className="px-4 py-6 sm:px-8 sm:py-8">
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {/* === Totals === */}
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Total Users</span>
             </div>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold">
               {total.totalUsers.toLocaleString()}
             </div>
           </div>
@@ -136,7 +136,7 @@ export function UserGrowthChart({
               <UserCheck className="h-4 w-4 text-yellow-500" />
               <span className="text-sm font-medium">Paying Members</span>
             </div>
-            <div className="text-2xl font-bold text-yellow-500">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-500">
               {total.payingMembers.toLocaleString()}
             </div>
           </div>
@@ -146,7 +146,7 @@ export function UserGrowthChart({
         <ChartContainer
           key={`${chartRange}-${historyRange}`} // Force re-render when props change
           config={chartConfig}
-          className="aspect-auto h-[450px] w-full"
+          className="aspect-auto h-[300px] sm:h-[400px] md:h-[450px] w-full"
         >
           <LineChart
             accessibilityLayer
