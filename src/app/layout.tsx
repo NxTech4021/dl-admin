@@ -6,7 +6,7 @@ import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
 import { CommandPalette } from "@/components/command-palette";
 import { ModalProvider } from "@/contexts/modal-context";
 import { GlobalModals } from "@/components/global-modals";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
