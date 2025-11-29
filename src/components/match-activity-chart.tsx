@@ -216,12 +216,12 @@ export function MatchActivityChart({
           </CardDescription>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select
             value={sportFilter}
             onValueChange={(value) => setSportFilter(value as SportFilter)}
           >
-            <SelectTrigger className="w-[120px] rounded-lg">
+            <SelectTrigger className="w-full sm:w-[120px] h-9 sm:h-10 rounded-lg touch-manipulation">
               <SelectValue />
             </SelectTrigger>
 
@@ -250,16 +250,17 @@ export function MatchActivityChart({
             onValueChange={(value) => value && setChartType(value as ChartType)}
             variant="outline"
             size="sm"
+            className="shrink-0"
           >
-            <ToggleGroupItem value="line">Line</ToggleGroupItem>
+            <ToggleGroupItem value="line" className="h-9 sm:h-10 touch-manipulation">Line</ToggleGroupItem>
 
-            <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
+            <ToggleGroupItem value="bar" className="h-9 sm:h-10 touch-manipulation">Bar</ToggleGroupItem>
           </ToggleGroup>
         </div>
       </CardHeader>
 
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-xs">
@@ -300,7 +301,7 @@ export function MatchActivityChart({
 
         <ChartContainer
           config={filteredConfig}
-          className="aspect-auto h-[350px] w-full"
+          className="aspect-auto h-[280px] sm:h-[320px] md:h-[350px] w-full"
         >
           <ChartComponent
             accessibilityLayer
@@ -413,7 +414,7 @@ export function MatchActivityChart({
                   if (!payload?.length) return null;
 
                   return (
-                    <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
+                    <div className="flex items-center justify-center gap-3 sm:gap-4 pt-3 flex-wrap">
                       {payload.map((item) => {
                         const key = String(item.dataKey || item.value);
                         const isHidden = hiddenSeries.has(key);
@@ -426,19 +427,19 @@ export function MatchActivityChart({
                             type="button"
                             onClick={() => toggleSeries(key)}
                             className={cn(
-                              "flex items-center gap-1.5 cursor-pointer transition-opacity hover:opacity-100",
+                              "flex items-center gap-1.5 cursor-pointer transition-opacity hover:opacity-100 min-h-[40px] touch-manipulation px-2 py-1.5",
                               isHidden && "opacity-30"
                             )}
                             aria-label={`${isHidden ? "Show" : "Hide"} ${itemConfig?.label}`}
                             aria-pressed={!isHidden}
                           >
                             <div
-                              className="h-2 w-2 shrink-0 rounded-[2px]"
+                              className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
                               style={{
                                 backgroundColor: item.color,
                               }}
                             />
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs sm:text-sm text-muted-foreground">
                               {itemConfig?.label}
                             </span>
                           </button>
@@ -478,7 +479,7 @@ export function MatchActivityChart({
         </ChartContainer>
 
         {sportFilter !== "all" && (
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
             <div className="flex flex-col space-y-2 p-4 rounded-lg border bg-muted/50">
               <div className="flex items-center space-x-2">
                 <div
