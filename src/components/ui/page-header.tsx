@@ -57,18 +57,18 @@ export function PageHeader({
         className
       )}
     >
-      <div className={cn("px-4 lg:px-6 py-6", containerClassName)}>
-        <div className="flex flex-col gap-6">
+      <div className={cn("px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6", containerClassName)}>
+        <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
           {/* Title and Actions Row */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:justify-between">
             {/* Title Section */}
             <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                {Icon && <Icon className="size-8 text-primary" aria-hidden="true" />}
-                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+              <div className="flex items-center gap-2 sm:gap-3">
+                {Icon && <Icon className="size-6 sm:size-7 md:size-8 text-primary shrink-0" aria-hidden="true" />}
+                <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
               </div>
               {description && (
-                <p className="text-sm text-muted-foreground max-w-2xl">
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
                   {description}
                 </p>
               )}
@@ -76,7 +76,7 @@ export function PageHeader({
 
             {/* Actions Section */}
             {actions && (
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
                 {actions}
               </div>
             )}
@@ -96,19 +96,19 @@ export function PageHeader({
 export function PageHeaderSkeleton() {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="px-4 lg:px-6 py-6">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6">
+        <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
+          <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="size-8 rounded-full bg-muted animate-pulse" />
-                <div className="h-9 w-48 bg-muted rounded animate-pulse" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="size-6 sm:size-7 md:size-8 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="h-7 sm:h-8 md:h-9 w-40 sm:w-48 bg-muted rounded animate-pulse" />
               </div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse" />
+              <div className="h-3 sm:h-4 w-64 sm:w-80 md:w-96 bg-muted rounded animate-pulse" />
             </div>
-            <div className="flex gap-2">
-              <div className="h-9 w-20 bg-muted rounded animate-pulse" />
-              <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+            <div className="flex gap-2 shrink-0">
+              <div className="h-8 sm:h-9 w-16 sm:w-20 bg-muted rounded animate-pulse" />
+              <div className="h-8 sm:h-9 w-24 sm:w-28 bg-muted rounded animate-pulse" />
             </div>
           </div>
         </div>
