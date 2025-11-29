@@ -67,6 +67,9 @@ export function SportComparisonChart({
   const getYAxisDomain = (metric: MetricType) => {
     const values = chartData.map((item) => item[metric]);
     const max = Math.max(...values);
+    if (!isFinite(max) || max <= 0) {
+      return [0, 100];
+    }
     return [0, Math.ceil(max * 1.1)];
   };
 
