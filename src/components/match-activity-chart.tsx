@@ -156,13 +156,15 @@ export function MatchActivityChart({
     0
   );
 
-  const avgMatchesPerWeek = Math.round(totalMatches / aggregatedData.length);
+  const avgMatchesPerWeek = aggregatedData.length > 0
+    ? Math.round(totalMatches / aggregatedData.length)
+    : 0;
 
-  const latestWeek = aggregatedData[aggregatedData.length - 1];
+  const latestWeek = aggregatedData[aggregatedData.length - 1] || { total: 0 };
 
   const previousWeek = aggregatedData[aggregatedData.length - 2];
 
-  const weeklyGrowth = previousWeek
+  const weeklyGrowth = previousWeek && previousWeek.total > 0
     ? ((latestWeek.total - previousWeek.total) / previousWeek.total) * 100
     : 0;
 
