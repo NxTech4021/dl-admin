@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { TopKPICards } from "@/components/kpi-cards";
 import { KeyInsights } from "@/components/key-insights";
 import { AnimatedContainer } from "@/components/ui/animated-container";
+import { DashboardFilterPresets, FilterPreset } from "@/components/dashboard-filter-presets";
 import { LayoutDashboard, RefreshCw, Keyboard, CheckCircle2, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
@@ -129,6 +130,11 @@ export default function Page() {
     toast.info("Historical range updated", {
       description: `Showing ${value} month${value > 1 ? "s" : ""} of data`,
     });
+  }, []);
+
+  const handleApplyPreset = useCallback((preset: FilterPreset) => {
+    setChartRange(preset.chartRange);
+    setHistoryRange(preset.historyRange);
   }, []);
 
   // Keyboard shortcuts
@@ -392,6 +398,12 @@ export default function Page() {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
+
+                <DashboardFilterPresets
+                  currentChartRange={chartRange}
+                  currentHistoryRange={historyRange}
+                  onApplyPreset={handleApplyPreset}
+                />
 
                 <TooltipProvider>
                   <Tooltip>
