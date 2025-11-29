@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/chart";
 import { getUserGrowthData, getUserGrowthThisWeekData } from "@/constants/data/mock-chart-data";
 
+// === Constants
+const WEEKS_PER_MONTH = 4.3;
+
 // === Chart configuration
 const chartConfig = {
   users: {
@@ -71,8 +74,8 @@ export function UserGrowthChart({
       // Calculate weekly averages (divide monthly data by ~4.3 weeks)
       return chartData.map((item, index) => ({
         ...item,
-        totalUsers: Math.round(item.totalUsers / 4.3),
-        payingMembers: Math.round(item.payingMembers / 4.3),
+        totalUsers: Math.round(item.totalUsers / WEEKS_PER_MONTH),
+        payingMembers: Math.round(item.payingMembers / WEEKS_PER_MONTH),
         month: `Week ${index + 1}`,
       }));
     }
