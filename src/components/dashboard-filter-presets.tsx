@@ -82,6 +82,8 @@ export function DashboardFilterPresets({
   });
 
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [presetToDelete, setPresetToDelete] = React.useState<string | null>(null);
   const [presetName, setPresetName] = React.useState("");
 
   const saveCurrentAsPreset = () => {
@@ -113,13 +115,20 @@ export function DashboardFilterPresets({
     toast.success(`Preset "${newPreset.name}" saved`);
   };
 
-  const deletePreset = (id: string) => {
+  const confirmDeletePreset = (id: string) => {
     if (id.startsWith("default-")) {
       toast.error("Cannot delete default presets");
       return;
     }
 
-    const updatedPresets = presets.filter((p) => p.id !== id);
+    setPresetToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const deletePreset = () => {
+    if (!presetToDelete) return;
+
+    const updatedPresets = presets.filter((p) => p.id !== presetToDelete);
     const customPresets = updatedPresets.filter((p) => p.id.startsWith("custom-"));
 
     localStorage.setItem(
@@ -128,6 +137,8 @@ export function DashboardFilterPresets({
     );
 
     setPresets(updatedPresets);
+    setShowDeleteDialog(false);
+    setPresetToDelete(null);
     toast.success("Preset deleted");
   };
 
@@ -209,8 +220,9 @@ export function DashboardFilterPresets({
                       className="h-6 w-6 p-0 hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deletePreset(preset.id);
+                        confirmDeletePreset(preset.id);
                       }}
+                      aria-label={`Delete ${preset.name} preset`}
                     >
                       <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
@@ -230,7 +242,10 @@ export function DashboardFilterPresets({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+      <Dialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Save Filter Preset</DialogTitle>
@@ -283,6 +298,41 @@ export function DashboardFilterPresets({
               Cancel
             </Button>
             <Button onClick={saveCurrentAsPreset}>Save Preset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open);
+          if (!open) setPresetToDelete(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Preset?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{presets.find(p => p.id === presetToDelete)?.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setPresetToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deletePreset}
+            >
+              Delete Preset
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
