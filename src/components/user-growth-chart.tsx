@@ -28,11 +28,11 @@ const chartConfig = {
   },
   totalUsers: {
     label: "Total Users",
-    color: "hsl(var(--chart-user-total))",
+    color: "var(--chart-user-total)",
   },
   payingMembers: {
     label: "Paying Members",
-    color: "hsl(var(--chart-user-paying))",
+    color: "var(--chart-user-paying)",
   },
 } satisfies ChartConfig;
 
