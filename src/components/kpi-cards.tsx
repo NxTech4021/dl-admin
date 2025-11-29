@@ -132,22 +132,22 @@ function KPICard({
 
   return (
     <Card
-      className="relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group"
+      className="relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group active:scale-[0.98] touch-manipulation"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       aria-label={`${title}: ${formatValue(value, format)}${trendData ? `. ${trendData.trend === "up" ? "Increased" : "Decreased"} by ${trendData.percentage.toFixed(1)}% from last period` : ""}. Click for details.`}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 md:px-6 md:pt-6">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <div className="text-2xl font-bold">{formatValue(value, format)}</div>
+      <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-xl sm:text-2xl font-bold truncate">{formatValue(value, format)}</div>
           {trendData && (
             <Sparkline
               data={generate7DayTrend(numValue, trendData.trend)}
@@ -159,12 +159,12 @@ function KPICard({
           <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
             {trendData.trend === "up" ? (
               <>
-                <TrendingUp className="h-3 w-3 text-green-500" aria-hidden="true" />
+                <TrendingUp className="h-3 w-3 shrink-0 text-green-500" aria-hidden="true" />
                 <span className="sr-only">Increase</span>
               </>
             ) : trendData.trend === "down" ? (
               <>
-                <TrendingDown className="h-3 w-3 text-red-500" aria-hidden="true" />
+                <TrendingDown className="h-3 w-3 shrink-0 text-red-500" aria-hidden="true" />
                 <span className="sr-only">Decrease</span>
               </>
             ) : null}
@@ -180,7 +180,7 @@ function KPICard({
               {trendData.percentage > 0 &&
                 `${trendData.percentage.toFixed(1)}%`}
             </span>
-            <span>from last period</span>
+            <span className="hidden sm:inline">from last period</span>
           </div>
         )}
       </CardContent>
@@ -249,7 +249,7 @@ export function TopKPICards() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Users"
           value={mockKPIData.totalUsers}
