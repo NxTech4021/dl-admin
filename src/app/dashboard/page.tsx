@@ -93,6 +93,9 @@ const ChartSkeleton = ({ height, name }: { height: string; name?: string }) => (
 
 // These should be moved to a layout.tsx file if needed
 
+// === Constants ===
+const CHART_LOADING_DELAY_MS = 300;
+
 export default function Page() {
   // === NEW STATE ===
 
@@ -125,7 +128,7 @@ export default function Page() {
     toast.info("Chart range updated", {
       description: `Switched to ${labels[value]}`,
     });
-    setTimeout(() => setIsChartLoading(false), 300);
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
   }, []);
 
   const handleHistoryRangeChange = useCallback((value: 1 | 3 | 6) => {
@@ -134,14 +137,14 @@ export default function Page() {
     toast.info("Historical range updated", {
       description: `Showing ${value} month${value > 1 ? "s" : ""} of data`,
     });
-    setTimeout(() => setIsChartLoading(false), 300);
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
   }, []);
 
   const handleApplyPreset = useCallback((preset: FilterPreset) => {
     setIsChartLoading(true);
     setChartRange(preset.chartRange);
     setHistoryRange(preset.historyRange);
-    setTimeout(() => setIsChartLoading(false), 300);
+    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
   }, []);
 
   // Keyboard shortcuts
