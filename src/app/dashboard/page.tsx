@@ -9,9 +9,10 @@ import { KeyInsights } from "@/components/key-insights";
 import { AnimatedContainer } from "@/components/ui/animated-container";
 import { FilterPreset } from "@/components/dashboard-filter-presets";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
+import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { ChartErrorBoundary } from "@/components/ui/chart-error-boundary";
 import { toast } from "sonner";
 
@@ -140,52 +141,12 @@ export default function Page() {
   }, []);
 
   // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Only trigger if not typing in input/textarea
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      // Show keyboard help with ?
-      if (e.key === "?" && e.shiftKey) {
-        e.preventDefault();
-        setShowKeyboardHelp(true);
-        return;
-      }
-
-      // Chart range shortcuts: M, A, W
-      if (e.key === "m" || e.key === "M") {
-        e.preventDefault();
-        handleChartRangeChange("monthly");
-      } else if (e.key === "a" || e.key === "A") {
-        e.preventDefault();
-        handleChartRangeChange("average");
-      } else if (e.key === "w" || e.key === "W") {
-        e.preventDefault();
-        handleChartRangeChange("thisWeek");
-      }
-      // History range shortcuts: 1, 2, 3 (mapping to 1, 3, 6 months)
-      else if (e.key === "1") {
-        e.preventDefault();
-        handleHistoryRangeChange(1);
-      } else if (e.key === "2") {
-        e.preventDefault();
-        handleHistoryRangeChange(3);
-      } else if (e.key === "3") {
-        e.preventDefault();
-        handleHistoryRangeChange(6);
-      }
-      // Refresh with R
-      else if (e.key === "r" || e.key === "R") {
-        e.preventDefault();
-        handleRefresh();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [handleChartRangeChange, handleHistoryRangeChange, handleRefresh]);
+  useDashboardKeyboard({
+    onChartRangeChange: handleChartRangeChange,
+    onHistoryRangeChange: handleHistoryRangeChange,
+    onRefresh: handleRefresh,
+    onShowKeyboardHelp: () => setShowKeyboardHelp(true),
+  });
 
   const handleExportCSV = useCallback(() => {
     // Mock dashboard data for export
