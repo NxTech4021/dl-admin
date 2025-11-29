@@ -46,32 +46,32 @@ import { cn } from "@/lib/utils";
 const chartConfig = {
   tennisLeague: {
     label: "Tennis League",
-    color: "hsl(var(--chart-tennis-league))",
+    color: "var(--chart-tennis-league)",
   },
 
   tennisFriendly: {
     label: "Tennis Friendly",
-    color: "hsl(var(--chart-tennis-friendly))",
+    color: "var(--chart-tennis-friendly)",
   },
 
   pickleballLeague: {
     label: "Pickleball League",
-    color: "hsl(var(--chart-pickleball-league))",
+    color: "var(--chart-pickleball-league)",
   },
 
   pickleballFriendly: {
     label: "Pickleball Friendly",
-    color: "hsl(var(--chart-pickleball-friendly))",
+    color: "var(--chart-pickleball-friendly)",
   },
 
   padelLeague: {
     label: "Padel League",
-    color: "hsl(var(--chart-padel-league))",
+    color: "var(--chart-padel-league)",
   },
 
   padelFriendly: {
     label: "Padel Friendly",
-    color: "hsl(var(--chart-padel-friendly))",
+    color: "var(--chart-padel-friendly)",
   },
 } satisfies ChartConfig;
 
@@ -485,7 +485,7 @@ export function MatchActivityChart({
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}League` as keyof typeof chartConfig
-                      ]?.color || "hsl(var(--chart-sport-members))",
+                      ]?.color || "var(--chart-sport-members)",
                   }}
                 />
 
@@ -516,7 +516,7 @@ export function MatchActivityChart({
                     backgroundColor:
                       chartConfig[
                         `${sportFilter}Friendly` as keyof typeof chartConfig
-                      ]?.color || "hsl(var(--chart-sport-revenue))",
+                      ]?.color || "var(--chart-sport-revenue)",
                   }}
                 />
 
