@@ -93,7 +93,7 @@ export function SportComparisonChart({
           onValueChange={(value) => setActiveMetric(value as MetricType)}
         >
           <SelectTrigger
-            className="w-[160px] rounded-lg sm:ml-auto"
+            className="w-full sm:w-[160px] h-9 sm:h-10 rounded-lg sm:ml-auto touch-manipulation"
             aria-label="Select metric"
           >
             <SelectValue placeholder="Select metric" />
@@ -109,7 +109,7 @@ export function SportComparisonChart({
         </Select>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -217,7 +217,7 @@ export function SportComparisonChart({
           </BarChart>
         </ChartContainer>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
           {chartData.map((sport) => (
             <div
               key={sport.sport}
