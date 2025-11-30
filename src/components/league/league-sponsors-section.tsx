@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
+import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import {
   Dialog,
   DialogContent,
@@ -21,9 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { type Sponsorship, type SponsorTier } from "@/constants/types/league";
+import { formatDateShort, formatCurrencyUSD } from "./types";
+
+/** Available sponsor option for selection dropdown */
+interface SponsorSelectOption {
+  id: string;
+  label: string;
+}
 
 interface LeagueSponsorsSectionProps {
-  sponsorships: Array<any>;
+  sponsorships: Sponsorship[];
   leagueId?: string;
   onAssignSponsor?: () => void;
   onSponsorDeleted?: () => void;
@@ -37,21 +47,12 @@ export function LeagueSponsorsSection({
 }: LeagueSponsorsSectionProps) {
   const router = useRouter();
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
-  const [available, setAvailable] = React.useState<
-    Array<{ id: string; label: string }>
-  >([]);
+  const [available, setAvailable] = React.useState<SponsorSelectOption[]>([]);
   const [selectedId, setSelectedId] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
 
-  console.log("LeagueSponsorsSection props:", {
-    sponsorships,
-    leagueId,
-    onAssignSponsor,
-  });
-  console.log("Sponsorships data:", sponsorships);
-  console.log("Sponsorships type:", typeof sponsorships);
-  console.log("Sponsorships is array:", Array.isArray(sponsorships));
-  console.log("Sponsorships length:", sponsorships?.length);
+  // Confirmation modal hook
+  const confirmation = useConfirmationModal();
 
   const handleAssign = () => {
     // Open inline modal to assign
@@ -62,11 +63,11 @@ export function LeagueSponsorsSection({
       .get(endpoints.sponsors.getAll)
       .then((res) => {
         const api = res.data;
-        const sponsorships = (api?.data?.sponsorships ||
+        const rawSponsorships = (api?.data?.sponsorships ||
           api?.data ||
           api ||
-          []) as any[];
-        const mapped = sponsorships.map((s: any) => ({
+          []) as Sponsorship[];
+        const mapped: SponsorSelectOption[] = rawSponsorships.map((s) => ({
           id: s.id,
           label: s.company?.name || s.sponsoredName || "Unnamed Sponsor",
         }));
@@ -81,37 +82,38 @@ export function LeagueSponsorsSection({
     router.push(`/utilities/sponsors/view/${sponsorId}`);
   };
 
-  const handleDeleteSponsor = async (
-    sponsorshipId: string,
-    sponsorName: string
-  ) => {
-    if (
-      !confirm(
-        `Are you sure you want to remove "${sponsorName}" from this league?`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteSponsorClick = React.useCallback(
+    (sponsorshipId: string, sponsorName: string) => {
+      confirmation.showConfirmation({
+        title: "Remove Sponsor",
+        description: `Are you sure you want to remove "${sponsorName}" from this league?`,
+        variant: "destructive",
+        confirmText: "Remove",
+        cancelText: "Cancel",
+        onConfirm: async () => {
+          confirmation.setLoading(true);
+          try {
+            await axiosInstance.delete(endpoints.sponsors.delete(sponsorshipId));
+            toast.success(`"${sponsorName}" has been removed from the league`);
+            confirmation.hideConfirmation();
+            if (onSponsorDeleted) {
+              onSponsorDeleted();
+            }
+          } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            toast.error(
+              error?.response?.data?.message || "Failed to remove sponsor from league"
+            );
+          } finally {
+            confirmation.setLoading(false);
+          }
+        },
+      });
+    },
+    [confirmation, onSponsorDeleted]
+  );
 
-    try {
-      await axiosInstance.delete(endpoints.sponsors.delete(sponsorshipId));
-      toast.success(`"${sponsorName}" has been removed from the league`);
-
-      // Call the refresh callback if provided, otherwise fallback to page reload
-      if (onSponsorDeleted) {
-        onSponsorDeleted();
-      } else {
-        window.location.reload();
-      }
-    } catch (error: any) {
-      console.error("Error deleting sponsorship:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to remove sponsor from league"
-      );
-    }
-  };
-
-  const getTierBadgeVariant = (tier: string) => {
+  const getTierBadgeVariant = (tier: SponsorTier | string | undefined) => {
     switch (tier?.toUpperCase()) {
       case "PLATINUM":
         return "default";
@@ -126,7 +128,7 @@ export function LeagueSponsorsSection({
     }
   };
 
-  const getTierColor = (tier: string) => {
+  const getTierColor = (tier: SponsorTier | string | undefined) => {
     switch (tier?.toUpperCase()) {
       case "PLATINUM":
         return "text-slate-700 bg-slate-100 border-slate-300";
@@ -141,20 +143,7 @@ export function LeagueSponsorsSection({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
+  // Using shared utility functions from ./types
 
   return (
     <div className="space-y-3">
@@ -174,29 +163,40 @@ export function LeagueSponsorsSection({
           size="sm"
           onClick={handleAssign}
           className="h-8 px-2 text-xs"
+          aria-label="Add sponsor to league"
         >
-          <IconPlus className="w-3 h-3 mr-1" />
+          <IconPlus className="w-3 h-3 mr-1" aria-hidden="true" />
           Add
         </Button>
       </div>
 
       {sponsorships && sponsorships.length > 0 ? (
-        <div className="space-y-2">
-          {sponsorships.map((s: any) => {
+        <div className="space-y-2" role="list" aria-label="Assigned sponsors">
+          {sponsorships.map((s) => {
+            const sponsorName = s.company?.name || s.sponsoredName || "Sponsor";
             return (
               <div
                 key={s.id}
                 className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => handleViewSponsor(s.company?.id)}
+                role="listitem"
+                aria-label={`Sponsor: ${sponsorName}`}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleViewSponsor(s.company?.id);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                    <IconBuilding className="w-4 h-4 text-muted-foreground" />
+                    <IconBuilding className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-sm truncate">
-                        {s.company?.name || s.sponsoredName || "Sponsor"}
+                        {sponsorName}
                       </h4>
                       <span
                         className={`text-xs px-1.5 py-0.5 rounded ${getTierColor(
@@ -209,10 +209,10 @@ export function LeagueSponsorsSection({
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       {(s.amount || s.contractAmount) && (
                         <span className="font-medium">
-                          {formatCurrency(Number(s.amount || s.contractAmount))}
+                          {formatCurrencyUSD(Number(s.amount || s.contractAmount))}
                         </span>
                       )}
-                      {s.startDate && <span>{formatDate(s.startDate)}</span>}
+                      {s.startDate && <span>{formatDateShort(s.startDate)}</span>}
                     </div>
                   </div>
                 </div>
@@ -222,21 +222,20 @@ export function LeagueSponsorsSection({
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const sponsorName =
-                      s.company?.name || s.sponsoredName || "Sponsor";
-                    handleDeleteSponsor(s.id, sponsorName);
+                    handleDeleteSponsorClick(s.id, sponsorName);
                   }}
+                  aria-label={`Remove ${sponsorName} from league`}
                 >
-                  <IconTrash className="w-3 h-3" />
+                  <IconTrash className="w-3 h-3" aria-hidden="true" />
                 </Button>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="text-center py-6">
+        <div className="text-center py-6" role="status" aria-label="No sponsors assigned">
           <div className="w-8 h-8 rounded-md bg-muted mx-auto mb-2 flex items-center justify-center">
-            <IconBuilding className="w-4 h-4 text-muted-foreground" />
+            <IconBuilding className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
           </div>
           <p className="text-sm text-muted-foreground">No sponsors assigned</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -292,32 +291,25 @@ export function LeagueSponsorsSection({
                 onClick={async () => {
                   if (!selectedId || !leagueId) return;
                   try {
-                    console.log("Assigning sponsor:", { selectedId, leagueId });
-                    console.log(
-                      "API endpoint:",
-                      endpoints.sponsors.update(selectedId)
-                    );
-                    console.log("Payload:", { leagueIds: [leagueId] });
-
-                    const response = await axiosInstance.put(
+                    await axiosInstance.put(
                       endpoints.sponsors.update(selectedId),
                       {
                         leagueIds: [leagueId],
                       }
                     );
 
-                    console.log("Assignment response:", response.data);
                     toast.success("Sponsor assigned to league");
                     setIsAssignOpen(false);
                     setSelectedId("");
 
-                    // Force page reload to refresh data
-                    window.location.reload();
-                  } catch (err: any) {
-                    console.error("Assignment error:", err);
-                    console.error("Error response:", err?.response?.data);
+                    // Refresh via callback instead of page reload
+                    if (onSponsorDeleted) {
+                      onSponsorDeleted();
+                    }
+                  } catch (err: unknown) {
+                    const error = err as { response?: { data?: { message?: string } } };
                     toast.error(
-                      err?.response?.data?.message || "Failed to assign sponsor"
+                      error?.response?.data?.message || "Failed to assign sponsor"
                     );
                   }
                 }}
@@ -328,6 +320,23 @@ export function LeagueSponsorsSection({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={confirmation.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            confirmation.hideConfirmation();
+          }
+        }}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        onConfirm={confirmation.onConfirm}
+        isLoading={confirmation.isLoading}
+        variant={confirmation.variant}
+      />
     </div>
   );
 }
