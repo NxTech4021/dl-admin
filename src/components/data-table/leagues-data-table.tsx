@@ -375,10 +375,10 @@ export function LeaguesDataTable({
 
       // Close modal
       confirmation.hideConfirmation();
-    } catch (error: any) {
-      console.error("Failed to delete leagues:", error);
+    } catch (error) {
+      const apiError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        error.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED
+        apiError.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED
       );
     } finally {
       confirmation.setLoading(false);
