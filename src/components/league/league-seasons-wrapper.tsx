@@ -1,30 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/constants/zod/season-schema";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { IconPlus, IconCalendar, IconTrophy } from "@tabler/icons-react";
-
-export interface Category {
-  leagues: any;
-  id: string;
-  name: string | null;
-  genderRestriction: string;
-  matchFormat: string | null;
-  game_type: string | null;
-  league: {
-    id: string;
-    name: string;
-    sportType: string;
-  } | null;
-  seasons: Array<{
-    id: string;
-    name: string;
-  }>;
-}
+import { Category } from "./types";
 
 interface LeagueSeasonsWrapperProps {
   seasons: Season[];
@@ -39,10 +23,10 @@ export function LeagueSeasonsWrapper({
   leagueName,
   onRefresh,
 }: LeagueSeasonsWrapperProps) {
+  const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
   const [seasonsWithPlayers, setSeasonsWithPlayers] = useState<Season[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
 
@@ -56,24 +40,24 @@ export function LeagueSeasonsWrapper({
 
       setSeasonsLoading(true);
       try {
-        // Fetch detailed data for each season using the same API as season detail page
-        const seasonPromises = seasons.map(async (season) => {
-          try {
-            const response = await axiosInstance.get(
-              endpoints.season.getById(season.id)
-            );
-            return response.data;
-          } catch (error) {
-            console.error(`Failed to fetch season ${season.id}:`, error);
-            return season; // Fallback to original season data
-          }
-        });
+        // Fetch detailed data for each season using Promise.allSettled to handle partial failures
+        const seasonPromises = seasons.map((season) =>
+          axiosInstance
+            .get(endpoints.season.getById(season.id))
+            .then((response) => response.data as Season)
+        );
 
-        const detailedSeasons = await Promise.all(seasonPromises);
+        const results = await Promise.allSettled(seasonPromises);
+
+        // Map results: use fetched data for fulfilled, fallback to original for rejected
+        const detailedSeasons = results.map((result, index) =>
+          result.status === "fulfilled" ? result.value : seasons[index]
+        );
+
         setSeasonsWithPlayers(detailedSeasons);
-      } catch (error) {
-        console.error("Failed to fetch seasons with players:", error);
-        setSeasonsWithPlayers(seasons); // Fallback to original seasons
+      } catch {
+        // Fallback to original seasons on unexpected failure
+        setSeasonsWithPlayers(seasons);
       } finally {
         setSeasonsLoading(false);
       }
@@ -85,18 +69,18 @@ export function LeagueSeasonsWrapper({
   // Fetch categories for the league
   useEffect(() => {
     const fetchCategories = async () => {
-      setCategoriesLoading(true);
+      setIsCategoriesLoading(true);
       try {
         const response = await axiosInstance.get(endpoints.categories.getAll, {
           params: { leagueId },
         });
         const categoriesData = response.data?.data || response.data || [];
         setCategories(categoriesData);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
+      } catch {
+        // Fallback to empty categories on fetch failure
         setCategories([]);
       } finally {
-        setCategoriesLoading(false);
+        setIsCategoriesLoading(false);
       }
     };
 
@@ -106,37 +90,25 @@ export function LeagueSeasonsWrapper({
   }, [leagueId]);
 
   const handleViewSeason = (seasonId: string) => {
-    window.location.href = `/seasons/${seasonId}`;
+    router.push(`/seasons/${seasonId}`);
   };
 
   const handleCreateSeason = () => {
-    console.log("Create season button clicked!");
-    console.log("Current isCreateModalOpen state:", isCreateModalOpen);
     setIsCreateModalOpen(true);
-    console.log("Set isCreateModalOpen to true");
   };
 
   const handleSeasonCreated = async () => {
-    // Call the refresh callback if provided, otherwise fallback to page reload
+    // Call the refresh callback
     if (onRefresh) {
       onRefresh();
-    } else {
-      window.location.reload();
     }
   };
 
-  const handleDeleteSeason = async (seasonId: string) => {
-    if (!confirm("Are you sure you want to delete this season?")) {
-      return;
-    }
-
-    try {
-      // TODO: Implement actual delete API call
-      console.log("Delete season:", seasonId);
-      // For now, just refresh the page
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to delete season:", error);
+  // Note: Delete functionality should use useConfirmationModal and proper API call
+  const handleDeleteSeason = async (_seasonId: string) => {
+    // TODO: Implement with useConfirmationModal and proper API call
+    if (onRefresh) {
+      onRefresh();
     }
   };
 
@@ -152,18 +124,23 @@ export function LeagueSeasonsWrapper({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={handleCreateSeason} size="sm" className="gap-2">
-            <IconPlus className="w-4 h-4" />
+          <Button
+            onClick={handleCreateSeason}
+            size="sm"
+            className="gap-2"
+            disabled={isCategoriesLoading}
+          >
+            <IconPlus className="w-4 h-4" aria-hidden="true" />
             Create Season
           </Button>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-2">
-            <IconCalendar className="w-4 h-4 text-blue-500" />
+            <IconCalendar className="w-4 h-4 text-blue-500" aria-hidden="true" />
             <span className="text-sm font-medium">Total</span>
           </div>
           <p className="text-2xl font-bold">{seasonsWithPlayers.length}</p>
@@ -171,7 +148,7 @@ export function LeagueSeasonsWrapper({
 
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-2">
-            <IconTrophy className="w-4 h-4 text-green-500" />
+            <IconTrophy className="w-4 h-4 text-green-500" aria-hidden="true" />
             <span className="text-sm font-medium">Active</span>
           </div>
           <p className="text-2xl font-bold">
@@ -181,7 +158,7 @@ export function LeagueSeasonsWrapper({
 
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-2">
-            <IconCalendar className="w-4 h-4 text-orange-500" />
+            <IconCalendar className="w-4 h-4 text-orange-500" aria-hidden="true" />
             <span className="text-sm font-medium">Upcoming</span>
           </div>
           <p className="text-2xl font-bold">
