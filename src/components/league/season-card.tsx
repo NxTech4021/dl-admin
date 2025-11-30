@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Season, FormatDateFunction } from "./types";
+import { Season, FormatDateFunction, Category } from "./types";
 import dynamic from "next/dynamic";
 import {
   AlertDialog,
@@ -38,7 +38,7 @@ const SeasonCreateModal = dynamic(
 interface SeasonCardProps {
   seasons: Season[];
   leagueId: string;
-  categories: { id: string; name: string }[];
+  categories: Category[];
   formatDate: FormatDateFunction;
   onSeasonCreated?: () => void;
   onDeleteSeason?: (seasonId: string) => void;
@@ -68,7 +68,7 @@ export function SeasonCard({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <IconCalendar className="size-5" />
+            <IconCalendar className="size-5" aria-hidden="true" />
             Seasons
           </CardTitle>
 
@@ -77,7 +77,7 @@ export function SeasonCard({
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <IconPlus className="size-4 mr-2" />
+            <IconPlus className="size-4 mr-2" aria-hidden="true" />
             Create Season
           </Button>
         </div>
@@ -93,7 +93,7 @@ export function SeasonCard({
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/20">
-                    <IconCalendar className="size-4 text-yellow-600" />
+                    <IconCalendar className="size-4 text-yellow-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-medium">{season.name}</p>
@@ -123,7 +123,7 @@ export function SeasonCard({
                       className="h-8 w-8"
                       onClick={() => onViewSeason(season.id)}
                     >
-                      <IconEye className="size-4 text-muted-foreground" />
+                      <IconEye className="size-4 text-muted-foreground" aria-hidden="true" />
                     </Button>
                   )}
 
@@ -135,7 +135,7 @@ export function SeasonCard({
                       className="h-8 w-8"
                       onClick={() => onEditSeason(season)}
                     >
-                      <IconEdit className="size-4 text-muted-foreground" />
+                      <IconEdit className="size-4 text-muted-foreground" aria-hidden="true" />
                     </Button>
                   )}
 
@@ -148,7 +148,7 @@ export function SeasonCard({
                           size="icon"
                           className="h-8 w-8"
                         >
-                          <IconTrash className="size-4 text-destructive" />
+                          <IconTrash className="size-4 text-destructive" aria-hidden="true" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -177,7 +177,7 @@ export function SeasonCard({
           </div>
         ) : (
           <div className="text-center py-8">
-            <IconCalendar className="size-12 text-muted-foreground mx-auto mb-2" />
+            <IconCalendar className="size-12 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">No seasons yet.</p>
           </div>
         )}
@@ -188,7 +188,7 @@ export function SeasonCard({
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         leagueId={leagueId}
-        categories={categories as any}
+        categories={categories}
         onSeasonCreated={handleSeasonCreated}
       />
     </Card>
