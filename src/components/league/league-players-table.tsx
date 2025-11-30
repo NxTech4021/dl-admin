@@ -72,6 +72,8 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
+import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 
 export interface LeaguePlayerRow {
   id: string;
@@ -91,6 +93,16 @@ export interface LeaguePlayerRow {
     status: string;
     joinedAt: string | Date;
   }>;
+}
+
+/** Player available for selection/assignment in add player dialog */
+interface AvailablePlayer {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  username?: string | null;
+  area?: string | null;
+  image?: string | null;
 }
 
 function getInitials(name: string) {
@@ -160,22 +172,19 @@ function getJoinTypeLabel(joinType: string) {
 
 interface PlayerActionsProps {
   player: LeaguePlayerRow;
-  onRemove?: (playerId: string) => void;
+  onRemoveClick?: (player: LeaguePlayerRow) => void;
 }
 
-function PlayerActions({ player, onRemove }: PlayerActionsProps) {
+function PlayerActions({ player, onRemoveClick }: PlayerActionsProps) {
   const router = useRouter();
-  
+
   const handleViewProfile = () => {
     toast.info(`Viewing profile for ${player.name}`);
-    // Navigate to player profile using Next.js router
     router.push(`/players/${player.id}`);
   };
 
   const handleRemove = () => {
-    if (confirm(`Are you sure you want to remove ${player.name} from this league?`)) {
-      onRemove?.(player.id);
-    }
+    onRemoveClick?.(player);
   };
 
   return (
@@ -201,7 +210,7 @@ function PlayerActions({ player, onRemove }: PlayerActionsProps) {
   );
 }
 
-const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePlayerRow>[] => [
+const makeColumns = (onRemoveClick?: (player: LeaguePlayerRow) => void): ColumnDef<LeaguePlayerRow>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -387,7 +396,7 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
   },
   {
     id: "actions",
-    cell: ({ row }) => <PlayerActions player={row.original} onRemove={onRemove} />,
+    cell: ({ row }) => <PlayerActions player={row.original} onRemoveClick={onRemoveClick} />,
   },
 ];
 
@@ -398,6 +407,7 @@ interface LeaguePlayersTableProps {
 }
 
 export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePlayersTableProps) {
+  const router = useRouter();
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -406,6 +416,10 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   const [isAddPlayerOpen, setIsAddPlayerOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedPlayers, setSelectedPlayers] = React.useState<Set<string>>(new Set());
+  const [playerToRemove, setPlayerToRemove] = React.useState<LeaguePlayerRow | null>(null);
+
+  // Confirmation modal hook
+  const confirmation = useConfirmationModal();
 
   // Get unique areas for filter
   const uniqueAreas = React.useMemo(() => {
@@ -413,11 +427,23 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
     return Array.from(areas).sort();
   }, [players]);
 
-  const handleRemovePlayer = React.useCallback(async (playerId: string) => {
-    // This is a read-only summary of players from all seasons
-    // Players are managed at the season level, not league level
-    toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
-  }, []);
+  // Handle remove click - shows confirmation modal
+  const handleRemoveClick = React.useCallback((player: LeaguePlayerRow) => {
+    setPlayerToRemove(player);
+    confirmation.showConfirmation({
+      title: "Remove Player",
+      description: `Are you sure you want to remove ${player.name} from this league?`,
+      variant: "destructive",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        // Players are managed at the season level, not league level
+        toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
+        confirmation.hideConfirmation();
+        setPlayerToRemove(null);
+      },
+    });
+  }, [confirmation]);
 
 
   const filtered = React.useMemo(() => {
@@ -443,7 +469,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
 
   const table = useReactTable({
     data: filtered,
-    columns: React.useMemo(() => makeColumns(handleRemovePlayer), [handleRemovePlayer]),
+    columns: React.useMemo(() => makeColumns(handleRemoveClick), [handleRemoveClick]),
     state: { 
       sorting, 
       columnFilters, 
@@ -486,7 +512,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   };
 
   // State for available players
-  const [availablePlayers, setAvailablePlayers] = React.useState<any[]>([]);
+  const [availablePlayers, setAvailablePlayers] = React.useState<AvailablePlayer[]>([]);
   const [isLoadingPlayers, setIsLoadingPlayers] = React.useState(false);
 
   // Fetch available players from API
@@ -495,23 +521,20 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
       setIsLoadingPlayers(true);
       try {
         const response = await axiosInstance.get(endpoints.player.getAll);
-        console.log("Players API response:", response.data);
-        
-        // Handle different response structures
-        let players = [];
+
+        // Handle different response structures with proper typing
+        let players: AvailablePlayer[] = [];
         if (Array.isArray(response.data)) {
-          players = response.data;
+          players = response.data as AvailablePlayer[];
         } else if (response.data && Array.isArray(response.data.players)) {
-          players = response.data.players;
+          players = response.data.players as AvailablePlayer[];
         } else if (response.data && Array.isArray(response.data.data)) {
-          players = response.data.data;
+          players = response.data.data as AvailablePlayer[];
         }
-        
+
         setAvailablePlayers(players);
-      } catch (error) {
-        console.error("Error fetching available players:", error);
+      } catch {
         toast.error("Failed to load available players");
-        // Fallback to empty array
         setAvailablePlayers([]);
       } finally {
         setIsLoadingPlayers(false);
@@ -561,9 +584,8 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   const handleSendInvite = () => {
     setIsAddPlayerOpen(false);
     toast.info("Opening invite form...");
-    // Navigate to invite page or open invite modal
     if (leagueId) {
-      window.location.href = `/league/${leagueId}/invite`;
+      router.push(`/league/${leagueId}/invite`);
     }
   };
 
@@ -819,6 +841,24 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={confirmation.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            confirmation.hideConfirmation();
+            setPlayerToRemove(null);
+          }
+        }}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        onConfirm={confirmation.onConfirm}
+        isLoading={confirmation.isLoading}
+        variant={confirmation.variant}
+      />
     </div>
   );
 }
