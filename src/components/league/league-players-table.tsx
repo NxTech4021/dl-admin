@@ -53,10 +53,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  IconCalendar, 
-  IconMail, 
-  IconMapPin, 
+import {
+  IconCalendar,
+  IconMail,
+  IconMapPin,
   IconDotsVertical,
   IconUserMinus,
   IconUserCheck,
@@ -66,7 +66,6 @@ import {
   IconTrash,
   IconSearch,
   IconUserPlus,
-  IconUsers,
   IconSend
 } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -298,7 +297,6 @@ const makeColumns = (onRemoveClick?: (player: LeaguePlayerRow) => void): ColumnD
       const ratingEntries = Object.entries(ratings);
       const visibleRatings = ratingEntries.slice(0, 3);
       const remainingCount = ratingEntries.length - 3;
-      const remainingRatings = ratingEntries.slice(3);
       
       return (
         <div className="flex flex-wrap gap-1.5 max-w-xs">
@@ -403,10 +401,9 @@ const makeColumns = (onRemoveClick?: (player: LeaguePlayerRow) => void): ColumnD
 interface LeaguePlayersTableProps {
   players: LeaguePlayerRow[];
   leagueId?: string;
-  onAddPlayer?: () => void;
 }
 
-export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePlayersTableProps) {
+export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProps) {
   const router = useRouter();
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -503,24 +500,22 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
     setRowSelection({});
   }, [table, setRowSelection]);
 
-  const handleAddPlayer = () => {
-    if (onAddPlayer) {
-      onAddPlayer();
-    } else {
-      setIsAddPlayerOpen(true);
-    }
-  };
-
   // State for available players
   const [availablePlayers, setAvailablePlayers] = React.useState<AvailablePlayer[]>([]);
   const [isLoadingPlayers, setIsLoadingPlayers] = React.useState(false);
 
   // Fetch available players from API
   React.useEffect(() => {
+    if (!isAddPlayerOpen) return;
+
+    const abortController = new AbortController();
+
     const fetchAvailablePlayers = async () => {
       setIsLoadingPlayers(true);
       try {
-        const response = await axiosInstance.get(endpoints.player.getAll);
+        const response = await axiosInstance.get(endpoints.player.getAll, {
+          signal: abortController.signal,
+        });
 
         // Handle different response structures with proper typing
         let players: AvailablePlayer[] = [];
@@ -534,31 +529,35 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
 
         setAvailablePlayers(players);
       } catch {
+        if (abortController.signal.aborted) return;
         toast.error("Failed to load available players");
         setAvailablePlayers([]);
       } finally {
-        setIsLoadingPlayers(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingPlayers(false);
+        }
       }
     };
 
-    if (isAddPlayerOpen) {
-      fetchAvailablePlayers();
-    }
+    fetchAvailablePlayers();
+
+    return () => {
+      abortController.abort();
+    };
   }, [isAddPlayerOpen]);
 
   const filteredAvailablePlayers = React.useMemo(() => {
     // Ensure availablePlayers is always an array and filter out invalid entries
-    const players = Array.isArray(availablePlayers) 
-      ? availablePlayers.filter(p => p && p.id) 
+    const players = Array.isArray(availablePlayers)
+      ? availablePlayers.filter(p => p && p.id)
       : [];
-    
+
     if (!searchQuery) return players;
     const q = searchQuery.toLowerCase();
-    return players.filter(p => 
-      p.name && p.email && p.username &&
-      (p.name.toLowerCase().includes(q) || 
-       p.email.toLowerCase().includes(q) ||
-       p.username.toLowerCase().includes(q))
+    return players.filter(p =>
+      (p.name?.toLowerCase().includes(q)) ||
+      (p.email?.toLowerCase().includes(q)) ||
+      (p.username?.toLowerCase().includes(q))
     );
   }, [availablePlayers, searchQuery]);
 
@@ -635,16 +634,6 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
         </div>
 
         <div className="flex gap-2">
-          {/*
-          <Button
-            onClick={handleAddPlayer}
-            size="sm"
-          >
-            <IconUsers className="h-4 w-4 mr-2" />
-            View Players
-          </Button>
-          */}
-
           {selectedCount > 0 && (
             <Button
               variant="destructive"
