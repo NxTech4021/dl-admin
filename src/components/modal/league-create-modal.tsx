@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,62 +29,28 @@ import {
   IconX,
   IconCheck,
   IconMapPin,
-  IconUsers,
   IconBuilding
 } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useSession } from "@/lib/auth-client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
+import {
+  SPORTS_OPTIONS,
+  LOCATION_OPTIONS,
+  STATUS_OPTIONS,
+  getSportColor,
+  type League,
+  type SponsorOption,
+  type SportType,
+  type LeagueStatus,
+} from "@/constants/types/league";
 
 interface LeagueCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children?: React.ReactNode;
-  onLeagueCreated?: (formData?: any) => void;
-  selectedTemplate?: any;
+  onLeagueCreated?: (data?: League) => void;
+  selectedTemplate?: { name: string };
 }
-
-// Available options for dropdowns
-const SPORTS_OPTIONS = [
-  { value: "PICKLEBALL", label: "Pickleball" },
-  { value: "TENNIS", label: "Tennis" },
-  { value: "PADEL", label: "Padel" },
-];
-
-const LOCATION_OPTIONS = [
-  { value: "kuala-lumpur", label: "Kuala Lumpur" },
-  { value: "petaling-jaya", label: "Petaling Jaya" },
-  { value: "subang-jaya", label: "Subang Jaya" },
-  { value: "shah-alam", label: "Shah Alam" },
-  { value: "klang", label: "Klang" },
-  { value: "ampang", label: "Ampang" },
-  { value: "cheras", label: "Cheras" },
-  { value: "puchong", label: "Puchong" },
-  { value: "cyberjaya", label: "Cyberjaya" },
-  { value: "putrajaya", label: "Putrajaya" },
-];
-
-const FORMAT_OPTIONS = [
-  { value: "SINGLES", label: "Singles" },
-  { value: "DOUBLES", label: "Doubles" },
-  { value: "MIXED", label: "Mixed Doubles" },
-];
-
-const STATUS_OPTIONS = [
-  // { value: "DRAFT", label: "Draft" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "UPCOMING", label: "Upcoming" },
-];
-
-// const JOIN_TYPE_OPTIONS = [
-//   { value: "OPEN", label: "Open to All" },
-//   { value: "INVITE_ONLY", label: "Invitation Only" },
-//   { value: "MANUAL", label: "Manual Approval" },
-// ];
-
-
 
 export default function LeagueCreateModal({
   open,
@@ -95,12 +61,12 @@ export default function LeagueCreateModal({
 }: LeagueCreateModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(false);
   const [sponsorInputValue, setSponsorInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSponsors, setFilteredSponsors] = useState<any[]>([]);
-  const { data} = useSession();
+  const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
+  const { data } = useSession();
 
   const userId = data?.user.id;
  
@@ -117,41 +83,27 @@ export default function LeagueCreateModal({
 
 
 React.useEffect(() => {
-  console.log("hasSponsor value:", formData.hasSponsor);
   if (formData.hasSponsor) {
-    console.log("Attempting to fetch sponsors..."); // Log the start of the process
     setSponsorsLoading(true);
     axiosInstance.get(endpoints.sponsors.getAll)
       .then(res => {
-         console.log("response sponsor", res.data);
          const api = res.data;
-         const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as any[];
+         const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as Array<{ id: string; sponsoredName?: string }>;
          // map to simple shape for autocomplete
-         const mapped = sponsorships.map((s: any) => ({
+         const mapped = sponsorships.map((s) => ({
            id: s.id,
            name: s.sponsoredName || "Unnamed Sponsor",
          }));
          setSponsors(mapped);
-         console.log("sponsors length:", mapped.length);
       })
-      .catch((error) => {
-        console.error("Error fetching sponsors:", error); // Log any errors
+      .catch(() => {
         setSponsors([]);
       })
       .finally(() => setSponsorsLoading(false));
   }
 }, [formData.hasSponsor]);
 
-
-// 2. **Add this new useEffect to log the actual state value**
-React.useEffect(() => {
-  // This will run AFTER the `setSponsors(res.data)` update completes
-  if (formData.hasSponsor) {
-    console.log("Current sponsors state:", sponsors); 
-  }
-}, [sponsors, formData.hasSponsor]);
-
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -175,7 +127,7 @@ React.useEffect(() => {
   };
 
   // Handle sponsor selection
-  const handleSponsorSelect = (sponsor: any) => {
+  const handleSponsorSelect = (sponsor: SponsorOption) => {
     setSponsorInputValue(sponsor.name);
     updateFormData("existingSponsorId", sponsor.id);
     setShowSuggestions(false);
@@ -208,7 +160,17 @@ React.useEffect(() => {
 
   const isFormValid = formData.leagueName && formData.sport && formData.location;
 
-type TierType = "GOLD" | "SILVER" | "BRONZE" | "PLATINUM";
+/** Payload for creating a league */
+interface LeagueCreatePayload {
+  name: string;
+  location: string;
+  status: string;
+  sportType: SportType;
+  gameType: "SINGLES" | "DOUBLES" | "MIXED";
+  description: string | null;
+  createdById: string | undefined;
+  existingSponsorshipIds?: string[];
+}
 
 const handleCreateLeague = async () => {
   if (!isFormValid) return;
@@ -217,19 +179,12 @@ const handleCreateLeague = async () => {
   setError("");
 
   try {
-    // Map sport values to match backend enum
-    const sportTypeMap: { [key: string]: string } = {
-      "TENNIS": "TENNIS",
-      "PICKLEBALL": "PICKLEBALL", 
-      "PADEL": "PADEL"
-    };
-
-     // Base league data
-    const leagueData: any = {
+    // Base league data
+    const leagueData: LeagueCreatePayload = {
       name: formData.leagueName,
       location: formData.location,
       status: formData.status,
-      sportType: sportTypeMap[formData.sport] || "TENNIS",
+      sportType: (formData.sport as SportType) || "TENNIS",
       gameType: "SINGLES",
       description: formData.description || null,
       createdById: userId,
@@ -237,13 +192,9 @@ const handleCreateLeague = async () => {
 
     // Add sponsorship if applicable
     if (formData.hasSponsor && formData.existingSponsorId) {
-      // connect existing sponsorship by id
       leagueData.existingSponsorshipIds = [formData.existingSponsorId];
     }
 
-    console.log("League data being sent to backend:", JSON.stringify(leagueData, null, 2));
-
-   
     // Send request
     const response = await axiosInstance.post(endpoints.league.create, leagueData);
 
@@ -254,28 +205,15 @@ const handleCreateLeague = async () => {
       onLeagueCreated?.(response.data);
     }
 
-  } catch (err: any) {
-    const message = err.response?.data?.message || err.message || "Failed to create league";
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string };
+    const message = error.response?.data?.message || error.message || "Failed to create league";
     setError(message);
     toast.error(message);
   } finally {
     setLoading(false);
   }
 };
-
-
-  const getSportColor = (sport: string) => {
-    switch (sport) {
-      case "TENNIS":
-        return "#ABFE4D";
-      case "PICKLEBALL":
-        return "#A04DFE";
-      case "PADEL":
-        return "#4DABFE";
-      default:
-        return "#6B7280";
-    }
-  };
 
   return (
     <Dialog
