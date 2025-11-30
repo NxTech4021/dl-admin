@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Category as CategorySchema } from "@/constants/zod/category-schema";
+import { Category } from "./types";
 
 interface CategorySelectorProps {
   value: string;
@@ -17,32 +17,9 @@ interface CategorySelectorProps {
   className?: string;
 }
 
-interface CategoryData {
-  id: string;
-  name: string | null;
-  game_type: "SINGLES" | "DOUBLES" | null;
-  matchFormat: string | null;
-  maxPlayers: number | null;
-  maxTeams: number | null;
-  genderRestriction: "MALE" | "FEMALE" | "MIXED" | "OPEN";
-  gender_category: "MALE" | "FEMALE" | "MIXED" | null;
-  isActive: boolean;
-  categoryOrder: number;
-  leagues: Array<{
-    id: string;
-    name: string;
-  }>;
-  seasons: Array<{
-    id: string;
-    name: string;
-    startDate?: Date | null;
-    endDate?: Date | null;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-  league: {
-    name: string;
-  };
+/** Extended category data from API response */
+interface CategoryApiData extends Category {
+  gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
 }
 
 export function CategorySelector({
@@ -52,7 +29,7 @@ export function CategorySelector({
   className,
 }: CategorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [categories, setCategories] = useState<CategoryApiData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -68,8 +45,8 @@ export function CategorySelector({
           const categoriesData = result.data || [];
           setCategories(categoriesData);
         }
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
+      } catch {
+        // Fallback to empty categories on fetch failure
         setCategories([]);
       } finally {
         setIsLoading(false);
@@ -90,8 +67,8 @@ export function CategorySelector({
             const categoriesData = result.data || [];
             setCategories(categoriesData);
           }
-        } catch (error) {
-          console.error("Failed to fetch latest categories:", error);
+        } catch {
+          // Silent failure - keep existing categories on refresh failure
         }
       };
 
@@ -108,29 +85,35 @@ export function CategorySelector({
     (category) => category.name === value
   );
 
-  const handleCategorySelect = (category: CategoryData) => {
+  const handleCategorySelect = (category: CategoryApiData) => {
     // Transform CategoryData to match CategorySchema
     // Map "OPEN" to "MIXED" to match schema requirements
-    const genderRestriction: "MALE" | "FEMALE" | "MIXED" = 
-      category.genderRestriction === "OPEN" ? "MIXED" : category.genderRestriction;
-    
+    const normalizeGenderRestriction = (gr: string): "MALE" | "FEMALE" | "MIXED" => {
+      const upper = gr.toUpperCase();
+      if (upper === "MALE") return "MALE";
+      if (upper === "FEMALE") return "FEMALE";
+      return "MIXED"; // Map OPEN and any other value to MIXED
+    };
+
+    const genderRestriction = normalizeGenderRestriction(category.genderRestriction);
+
     const categorySchema: CategorySchema = {
       id: category.id,
       name: category.name,
       genderRestriction,
-      matchFormat: category.matchFormat,
-      game_type: category.game_type,
-      gender_category: category.gender_category,
-      isActive: category.isActive,
-      categoryOrder: category.categoryOrder,
-      seasons: category.seasons.map((season) => ({
+      matchFormat: category.matchFormat ?? null,
+      game_type: category.game_type as "SINGLES" | "DOUBLES" | null,
+      gender_category: category.gender_category ?? null,
+      isActive: category.isActive ?? true,
+      categoryOrder: category.categoryOrder ?? 0,
+      seasons: (category.seasons ?? []).map((season) => ({
         id: season.id,
         name: season.name,
-        startDate: season.startDate ?? null,
-        endDate: season.endDate ?? null,
+        startDate: null,
+        endDate: null,
       })),
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
+      createdAt: category.createdAt ? new Date(category.createdAt) : new Date(),
+      updatedAt: category.updatedAt ? new Date(category.updatedAt) : new Date(),
     };
     onChange(category.name || "", categorySchema);
     setIsOpen(false);
