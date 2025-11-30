@@ -33,6 +33,7 @@ import {
 } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useSession } from "@/lib/auth-client";
+import { getErrorMessage } from "@/lib/api-error";
 import {
   SPORTS_OPTIONS,
   LOCATION_OPTIONS,
@@ -206,8 +207,7 @@ const handleCreateLeague = async () => {
     }
 
   } catch (err: unknown) {
-    const error = err as { response?: { data?: { message?: string } }; message?: string };
-    const message = error.response?.data?.message || error.message || "Failed to create league";
+    const message = getErrorMessage(err, "Failed to create league");
     setError(message);
     toast.error(message);
   } finally {
