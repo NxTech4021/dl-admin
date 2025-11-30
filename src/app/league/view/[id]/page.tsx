@@ -667,15 +667,6 @@ export default function LeagueViewPage({
                           <IconInfoCircle className="h-4 w-4" />
                           Overview
                         </TabsTrigger>
-                        {/**
-                         * Players tab is temporarily hidden.
-                         */}
-                        {/*
-                        <TabsTrigger value="members" className="gap-2">
-                          <IconUsers className="h-4 w-4" />
-                          Players
-                        </TabsTrigger>
-                        */}
                         <TabsTrigger value="seasons" className="gap-2">
                           <IconCalendar className="h-4 w-4" />
                           Seasons
@@ -1014,17 +1005,6 @@ export default function LeagueViewPage({
                     />
                   </SectionCard>
                 </TabsContent>
-
-                {/*
-                <TabsContent value="members" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>League Players</CardTitle>
-                      <CardDescription>Player management is temporarily hidden.</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </TabsContent>
-                */}
 
                 <TabsContent value="seasons" className="space-y-8">
                   <SectionCard className="space-y-6">
