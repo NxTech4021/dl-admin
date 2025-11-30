@@ -54,7 +54,7 @@ export function LeagueInfoCard({
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: keyof typeof editForm, value: string) => {
     setEditForm(prev => ({
       ...prev,
       [field]: value
