@@ -82,18 +82,35 @@ export interface Season {
   withdrawalEnabled: boolean;
 }
 
-export interface Category {
-  game_type: string;
+/** Basic league reference for category */
+interface CategoryLeagueRef {
   id: string;
   name: string;
-  genderRestriction: GenderRestriction;
-  matchFormat?: string;
+  sportType?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string | null;
+  game_type: string | null;
+  genderRestriction: GenderRestriction | string;
+  matchFormat?: string | null;
   maxPlayers?: number;
   maxTeams?: number;
-  isActive: boolean;
-  categoryOrder: number;
-  createdAt: string;
-  updatedAt: string;
+  isActive?: boolean;
+  categoryOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  leagues?: CategoryLeagueRef[];
+  league?: {
+    id: string;
+    name: string;
+    sportType: string;
+  } | null;
+  seasons?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export type TierType = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
@@ -118,3 +135,59 @@ export type GetSportLabelFunction = (sport: string) => string;
 export type GetStatusBadgeFunction = (status: string) => React.ReactNode;
 export type FormatDateFunction = (dateString: string) => string;
 export type CalculateWinRateFunction = (wins: number, losses: number) => number;
+
+// ==========================================
+// Shared Utility Functions
+// ==========================================
+
+/**
+ * Format date string to short month and year
+ */
+export const formatDateShort = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/**
+ * Format date string to full date format
+ */
+export const formatDateFull = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+/**
+ * Format currency amount (USD)
+ */
+export const formatCurrencyUSD = (amount: number): string => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
+/**
+ * Format currency amount (MYR)
+ */
+export const formatCurrencyMYR = (amount: number): string => {
+  return new Intl.NumberFormat("en-MY", {
+    style: "currency",
+    currency: "MYR",
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+/**
+ * Calculate win rate percentage
+ */
+export const calculateWinRate = (wins: number, losses: number): number => {
+  const total = wins + losses;
+  if (total === 0) return 0;
+  return Math.round((wins / total) * 100);
+};
