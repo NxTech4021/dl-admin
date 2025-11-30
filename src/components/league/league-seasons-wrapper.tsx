@@ -8,6 +8,7 @@ import SeasonCreateModal from "@/components/modal/season-create-modal";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { IconPlus, IconCalendar, IconTrophy } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { Category } from "./types";
 
 interface LeagueSeasonsWrapperProps {
@@ -32,22 +33,28 @@ export function LeagueSeasonsWrapper({
 
   // Fetch detailed season data with players for each season
   useEffect(() => {
-    const fetchSeasonsWithPlayers = async () => {
-      if (!seasons || seasons.length === 0) {
-        setSeasonsWithPlayers([]);
-        return;
-      }
+    if (!seasons || seasons.length === 0) {
+      setSeasonsWithPlayers([]);
+      return;
+    }
 
+    const abortController = new AbortController();
+
+    const fetchSeasonsWithPlayers = async () => {
       setSeasonsLoading(true);
       try {
         // Fetch detailed data for each season using Promise.allSettled to handle partial failures
         const seasonPromises = seasons.map((season) =>
           axiosInstance
-            .get(endpoints.season.getById(season.id))
+            .get(endpoints.season.getById(season.id), {
+              signal: abortController.signal,
+            })
             .then((response) => response.data as Season)
         );
 
         const results = await Promise.allSettled(seasonPromises);
+
+        if (abortController.signal.aborted) return;
 
         // Map results: use fetched data for fulfilled, fallback to original for rejected
         const detailedSeasons = results.map((result, index) =>
@@ -56,37 +63,55 @@ export function LeagueSeasonsWrapper({
 
         setSeasonsWithPlayers(detailedSeasons);
       } catch {
+        if (abortController.signal.aborted) return;
         // Fallback to original seasons on unexpected failure
         setSeasonsWithPlayers(seasons);
       } finally {
-        setSeasonsLoading(false);
+        if (!abortController.signal.aborted) {
+          setSeasonsLoading(false);
+        }
       }
     };
 
     fetchSeasonsWithPlayers();
+
+    return () => {
+      abortController.abort();
+    };
   }, [seasons]);
 
   // Fetch categories for the league
   useEffect(() => {
+    if (!leagueId) return;
+
+    const abortController = new AbortController();
+
     const fetchCategories = async () => {
       setIsCategoriesLoading(true);
       try {
         const response = await axiosInstance.get(endpoints.categories.getAll, {
           params: { leagueId },
+          signal: abortController.signal,
         });
         const categoriesData = response.data?.data || response.data || [];
         setCategories(categoriesData);
       } catch {
+        if (abortController.signal.aborted) return;
         // Fallback to empty categories on fetch failure
         setCategories([]);
+        toast.error("Failed to load categories");
       } finally {
-        setIsCategoriesLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsCategoriesLoading(false);
+        }
       }
     };
 
-    if (leagueId) {
-      fetchCategories();
-    }
+    fetchCategories();
+
+    return () => {
+      abortController.abort();
+    };
   }, [leagueId]);
 
   const handleViewSeason = (seasonId: string) => {
