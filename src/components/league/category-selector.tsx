@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { toast } from "sonner";
 import { Category as CategorySchema } from "@/constants/zod/category-schema";
 import { Category } from "./types";
 
@@ -34,46 +35,65 @@ export function CategorySelector({
   const [searchTerm, setSearchTerm] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories on mount and when dropdown opens
+  // Fetch categories on mount
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get(endpoints.categories.getAll);
+        const response = await axiosInstance.get(endpoints.categories.getAll, {
+          signal: abortController.signal,
+        });
+        if (response.status === 200) {
+          const result = response.data;
+          const categoriesData = result.data || [];
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        if (abortController.signal.aborted) return;
+        setCategories([]);
+        toast.error("Failed to load categories");
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
+  // Refresh categories when dropdown opens to get latest data
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const abortController = new AbortController();
+
+    const fetchLatestCategories = async () => {
+      try {
+        const response = await axiosInstance.get(endpoints.categories.getAll, {
+          signal: abortController.signal,
+        });
         if (response.status === 200) {
           const result = response.data;
           const categoriesData = result.data || [];
           setCategories(categoriesData);
         }
       } catch {
-        // Fallback to empty categories on fetch failure
-        setCategories([]);
-      } finally {
-        setIsLoading(false);
+        // Keep existing categories on refresh failure - no toast to avoid spam on dropdown open
       }
     };
 
-    fetchCategories();
-  }, []);
+    fetchLatestCategories();
 
-  // Refresh categories when dropdown opens to get latest data
-  useEffect(() => {
-    if (isOpen) {
-      const fetchLatestCategories = async () => {
-        try {
-          const response = await axiosInstance.get(endpoints.categories.getAll);
-          if (response.status === 200) {
-            const result = response.data;
-            const categoriesData = result.data || [];
-            setCategories(categoriesData);
-          }
-        } catch {
-          // Silent failure - keep existing categories on refresh failure
-        }
-      };
-
-      fetchLatestCategories();
-    }
+    return () => {
+      abortController.abort();
+    };
   }, [isOpen]);
 
   // Filter categories based on search term
@@ -97,12 +117,21 @@ export function CategorySelector({
 
     const genderRestriction = normalizeGenderRestriction(category.genderRestriction);
 
+    // Validate game_type against expected values
+    const normalizeGameType = (gt: string | null | undefined): "SINGLES" | "DOUBLES" | null => {
+      if (!gt) return null;
+      const upper = gt.toUpperCase();
+      if (upper === "SINGLES") return "SINGLES";
+      if (upper === "DOUBLES") return "DOUBLES";
+      return null;
+    };
+
     const categorySchema: CategorySchema = {
       id: category.id,
       name: category.name,
       genderRestriction,
       matchFormat: category.matchFormat ?? null,
-      game_type: category.game_type as "SINGLES" | "DOUBLES" | null,
+      game_type: normalizeGameType(category.game_type),
       gender_category: category.gender_category ?? null,
       isActive: category.isActive ?? true,
       categoryOrder: category.categoryOrder ?? 0,
