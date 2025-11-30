@@ -170,9 +170,10 @@ export function LeagueMembershipInsights({
                 })}
                 {additionalPaymentStatuses.map((status) => {
                   const count = paymentStatusCountsSafe[status] ?? 0;
-                  const percentage = Math.round(
-                    (count / totalPaymentsTracked) * 100
-                  );
+                  const percentage =
+                    count && totalPaymentsTracked
+                      ? Math.round((count / totalPaymentsTracked) * 100)
+                      : 0;
 
                   return (
                     <li
