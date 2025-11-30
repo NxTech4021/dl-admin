@@ -36,9 +36,43 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Badge } from "../ui/badge";
-import { Category } from "../league/league-seasons-wrapper";
+import { Category } from "../league/types";
 import CategoryCreateModal from "./category-create-modal";
 import { Checkbox } from "@/components/ui/checkbox";
+
+/** Sponsor option for dropdown selection */
+interface SponsorOption {
+  id: string;
+  name: string;
+}
+
+/** Raw sponsorship data from API */
+interface SponsorshipApiResponse {
+  id: string;
+  sponsoredName?: string;
+}
+
+/** League reference in category */
+interface CategoryLeagueRef {
+  name: string;
+}
+
+/** Season creation payload */
+interface SeasonCreatePayload {
+  name: string;
+  description: string | null;
+  entryFee: number;
+  startDate: string;
+  endDate: string;
+  regiDeadline: string;
+  categoryId: string;
+  leagueIds: string[];
+  isActive: boolean;
+  paymentRequired: boolean;
+  promoCodeSupported: boolean;
+  withdrawalEnabled: boolean;
+  sponsorId?: string;
+}
 
 interface SeasonFormData {
   name: string;
@@ -102,11 +136,11 @@ export default function SeasonCreateModal({
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
 
   // Sponsor state
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(false);
   const [sponsorInputValue, setSponsorInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSponsors, setFilteredSponsors] = useState<any[]>([]);
+  const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
 
   const [form, setForm] = useState<SeasonFormData>({
     name: "",
@@ -135,8 +169,8 @@ export default function SeasonCreateModal({
         .then((res) => {
           console.log("Sponsors response:", res.data);
           const api = res.data;
-          const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as any[];
-          const mapped = sponsorships.map((s: any) => ({
+          const sponsorships: SponsorshipApiResponse[] = api?.data?.sponsorships || api?.data || api || [];
+          const mapped: SponsorOption[] = sponsorships.map((s) => ({
             id: s.id,
             name: s.sponsoredName || "Unnamed Sponsor",
           }));
@@ -177,7 +211,7 @@ export default function SeasonCreateModal({
     return allCategories.filter(
       (category) =>
         category.name?.toLowerCase().includes(categorySearch.toLowerCase()) ||
-        category.leagues?.some((league: any) =>
+        category.leagues?.some((league: CategoryLeagueRef) =>
           league.name.toLowerCase().includes(categorySearch.toLowerCase())
         )
     );
@@ -202,7 +236,7 @@ export default function SeasonCreateModal({
   };
 
   // Handle sponsor selection
-  const handleSponsorSelect = (sponsor: any) => {
+  const handleSponsorSelect = (sponsor: SponsorOption) => {
     setSponsorInputValue(sponsor.name);
     setForm((prev) => ({ ...prev, existingSponsorId: sponsor.id }));
     setShowSuggestions(false);
@@ -394,7 +428,7 @@ export default function SeasonCreateModal({
         throw new Error(errorMessage);
       }
 
-      const seasonData: any = {
+      const seasonData: SeasonCreatePayload = {
         name: form.name,
         description: form.description || null,
         entryFee: Number(form.entryFee),
@@ -407,12 +441,8 @@ export default function SeasonCreateModal({
         paymentRequired: form.paymentRequired,
         promoCodeSupported: form.promoCodeSupported,
         withdrawalEnabled: form.withdrawalEnabled,
+        ...(form.hasSponsor && form.existingSponsorId && { sponsorId: form.existingSponsorId }),
       };
-
-      // Add sponsor if selected
-      if (form.hasSponsor && form.existingSponsorId) {
-        seasonData.sponsorId = form.existingSponsorId;
-      }
 
       console.log("Season data being sent:", seasonData);
 
@@ -425,11 +455,12 @@ export default function SeasonCreateModal({
       resetModal();
       onOpenChange(false);
       await onSeasonCreated?.();
-    } catch (error: any) {
+    } catch (error) {
       // Enhanced error handling
+      const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
       const errorMessage =
-        error.response?.data?.error ||
-        error.message ||
+        axiosError.response?.data?.error ||
+        axiosError.message ||
         "Failed to create season";
       setError(errorMessage);
       toast.error(errorMessage);
