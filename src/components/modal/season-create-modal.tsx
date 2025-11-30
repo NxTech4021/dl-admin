@@ -35,6 +35,7 @@ import { IconBuilding } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { Badge } from "../ui/badge";
 import { Category } from "../league/types";
 import CategoryCreateModal from "./category-create-modal";
@@ -160,14 +161,11 @@ export default function SeasonCreateModal({
 
   // Fetch sponsors when hasSponsor is enabled
   useEffect(() => {
-    console.log("hasSponsor value:", form.hasSponsor);
     if (form.hasSponsor) {
-      console.log("Fetching sponsors...");
       setSponsorsLoading(true);
       axiosInstance
         .get(endpoints.sponsors.getAll)
         .then((res) => {
-          console.log("Sponsors response:", res.data);
           const api = res.data;
           const sponsorships: SponsorshipApiResponse[] = api?.data?.sponsorships || api?.data || api || [];
           const mapped: SponsorOption[] = sponsorships.map((s) => ({
@@ -175,10 +173,8 @@ export default function SeasonCreateModal({
             name: s.sponsoredName || "Unnamed Sponsor",
           }));
           setSponsors(mapped);
-          console.log("Mapped sponsors:", mapped);
         })
-        .catch((error) => {
-          console.error("Error fetching sponsors:", error);
+        .catch(() => {
           setSponsors([]);
           toast.error("Failed to load sponsors");
         })
@@ -197,8 +193,8 @@ export default function SeasonCreateModal({
             const categoriesData = result.data || [];
             setAllCategories(categoriesData);
           }
-        } catch (error) {
-          console.error("Failed to fetch categories:", error);
+        } catch {
+          toast.error("Failed to load categories");
         }
       };
       fetchCategories();
@@ -274,8 +270,8 @@ export default function SeasonCreateModal({
           }
         }
       }
-    } catch (error) {
-      console.error("Failed to refresh categories:", error);
+    } catch {
+      toast.error("Failed to refresh categories");
     }
 
     setIsCreateCategoryOpen(false);
@@ -444,9 +440,7 @@ export default function SeasonCreateModal({
         ...(form.hasSponsor && form.existingSponsorId && { sponsorId: form.existingSponsorId }),
       };
 
-      console.log("Season data being sent:", seasonData);
-
-      const response = await axiosInstance.post(
+      await axiosInstance.post(
         endpoints.season.create,
         seasonData
       );
@@ -456,12 +450,7 @@ export default function SeasonCreateModal({
       onOpenChange(false);
       await onSeasonCreated?.();
     } catch (error) {
-      // Enhanced error handling
-      const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
-      const errorMessage =
-        axiosError.response?.data?.error ||
-        axiosError.message ||
-        "Failed to create season";
+      const errorMessage = getErrorMessage(error, "Failed to create season");
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
