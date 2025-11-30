@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import {
@@ -36,7 +37,8 @@ interface LeagueSponsorsSectionProps {
   sponsorships: Sponsorship[];
   leagueId?: string;
   onAssignSponsor?: () => void;
-  onSponsorDeleted?: () => void;
+  /** Callback triggered after sponsor changes (assign/delete) to refresh data */
+  onSponsorDeleted?: () => void | Promise<void>;
 }
 
 export function LeagueSponsorsSection({
@@ -54,14 +56,18 @@ export function LeagueSponsorsSection({
   // Confirmation modal hook
   const confirmation = useConfirmationModal();
 
-  const handleAssign = () => {
-    // Open inline modal to assign
-    setIsAssignOpen(true);
-    // Fetch sponsorships list for selection
-    setLoading(true);
-    axiosInstance
-      .get(endpoints.sponsors.getAll)
-      .then((res) => {
+  // Fetch sponsors when modal opens
+  React.useEffect(() => {
+    if (!isAssignOpen) return;
+
+    const abortController = new AbortController();
+
+    const fetchSponsors = async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get(endpoints.sponsors.getAll, {
+          signal: abortController.signal,
+        });
         const api = res.data;
         const rawSponsorships = (api?.data?.sponsorships ||
           api?.data ||
@@ -72,9 +78,26 @@ export function LeagueSponsorsSection({
           label: s.company?.name || s.sponsoredName || "Unnamed Sponsor",
         }));
         setAvailable(mapped);
-      })
-      .catch(() => setAvailable([]))
-      .finally(() => setLoading(false));
+      } catch {
+        if (abortController.signal.aborted) return;
+        setAvailable([]);
+        toast.error("Failed to load sponsors");
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSponsors();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [isAssignOpen]);
+
+  const handleAssign = () => {
+    setIsAssignOpen(true);
   };
 
   const handleViewSponsor = (sponsorId?: string) => {
@@ -97,13 +120,10 @@ export function LeagueSponsorsSection({
             toast.success(`"${sponsorName}" has been removed from the league`);
             confirmation.hideConfirmation();
             if (onSponsorDeleted) {
-              onSponsorDeleted();
+              await onSponsorDeleted();
             }
           } catch (err: unknown) {
-            const error = err as { response?: { data?: { message?: string } } };
-            toast.error(
-              error?.response?.data?.message || "Failed to remove sponsor from league"
-            );
+            toast.error(getErrorMessage(err, "Failed to remove sponsor from league"));
           } finally {
             confirmation.setLoading(false);
           }
@@ -304,13 +324,10 @@ export function LeagueSponsorsSection({
 
                     // Refresh via callback instead of page reload
                     if (onSponsorDeleted) {
-                      onSponsorDeleted();
+                      await onSponsorDeleted();
                     }
                   } catch (err: unknown) {
-                    const error = err as { response?: { data?: { message?: string } } };
-                    toast.error(
-                      error?.response?.data?.message || "Failed to assign sponsor"
-                    );
+                    toast.error(getErrorMessage(err, "Failed to assign sponsor"));
                   }
                 }}
               >
