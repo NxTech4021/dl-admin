@@ -38,10 +38,64 @@ export interface NotificationStats {
   byType: Record<string, number>;
 }
 
+// Helper to get navigation URL from notification metadata
+export function getNotificationUrl(notification: Notification): string | null {
+  const { category, metadata } = notification;
+
+  // Check for explicit URL in metadata
+  if (metadata?.url) return metadata.url;
+
+  // Generate URL based on category and metadata IDs
+  switch (category) {
+    case "MATCH":
+      if (metadata?.matchId) return `/matches/${metadata.matchId}`;
+      break;
+    case "LEAGUE":
+      if (metadata?.leagueId) return `/league/${metadata.leagueId}`;
+      break;
+    case "SEASON":
+      if (metadata?.seasonId) return `/seasons/${metadata.seasonId}`;
+      break;
+    case "DIVISION":
+      if (metadata?.divisionId) return `/divisions/${metadata.divisionId}`;
+      break;
+    case "PAYMENT":
+      if (metadata?.paymentId) return `/payments/${metadata.paymentId}`;
+      if (metadata?.userId) return `/players/${metadata.userId}`;
+      break;
+    case "CHAT":
+      if (metadata?.threadId) return `/chat/${metadata.threadId}`;
+      break;
+    case "ADMIN":
+      // Admin notifications might link to specific resources
+      if (metadata?.disputeId) return `/disputes/${metadata.disputeId}`;
+      if (metadata?.reportId) return `/reports/${metadata.reportId}`;
+      break;
+  }
+
+  return null;
+}
+
+export interface PaginationState {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasMore: false,
+  });
   const { socket } = useSocket();
   const { data: session } = useSession();
 
@@ -55,12 +109,17 @@ export const useNotifications = () => {
         archived?: boolean;
         category?: NotificationCategory;
         categories?: NotificationCategory[];
+        append?: boolean; // For pagination - append to existing notifications
       } = {}
     ) => {
       if (!session?.user?.id) return;
 
       try {
-        setLoading(true);
+        if (options.append) {
+          setLoadingMore(true);
+        } else {
+          setLoading(true);
+        }
 
         const params = new URLSearchParams();
 
@@ -75,16 +134,48 @@ export const useNotifications = () => {
         );
 
         if (response.data?.success) {
-          setNotifications(response.data.data.notifications || []);
+          const newNotifications = response.data.data.notifications || [];
+          const paginationData = response.data.data.pagination;
+
+          if (options.append) {
+            // Append to existing notifications (for load more)
+            setNotifications((prev) => [...prev, ...newNotifications]);
+          } else {
+            // Replace notifications (for initial load or refresh)
+            setNotifications(newNotifications);
+          }
+
+          // Update pagination state
+          if (paginationData) {
+            setPagination({
+              page: paginationData.page || 1,
+              limit: paginationData.limit || 20,
+              total: paginationData.total || 0,
+              totalPages: paginationData.totalPages || 0,
+              hasMore: paginationData.hasMore || false,
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
     [session?.user?.id]
   );
+
+  // Load more notifications (pagination)
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !pagination.hasMore) return;
+
+    await fetchNotifications({
+      page: pagination.page + 1,
+      limit: pagination.limit,
+      append: true,
+    });
+  }, [fetchNotifications, loadingMore, pagination.hasMore, pagination.page, pagination.limit]);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -150,6 +241,86 @@ export const useNotifications = () => {
     }
   }, [session?.user?.id]);
 
+  // Delete notification
+  const deleteNotification = useCallback(
+    async (notificationId: string) => {
+      if (!session?.user?.id) return;
+
+      try {
+        const notification = notifications.find((n) => n.id === notificationId);
+
+        await axiosInstance.delete(
+          endpoints.notifications.delete(notificationId)
+        );
+
+        // Update local state
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+
+        // Update unread count if notification was unread
+        if (notification && !notification.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+
+        toast.success("Notification deleted");
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        toast.error("Failed to delete notification");
+      }
+    },
+    [session?.user?.id, notifications]
+  );
+
+  // Delete multiple notifications
+  const deleteMany = useCallback(
+    async (notificationIds: string[]) => {
+      if (!session?.user?.id || notificationIds.length === 0) return;
+
+      try {
+        // Count unread notifications being deleted
+        const unreadBeingDeleted = notifications.filter(
+          (n) => notificationIds.includes(n.id) && !n.read
+        ).length;
+
+        await axiosInstance.post(endpoints.notifications.deleteMany, {
+          ids: notificationIds,
+        });
+
+        // Update local state
+        setNotifications((prev) =>
+          prev.filter((n) => !notificationIds.includes(n.id))
+        );
+
+        // Update unread count
+        setUnreadCount((prev) => Math.max(0, prev - unreadBeingDeleted));
+
+        toast.success(`${notificationIds.length} notification${notificationIds.length > 1 ? 's' : ''} deleted`);
+      } catch (error) {
+        console.error("Error deleting notifications:", error);
+        toast.error("Failed to delete notifications");
+      }
+    },
+    [session?.user?.id, notifications]
+  );
+
+  // Clear all notifications
+  const clearAll = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      await axiosInstance.delete(endpoints.notifications.clearAll);
+
+      // Update local state
+      setNotifications([]);
+      setUnreadCount(0);
+      setPagination((prev) => ({ ...prev, total: 0, hasMore: false }));
+
+      toast.success("All notifications cleared");
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      toast.error("Failed to clear notifications");
+    }
+  }, [session?.user?.id]);
+
   // Refresh notifications
   const refresh = useCallback(() => {
     fetchNotifications();
@@ -172,6 +343,12 @@ export const useNotifications = () => {
       if (!notification.read) {
         setUnreadCount((prev) => prev + 1);
       }
+
+      // Show toast for new notification
+      toast(notification.title || "New Notification", {
+        description: notification.message,
+        duration: 5000,
+      });
     };
 
     const handleNotificationRead = (data: { notificationId: string }) => {
@@ -198,11 +375,17 @@ export const useNotifications = () => {
     notifications,
     unreadCount,
     loading,
+    loadingMore,
+    pagination,
 
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
+    deleteMany,
+    clearAll,
+    loadMore,
     refresh: () => {
       fetchNotifications();
       fetchUnreadCount();
