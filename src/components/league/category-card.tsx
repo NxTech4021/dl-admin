@@ -39,7 +39,7 @@ export function CategoryCard({
     <Card>
       <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-2">
-          <IconTag className="size-5" />
+          <IconTag className="size-5" aria-hidden="true" />
           Categories
         </CardTitle>
         {onAddCategory && (
@@ -47,7 +47,7 @@ export function CategoryCard({
           variant="outline"
           size="sm" 
           onClick={onAddCategory}>
-            <IconPlus className="size-4 mr-2" />
+            <IconPlus className="size-4 mr-2" aria-hidden="true" />
             Create Category
           </Button>
         )}
@@ -62,7 +62,7 @@ export function CategoryCard({
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20">
-                    <IconTag className="size-4 text-green-600" />
+                    <IconTag className="size-4 text-green-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-medium">{category.name}</p>
@@ -85,7 +85,7 @@ export function CategoryCard({
                       size="sm"
                       onClick={() => onEditCategory(category)}
                     >
-                      <IconEdit className="size-4 mr-1" />
+                      <IconEdit className="size-4 mr-1" aria-hidden="true" />
                       Edit
                     </Button>
                   )}
@@ -93,7 +93,7 @@ export function CategoryCard({
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="icon" className="h-8 w-8">
-                          <IconTrash className="size-4 text-destructive" />
+                          <IconTrash className="size-4 text-destructive" aria-hidden="true" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -121,7 +121,7 @@ export function CategoryCard({
           </div>
         ) : (
           <div className="text-center py-8">
-            <IconTag className="size-12 text-muted-foreground mx-auto mb-2" />
+            <IconTag className="size-12 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
             <p className="text-sm text-muted-foreground mb-4">
               No categories yet
             </p>
