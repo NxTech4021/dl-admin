@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { League, GetLocationLabelFunction, GetSportLabelFunction, GetStatusBadgeFunction, FormatDateFunction } from "./types";
+import { LOCATION_OPTIONS } from "@/constants/types/league";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
@@ -70,8 +71,7 @@ export function LeagueInfoCard({
       if (onLeagueUpdated) {
         await onLeagueUpdated();
       }
-    } catch (error) {
-      console.error("Error updating league:", error);
+    } catch {
       toast.error("Failed to update league");
     } finally {
       setIsLoading(false);
@@ -178,7 +178,11 @@ export function LeagueInfoCard({
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Add your location options here */}
+                  {LOCATION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
