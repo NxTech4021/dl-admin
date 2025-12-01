@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { toast } from "sonner";
 import { Category as CategorySchema } from "@/constants/zod/category-schema";
+import { Category } from "./types";
 
 interface CategorySelectorProps {
   value: string;
@@ -17,32 +18,9 @@ interface CategorySelectorProps {
   className?: string;
 }
 
-interface CategoryData {
-  id: string;
-  name: string | null;
-  game_type: "SINGLES" | "DOUBLES" | null;
-  matchFormat: string | null;
-  maxPlayers: number | null;
-  maxTeams: number | null;
-  genderRestriction: "MALE" | "FEMALE" | "MIXED" | "OPEN";
-  gender_category: "MALE" | "FEMALE" | "MIXED" | null;
-  isActive: boolean;
-  categoryOrder: number;
-  leagues: Array<{
-    id: string;
-    name: string;
-  }>;
-  seasons: Array<{
-    id: string;
-    name: string;
-    startDate?: Date | null;
-    endDate?: Date | null;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-  league: {
-    name: string;
-  };
+/** Extended category data from API response */
+interface CategoryApiData extends Category {
+  gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
 }
 
 export function CategorySelector({
@@ -52,51 +30,70 @@ export function CategorySelector({
   className,
 }: CategorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [categories, setCategories] = useState<CategoryApiData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories on mount and when dropdown opens
+  // Fetch categories on mount
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get(endpoints.categories.getAll);
+        const response = await axiosInstance.get(endpoints.categories.getAll, {
+          signal: abortController.signal,
+        });
         if (response.status === 200) {
           const result = response.data;
           const categoriesData = result.data || [];
           setCategories(categoriesData);
         }
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        if (abortController.signal.aborted) return;
         setCategories([]);
+        toast.error("Failed to load categories");
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchCategories();
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   // Refresh categories when dropdown opens to get latest data
   useEffect(() => {
-    if (isOpen) {
-      const fetchLatestCategories = async () => {
-        try {
-          const response = await axiosInstance.get(endpoints.categories.getAll);
-          if (response.status === 200) {
-            const result = response.data;
-            const categoriesData = result.data || [];
-            setCategories(categoriesData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch latest categories:", error);
-        }
-      };
+    if (!isOpen) return;
 
-      fetchLatestCategories();
-    }
+    const abortController = new AbortController();
+
+    const fetchLatestCategories = async () => {
+      try {
+        const response = await axiosInstance.get(endpoints.categories.getAll, {
+          signal: abortController.signal,
+        });
+        if (response.status === 200) {
+          const result = response.data;
+          const categoriesData = result.data || [];
+          setCategories(categoriesData);
+        }
+      } catch {
+        // Keep existing categories on refresh failure - no toast to avoid spam on dropdown open
+      }
+    };
+
+    fetchLatestCategories();
+
+    return () => {
+      abortController.abort();
+    };
   }, [isOpen]);
 
   // Filter categories based on search term
@@ -108,29 +105,44 @@ export function CategorySelector({
     (category) => category.name === value
   );
 
-  const handleCategorySelect = (category: CategoryData) => {
+  const handleCategorySelect = (category: CategoryApiData) => {
     // Transform CategoryData to match CategorySchema
     // Map "OPEN" to "MIXED" to match schema requirements
-    const genderRestriction: "MALE" | "FEMALE" | "MIXED" = 
-      category.genderRestriction === "OPEN" ? "MIXED" : category.genderRestriction;
-    
+    const normalizeGenderRestriction = (gr: string): "MALE" | "FEMALE" | "MIXED" => {
+      const upper = gr.toUpperCase();
+      if (upper === "MALE") return "MALE";
+      if (upper === "FEMALE") return "FEMALE";
+      return "MIXED"; // Map OPEN and any other value to MIXED
+    };
+
+    const genderRestriction = normalizeGenderRestriction(category.genderRestriction);
+
+    // Validate game_type against expected values
+    const normalizeGameType = (gt: string | null | undefined): "SINGLES" | "DOUBLES" | null => {
+      if (!gt) return null;
+      const upper = gt.toUpperCase();
+      if (upper === "SINGLES") return "SINGLES";
+      if (upper === "DOUBLES") return "DOUBLES";
+      return null;
+    };
+
     const categorySchema: CategorySchema = {
       id: category.id,
       name: category.name,
       genderRestriction,
-      matchFormat: category.matchFormat,
-      game_type: category.game_type,
-      gender_category: category.gender_category,
-      isActive: category.isActive,
-      categoryOrder: category.categoryOrder,
-      seasons: category.seasons.map((season) => ({
+      matchFormat: category.matchFormat ?? null,
+      game_type: normalizeGameType(category.game_type),
+      gender_category: category.gender_category ?? null,
+      isActive: category.isActive ?? true,
+      categoryOrder: category.categoryOrder ?? 0,
+      seasons: (category.seasons ?? []).map((season) => ({
         id: season.id,
         name: season.name,
-        startDate: season.startDate ?? null,
-        endDate: season.endDate ?? null,
+        startDate: null,
+        endDate: null,
       })),
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
+      createdAt: category.createdAt ? new Date(category.createdAt) : new Date(),
+      updatedAt: category.updatedAt ? new Date(category.updatedAt) : new Date(),
     };
     onChange(category.name || "", categorySchema);
     setIsOpen(false);

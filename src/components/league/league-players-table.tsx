@@ -53,10 +53,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  IconCalendar, 
-  IconMail, 
-  IconMapPin, 
+import {
+  IconCalendar,
+  IconMail,
+  IconMapPin,
   IconDotsVertical,
   IconUserMinus,
   IconUserCheck,
@@ -66,12 +66,13 @@ import {
   IconTrash,
   IconSearch,
   IconUserPlus,
-  IconUsers,
   IconSend
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
+import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 
 export interface LeaguePlayerRow {
   id: string;
@@ -91,6 +92,16 @@ export interface LeaguePlayerRow {
     status: string;
     joinedAt: string | Date;
   }>;
+}
+
+/** Player available for selection/assignment in add player dialog */
+interface AvailablePlayer {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  username?: string | null;
+  area?: string | null;
+  image?: string | null;
 }
 
 function getInitials(name: string) {
@@ -160,22 +171,19 @@ function getJoinTypeLabel(joinType: string) {
 
 interface PlayerActionsProps {
   player: LeaguePlayerRow;
-  onRemove?: (playerId: string) => void;
+  onRemoveClick?: (player: LeaguePlayerRow) => void;
 }
 
-function PlayerActions({ player, onRemove }: PlayerActionsProps) {
+function PlayerActions({ player, onRemoveClick }: PlayerActionsProps) {
   const router = useRouter();
-  
+
   const handleViewProfile = () => {
     toast.info(`Viewing profile for ${player.name}`);
-    // Navigate to player profile using Next.js router
     router.push(`/players/${player.id}`);
   };
 
   const handleRemove = () => {
-    if (confirm(`Are you sure you want to remove ${player.name} from this league?`)) {
-      onRemove?.(player.id);
-    }
+    onRemoveClick?.(player);
   };
 
   return (
@@ -201,7 +209,7 @@ function PlayerActions({ player, onRemove }: PlayerActionsProps) {
   );
 }
 
-const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePlayerRow>[] => [
+const makeColumns = (onRemoveClick?: (player: LeaguePlayerRow) => void): ColumnDef<LeaguePlayerRow>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -289,7 +297,6 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
       const ratingEntries = Object.entries(ratings);
       const visibleRatings = ratingEntries.slice(0, 3);
       const remainingCount = ratingEntries.length - 3;
-      const remainingRatings = ratingEntries.slice(3);
       
       return (
         <div className="flex flex-wrap gap-1.5 max-w-xs">
@@ -387,17 +394,17 @@ const makeColumns = (onRemove?: (playerId: string) => void): ColumnDef<LeaguePla
   },
   {
     id: "actions",
-    cell: ({ row }) => <PlayerActions player={row.original} onRemove={onRemove} />,
+    cell: ({ row }) => <PlayerActions player={row.original} onRemoveClick={onRemoveClick} />,
   },
 ];
 
 interface LeaguePlayersTableProps {
   players: LeaguePlayerRow[];
   leagueId?: string;
-  onAddPlayer?: () => void;
 }
 
-export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePlayersTableProps) {
+export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProps) {
+  const router = useRouter();
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -406,6 +413,10 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   const [isAddPlayerOpen, setIsAddPlayerOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedPlayers, setSelectedPlayers] = React.useState<Set<string>>(new Set());
+  const [playerToRemove, setPlayerToRemove] = React.useState<LeaguePlayerRow | null>(null);
+
+  // Confirmation modal hook
+  const confirmation = useConfirmationModal();
 
   // Get unique areas for filter
   const uniqueAreas = React.useMemo(() => {
@@ -413,11 +424,23 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
     return Array.from(areas).sort();
   }, [players]);
 
-  const handleRemovePlayer = React.useCallback(async (playerId: string) => {
-    // This is a read-only summary of players from all seasons
-    // Players are managed at the season level, not league level
-    toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
-  }, []);
+  // Handle remove click - shows confirmation modal
+  const handleRemoveClick = React.useCallback((player: LeaguePlayerRow) => {
+    setPlayerToRemove(player);
+    confirmation.showConfirmation({
+      title: "Remove Player",
+      description: `Are you sure you want to remove ${player.name} from this league?`,
+      variant: "destructive",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        // Players are managed at the season level, not league level
+        toast.info("Players are managed through individual seasons. Please go to the Seasons tab to remove players from specific seasons.");
+        confirmation.hideConfirmation();
+        setPlayerToRemove(null);
+      },
+    });
+  }, [confirmation]);
 
 
   const filtered = React.useMemo(() => {
@@ -443,7 +466,7 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
 
   const table = useReactTable({
     data: filtered,
-    columns: React.useMemo(() => makeColumns(handleRemovePlayer), [handleRemovePlayer]),
+    columns: React.useMemo(() => makeColumns(handleRemoveClick), [handleRemoveClick]),
     state: { 
       sorting, 
       columnFilters, 
@@ -477,65 +500,64 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
     setRowSelection({});
   }, [table, setRowSelection]);
 
-  const handleAddPlayer = () => {
-    if (onAddPlayer) {
-      onAddPlayer();
-    } else {
-      setIsAddPlayerOpen(true);
-    }
-  };
-
   // State for available players
-  const [availablePlayers, setAvailablePlayers] = React.useState<any[]>([]);
+  const [availablePlayers, setAvailablePlayers] = React.useState<AvailablePlayer[]>([]);
   const [isLoadingPlayers, setIsLoadingPlayers] = React.useState(false);
 
   // Fetch available players from API
   React.useEffect(() => {
+    if (!isAddPlayerOpen) return;
+
+    const abortController = new AbortController();
+
     const fetchAvailablePlayers = async () => {
       setIsLoadingPlayers(true);
       try {
-        const response = await axiosInstance.get(endpoints.player.getAll);
-        console.log("Players API response:", response.data);
-        
-        // Handle different response structures
-        let players = [];
+        const response = await axiosInstance.get(endpoints.player.getAll, {
+          signal: abortController.signal,
+        });
+
+        // Handle different response structures with proper typing
+        let players: AvailablePlayer[] = [];
         if (Array.isArray(response.data)) {
-          players = response.data;
+          players = response.data as AvailablePlayer[];
         } else if (response.data && Array.isArray(response.data.players)) {
-          players = response.data.players;
+          players = response.data.players as AvailablePlayer[];
         } else if (response.data && Array.isArray(response.data.data)) {
-          players = response.data.data;
+          players = response.data.data as AvailablePlayer[];
         }
-        
+
         setAvailablePlayers(players);
-      } catch (error) {
-        console.error("Error fetching available players:", error);
+      } catch {
+        if (abortController.signal.aborted) return;
         toast.error("Failed to load available players");
-        // Fallback to empty array
         setAvailablePlayers([]);
       } finally {
-        setIsLoadingPlayers(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingPlayers(false);
+        }
       }
     };
 
-    if (isAddPlayerOpen) {
-      fetchAvailablePlayers();
-    }
+    fetchAvailablePlayers();
+
+    return () => {
+      abortController.abort();
+    };
   }, [isAddPlayerOpen]);
 
   const filteredAvailablePlayers = React.useMemo(() => {
     // Ensure availablePlayers is always an array and filter out invalid entries
-    const players = Array.isArray(availablePlayers) 
-      ? availablePlayers.filter(p => p && p.id) 
+    const players = Array.isArray(availablePlayers)
+      ? availablePlayers.filter(p => p && p.id)
       : [];
-    
+
     if (!searchQuery) return players;
     const q = searchQuery.toLowerCase();
-    return players.filter(p => 
-      p.name && p.email && p.username &&
-      (p.name.toLowerCase().includes(q) || 
-       p.email.toLowerCase().includes(q) ||
-       p.username.toLowerCase().includes(q))
+    return players.filter(p =>
+      (p.name?.toLowerCase().includes(q)) ||
+      (p.email?.toLowerCase().includes(q)) ||
+      (p.username?.toLowerCase().includes(q))
     );
   }, [availablePlayers, searchQuery]);
 
@@ -561,9 +583,8 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
   const handleSendInvite = () => {
     setIsAddPlayerOpen(false);
     toast.info("Opening invite form...");
-    // Navigate to invite page or open invite modal
     if (leagueId) {
-      window.location.href = `/league/${leagueId}/invite`;
+      router.push(`/league/${leagueId}/invite`);
     }
   };
 
@@ -613,16 +634,6 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
         </div>
 
         <div className="flex gap-2">
-          {/*
-          <Button
-            onClick={handleAddPlayer}
-            size="sm"
-          >
-            <IconUsers className="h-4 w-4 mr-2" />
-            View Players
-          </Button>
-          */}
-
           {selectedCount > 0 && (
             <Button
               variant="destructive"
@@ -819,6 +830,24 @@ export function LeaguePlayersTable({ players, leagueId, onAddPlayer }: LeaguePla
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={confirmation.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            confirmation.hideConfirmation();
+            setPlayerToRemove(null);
+          }
+        }}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        onConfirm={confirmation.onConfirm}
+        isLoading={confirmation.isLoading}
+        variant={confirmation.variant}
+      />
     </div>
   );
 }

@@ -1,28 +1,31 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 import { Button } from "@/components/ui/button";
 import { League, leagueSchema } from "@/constants/zod/league-schema";
+import { type ApiLeagueResponse, type ApiSeasonResponse } from "@/constants/types/league";
 import {
   IconTrophy,
   IconPlus,
   IconUsers,
-  IconTarget,
   IconCalendar,
   IconDownload,
 } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { useLeagueExport } from "@/hooks/use-league-export";
+import { useLeagueKeyboard } from "@/hooks/use-league-keyboard";
 
 // CRITICAL: Dynamic imports reduce initial compilation time by 70-80%
 const LeaguesDataTable = dynamic(
@@ -55,13 +58,14 @@ export default function Page() {
   const [totalMembers, setTotalMembers] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
 
+  // Export hook
+  const { exportLeaguesCSV } = useLeagueExport();
+
   const fetchLeagues = React.useCallback(async () => {
     setIsLoading(true);
     let response;
     try {
       response = await axiosInstance.get(endpoints.league.getAll);
-
-      console.log("leagues response:", response.data);
 
       // Handle ApiResponse structure from backend
       if (
@@ -69,7 +73,6 @@ export default function Page() {
         !response.data.data ||
         !response.data.data.leagues
       ) {
-        console.log("No leagues data found in response");
         setData([]);
         return;
       }
@@ -80,16 +83,11 @@ export default function Page() {
       // Store totalMembers from backend
       setTotalMembers(totalMembersData);
 
-      // Debug: Log raw league data to see joinType values
-      // console.log("Raw leagues data from API:", leaguesData);
-      // console.log("Total members from backend:", totalMembersData);
-      // console.log("First league joinType:", leaguesData[0]?.joinType);
-
       // Transform the data to match our schema
-      const transformedData = leaguesData.map((league: any) => {
+      const transformedData = leaguesData.map((league: ApiLeagueResponse) => {
         // Calculate total members from all seasons in this league
         const totalMembersInLeague =
-          league.seasons?.reduce((sum: number, season: any) => {
+          league.seasons?.reduce((sum: number, season: ApiSeasonResponse) => {
             const memberships = season._count?.memberships || 0;
             return sum + memberships;
           }, 0) || 0;
@@ -115,13 +113,37 @@ export default function Page() {
 
       const parsedData = z.array(leagueSchema).parse(transformedData);
       setData(parsedData);
-    } catch (error) {
-      console.error("Failed to fetch leagues:", error);
+    } catch {
+      // Fallback to empty data on fetch failure - table shows empty state
       setData([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Keyboard shortcuts handlers
+  const handleExportShortcut = useCallback(() => {
+    if (!isLoading && data.length > 0) {
+      exportLeaguesCSV(data);
+    }
+  }, [isLoading, data, exportLeaguesCSV]);
+
+  const handleCreateShortcut = useCallback(() => {
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleRefreshShortcut = useCallback(() => {
+    if (!isLoading) {
+      fetchLeagues();
+    }
+  }, [isLoading, fetchLeagues]);
+
+  // Keyboard shortcuts hook
+  useLeagueKeyboard({
+    onCreateLeague: handleCreateShortcut,
+    onExport: handleExportShortcut,
+    onRefresh: handleRefreshShortcut,
+  });
 
   React.useEffect(() => {
     fetchLeagues();
@@ -172,130 +194,125 @@ export default function Page() {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconTrophy className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            League Management
-                          </h1>
-                        </div>
-                        {/* <p className="text-muted-foreground">
-                           Manage leagues, tournaments, and competitions
-                         </p> */}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                        </Button>
-                        <LeagueCreateModal
-                          open={isCreateModalOpen}
-                          onOpenChange={setIsCreateModalOpen}
-                          onLeagueCreated={handleLeagueCreated}
-                        >
-                          <Button onClick={() => setIsCreateModalOpen(true)}>
-                            <IconPlus className="mr-2 size-4" />
-                            Create League
-                          </Button>
-                        </LeagueCreateModal>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="@container/main flex flex-1 flex-col gap-6">
+            {/* Industry-Standard Page Header */}
+            <PageHeader
+              icon={IconTrophy}
+              title="League Management"
+              description="Manage leagues, seasons, and player memberships"
+              actions={
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportLeaguesCSV(leagues)}
+                    disabled={isLoading || leagues.length === 0}
+                    aria-label="Export leagues to CSV"
+                  >
+                    <IconDownload className="mr-2 size-4" aria-hidden="true" />
+                    Export
+                  </Button>
+                  <LeagueCreateModal
+                    open={isCreateModalOpen}
+                    onOpenChange={setIsCreateModalOpen}
+                    onLeagueCreated={handleLeagueCreated}
+                  >
+                    <Button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      aria-label="Create a new league"
+                    >
+                      <IconPlus className="mr-2 size-4" aria-hidden="true" />
+                      Create League
+                    </Button>
+                  </LeagueCreateModal>
+                </>
+              }
+            />
 
-              <div className="flex-1 px-4 lg:px-6 py-6">
-                <div className="space-y-6">
-                  {/* League Overview Cards */}
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Leagues
-                        </CardTitle>
-                        <IconTrophy className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {leagues.length}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {
-                            leagues.filter(
-                              (l) =>
-                                l.status === "ACTIVE" || l.status === "ONGOING"
-                            ).length
-                          }{" "}
-                          currently active
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Members
-                        </CardTitle>
-                        <IconUsers className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{totalMembers}</div>
-                        <p className="text-xs text-muted-foreground">
-                          Total players across all seasons in all leagues
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          Total Seasons
-                        </CardTitle>
-                        <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {leagues.reduce(
-                            (sum, league) => sum + (league.seasonCount || 0),
-                            0
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Across all leagues
-                        </p>
-                      </CardContent>
-                    </Card>
-                    {/* <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
-                        <IconTarget className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {leagues.reduce((sum, league) => sum + (league.categoryCount || 0), 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Across all leagues</p>
-                      </CardContent>
-                    </Card> */}
-                  </div>
+            {/* League Overview Cards */}
+            <AnimatedContainer delay={0.1}>
+              <section
+                className="px-4 sm:px-6"
+                aria-label="League statistics overview"
+              >
+                <div
+                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                  role="region"
+                  aria-label="Key metrics"
+                >
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Leagues
+                      </CardTitle>
+                      <IconTrophy className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {leagues.length}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {
+                          leagues.filter(
+                            (l) =>
+                              l.status === "ACTIVE" || l.status === "ONGOING"
+                          ).length
+                        }{" "}
+                        currently active
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Members
+                      </CardTitle>
+                      <IconUsers className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalMembers}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Total players across all seasons in all leagues
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Seasons
+                      </CardTitle>
+                      <IconCalendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {leagues.reduce(
+                          (sum, league) => sum + (league.seasonCount || 0),
+                          0
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Across all leagues
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
+              </section>
+            </AnimatedContainer>
 
-                {/* Data Table */}
-                <div className="flex-1">
-                  <LeaguesDataTable
-                    key={refreshKey}
-                    data={leagues}
-                    isLoading={isLoading}
-                    onDataChange={fetchLeagues}
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Data Table */}
+            <AnimatedContainer delay={0.2}>
+              <section
+                className="px-4 sm:px-6 pb-6"
+                aria-label="Leagues data table"
+              >
+                <LeaguesDataTable
+                  key={refreshKey}
+                  data={leagues}
+                  isLoading={isLoading}
+                  onDataChange={fetchLeagues}
+                />
+              </section>
+            </AnimatedContainer>
           </div>
         </div>
       </SidebarInset>

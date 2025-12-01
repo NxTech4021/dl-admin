@@ -297,8 +297,40 @@ export function useAdminSession() {
 }
 
 // ============================================
-// UTILITY HOOKS
+// SPONSORS
 // ============================================
+
+/** Sponsor option for dropdown selection */
+export interface SponsorOption {
+  id: string;
+  name: string;
+}
+
+/** Raw sponsorship from API */
+interface SponsorshipResponse {
+  id: string;
+  sponsoredName?: string;
+  company?: {
+    id: string;
+    name: string;
+  };
+}
+
+export function useSponsors(enabled: boolean = true) {
+  return useQuery({
+    queryKey: queryKeys.sponsors.list(),
+    queryFn: async (): Promise<SponsorOption[]> => {
+      const response = await axiosInstance.get(endpoints.sponsors.getAll);
+      const api = response.data;
+      const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as SponsorshipResponse[];
+      return sponsorships.map((s) => ({
+        id: s.id,
+        name: s.company?.name || s.sponsoredName || "Unnamed Sponsor",
+      }));
+    },
+    enabled,
+  });
+}
 
 // ============================================
 // MATCHES
@@ -688,6 +720,8 @@ export function useInvalidateQueries() {
       queryClient.invalidateQueries({ queryKey: queryKeys.matches.all }),
     invalidateDisputes: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.disputes.all }),
+    invalidateSponsors: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.sponsors.all }),
     invalidateAll: () => queryClient.invalidateQueries(),
   };
 }

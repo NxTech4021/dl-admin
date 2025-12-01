@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
   Sheet,
@@ -29,7 +30,6 @@ import {
   IconCheck,
   IconCheckbox,
   IconRefresh,
-  IconSettings,
   IconBellRinging,
   IconSearch,
   IconBellOff,
@@ -41,8 +41,14 @@ import {
   IconCreditCard,
   IconShield,
   IconCalendar,
+  IconExternalLink,
+  IconLoader2,
+  IconSquare,
+  IconSquareCheck,
+  IconX,
+  IconSelectAll,
 } from "@tabler/icons-react";
-import { useNotifications, type Notification, type NotificationCategory } from "@/hooks/use-notifications";
+import { useNotifications, getNotificationUrl, type Notification, type NotificationCategory } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
 
 interface NotificationsSidebarProps {
@@ -114,34 +120,80 @@ const getNotificationColor = (category: NotificationCategory) => {
 };
 
 // Enhanced notification item with better UX
-const NotificationItem = React.memo(({ 
-  notification, 
-  onMarkAsRead, 
-  // onDelete
-}: { 
+const NotificationItem = React.memo(({
+  notification,
+  onMarkAsRead,
+  onDelete,
+  onNavigate,
+  selectMode,
+  isSelected,
+  onToggleSelect,
+}: {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
-  // onDelete: (id: string) => void;
+  onDelete: (id: string) => void;
+  onNavigate: (url: string) => void;
+  selectMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
 }) => {
   const iconColor = getNotificationColor(notification.category);
+  const notificationUrl = getNotificationUrl(notification);
 
   const handleMarkAsRead = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onMarkAsRead(notification.id);
   }, [notification.id, onMarkAsRead]);
 
-  // const handleDelete = useCallback((e: React.MouseEvent) => {
-  //   e.stopPropagation();
-  //   onDelete(notification.id);
-  // }, [notification.id, onDelete]);
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(notification.id);
+  }, [notification.id, onDelete]);
+
+  const handleClick = useCallback(() => {
+    if (selectMode) {
+      onToggleSelect(notification.id);
+      return;
+    }
+    // Mark as read when clicking
+    if (!notification.read) {
+      onMarkAsRead(notification.id);
+    }
+    // Navigate if URL exists
+    if (notificationUrl) {
+      onNavigate(notificationUrl);
+    }
+  }, [notification.id, notification.read, notificationUrl, onMarkAsRead, onNavigate, selectMode, onToggleSelect]);
+
+  const handleCheckboxClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleSelect(notification.id);
+  }, [notification.id, onToggleSelect]);
 
   return (
     <div
+      onClick={handleClick}
       className={cn(
         "group relative flex items-start gap-3 p-3 hover:bg-accent/50 transition-colors cursor-pointer border-l-2 border-transparent",
-        !notification.read && "bg-accent/30 border-l-primary"
+        !notification.read && "bg-accent/30 border-l-primary",
+        notificationUrl && !selectMode && "hover:bg-accent/70",
+        isSelected && "bg-primary/10 border-l-primary"
       )}
     >
+      {/* Checkbox for select mode */}
+      {selectMode && (
+        <button
+          onClick={handleCheckboxClick}
+          className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1.5"
+        >
+          {isSelected ? (
+            <IconSquareCheck className="h-4 w-4 text-primary" />
+          ) : (
+            <IconSquare className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+      )}
+
       {/* Icon with colored background */}
       <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-accent/50 flex items-center justify-center mt-0.5", iconColor)}>
         {getNotificationIcon(notification.category)}
@@ -174,6 +226,9 @@ const NotificationItem = React.memo(({
                   <div className="h-1 w-1 bg-current rounded-full opacity-50" />
                   <span className="capitalize">{notification.type.replace('_', ' ').toLowerCase()}</span>
                 </>
+              )}
+              {notificationUrl && (
+                <IconExternalLink className="h-2.5 w-2.5 ml-0.5 opacity-60" />
               )}
             </div>
           </div>
@@ -209,7 +264,7 @@ const NotificationItem = React.memo(({
                   variant="ghost"
                   size="sm"
                   className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                  // onClick={handleDelete}
+                  onClick={handleDelete}
                 >
                   <IconTrash className="h-3 w-3" />
                 </Button>
@@ -228,24 +283,73 @@ const NotificationItem = React.memo(({
 NotificationItem.displayName = "NotificationItem";
 
 export default function NotificationsSidebar({ open, onOpenChange }: NotificationsSidebarProps) {
+  const router = useRouter();
   const {
     notifications,
     unreadCount,
     loading,
+    loadingMore,
+    pagination,
     markAsRead,
     markAllAsRead,
+    deleteNotification,
+    deleteMany,
+    clearAll,
+    loadMore,
     refresh,
   } = useNotifications();
 
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Delete notification handler
-  // const handleDeleteNotification = useCallback((id: string) => {
-  //   // Use archive function as delete (you can create a separate delete function if needed)
-  //   archiveNotification(id);
-  // }, [archiveNotification]);
+  const handleNavigate = useCallback((url: string) => {
+    router.push(url);
+    onOpenChange(false);
+  }, [router, onOpenChange]);
+
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // Note: selectAll uses notifications directly, not filteredNotifications
+  // to avoid dependency issues - will be called after filteredNotifications is computed
+  const selectAllFiltered = useCallback((ids: string[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const deselectAll = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    await deleteMany(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [selectedIds, deleteMany]);
+
+  const handleClearAll = useCallback(async () => {
+    await clearAll();
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, [clearAll]);
+
 
   // Filter notifications
   const filteredNotifications = React.useMemo(() => {
@@ -300,8 +404,33 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
             </div>
           </DialogTitle>
 
-          <div className="flex items-center gap-2">
-            {unreadCountTotal > 0 && (
+          <div className="flex items-center gap-1">
+            {/* Select mode toggle */}
+            {filteredNotifications.length > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={selectMode ? "default" : "ghost"}
+                      size="sm"
+                      onClick={toggleSelectMode}
+                      className="h-7 w-7 p-0"
+                    >
+                      {selectMode ? (
+                        <IconX className="h-3.5 w-3.5" />
+                      ) : (
+                        <IconSelectAll className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{selectMode ? "Cancel selection" : "Select multiple"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {!selectMode && unreadCountTotal > 0 && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -321,15 +450,17 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
               </TooltipProvider>
             )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={refresh}
-              disabled={loading}
-              className="h-7 w-7 p-0"
-            >
-              <IconRefresh className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            </Button>
+            {!selectMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refresh}
+                disabled={loading}
+                className="h-7 w-7 p-0"
+              >
+                <IconRefresh className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -416,14 +547,40 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
                 ))}
               </div>
             ) : filteredNotifications.length > 0 ? (
-              filteredNotifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onMarkAsRead={markAsRead}
-                  // onDelete={handleDeleteNotification}
-                />
-              ))
+              <>
+                {filteredNotifications.map((notification) => (
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={markAsRead}
+                    onDelete={deleteNotification}
+                    onNavigate={handleNavigate}
+                    selectMode={selectMode}
+                    isSelected={selectedIds.has(notification.id)}
+                    onToggleSelect={toggleSelect}
+                  />
+                ))}
+                {pagination.hasMore && (
+                  <div className="p-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="w-full h-8 text-xs"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        `Load more (${pagination.total - notifications.length} remaining)`
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-8 px-4">
                 <IconBellOff className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
@@ -448,13 +605,64 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
           </div>
         </ScrollArea>
 
-        {/* Simple footer */}
+        {/* Footer - shows bulk actions in select mode, otherwise simple count */}
         {filteredNotifications.length > 0 && (
           <div className="p-3 border-t bg-accent/10">
-            <p className="text-xs text-center text-muted-foreground">
-              {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
-              {filter === 'unread' && unreadCountTotal > 0 && ` • ${unreadCountTotal} unread`}
-            </p>
+            {selectMode ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {selectedIds.size} selected
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => selectAllFiltered(filteredNotifications.map(n => n.id))}
+                      className="h-6 px-2 text-xs"
+                      disabled={selectedIds.size === filteredNotifications.length}
+                    >
+                      Select all
+                    </Button>
+                    {selectedIds.size > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={deselectAll}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Deselect
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteSelected}
+                    disabled={selectedIds.size === 0}
+                    className="flex-1 h-7 text-xs"
+                  >
+                    <IconTrash className="h-3 w-3 mr-1" />
+                    Delete selected ({selectedIds.size})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearAll}
+                    className="h-7 text-xs text-destructive hover:text-destructive"
+                  >
+                    Clear all
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-center text-muted-foreground">
+                {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+                {filter === 'unread' && unreadCountTotal > 0 && ` • ${unreadCountTotal} unread`}
+              </p>
+            )}
           </div>
         )}
       </SheetContent>
