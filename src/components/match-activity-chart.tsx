@@ -40,8 +40,28 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getMatchActivityData } from "@/constants/data/mock-chart-data";
+import { getMatchActivityData, MatchActivityData } from "@/constants/data/mock-chart-data";
 import { cn } from "@/lib/utils";
+
+/** Type-safe accessor for numeric sport data fields */
+const getNumericValue = (item: MatchActivityData, key: string): number => {
+  switch (key) {
+    case "tennisLeague":
+      return item.tennisLeague;
+    case "tennisFriendly":
+      return item.tennisFriendly;
+    case "pickleballLeague":
+      return item.pickleballLeague;
+    case "pickleballFriendly":
+      return item.pickleballFriendly;
+    case "padelLeague":
+      return item.padelLeague;
+    case "padelFriendly":
+      return item.padelFriendly;
+    default:
+      return 0;
+  }
+};
 
 const chartConfig = {
   tennisLeague: {
@@ -133,7 +153,7 @@ export function MatchActivityChart({
       );
 
       const total = keys.reduce(
-        (sum, key) => sum + (item[key as keyof typeof item] as number),
+        (sum, key) => sum + getNumericValue(item, key),
         0
       );
 
@@ -495,10 +515,7 @@ export function MatchActivityChart({
               <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
-                    sum +
-                    (item[
-                      `${sportFilter}League` as keyof typeof item
-                    ] as number),
+                    sum + getNumericValue(item, `${sportFilter}League`),
                   0
                 )}
               </div>
@@ -526,10 +543,7 @@ export function MatchActivityChart({
               <div className="text-xl sm:text-2xl font-bold">
                 {aggregatedData.reduce(
                   (sum, item) =>
-                    sum +
-                    (item[
-                      `${sportFilter}Friendly` as keyof typeof item
-                    ] as number),
+                    sum + getNumericValue(item, `${sportFilter}Friendly`),
                   0
                 )}
               </div>
