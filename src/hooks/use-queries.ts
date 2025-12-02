@@ -68,6 +68,7 @@ export const queryKeys = {
     list: (filters?: { status?: string; priority?: string }) =>
       [...queryKeys.disputes.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.disputes.all, "detail", id] as const,
+    openCount: () => [...queryKeys.disputes.all, "openCount"] as const,
   },
 };
 
@@ -752,6 +753,61 @@ export function useResolveDispute() {
         queryKey: queryKeys.disputes.detail(variables.disputeId),
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+    },
+  });
+}
+
+/**
+ * Get open disputes count for sidebar badge
+ */
+export function useOpenDisputeCount() {
+  return useQuery({
+    queryKey: queryKeys.disputes.openCount(),
+    queryFn: async () => {
+      // Fetch only OPEN and UNDER_REVIEW disputes to get the count
+      const params = new URLSearchParams();
+      params.append("status", "OPEN,UNDER_REVIEW");
+      params.append("limit", "1"); // We only need the total count
+
+      const response = await axiosInstance.get(
+        `${endpoints.admin.disputes.getAll}?${params.toString()}`
+      );
+      return response.data?.total || 0;
+    },
+    staleTime: 60000, // Cache for 1 minute
+    refetchInterval: 60000, // Refetch every minute
+  });
+}
+
+/**
+ * Add note to dispute (admin action)
+ */
+export function useAddDisputeNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      disputeId,
+      note,
+      isInternalOnly = true,
+    }: {
+      disputeId: string;
+      note: string;
+      isInternalOnly?: boolean;
+    }) => {
+      const response = await axiosInstance.post(
+        `${endpoints.admin.disputes.getById(disputeId)}/notes`,
+        {
+          note,
+          isInternalOnly,
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.disputes.detail(variables.disputeId),
+      });
     },
   });
 }
