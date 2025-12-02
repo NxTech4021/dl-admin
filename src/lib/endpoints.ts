@@ -46,9 +46,16 @@ export const endpoints = {
       getById: (id: string) => `/api/admin/matches/${id}`,
       voidMatch: (id: string) => `/api/admin/matches/${id}/void`,
       editResult: (id: string) => `/api/admin/matches/${id}/edit-result`,
+      editParticipants: (id: string) => `/api/admin/matches/${id}/participants`,
+      validateParticipants: (id: string) => `/api/admin/matches/${id}/participants/validate`,
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
       reviewCancellation: (id: string) => `/api/admin/matches/${id}/review-cancellation`,
       messageParticipants: (id: string) => `/api/admin/matches/${id}/message-participants`,
+    },
+
+    // Division helpers
+    divisions: {
+      availablePlayers: (divisionId: string) => `/api/admin/divisions/${divisionId}/available-players`,
     },
 
     // Dispute management
