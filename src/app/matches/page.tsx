@@ -4,15 +4,23 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { IconTrophy, IconDownload } from "@tabler/icons-react";
+import { IconTrophy, IconDownload, IconAlertTriangle, IconRefresh, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
+import { MatchFilters } from "@/components/match/match-filters";
+import { MatchRowActions } from "@/components/match/match-row-actions";
+import { MatchDetailModal } from "@/components/match/match-detail-modal";
+import { VoidMatchModal } from "@/components/match/void-match-modal";
+import { WalkoverModal } from "@/components/match/walkover-modal";
+import { MessageParticipantsModal } from "@/components/match/message-participants-modal";
+import { EditResultModal } from "@/components/match/edit-result-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMatches } from "@/hooks/use-queries";
 import { MatchStatusBadge } from "@/components/match/match-status-badge";
 import { MatchParticipantsDisplay } from "@/components/match/match-participants-display";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Badge } from "@/components/ui/badge";
+import { Match, MatchStatus } from "@/constants/zod/match-schema";
 import {
   Table,
   TableBody,
@@ -27,13 +35,60 @@ export default function MatchesPage() {
   const [selectedLeague, setSelectedLeague] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<string>();
   const [selectedDivision, setSelectedDivision] = useState<string>();
+  const [selectedStatus, setSelectedStatus] = useState<MatchStatus>();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDisputedOnly, setShowDisputedOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data, isLoading } = useMatches({
+  // Modal states
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [voidModalOpen, setVoidModalOpen] = useState(false);
+  const [walkoverModalOpen, setWalkoverModalOpen] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+
+  const pageSize = 20;
+  const { data, isLoading, error, refetch } = useMatches({
     leagueId: selectedLeague,
     seasonId: selectedSeason,
     divisionId: selectedDivision,
-    limit: 20,
+    status: selectedStatus,
+    search: searchQuery || undefined,
+    isDisputed: showDisputedOnly || undefined,
+    page: currentPage,
+    limit: pageSize,
   });
+
+  // Action handlers
+  const handleView = (match: Match) => {
+    setSelectedMatch(match);
+    setViewModalOpen(true);
+  };
+
+  const handleEdit = (match: Match) => {
+    setSelectedMatch(match);
+    setEditModalOpen(true);
+  };
+
+  const handleVoid = (match: Match) => {
+    setSelectedMatch(match);
+    setVoidModalOpen(true);
+  };
+
+  const handleConvertToWalkover = (match: Match) => {
+    setSelectedMatch(match);
+    setWalkoverModalOpen(true);
+  };
+
+  const handleMessage = (match: Match) => {
+    setSelectedMatch(match);
+    setMessageModalOpen(true);
+  };
+
+  const handleActionSuccess = () => {
+    refetch();
+  };
 
   return (
     <SidebarProvider
@@ -79,6 +134,22 @@ export default function MatchesPage() {
                       seasonId={selectedSeason}
                       divisionId={selectedDivision}
                     />
+
+                    {/* Filters */}
+                    <MatchFilters
+                      selectedLeague={selectedLeague}
+                      selectedSeason={selectedSeason}
+                      selectedDivision={selectedDivision}
+                      selectedStatus={selectedStatus}
+                      searchQuery={searchQuery}
+                      showDisputedOnly={showDisputedOnly}
+                      onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
+                      onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
+                      onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
+                      onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                      onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                      onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
+                    />
                   </div>
                 </div>
               </div>
@@ -96,6 +167,22 @@ export default function MatchesPage() {
                           <Skeleton key={i} className="h-12 w-full" />
                         ))}
                       </div>
+                    ) : error ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <IconAlertTriangle className="size-12 text-destructive mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Failed to Load Matches</h3>
+                        <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                          There was an error loading the matches data. Please try again.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => refetch()}
+                          className="gap-2"
+                        >
+                          <IconRefresh className="size-4" />
+                          Retry
+                        </Button>
+                      </div>
                     ) : data && data.matches.length > 0 ? (
                       <Table>
                         <TableHeader>
@@ -107,6 +194,7 @@ export default function MatchesPage() {
                             <TableHead>Venue</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Score</TableHead>
+                            <TableHead className="w-[50px]">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -177,6 +265,16 @@ export default function MatchesPage() {
                                   </span>
                                 )}
                               </TableCell>
+                              <TableCell>
+                                <MatchRowActions
+                                  match={match}
+                                  onView={handleView}
+                                  onEdit={handleEdit}
+                                  onVoid={handleVoid}
+                                  onConvertToWalkover={handleConvertToWalkover}
+                                  onMessage={handleMessage}
+                                />
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -186,6 +284,61 @@ export default function MatchesPage() {
                         No matches found
                       </div>
                     )}
+
+                    {/* Pagination */}
+                    {data && data.totalPages > 1 && (
+                      <div className="flex items-center justify-between pt-4 border-t mt-4">
+                        <div className="text-sm text-muted-foreground">
+                          Showing {((currentPage - 1) * pageSize) + 1} to{" "}
+                          {Math.min(currentPage * pageSize, data.total)} of {data.total} matches
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            <IconChevronLeft className="size-4 mr-1" />
+                            Previous
+                          </Button>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
+                              let pageNum: number;
+                              if (data.totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= data.totalPages - 2) {
+                                pageNum = data.totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={currentPage === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setCurrentPage(pageNum)}
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.min(data.totalPages, p + 1))}
+                            disabled={currentPage === data.totalPages}
+                          >
+                            Next
+                            <IconChevronRight className="size-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -193,6 +346,41 @@ export default function MatchesPage() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Modals */}
+      <MatchDetailModal
+        match={selectedMatch}
+        open={viewModalOpen}
+        onOpenChange={setViewModalOpen}
+      />
+
+      <EditResultModal
+        match={selectedMatch}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        onSuccess={handleActionSuccess}
+      />
+
+      <VoidMatchModal
+        match={selectedMatch}
+        open={voidModalOpen}
+        onOpenChange={setVoidModalOpen}
+        onSuccess={handleActionSuccess}
+      />
+
+      <WalkoverModal
+        match={selectedMatch}
+        open={walkoverModalOpen}
+        onOpenChange={setWalkoverModalOpen}
+        onSuccess={handleActionSuccess}
+      />
+
+      <MessageParticipantsModal
+        match={selectedMatch}
+        open={messageModalOpen}
+        onOpenChange={setMessageModalOpen}
+        onSuccess={handleActionSuccess}
+      />
     </SidebarProvider>
   );
 }
