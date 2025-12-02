@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconFilter, IconX, IconSearch, IconAlertTriangle } from "@tabler/icons-react";
+import { IconFilter, IconX, IconSearch, IconAlertTriangle, IconClock } from "@tabler/icons-react";
 import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
 import { MatchStatus } from "@/constants/zod/match-schema";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,12 +24,14 @@ interface MatchFiltersProps {
   selectedStatus?: MatchStatus;
   searchQuery?: string;
   showDisputedOnly?: boolean;
+  showLateCancellations?: boolean;
   onLeagueChange: (value: string | undefined) => void;
   onSeasonChange: (value: string | undefined) => void;
   onDivisionChange: (value: string | undefined) => void;
   onStatusChange: (value: MatchStatus | undefined) => void;
   onSearchChange: (value: string) => void;
   onDisputedChange: (value: boolean) => void;
+  onLateCancellationChange?: (value: boolean) => void;
   className?: string;
 }
 
@@ -50,12 +52,14 @@ export function MatchFilters({
   selectedStatus,
   searchQuery = "",
   showDisputedOnly = false,
+  showLateCancellations = false,
   onLeagueChange,
   onSeasonChange,
   onDivisionChange,
   onStatusChange,
   onSearchChange,
   onDisputedChange,
+  onLateCancellationChange,
   className = "",
 }: MatchFiltersProps) {
   const { data: leagues, isLoading: leaguesLoading } = useLeagues();
@@ -85,10 +89,11 @@ export function MatchFilters({
     onStatusChange(undefined);
     onSearchChange("");
     onDisputedChange(false);
+    onLateCancellationChange?.(false);
   };
 
   const hasActiveFilters =
-    selectedLeague || selectedSeason || selectedDivision || selectedStatus || searchQuery || showDisputedOnly;
+    selectedLeague || selectedSeason || selectedDivision || selectedStatus || searchQuery || showDisputedOnly || showLateCancellations;
 
   // Handle league change - reset dependent filters
   const handleLeagueChange = (value: string) => {
@@ -244,6 +249,24 @@ export function MatchFilters({
             Disputed Only
           </Label>
         </div>
+
+        {/* Late Cancellation Filter */}
+        {onLateCancellationChange && (
+          <div className="flex items-center space-x-2 px-2">
+            <Checkbox
+              id="late-cancellation"
+              checked={showLateCancellations}
+              onCheckedChange={(checked) => onLateCancellationChange(checked as boolean)}
+            />
+            <Label
+              htmlFor="late-cancellation"
+              className="text-sm font-normal cursor-pointer flex items-center gap-1.5"
+            >
+              <IconClock className="size-4 text-orange-500" />
+              Late Cancellations
+            </Label>
+          </div>
+        )}
 
         {/* Clear Button */}
         {hasActiveFilters && (
