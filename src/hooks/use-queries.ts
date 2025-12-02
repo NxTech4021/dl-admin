@@ -813,6 +813,107 @@ export function useAddDisputeNote() {
 }
 
 // ============================================
+// MATCH PARTICIPANTS
+// ============================================
+
+export interface ParticipantInput {
+  userId: string;
+  team: "team1" | "team2" | null;
+  role: "CREATOR" | "OPPONENT" | "PARTNER" | "INVITED";
+}
+
+export interface AvailablePlayer {
+  id: string;
+  name: string;
+  username: string;
+  image: string | null;
+  rating: number | null;
+}
+
+/**
+ * Get available players for a division (for participant picker)
+ */
+export function useAvailablePlayers(
+  divisionId: string | undefined,
+  excludeMatchId?: string,
+  search?: string
+) {
+  return useQuery({
+    queryKey: ["availablePlayers", divisionId, excludeMatchId, search],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (excludeMatchId) params.append("excludeMatchId", excludeMatchId);
+      if (search) params.append("search", search);
+
+      const response = await axiosInstance.get(
+        `${endpoints.admin.divisions.availablePlayers(divisionId!)}?${params.toString()}`
+      );
+      return response.data as AvailablePlayer[];
+    },
+    enabled: !!divisionId,
+  });
+}
+
+/**
+ * Validate participant edit before submission
+ */
+export function useValidateParticipants() {
+  return useMutation({
+    mutationFn: async ({
+      matchId,
+      participants,
+    }: {
+      matchId: string;
+      participants: ParticipantInput[];
+    }) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.matches.validateParticipants(matchId),
+        { participants }
+      );
+      return response.data as {
+        isValid: boolean;
+        errors: string[];
+        warnings: string[];
+      };
+    },
+  });
+}
+
+/**
+ * Edit match participants (admin action)
+ */
+export function useEditMatchParticipants() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      matchId,
+      participants,
+      reason,
+    }: {
+      matchId: string;
+      participants: ParticipantInput[];
+      reason: string;
+    }) => {
+      const response = await axiosInstance.put(
+        endpoints.admin.matches.editParticipants(matchId),
+        { participants, reason }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.matches.detail(variables.matchId),
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to edit participants:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+// ============================================
 // UTILITY HOOKS
 // ============================================
 
