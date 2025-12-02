@@ -56,6 +56,46 @@ export const disputePriorityEnum = z.enum([
   "URGENT",
 ]);
 
+// ===== JSON FIELD SCHEMAS =====
+
+/** Set score entry for matches (stored as JSON) */
+export const setScoreEntrySchema = z.object({
+  setNumber: z.number(),
+  team1Games: z.number(),
+  team2Games: z.number(),
+});
+
+/** Proposed times array (stored as JSON - array of date strings or dates) */
+export const proposedTimesSchema = z.array(
+  z.union([z.string(), z.coerce.date()])
+);
+
+/** Tennis/Padel walkover score set */
+export const walkoverSetScoreSchema = z.object({
+  setNumber: z.number(),
+  winner: z.number(),
+  loser: z.number(),
+});
+
+/** Pickleball walkover score game */
+export const walkoverGameScoreSchema = z.object({
+  gameNumber: z.number(),
+  winner: z.number(),
+  loser: z.number(),
+});
+
+/** Walkover score (stored as JSON - sport-specific format) */
+export const walkoverScoreSchema = z.union([
+  // Tennis/Padel format
+  z.object({
+    sets: z.array(walkoverSetScoreSchema),
+  }),
+  // Pickleball format
+  z.object({
+    games: z.array(walkoverGameScoreSchema),
+  }),
+]);
+
 // ===== NESTED SCHEMAS =====
 
 // Participant schema
@@ -162,7 +202,7 @@ export const matchSchema = z.object({
   scheduledTime: z.coerce.date().nullable().optional(),
   scheduledStartTime: z.coerce.date().nullable().optional(),
   actualStartTime: z.coerce.date().nullable().optional(),
-  proposedTimes: z.any().nullable().optional(), // JSON field
+  proposedTimes: proposedTimesSchema.nullable().optional(),
 
   // Location
   location: z.string().nullable().optional(),
@@ -174,7 +214,7 @@ export const matchSchema = z.object({
   team1Score: z.number().nullable().optional(),
   team2Score: z.number().nullable().optional(),
   outcome: z.string().nullable().optional(),
-  setScores: z.any().nullable().optional(), // JSON field
+  setScores: z.array(setScoreEntrySchema).nullable().optional(),
   duration: z.number().nullable().optional(),
 
   // Result submission
@@ -202,7 +242,7 @@ export const matchSchema = z.object({
   // Walkover
   walkoverReason: walkoverReasonEnum.nullable().optional(),
   walkoverRecordedById: z.string().nullable().optional(),
-  walkoverScore: z.any().nullable().optional(), // JSON field
+  walkoverScore: walkoverScoreSchema.nullable().optional(),
 
   // Admin
   adminNotes: z.string().nullable().optional(),
@@ -248,6 +288,11 @@ export type CancellationReason = z.infer<typeof cancellationReasonEnum>;
 export type WalkoverReason = z.infer<typeof walkoverReasonEnum>;
 export type DisputeStatus = z.infer<typeof disputeStatusEnum>;
 export type DisputePriority = z.infer<typeof disputePriorityEnum>;
+
+// JSON field types
+export type SetScoreEntry = z.infer<typeof setScoreEntrySchema>;
+export type ProposedTimes = z.infer<typeof proposedTimesSchema>;
+export type WalkoverScoreData = z.infer<typeof walkoverScoreSchema>;
 
 // ===== STATISTICS SCHEMA =====
 export const matchStatsSchema = z.object({
