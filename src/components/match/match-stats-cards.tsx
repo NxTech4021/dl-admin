@@ -7,9 +7,11 @@ import {
   IconAlertTriangle,
   IconBan,
   IconUsers,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { useMatchStats } from "@/hooks/use-queries";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface MatchStatsCardsProps {
   leagueId?: string;
@@ -22,7 +24,7 @@ export function MatchStatsCards({
   seasonId,
   divisionId,
 }: MatchStatsCardsProps) {
-  const { data: stats, isLoading } = useMatchStats({
+  const { data: stats, isLoading, error, refetch } = useMatchStats({
     leagueId,
     seasonId,
     divisionId,
@@ -43,6 +45,31 @@ export function MatchStatsCards({
             </CardContent>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  // Error state with retry option
+  if (error) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card className="lg:col-span-5">
+          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+            <IconAlertTriangle className="size-8 text-destructive mb-2" />
+            <p className="text-sm text-muted-foreground mb-3">
+              Failed to load match statistics
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="gap-2"
+            >
+              <IconRefresh className="size-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
