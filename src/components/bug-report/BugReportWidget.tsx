@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Bug, X, Upload, Trash2, Send, Loader2 } from "lucide-react";
+import { Bug, X, Upload, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,16 +21,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-// App code for DeuceLeague Admin
-const APP_CODE = "DLA";
-
-interface Module {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-}
-
 interface BugReportWidgetProps {
   apiUrl?: string;
 }
@@ -39,7 +29,6 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appId, setAppId] = useState<string | null>(null);
-  const [modules, setModules] = useState<Module[]>([]);
   const [screenshots, setScreenshots] = useState<File[]>([]);
   const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,85 +45,53 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
     actualBehavior: "",
   });
 
-  // Fetch app and modules on mount
+  // Initialize DLA app on mount (auto-creates if needed)
   useEffect(() => {
-    fetchAppData();
-  }, []);
+    const initApp = async () => {
+      try {
+        if (!apiUrl) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("Bug reporting: API URL not configured");
+          }
+          return;
+        }
 
-  const fetchAppData = async () => {
-    // Silently fail if backend is unavailable - bug reporting is optional
-    try {
-      if (!apiUrl) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(`${apiUrl}/api/bug/init/dla`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("Bug reporting: Failed to initialize -", res.status);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        setAppId(data.appId);
+
         if (process.env.NODE_ENV === "development") {
-          console.warn("Bug reporting: API URL not configured");
+          console.log("✅ Bug reporting ready");
         }
-        return;
-      }
-
-      // Fetch apps to get DLA app ID with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-      const appsRes = await fetch(`${apiUrl}/api/bug/apps`, {
-        credentials: "include",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!appsRes.ok) {
+      } catch (error: any) {
         if (process.env.NODE_ENV === "development") {
-          const errorText = await appsRes.text();
-          console.warn("Bug reporting unavailable:", appsRes.status, errorText);
-        }
-        return;
-      }
-
-      const apps = await appsRes.json();
-
-      const dlaApp = apps.find((app: any) => app.code === APP_CODE);
-
-      if (!dlaApp) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn(`Bug reporting: App "${APP_CODE}" not found`);
-        }
-        return;
-      }
-
-      console.log("✅ Found DLA app:", dlaApp);
-      setAppId(dlaApp.id);
-
-      // Fetch modules for this app
-      const moduleController = new AbortController();
-      const moduleTimeoutId = setTimeout(() => moduleController.abort(), 5000);
-
-      const modulesRes = await fetch(`${apiUrl}/api/bug/apps/${dlaApp.id}/modules`, {
-        credentials: "include",
-        signal: moduleController.signal,
-      });
-
-      clearTimeout(moduleTimeoutId);
-
-      if (modulesRes.ok) {
-        const modulesData = await modulesRes.json();
-        setModules(modulesData);
-        if (process.env.NODE_ENV === "development") {
-          console.log("Bug reporting: Modules loaded");
+          if (error.name === "AbortError") {
+            console.warn("Bug reporting: Request timeout");
+          } else {
+            console.warn("Bug reporting:", error.message);
+          }
         }
       }
-    } catch (error: any) {
-      // Silently fail - bug reporting is optional, don't disrupt user experience
-      if (process.env.NODE_ENV === "development") {
-        if (error.name === "AbortError") {
-          console.warn("Bug reporting: Request timeout");
-        } else if (error.message?.includes("fetch")) {
-          console.warn("Bug reporting: Backend unavailable");
-        } else {
-          console.warn("Bug reporting:", error.message);
-        }
-      }
-    }
-  };
+    };
+
+    initApp();
+  }, [apiUrl]);
 
   // Auto-capture browser context
   const captureContext = () => {
