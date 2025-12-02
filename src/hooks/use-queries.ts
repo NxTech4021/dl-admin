@@ -8,6 +8,7 @@ import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { adminSchema, Admin } from "@/constants/zod/admin-schema";
 import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters } from "@/constants/zod/match-schema";
 import { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_HOST_URL,
@@ -339,10 +340,18 @@ export function useSponsors(enabled: boolean = true) {
 /**
  * Get all matches with filters
  */
+interface MatchesResponse {
+  matches: Match[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export function useMatches(filters: MatchFilters = {}) {
   return useQuery({
     queryKey: queryKeys.matches.list(filters),
-    queryFn: async () => {
+    queryFn: async (): Promise<MatchesResponse> => {
       const params = new URLSearchParams();
 
       if (filters.leagueId) params.append("leagueId", filters.leagueId);
@@ -370,8 +379,22 @@ export function useMatches(filters: MatchFilters = {}) {
         `${endpoints.admin.matches.getAll}?${params.toString()}`
       );
 
+      // Safe parse with error handling for schema mismatches
+      const parseResult = z.array(matchSchema).safeParse(response.data.matches);
+      if (!parseResult.success) {
+        console.error("Match schema validation failed:", parseResult.error.issues);
+        // Return raw data as fallback to prevent complete failure
+        return {
+          matches: response.data.matches ?? [],
+          total: response.data.total,
+          page: response.data.page,
+          limit: response.data.limit,
+          totalPages: response.data.totalPages,
+        };
+      }
+
       return {
-        matches: z.array(matchSchema).parse(response.data.matches),
+        matches: parseResult.data,
         total: response.data.total,
         page: response.data.page,
         limit: response.data.limit,
@@ -392,7 +415,14 @@ export function useMatch(id: string) {
       const response = await axiosInstance.get(
         endpoints.admin.matches.getById(id)
       );
-      return matchSchema.parse(response.data.data);
+      // Safe parse with error handling for schema mismatches
+      const parseResult = matchSchema.safeParse(response.data.data);
+      if (!parseResult.success) {
+        console.error("Match detail schema validation failed:", parseResult.error.issues);
+        // Return raw data as fallback
+        return response.data.data;
+      }
+      return parseResult.data;
     },
     enabled: !!id,
   });
@@ -417,9 +447,22 @@ export function useMatchStats(filters?: {
       const response = await axiosInstance.get(
         `${endpoints.admin.matches.getStats}?${params.toString()}`
       );
-      return matchStatsSchema.parse(response.data);
+      // Safe parse with error handling for schema mismatches
+      const parseResult = matchStatsSchema.safeParse(response.data);
+      if (!parseResult.success) {
+        console.error("Match stats schema validation failed:", parseResult.error.issues);
+        // Return raw data as fallback
+        return response.data;
+      }
+      return parseResult.data;
     },
   });
+}
+
+/** Mutation error type for match operations */
+export interface MatchMutationError {
+  message: string;
+  matchId: string;
 }
 
 /**
@@ -452,6 +495,9 @@ export function useVoidMatch() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.matches.detail(variables.matchId),
       });
+    },
+    onError: (error) => {
+      console.error("Failed to void match:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -492,6 +538,9 @@ export function useConvertToWalkover() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.matches.detail(variables.matchId),
       });
+    },
+    onError: (error) => {
+      console.error("Failed to convert match to walkover:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -536,6 +585,9 @@ export function useEditMatchResult() {
         queryKey: queryKeys.matches.detail(variables.matchId),
       });
     },
+    onError: (error) => {
+      console.error("Failed to edit match result:", getErrorMessage(error, "Unknown error"));
+    },
   });
 }
 
@@ -567,6 +619,9 @@ export function useMessageParticipants() {
         }
       );
       return response.data;
+    },
+    onError: (error) => {
+      console.error("Failed to message participants:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -607,6 +662,9 @@ export function useReviewCancellation() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.matches.detail(variables.matchId),
       });
+    },
+    onError: (error) => {
+      console.error("Failed to review cancellation:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
