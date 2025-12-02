@@ -14,6 +14,8 @@ import { VoidMatchModal } from "@/components/match/void-match-modal";
 import { WalkoverModal } from "@/components/match/walkover-modal";
 import { MessageParticipantsModal } from "@/components/match/message-participants-modal";
 import { EditResultModal } from "@/components/match/edit-result-modal";
+import { EditParticipantsModal } from "@/components/match/edit-participants-modal";
+import { CancellationReviewModal } from "@/components/match/cancellation-review-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMatches } from "@/hooks/use-queries";
 import { MatchStatusBadge } from "@/components/match/match-status-badge";
@@ -38,15 +40,18 @@ export default function MatchesPage() {
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus>();
   const [searchQuery, setSearchQuery] = useState("");
   const [showDisputedOnly, setShowDisputedOnly] = useState(false);
+  const [showLateCancellations, setShowLateCancellations] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal states
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editParticipantsModalOpen, setEditParticipantsModalOpen] = useState(false);
   const [voidModalOpen, setVoidModalOpen] = useState(false);
   const [walkoverModalOpen, setWalkoverModalOpen] = useState(false);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [cancellationReviewModalOpen, setCancellationReviewModalOpen] = useState(false);
 
   const pageSize = 20;
   const { data, isLoading, error, refetch } = useMatches({
@@ -56,6 +61,7 @@ export default function MatchesPage() {
     status: selectedStatus,
     search: searchQuery || undefined,
     isDisputed: showDisputedOnly || undefined,
+    hasLateCancellation: showLateCancellations || undefined,
     page: currentPage,
     limit: pageSize,
   });
@@ -71,6 +77,11 @@ export default function MatchesPage() {
     setEditModalOpen(true);
   };
 
+  const handleEditParticipants = (match: Match) => {
+    setSelectedMatch(match);
+    setEditParticipantsModalOpen(true);
+  };
+
   const handleVoid = (match: Match) => {
     setSelectedMatch(match);
     setVoidModalOpen(true);
@@ -84,6 +95,11 @@ export default function MatchesPage() {
   const handleMessage = (match: Match) => {
     setSelectedMatch(match);
     setMessageModalOpen(true);
+  };
+
+  const handleReviewCancellation = (match: Match) => {
+    setSelectedMatch(match);
+    setCancellationReviewModalOpen(true);
   };
 
   const handleActionSuccess = () => {
@@ -143,12 +159,14 @@ export default function MatchesPage() {
                       selectedStatus={selectedStatus}
                       searchQuery={searchQuery}
                       showDisputedOnly={showDisputedOnly}
+                      showLateCancellations={showLateCancellations}
                       onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
                       onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
                       onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
                       onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
                       onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
                       onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
+                      onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
                     />
                   </div>
                 </div>
@@ -235,7 +253,7 @@ export default function MatchesPage() {
                                 {match.venue || match.location || "TBD"}
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <MatchStatusBadge status={match.status} />
                                   {match.isDisputed && (
                                     <Badge
@@ -248,6 +266,14 @@ export default function MatchesPage() {
                                   {match.isWalkover && (
                                     <Badge variant="outline" className="text-xs">
                                       Walkover
+                                    </Badge>
+                                  )}
+                                  {match.isLateCancellation && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs border-orange-500 text-orange-600"
+                                    >
+                                      Late Cancel
                                     </Badge>
                                   )}
                                 </div>
@@ -270,9 +296,11 @@ export default function MatchesPage() {
                                   match={match}
                                   onView={handleView}
                                   onEdit={handleEdit}
+                                  onEditParticipants={handleEditParticipants}
                                   onVoid={handleVoid}
                                   onConvertToWalkover={handleConvertToWalkover}
                                   onMessage={handleMessage}
+                                  onReviewCancellation={handleReviewCancellation}
                                 />
                               </TableCell>
                             </TableRow>
@@ -379,6 +407,20 @@ export default function MatchesPage() {
         match={selectedMatch}
         open={messageModalOpen}
         onOpenChange={setMessageModalOpen}
+        onSuccess={handleActionSuccess}
+      />
+
+      <EditParticipantsModal
+        match={selectedMatch}
+        open={editParticipantsModalOpen}
+        onOpenChange={setEditParticipantsModalOpen}
+        onSuccess={handleActionSuccess}
+      />
+
+      <CancellationReviewModal
+        match={selectedMatch}
+        open={cancellationReviewModalOpen}
+        onOpenChange={setCancellationReviewModalOpen}
         onSuccess={handleActionSuccess}
       />
     </SidebarProvider>
