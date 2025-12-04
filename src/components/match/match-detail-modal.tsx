@@ -111,9 +111,9 @@ export function MatchDetailModal({
                             </span>
                           ))}
                         </div>
-                      );
+                      ) as React.ReactNode;
                     }
-                    return null;
+                    return null as React.ReactNode;
                   })()}
                 </div>
               </div>

@@ -287,7 +287,9 @@ const columns: ColumnDef<Player>[] = [
 export function PlayersDataTable() {
   // React Query for data fetching
   const { data: queryData, isLoading, isError, error, refetch } = usePlayers();
-  const data = queryData ?? [];
+  
+  // Memoize data to ensure stable reference
+  const data = React.useMemo(() => queryData ?? [], [queryData]);
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
