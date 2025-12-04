@@ -12,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconFilter, IconX, IconSearch, IconAlertTriangle, IconClock } from "@tabler/icons-react";
+import { IconFilter, IconX, IconSearch, IconAlertTriangle, IconClock, IconUsers, IconEyeOff, IconFlag } from "@tabler/icons-react";
 import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
-import { MatchStatus } from "@/constants/zod/match-schema";
+import { MatchStatus, MatchContext } from "@/constants/zod/match-schema";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface MatchFiltersProps {
@@ -25,6 +25,9 @@ interface MatchFiltersProps {
   searchQuery?: string;
   showDisputedOnly?: boolean;
   showLateCancellations?: boolean;
+  matchContext?: MatchContext;
+  showHidden?: boolean;
+  showReported?: boolean;
   onLeagueChange: (value: string | undefined) => void;
   onSeasonChange: (value: string | undefined) => void;
   onDivisionChange: (value: string | undefined) => void;
@@ -32,6 +35,9 @@ interface MatchFiltersProps {
   onSearchChange: (value: string) => void;
   onDisputedChange: (value: boolean) => void;
   onLateCancellationChange?: (value: boolean) => void;
+  onMatchContextChange?: (value: MatchContext | undefined) => void;
+  onShowHiddenChange?: (value: boolean) => void;
+  onShowReportedChange?: (value: boolean) => void;
   className?: string;
 }
 
@@ -45,6 +51,12 @@ const MATCH_STATUSES: { value: MatchStatus; label: string }[] = [
   { value: "VOID", label: "Void" },
 ];
 
+const MATCH_CONTEXTS: { value: MatchContext; label: string }[] = [
+  { value: "all", label: "All Matches" },
+  { value: "league", label: "League Matches" },
+  { value: "friendly", label: "Friendly Matches" },
+];
+
 export function MatchFilters({
   selectedLeague,
   selectedSeason,
@@ -53,6 +65,9 @@ export function MatchFilters({
   searchQuery = "",
   showDisputedOnly = false,
   showLateCancellations = false,
+  matchContext,
+  showHidden = false,
+  showReported = false,
   onLeagueChange,
   onSeasonChange,
   onDivisionChange,
@@ -60,6 +75,9 @@ export function MatchFilters({
   onSearchChange,
   onDisputedChange,
   onLateCancellationChange,
+  onMatchContextChange,
+  onShowHiddenChange,
+  onShowReportedChange,
   className = "",
 }: MatchFiltersProps) {
   const { data: leagues, isLoading: leaguesLoading } = useLeagues();
@@ -90,10 +108,13 @@ export function MatchFilters({
     onSearchChange("");
     onDisputedChange(false);
     onLateCancellationChange?.(false);
+    onMatchContextChange?.(undefined);
+    onShowHiddenChange?.(false);
+    onShowReportedChange?.(false);
   };
 
   const hasActiveFilters =
-    selectedLeague || selectedSeason || selectedDivision || selectedStatus || searchQuery || showDisputedOnly || showLateCancellations;
+    selectedLeague || selectedSeason || selectedDivision || selectedStatus || searchQuery || showDisputedOnly || showLateCancellations || matchContext || showHidden || showReported;
 
   // Handle league change - reset dependent filters
   const handleLeagueChange = (value: string) => {
@@ -264,6 +285,64 @@ export function MatchFilters({
             >
               <IconClock className="size-4 text-orange-500" />
               Late Cancellations
+            </Label>
+          </div>
+        )}
+
+        {/* Match Context Filter (League vs Friendly) */}
+        {onMatchContextChange && (
+          <Select
+            value={matchContext || "all"}
+            onValueChange={(value) => onMatchContextChange(value === "all" ? undefined : value as MatchContext)}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="All Matches" />
+            </SelectTrigger>
+            <SelectContent>
+              {MATCH_CONTEXTS.map((context) => (
+                <SelectItem key={context.value} value={context.value}>
+                  <span className="flex items-center gap-1.5">
+                    <IconUsers className="size-4" />
+                    {context.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Show Hidden Filter */}
+        {onShowHiddenChange && (
+          <div className="flex items-center space-x-2 px-2">
+            <Checkbox
+              id="show-hidden"
+              checked={showHidden}
+              onCheckedChange={(checked) => onShowHiddenChange(checked as boolean)}
+            />
+            <Label
+              htmlFor="show-hidden"
+              className="text-sm font-normal cursor-pointer flex items-center gap-1.5"
+            >
+              <IconEyeOff className="size-4 text-muted-foreground" />
+              Show Hidden
+            </Label>
+          </div>
+        )}
+
+        {/* Show Reported Filter */}
+        {onShowReportedChange && (
+          <div className="flex items-center space-x-2 px-2">
+            <Checkbox
+              id="show-reported"
+              checked={showReported}
+              onCheckedChange={(checked) => onShowReportedChange(checked as boolean)}
+            />
+            <Label
+              htmlFor="show-reported"
+              className="text-sm font-normal cursor-pointer flex items-center gap-1.5"
+            >
+              <IconFlag className="size-4 text-red-500" />
+              Show Reported
             </Label>
           </div>
         )}
