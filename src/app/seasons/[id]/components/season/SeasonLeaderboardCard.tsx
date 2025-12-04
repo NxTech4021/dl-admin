@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { IconTrophy, IconMedal, IconTarget } from "@tabler/icons-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IconTrophy, IconTarget, IconAlertCircle } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { z } from "zod";
 
@@ -55,6 +56,26 @@ export const divisionSchema = z.object({
 
 export type Division = z.infer<typeof divisionSchema>;
 
+// Standing schema from API
+const standingSchema = z.object({
+  id: z.string(),
+  rank: z.number(),
+  userId: z.string(),
+  wins: z.number(),
+  losses: z.number(),
+  matchesPlayed: z.number(),
+  totalPoints: z.number(),
+  setsWon: z.number().optional(),
+  setsLost: z.number().optional(),
+  gamesWon: z.number().optional(),
+  gamesLost: z.number().optional(),
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    image: z.string().nullable().optional(),
+  }).optional(),
+}).passthrough();
+
 interface LeaderboardPlayer {
   id: string;
   name: string;
@@ -70,50 +91,6 @@ interface SeasonLeaderboardCardProps {
   seasonId: string;
 }
 
-// Mock data for each division
-const generateMockPlayers = (divisionId: string): LeaderboardPlayer[] => {
-  const playerNames = [
-    "John Smith",
-    "Sarah Johnson",
-    "Mike Chen",
-    "Emma Davis",
-    "Alex Rodriguez",
-    "Lisa Wang",
-    "David Brown",
-    "Maria Garcia",
-    "James Wilson",
-    "Anna Taylor",
-  ];
-
-  const players: LeaderboardPlayer[] = [];
-
-  for (let i = 0; i < 5; i++) {
-    const name = playerNames[i];
-    const matchesPlayed = Math.floor(Math.random() * 8) + 8; // 8-15 matches
-    const wins = Math.floor(Math.random() * (matchesPlayed - 2)) + 2; // At least 2 wins
-    const losses = matchesPlayed - wins;
-    const points = wins * 3; // 3 points per win
-    const winRate = Math.round((wins / matchesPlayed) * 100);
-
-    players.push({
-      id: `${divisionId}-player-${i + 1}`,
-      name,
-      avatarUrl: null, // Will use initials
-      matchesPlayed,
-      wins,
-      losses,
-      points,
-      winRate,
-    });
-  }
-
-  // Sort by points (descending), then by win rate
-  return players.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    return b.winRate - a.winRate;
-  });
-};
-
 const getInitials = (name: string): string => {
   return name
     .split(" ")
@@ -128,19 +105,19 @@ const getPositionBadge = (position: number) => {
     case 1:
       return (
         <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white border-0 font-bold">
-          🥇 #1
+          #1
         </Badge>
       );
     case 2:
       return (
         <Badge className="bg-gradient-to-r from-gray-300 to-gray-500 text-white border-0 font-bold">
-          🥈 #2
+          #2
         </Badge>
       );
     case 3:
       return (
         <Badge className="bg-gradient-to-r from-amber-600 to-amber-800 text-white border-0 font-bold">
-          🥉 #3
+          #3
         </Badge>
       );
     default:
@@ -173,37 +150,15 @@ export default function SeasonLeaderboardCard({
   seasonId,
 }: SeasonLeaderboardCardProps) {
   const [divisions, setDivisions] = useState<Division[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [standings, setStandings] = useState<LeaderboardPlayer[]>([]);
+  const [isLoadingDivisions, setIsLoadingDivisions] = useState(true);
+  const [isLoadingStandings, setIsLoadingStandings] = useState(false);
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>("");
 
-  const fetchDivisions = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axiosInstance.get(
-        `${endpoints.division.getAll}?seasonId=${seasonId}`
-      );
-      if (!response.data || !Array.isArray(response.data)) {
-        setDivisions([]);
-        return;
-      }
-      const parsed = z.array(divisionSchema).parse(response.data);
-      setDivisions(parsed);
-
-      // Set first division as selected if available
-      if (parsed.length > 0 && !selectedDivisionId) {
-        setSelectedDivisionId(parsed[0].id);
-      }
-    } catch (error) {
-      console.error("Failed to fetch divisions:", error);
-      setDivisions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Fetch divisions on mount
   useEffect(() => {
     const fetchDivisions = async () => {
-      setIsLoading(true);
+      setIsLoadingDivisions(true);
       try {
         const response = await axiosInstance.get(
           `${endpoints.division.getAll}?seasonId=${seasonId}`
@@ -216,27 +171,79 @@ export default function SeasonLeaderboardCard({
         setDivisions(parsed);
 
         // Set first division as selected if available
-        if (parsed.length > 0 && !selectedDivisionId) {
+        if (parsed.length > 0) {
           setSelectedDivisionId(parsed[0].id);
         }
-      } catch (error) {
-        console.error("Failed to fetch divisions:", error);
+      } catch (err) {
+        console.error("Failed to fetch divisions:", err);
         setDivisions([]);
       } finally {
-        setIsLoading(false);
+        setIsLoadingDivisions(false);
       }
     };
+
     if (seasonId) {
       fetchDivisions();
     }
-  }, [seasonId, selectedDivisionId]);
+  }, [seasonId]);
+
+  // Fetch standings when division changes
+  useEffect(() => {
+    const fetchStandings = async () => {
+      if (!selectedDivisionId) {
+        setStandings([]);
+        return;
+      }
+
+      setIsLoadingStandings(true);
+      try {
+        const response = await axiosInstance.get(
+          `/api/standings/division/${selectedDivisionId}`
+        );
+
+        if (!response.data?.data || !Array.isArray(response.data.data)) {
+          setStandings([]);
+          return;
+        }
+
+        // Parse and transform standings to LeaderboardPlayer format
+        const parsedStandings = z.array(standingSchema).parse(response.data.data);
+
+        const players: LeaderboardPlayer[] = parsedStandings.map((standing) => ({
+          id: standing.userId,
+          name: standing.user?.name || "Unknown Player",
+          avatarUrl: standing.user?.image || null,
+          matchesPlayed: standing.matchesPlayed,
+          wins: standing.wins,
+          losses: standing.losses,
+          points: standing.totalPoints,
+          winRate: standing.matchesPlayed > 0
+            ? Math.round((standing.wins / standing.matchesPlayed) * 100)
+            : 0,
+        }));
+
+        // Sort by points (descending), then by win rate
+        players.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return b.winRate - a.winRate;
+        });
+
+        setStandings(players);
+      } catch (err) {
+        console.error("Failed to fetch standings:", err);
+        setStandings([]);
+        // Don't show error for empty standings - it's expected for new divisions
+      } finally {
+        setIsLoadingStandings(false);
+      }
+    };
+
+    fetchStandings();
+  }, [selectedDivisionId]);
 
   const selectedDivision = divisions.find((d) => d.id === selectedDivisionId);
-  const mockPlayers = selectedDivision
-    ? generateMockPlayers(selectedDivisionId)
-    : [];
 
-  if (isLoading) {
+  if (isLoadingDivisions) {
     return (
       <Card>
         <CardHeader>
@@ -246,8 +253,13 @@ export default function SeasonLeaderboardCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            Loading divisions...
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-[300px]" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -337,107 +349,129 @@ export default function SeasonLeaderboardCard({
               </Badge>
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">#</TableHead>
-                    <TableHead className="w-[200px]">Player</TableHead>
-                    <TableHead className="w-[60px] text-center">P</TableHead>
-                    <TableHead className="w-[60px] text-center">W</TableHead>
-                    <TableHead className="w-[60px] text-center">L</TableHead>
-                    <TableHead className="w-[80px] text-center">Pts</TableHead>
-                    <TableHead className="w-[100px] text-center">
-                      Win Rate
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockPlayers.map((player, index) => (
-                    <TableRow key={player.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {getPositionBadge(index + 1)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-10">
-                            <AvatarImage src={player.avatarUrl || undefined} />
-                            <AvatarFallback
-                              className={`text-white text-sm font-semibold ${getAvatarColor(
-                                player.name
-                              )}`}
-                            >
-                              {getInitials(player.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">
-                              {player.name}
+            {isLoadingStandings ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : standings.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <IconAlertCircle className="size-10 opacity-50" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">No standings yet</p>
+                    <p className="text-xs">Matches need to be played to generate standings</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">#</TableHead>
+                        <TableHead className="w-[200px]">Player</TableHead>
+                        <TableHead className="w-[60px] text-center">P</TableHead>
+                        <TableHead className="w-[60px] text-center">W</TableHead>
+                        <TableHead className="w-[60px] text-center">L</TableHead>
+                        <TableHead className="w-[80px] text-center">Pts</TableHead>
+                        <TableHead className="w-[100px] text-center">
+                          Win Rate
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {standings.map((player, index) => (
+                        <TableRow key={player.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            {getPositionBadge(index + 1)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-10">
+                                <AvatarImage src={player.avatarUrl || undefined} />
+                                <AvatarFallback
+                                  className={`text-white text-sm font-semibold ${getAvatarColor(
+                                    player.name
+                                  )}`}
+                                >
+                                  {getInitials(player.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium text-sm">
+                                  {player.name}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center font-medium">
-                        {player.matchesPlayed}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-green-600 font-semibold">
-                          {player.wins}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-red-600 font-semibold">
-                          {player.losses}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="font-bold">
-                          {player.points}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="text-sm">
-                          <div className="font-medium">{player.winRate}%</div>
-                          <div className="text-xs text-muted-foreground">
-                            {player.wins}/{player.matchesPlayed}
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-medium">
+                            {player.matchesPlayed}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-green-600 font-semibold">
+                              {player.wins}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-red-600 font-semibold">
+                              {player.losses}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className="font-bold">
+                              {player.points}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="text-sm">
+                              <div className="font-medium">{player.winRate}%</div>
+                              <div className="text-xs text-muted-foreground">
+                                {player.wins}/{player.matchesPlayed}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-            {/* Additional Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {mockPlayers.length}
+                {/* Additional Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      {standings.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Players
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {standings.reduce((sum, p) => sum + p.wins, 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Wins</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {standings.length > 0
+                        ? Math.round(
+                            standings.reduce((sum, p) => sum + p.winRate, 0) /
+                              standings.length
+                          )
+                        : 0}
+                      %
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Avg Win Rate
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Total Players
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {mockPlayers.reduce((sum, p) => sum + p.wins, 0)}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Wins</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {Math.round(
-                    mockPlayers.reduce((sum, p) => sum + p.winRate, 0) /
-                      mockPlayers.length
-                  )}
-                  %
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Avg Win Rate
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
       </CardContent>
