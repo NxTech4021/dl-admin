@@ -44,6 +44,9 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
     stepsToReproduce: "",
     expectedBehavior: "",
     actualBehavior: "",
+    // Reporter info (for tracking who reported)
+    reporterName: "",
+    reporterEmail: "",
   });
 
   // Initialize DLA app on mount (auto-creates if needed)
@@ -222,6 +225,9 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
           appId,
           ...formData,
           ...context,
+          // Map form fields to backend expected fields
+          anonymousName: formData.reporterName || undefined,
+          anonymousEmail: formData.reporterEmail || undefined,
         }),
       });
 
@@ -233,8 +239,32 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
       const report = await reportRes.json();
 
       // Upload screenshots if any
-      // Note: In production, you'd upload to cloud storage first, then save URL
-      // For now, we'll skip screenshot upload as it requires cloud storage setup
+      if (screenshots.length > 0) {
+        const uploadPromises = screenshots.map(async (file) => {
+          const formData = new FormData();
+          formData.append("screenshot", file);
+          formData.append("bugReportId", report.id);
+
+          const uploadRes = await fetch(`${apiUrl}/api/bug/screenshots/upload`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          });
+
+          if (!uploadRes.ok) {
+            console.error("Failed to upload screenshot:", file.name);
+          }
+          return uploadRes;
+        });
+
+        await Promise.allSettled(uploadPromises);
+      }
+
+      // Sync to Google Sheets after all uploads complete (single sync to avoid duplicates)
+      await fetch(`${apiUrl}/api/bug/reports/${report.id}/sync`, {
+        method: "POST",
+        credentials: "include",
+      }).catch(console.error);
 
       toast.success(`Bug report ${report.reportNumber} created successfully`);
 
@@ -248,6 +278,8 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
         stepsToReproduce: "",
         expectedBehavior: "",
         actualBehavior: "",
+        reporterName: "",
+        reporterEmail: "",
       });
       setScreenshots([]);
       setScreenshotPreviews([]);
