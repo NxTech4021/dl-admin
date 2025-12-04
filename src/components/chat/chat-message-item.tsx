@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import Image from "next/image";
 
 interface ChatMessageItemProps {
   message: any;
@@ -134,9 +135,11 @@ export default function ChatMessageItem({
     {renderReplyPreview}
 
     {hasImage ? (
-      <img
+      <Image
         src={messageContent}
         alt="attachment"
+        width={400}
+        height={220}
         className="min-h-[220px] w-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
         onClick={() => onOpenLightbox?.(messageContent)}
       />

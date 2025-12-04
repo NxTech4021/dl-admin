@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Bug,
   AlertTriangle,
@@ -53,6 +53,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -126,11 +127,6 @@ export default function BugDashboard() {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 20;
 
-  useEffect(() => {
-    fetchStats();
-    fetchReports();
-  }, [page, statusFilter, severityFilter, priorityFilter]);
-
   const fetchStats = async () => {
     try {
       const res = await fetch(`${API_URL}/api/bug/admin/stats`, {
@@ -145,7 +141,7 @@ export default function BugDashboard() {
     }
   };
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -173,7 +169,12 @@ export default function BugDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, severityFilter, priorityFilter, search]);
+
+  useEffect(() => {
+    fetchStats();
+    fetchReports();
+  }, [fetchReports]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -629,9 +630,11 @@ export default function BugDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <img
+                          <Image
                             src={screenshot.thumbnailUrl || screenshot.imageUrl}
                             alt={screenshot.fileName}
+                            width={80}
+                            height={80}
                             className="h-20 w-20 object-cover rounded border hover:opacity-80"
                           />
                         </a>

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface BugReportWidgetProps {
   apiUrl?: string;
@@ -413,10 +414,12 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
               <div className="flex flex-wrap gap-2">
                 {screenshotPreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={preview}
+                    <Image
+                      src={preview as string}
                       alt={`Screenshot ${index + 1}`}
                       className="h-20 w-20 object-cover rounded border"
+                      width={80}
+                      height={80}
                     />
                     <button
                       type="button"
