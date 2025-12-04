@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -96,62 +96,6 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
   const pendingRequests = requests.filter(r => r.status === 'PENDING');
   const approvedRequests = requests.filter(r => r.status === 'APPROVED');
   const rejectedRequests = requests.filter(r => r.status === 'REJECTED');
-
-  // Mock data for demonstration (remove when real data is available)
-  const mockRequests: WithdrawalRequest[] = [
-    {
-      id: 'wr-1',
-      userId: 'user-1',
-      seasonId: 'season-1',
-      reason: 'Medical emergency requiring immediate attention and hospital care',
-      requestDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      status: 'PENDING',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      user: { name: 'John Smith', email: 'john@example.com' },
-    },
-    {
-      id: 'wr-2',
-      userId: 'user-2',
-      seasonId: 'season-1',
-      reason: 'Personal family matters that require my full attention',
-      requestDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      status: 'PENDING',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      user: { name: 'Sarah Johnson', email: 'sarah@example.com' },
-    },
-    {
-      id: 'wr-3',
-      userId: 'user-3',
-      seasonId: 'season-1',
-      reason: 'Work relocation to another city',
-      requestDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      status: 'APPROVED',
-      processedByAdminId: 'admin-1',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      user: { name: 'Mike Chen', email: 'mike@example.com' },
-      processedByAdmin: { name: 'Admin User' },
-    },
-    {
-      id: 'wr-4',
-      userId: 'user-4',
-      seasonId: 'season-1',
-      reason: 'Financial difficulties',
-      requestDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      status: 'REJECTED',
-      processedByAdminId: 'admin-1',
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      user: { name: 'Emma Davis', email: 'emma@example.com' },
-      processedByAdmin: { name: 'Admin User' },
-    },
-  ];
-
-  // Use mock data if no real requests
-  const displayRequests = requests.length > 0 ? requests : mockRequests;
-  const displayPendingRequests = displayRequests.filter(r => r.status === 'PENDING');
-  const displayApprovedRequests = displayRequests.filter(r => r.status === 'APPROVED');
-  const displayRejectedRequests = displayRequests.filter(r => r.status === 'REJECTED');
 
   const handleApprove = (requestId: string) => {
     // TODO: Implement API call
@@ -308,40 +252,40 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <IconAlertCircle className="size-5" />
-          Withdrawal Requests ({displayPendingRequests.length} Pending)
+          Withdrawal Requests ({pendingRequests.length} Pending)
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">
-              All ({displayRequests.length})
+              All ({requests.length})
             </TabsTrigger>
             <TabsTrigger value="pending">
-              Pending ({displayPendingRequests.length})
+              Pending ({pendingRequests.length})
             </TabsTrigger>
             <TabsTrigger value="approved">
-              Approved ({displayApprovedRequests.length})
+              Approved ({approvedRequests.length})
             </TabsTrigger>
             <TabsTrigger value="rejected">
-              Rejected ({displayRejectedRequests.length})
+              Rejected ({rejectedRequests.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
-            <RequestTable requests={displayRequests} />
+            <RequestTable requests={requests} />
           </TabsContent>
 
           <TabsContent value="pending">
-            <RequestTable requests={displayPendingRequests} />
+            <RequestTable requests={pendingRequests} />
           </TabsContent>
 
           <TabsContent value="approved">
-            <RequestTable requests={displayApprovedRequests} />
+            <RequestTable requests={approvedRequests} />
           </TabsContent>
 
           <TabsContent value="rejected">
-            <RequestTable requests={displayRejectedRequests} />
+            <RequestTable requests={rejectedRequests} />
           </TabsContent>
         </Tabs>
       </CardContent>
