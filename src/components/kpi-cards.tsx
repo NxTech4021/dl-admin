@@ -8,7 +8,6 @@ import {
   Users,
   UserCheck,
   CreditCard,
-  X,
 } from "lucide-react";
 import { formatValue } from "@/lib/utils/format";
 import {
@@ -18,18 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-// Static mock data - replace with real API calls (realistic for 100+ member app)
-const mockKPIData = {
-  totalUsers: 284,
-  leagueParticipants: 132,
-  conversionRate: 46.5,
-  totalRevenue: 3960,
-  previousTotalUsers: 259,
-  previousLeagueParticipants: 121,
-  previousRevenue: 3630,
-};
-
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardKPI, useSportMetrics } from "@/hooks/use-queries";
 
 interface KPICardProps {
   title: string;
@@ -39,9 +28,8 @@ interface KPICardProps {
   format?: "number" | "currency" | "percentage";
   trend?: "up" | "down" | "neutral";
   onClick?: () => void;
+  isLoading?: boolean;
 }
-
-// formatValue function moved to @/lib/utils/format
 
 // Mock 7-day trend data generator - DETERMINISTIC (no Math.random)
 function generate7DayTrend(currentValue: number, trend: "up" | "down" | "neutral"): number[] {
@@ -106,16 +94,37 @@ function calculateTrend(
   return { trend, percentage: Math.abs(change) };
 }
 
+function KPICardSkeleton() {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 md:px-6 md:pt-6">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-4" />
+      </CardHeader>
+      <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-5 w-16" />
+        </div>
+        <Skeleton className="h-3 w-32 mt-2" />
+      </CardContent>
+    </Card>
+  );
+}
+
 function KPICard({
   title,
   value,
   previousValue,
   icon: Icon,
   format = "number",
-
-  trend,
   onClick,
+  isLoading,
 }: KPICardProps) {
+  if (isLoading) {
+    return <KPICardSkeleton />;
+  }
+
   const numValue = typeof value === "string" ? parseFloat(value) : value;
   const trendData = previousValue
     ? calculateTrend(numValue, previousValue)
@@ -197,90 +206,117 @@ type KPIMetric = "totalUsers" | "leagueParticipants" | "conversionRate" | "total
 export function TopKPICards() {
   const [selectedMetric, setSelectedMetric] = React.useState<KPIMetric | null>(null);
 
+  const { data: kpiData, isLoading: isLoadingKPI } = useDashboardKPI();
+  const { data: sportMetrics, isLoading: isLoadingSports } = useSportMetrics();
+
+  const isLoading = isLoadingKPI || isLoadingSports;
+
   const getMetricDetails = (metric: KPIMetric) => {
+    if (!kpiData) return null;
+
     switch (metric) {
       case "totalUsers":
         return {
           title: "Total Users",
-          value: mockKPIData.totalUsers,
-          previousValue: mockKPIData.previousTotalUsers,
+          value: kpiData.totalUsers,
+          previousValue: kpiData.previousTotalUsers,
           description: "All registered users across all sports",
-          breakdown: [
-            { label: "Active users (30 days)", value: 234 },
-            { label: "New users (this month)", value: 25 },
-            { label: "Inactive users", value: 50 },
-          ],
+          breakdown: sportMetrics?.map(s => ({
+            label: `${s.sport} users`,
+            value: s.users,
+          })) || [],
         };
       case "leagueParticipants":
         return {
           title: "League Participants",
-          value: mockKPIData.leagueParticipants,
-          previousValue: mockKPIData.previousLeagueParticipants,
+          value: kpiData.leagueParticipants,
+          previousValue: kpiData.previousLeagueParticipants,
           description: "Users actively participating in league matches",
-          breakdown: [
-            { label: "Tennis league", value: 68 },
-            { label: "Pickleball league", value: 42 },
-            { label: "Padel league", value: 22 },
-          ],
+          breakdown: sportMetrics?.map(s => ({
+            label: `${s.sport} participants`,
+            value: s.payingMembers,
+          })) || [],
         };
       case "conversionRate":
         return {
           title: "Conversion Rate",
-          value: mockKPIData.conversionRate,
+          value: kpiData.conversionRate,
           description: "Percentage of users who become paying members",
           breakdown: [
-            { label: "Total paying members", value: 132 },
-            { label: "Total users", value: 284 },
-            { label: "Conversion rate", value: `${mockKPIData.conversionRate}%` },
+            { label: "Total paying members", value: kpiData.leagueParticipants },
+            { label: "Total users", value: kpiData.totalUsers },
+            { label: "Conversion rate", value: `${kpiData.conversionRate}%` },
           ],
         };
       case "totalRevenue":
         return {
           title: "Total Revenue",
-          value: mockKPIData.totalRevenue,
-          previousValue: mockKPIData.previousRevenue,
+          value: kpiData.totalRevenue,
+          previousValue: kpiData.previousRevenue,
           description: "Combined revenue from all sports and membership fees",
-          breakdown: [
-            { label: "Tennis revenue", value: "RM1,700" },
-            { label: "Pickleball revenue", value: "RM1,260" },
-            { label: "Padel revenue", value: "RM1,000" },
-          ],
+          breakdown: sportMetrics?.map(s => ({
+            label: `${s.sport} revenue`,
+            value: `RM${s.revenue.toLocaleString()}`,
+          })) || [],
         };
     }
   };
 
   const details = selectedMetric ? getMetricDetails(selectedMetric) : null;
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <KPICardSkeleton />
+        <KPICardSkeleton />
+        <KPICardSkeleton />
+        <KPICardSkeleton />
+      </div>
+    );
+  }
+
+  // Handle no data state
+  if (!kpiData) {
+    return (
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="col-span-full p-6 text-center text-muted-foreground">
+          No dashboard data available
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Users"
-          value={mockKPIData.totalUsers}
-          previousValue={mockKPIData.previousTotalUsers}
+          value={kpiData.totalUsers}
+          previousValue={kpiData.previousTotalUsers}
           icon={Users}
           format="number"
           onClick={() => setSelectedMetric("totalUsers")}
         />
         <KPICard
           title="League Participants"
-          value={mockKPIData.leagueParticipants}
-          previousValue={mockKPIData.previousLeagueParticipants}
+          value={kpiData.leagueParticipants}
+          previousValue={kpiData.previousLeagueParticipants}
           icon={UserCheck}
           format="number"
           onClick={() => setSelectedMetric("leagueParticipants")}
         />
         <KPICard
           title="Conversion Rate"
-          value={mockKPIData.conversionRate}
+          value={kpiData.conversionRate}
           icon={TrendingUp}
           format="percentage"
           onClick={() => setSelectedMetric("conversionRate")}
         />
         <KPICard
           title="Total Revenue"
-          value={mockKPIData.totalRevenue}
-          previousValue={mockKPIData.previousRevenue}
+          value={kpiData.totalRevenue}
+          previousValue={kpiData.previousRevenue}
           icon={CreditCard}
           format="currency"
           onClick={() => setSelectedMetric("totalRevenue")}

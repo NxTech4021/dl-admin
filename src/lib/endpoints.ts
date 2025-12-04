@@ -79,6 +79,16 @@ export const endpoints = {
       triggerCheck: "/api/admin/inactivity/check",
       getStats: "/api/admin/inactivity/stats",
     },
+
+    // Dashboard statistics
+    dashboard: {
+      getAll: "/api/admin/dashboard/stats",
+      getKPI: "/api/admin/dashboard/kpi",
+      getSports: "/api/admin/dashboard/sports",
+      getMatchActivity: "/api/admin/dashboard/match-activity",
+      getUserGrowth: "/api/admin/dashboard/user-growth",
+      getSportComparison: "/api/admin/dashboard/sport-comparison",
+    },
   },
 
   player: {
@@ -141,7 +151,7 @@ export const endpoints = {
     getById: (id: string) => `/api/division/${id}`,
     update: (id: string) => `/api/division/${id}`,
     delete: (id: string) => `/api/division/delete/${id}`,
-    getbySeasionId : (seasonId: string)    =>  `/api/division/season/${seasonId}`,
+    getBySeasonId: (seasonId: string) => `/api/division/season/${seasonId}`,
    
     //Player Assign to Division 
     assignPlayer: "/api/division/assign",

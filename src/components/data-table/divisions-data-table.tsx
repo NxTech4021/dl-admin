@@ -128,13 +128,9 @@ export function DivisionsDataTable() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Fetching divisions from:", endpoints.division.getAll);
       const response = await axiosInstance.get(endpoints.division.getAll);
 
-      console.log("Raw response:", response.data);
-
       if (!response.data) {
-        console.error("No data received from API");
         setData([]);
         setError("No data received from server");
         toast.error("No data received from server");
@@ -161,30 +157,17 @@ export function DivisionsDataTable() {
       }
       // Invalid format
       else {
-        console.error(
-          "Response data is not in expected format:",
-          response.data
-        );
         setData([]);
         setError("Invalid data format from server");
         toast.error("Invalid data format from server");
         return;
       }
 
-      console.log("Divisions array before parsing:", divisionsArray);
-
       // Parse and validate with Zod
       try {
         const parsed = z.array(divisionSchema).parse(divisionsArray);
-        console.log("Successfully parsed divisions:", parsed);
         setData(parsed);
       } catch (parseError: any) {
-        console.error("Zod validation error:", parseError);
-        console.error(
-          "Zod error details:",
-          JSON.stringify(parseError.errors, null, 2)
-        );
-
         // Show more detailed error
         const errorMessage =
           parseError.errors?.[0]?.message || "Data validation failed";
@@ -196,14 +179,6 @@ export function DivisionsDataTable() {
         setData(divisionsArray);
       }
     } catch (error: any) {
-      console.error("Failed to load divisions:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-      });
-
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -249,7 +224,6 @@ export function DivisionsDataTable() {
       setDeleteDivision(null);
       setIsDeleteOpen(false);
     } catch (error: any) {
-      console.error("Delete error:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||

@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSportComparisonData } from "@/constants/data/mock-chart-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSportComparison } from "@/hooks/use-queries";
 import { formatValue as formatCurrency } from "@/lib/utils/format";
 
 const chartConfig = {
@@ -44,6 +45,33 @@ interface SportComparisonChartProps {
   historyRange?: 1 | 3 | 6;
 }
 
+function ChartSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
+        <div className="grid flex-1 gap-1 text-center sm:text-left">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-1" />
+        </div>
+        <Skeleton className="h-10 w-40" />
+      </CardHeader>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
+          <div className="flex flex-col space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-[300px] w-full" />
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SportComparisonChart({
   chartRange = "monthly",
   historyRange = 3,
@@ -51,11 +79,8 @@ export function SportComparisonChart({
   const [activeMetric, setActiveMetric] =
     React.useState<MetricType>("payingMembers");
 
-  // using mock data
-  const chartData = React.useMemo(() =>
-    getSportComparisonData(chartRange, historyRange),
-    [chartRange, historyRange]
-  );
+  // Fetch real data from API
+  const { data: chartData, isLoading, error } = useSportComparison();
 
   const formatMetricValue = (value: number, metric: MetricType) => {
     if (metric === "revenue") {
@@ -65,6 +90,7 @@ export function SportComparisonChart({
   };
 
   const getYAxisDomain = (metric: MetricType) => {
+    if (!chartData) return [0, 100];
     const values = chartData.map((item) => item[metric]);
     const max = Math.max(...values);
     if (!isFinite(max) || max <= 0) {
@@ -73,14 +99,36 @@ export function SportComparisonChart({
     return [0, Math.ceil(max * 1.1)];
   };
 
-  const totalMembers = React.useMemo(() => 
-    chartData.reduce((sum, item) => sum + item.payingMembers, 0), 
+  const totalMembers = React.useMemo(() =>
+    chartData?.reduce((sum, item) => sum + item.payingMembers, 0) ?? 0,
     [chartData]
   );
-  const totalRevenue = React.useMemo(() => 
-    chartData.reduce((sum, item) => sum + item.revenue, 0), 
+  const totalRevenue = React.useMemo(() =>
+    chartData?.reduce((sum, item) => sum + item.revenue, 0) ?? 0,
     [chartData]
   );
+
+  if (isLoading) {
+    return <ChartSkeleton />;
+  }
+
+  if (error || !chartData || chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
+          <div className="grid flex-1 gap-1 text-center sm:text-left">
+            <CardTitle>Sport Comparison</CardTitle>
+            <CardDescription>No data available</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            No sport comparison data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -248,7 +296,9 @@ export function SportComparisonChart({
                 </div>
               </div>
               <div className="text-xs text-muted-foreground leading-tight">
-                {((sport.payingMembers / totalMembers) * 100).toFixed(1)}% of total
+                {totalMembers > 0
+                  ? ((sport.payingMembers / totalMembers) * 100).toFixed(1)
+                  : 0}% of total
               </div>
             </div>
           ))}

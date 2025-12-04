@@ -3,8 +3,9 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { IconSettings, IconClock } from "@tabler/icons-react";
+import { IconSettings, IconClock, IconBug } from "@tabler/icons-react";
 import { InactivitySettingsCard } from "@/components/settings/inactivity-settings-card";
+import { BugReportSettingsCard } from "@/components/settings/bug-report-settings-card";
 
 export default function SettingsPage() {
   return (
@@ -49,6 +50,15 @@ export default function SettingsPage() {
                       <h2 className="text-lg font-semibold">Player Inactivity</h2>
                     </div>
                     <InactivitySettingsCard />
+                  </section>
+
+                  {/* Bug Report Settings Section */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <IconBug className="size-5 text-muted-foreground" />
+                      <h2 className="text-lg font-semibold">Bug Reports</h2>
+                    </div>
+                    <BugReportSettingsCard />
                   </section>
                 </div>
               </div>

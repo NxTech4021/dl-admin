@@ -4,7 +4,8 @@ import { z } from "zod";
 
 /** Schema for inactivity settings from backend */
 export const inactivitySettingsSchema = z.object({
-  id: z.string(),
+  // ID is optional - defaults don't have an ID
+  id: z.string().optional(),
 
   // Scope - Can be global, league-specific, or season-specific
   leagueId: z.string().nullable().optional(),
@@ -20,10 +21,13 @@ export const inactivitySettingsSchema = z.object({
   sendReminderEmail: z.boolean().default(true),
   reminderDaysBefore: z.number().nullable().optional(),
 
-  // Audit
-  updatedByAdminId: z.string(),
-  updatedAt: z.coerce.date(),
-  createdAt: z.coerce.date(),
+  // Flag to indicate if these are default values (no saved settings)
+  isDefault: z.boolean().optional(),
+
+  // Audit (optional - defaults don't have these)
+  updatedByAdminId: z.string().optional(),
+  updatedAt: z.coerce.date().optional(),
+  createdAt: z.coerce.date().optional(),
 
   // Relations (optional - may not always be included)
   league: z.object({
@@ -45,12 +49,18 @@ export const inactivitySettingsSchema = z.object({
 
 /** Schema for inactivity stats from backend */
 export const inactivityStatsSchema = z.object({
-  totalUsers: z.number(),
-  activeUsers: z.number(),
-  inactiveUsers: z.number(),
-  warningUsers: z.number().optional(),
-  recentlyReactivated: z.number().optional(),
-}).passthrough();
+  // Backend returns: active, inactive, atRisk, total
+  total: z.number(),
+  active: z.number(),
+  inactive: z.number(),
+  atRisk: z.number().optional(),
+}).passthrough().transform((data) => ({
+  // Transform to expected frontend field names
+  totalUsers: data.total,
+  activeUsers: data.active,
+  inactiveUsers: data.inactive,
+  warningUsers: data.atRisk ?? 0,
+}));
 
 /** Schema for creating/updating inactivity settings */
 export const inactivitySettingsInputSchema = z.object({

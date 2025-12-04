@@ -49,17 +49,15 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     setIsDivisionsLoading(true);
     try {
       const response = await axiosInstance.get(
-        endpoints.division.getbySeasionId(seasonId)
+        endpoints.division.getBySeasonId(seasonId)
       );
       if (!response.data || !Array.isArray(response.data.data)) {
         setDivisions([]);
         return;
       }
       const parsed = z.array(divisionSchema).parse(response.data.data);
-      console.log("divison pasrsed ", parsed);
       setDivisions(parsed);
     } catch (error) {
-      console.error("Failed to fetch divisions:", error);
       setDivisions([]);
       toast.error("Unable to load divisions.");
     } finally {
