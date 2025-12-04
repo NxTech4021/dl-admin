@@ -6,7 +6,7 @@ import { leagueSchema, League } from "@/constants/zod/league-schema";
 import { seasonSchema, Season } from "@/constants/zod/season-schema";
 import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { adminSchema, Admin } from "@/constants/zod/admin-schema";
-import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters } from "@/constants/zod/match-schema";
+import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters, MatchReportCategory } from "@/constants/zod/match-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -373,6 +373,12 @@ export function useMatches(filters: MatchFilters = {}) {
         params.append("isDisputed", String(filters.isDisputed));
       if (filters.hasLateCancellation !== undefined)
         params.append("hasLateCancellation", String(filters.hasLateCancellation));
+      if (filters.matchContext && filters.matchContext !== "all")
+        params.append("matchContext", filters.matchContext);
+      if (filters.showHidden !== undefined)
+        params.append("showHidden", String(filters.showHidden));
+      if (filters.showReported !== undefined)
+        params.append("showReported", String(filters.showReported));
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
@@ -909,6 +915,126 @@ export function useEditMatchParticipants() {
     },
     onError: (error) => {
       console.error("Failed to edit participants:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+// ============================================
+// FRIENDLY MATCH MODERATION
+// ============================================
+
+/**
+ * Hide a friendly match from public view (admin action)
+ */
+export function useHideMatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      matchId,
+      reason,
+    }: {
+      matchId: string;
+      reason: string;
+    }) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.matches.hideMatch(matchId),
+        { reason }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.matches.detail(variables.matchId),
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to hide match:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Unhide a friendly match (admin action)
+ */
+export function useUnhideMatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ matchId }: { matchId: string }) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.matches.unhideMatch(matchId)
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.matches.detail(variables.matchId),
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to unhide match:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Report a friendly match for abuse (admin action)
+ */
+export function useReportMatchAbuse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      matchId,
+      reason,
+      category,
+    }: {
+      matchId: string;
+      reason: string;
+      category: MatchReportCategory;
+    }) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.matches.reportAbuse(matchId),
+        { reason, category }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.matches.detail(variables.matchId),
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to report match abuse:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Clear abuse report from a friendly match (admin action)
+ */
+export function useClearMatchReport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ matchId }: { matchId: string }) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.matches.clearReport(matchId)
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.matches.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.matches.detail(variables.matchId),
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to clear match report:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
