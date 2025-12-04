@@ -69,7 +69,9 @@ interface BugReport {
   createdAt: string;
   app: { code: string; displayName: string };
   module: { name: string };
-  reporter: { id: string; name: string; email: string };
+  reporter: { id: string; name: string; email: string } | null;
+  anonymousName?: string | null;
+  anonymousEmail?: string | null;
   assignedTo?: { id: string; user: { name: string } };
   _count: { comments: number; screenshots: number };
 }
@@ -454,9 +456,9 @@ export default function BugDashboard() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <p>{report.reporter.name}</p>
+                        <p>{report.reporter?.name || report.anonymousName || "User"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {report.reporter.email}
+                          {report.reporter?.email || report.anonymousEmail || "-"}
                         </p>
                       </div>
                     </TableCell>
@@ -548,7 +550,7 @@ export default function BugDashboard() {
                 <div>
                   <h3 className="font-semibold text-lg">{selectedReport.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedReport.module.name} | Reported by {selectedReport.reporter.name}
+                    {selectedReport.module.name} | Reported by {selectedReport.reporter?.name || (selectedReport as any).anonymousName || "User"}
                   </p>
                 </div>
 
