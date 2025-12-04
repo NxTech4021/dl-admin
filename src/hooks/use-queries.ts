@@ -7,6 +7,7 @@ import { seasonSchema, Season } from "@/constants/zod/season-schema";
 import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { adminSchema, Admin } from "@/constants/zod/admin-schema";
 import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters, MatchReportCategory } from "@/constants/zod/match-schema";
+import { inactivitySettingsSchema, inactivityStatsSchema, InactivitySettings, InactivityStats, InactivitySettingsInput } from "@/constants/zod/inactivity-settings-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -69,6 +70,13 @@ export const queryKeys = {
       [...queryKeys.disputes.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.disputes.all, "detail", id] as const,
     openCount: () => [...queryKeys.disputes.all, "openCount"] as const,
+  },
+  inactivity: {
+    all: ["inactivity"] as const,
+    settings: (params?: { leagueId?: string; seasonId?: string }) =>
+      [...queryKeys.inactivity.all, "settings", params] as const,
+    allSettings: () => [...queryKeys.inactivity.all, "allSettings"] as const,
+    stats: () => [...queryKeys.inactivity.all, "stats"] as const,
   },
 };
 
@@ -1035,6 +1043,129 @@ export function useClearMatchReport() {
     },
     onError: (error) => {
       console.error("Failed to clear match report:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+// ============================================
+// INACTIVITY SETTINGS
+// ============================================
+
+/**
+ * Get inactivity settings (global, league-specific, or season-specific)
+ */
+export function useInactivitySettings(params?: { leagueId?: string; seasonId?: string }) {
+  return useQuery({
+    queryKey: queryKeys.inactivity.settings(params),
+    queryFn: async (): Promise<InactivitySettings | null> => {
+      const queryParams = new URLSearchParams();
+      if (params?.leagueId) queryParams.append("leagueId", params.leagueId);
+      if (params?.seasonId) queryParams.append("seasonId", params.seasonId);
+
+      const url = queryParams.toString()
+        ? `${endpoints.admin.inactivity.getSettings}?${queryParams.toString()}`
+        : endpoints.admin.inactivity.getSettings;
+
+      const response = await axiosInstance.get(url);
+
+      // Backend may return null if no settings exist
+      if (!response.data || !response.data.data) {
+        return null;
+      }
+
+      return inactivitySettingsSchema.parse(response.data.data);
+    },
+  });
+}
+
+/**
+ * Get all inactivity settings across all scopes
+ */
+export function useAllInactivitySettings() {
+  return useQuery({
+    queryKey: queryKeys.inactivity.allSettings(),
+    queryFn: async (): Promise<InactivitySettings[]> => {
+      const response = await axiosInstance.get(endpoints.admin.inactivity.getAllSettings);
+      return z.array(inactivitySettingsSchema).parse(response.data.data || []);
+    },
+  });
+}
+
+/**
+ * Get inactivity statistics
+ */
+export function useInactivityStats() {
+  return useQuery({
+    queryKey: queryKeys.inactivity.stats(),
+    queryFn: async (): Promise<InactivityStats> => {
+      const response = await axiosInstance.get(endpoints.admin.inactivity.getStats);
+      return inactivityStatsSchema.parse(response.data.data);
+    },
+  });
+}
+
+/**
+ * Update inactivity settings
+ */
+export function useUpdateInactivitySettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: InactivitySettingsInput) => {
+      const response = await axiosInstance.put(
+        endpoints.admin.inactivity.updateSettings,
+        input
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inactivity.all });
+    },
+    onError: (error) => {
+      console.error("Failed to update inactivity settings:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Delete inactivity settings (revert to defaults)
+ */
+export function useDeleteInactivitySettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (settingsId: string) => {
+      const response = await axiosInstance.delete(
+        endpoints.admin.inactivity.deleteSettings(settingsId)
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inactivity.all });
+    },
+    onError: (error) => {
+      console.error("Failed to delete inactivity settings:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Manually trigger inactivity check
+ */
+export function useTriggerInactivityCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axiosInstance.post(endpoints.admin.inactivity.triggerCheck);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inactivity.stats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.players.all });
+    },
+    onError: (error) => {
+      console.error("Failed to trigger inactivity check:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
