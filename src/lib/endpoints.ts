@@ -69,6 +69,16 @@ export const endpoints = {
       getById: (id: string) => `/api/admin/disputes/${id}`,
       resolve: (id: string) => `/api/admin/disputes/${id}/resolve`,
     },
+
+    // Inactivity settings
+    inactivity: {
+      getSettings: "/api/admin/inactivity/settings",
+      getAllSettings: "/api/admin/inactivity/settings/all",
+      updateSettings: "/api/admin/inactivity/settings",
+      deleteSettings: (id: string) => `/api/admin/inactivity/settings/${id}`,
+      triggerCheck: "/api/admin/inactivity/check",
+      getStats: "/api/admin/inactivity/stats",
+    },
   },
 
   player: {
