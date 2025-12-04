@@ -51,6 +51,11 @@ export const endpoints = {
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
       reviewCancellation: (id: string) => `/api/admin/matches/${id}/review-cancellation`,
       messageParticipants: (id: string) => `/api/admin/matches/${id}/message-participants`,
+      // Friendly match moderation
+      hideMatch: (id: string) => `/api/admin/matches/${id}/hide`,
+      unhideMatch: (id: string) => `/api/admin/matches/${id}/unhide`,
+      reportAbuse: (id: string) => `/api/admin/matches/${id}/report`,
+      clearReport: (id: string) => `/api/admin/matches/${id}/clear-report`,
     },
 
     // Division helpers
