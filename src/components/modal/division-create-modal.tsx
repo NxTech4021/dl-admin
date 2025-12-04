@@ -242,13 +242,11 @@ export default function DivisionCreateModal({
           // Fallback: check for res.data.seasons
           seasonsData = res.data.seasons;
         } else {
-          console.warn("Unexpected seasons API response structure:", res.data);
           seasonsData = [];
         }
-        
+
         setSeasons(seasonsData);
-      } catch (err: any) {
-        console.error("Failed to load seasons", err);
+      } catch {
         setSeasons([]);
       }
     };
@@ -381,7 +379,6 @@ export default function DivisionCreateModal({
         isActive: Boolean(data.isActive),
       };
 
-      console.log("payload", payload);
       const toNumberOrNull = (value: unknown) => {
         if (value === undefined || value === null || value === "") {
           return null;
