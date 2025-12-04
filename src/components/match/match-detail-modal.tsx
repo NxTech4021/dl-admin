@@ -100,15 +100,21 @@ export function MatchDetailModal({
                   <span className="text-3xl font-bold font-mono">
                     {match.team1Score} - {match.team2Score}
                   </span>
-                  {match.setScores && match.setScores.length > 0 && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      {match.setScores.map((set, idx) => (
-                        <span key={idx} className="mr-2">
-                          Set {set.setNumber}: {set.team1Games}-{set.team2Games}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    const scores = match.setScores as Array<{ setNumber?: number; team1Games?: number; team2Games?: number }> | null | undefined;
+                    if (scores && Array.isArray(scores) && scores.length > 0) {
+                      return (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {scores.map((set, idx) => (
+                            <span key={idx} className="mr-2">
+                              Set {set.setNumber}: {set.team1Games}-{set.team2Games}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             )}
@@ -208,7 +214,7 @@ export function MatchDetailModal({
                       </p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Filed by {dispute.disputedBy.name} on{" "}
+                      Filed by {dispute.disputedBy?.name ?? "Unknown"} on{" "}
                       {formatTableDate(dispute.createdAt)}
                     </p>
                   </div>
