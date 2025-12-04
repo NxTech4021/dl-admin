@@ -26,7 +26,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart";
 
 import {
@@ -40,11 +39,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getMatchActivityData, MatchActivityData } from "@/constants/data/mock-chart-data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMatchActivity } from "@/hooks/use-queries";
+import { MatchActivity } from "@/constants/zod/dashboard-schema";
 import { cn } from "@/lib/utils";
 
 /** Type-safe accessor for numeric sport data fields */
-const getNumericValue = (item: MatchActivityData, key: string): number => {
+const getNumericValue = (item: MatchActivity, key: string): number => {
   switch (key) {
     case "tennisLeague":
       return item.tennisLeague;
@@ -101,28 +102,52 @@ type ChartType = "line" | "bar";
 
 interface MatchActivityChartProps {
   chartRange?: "monthly" | "average" | "thisWeek";
-
   historyRange?: 1 | 3 | 6;
+}
+
+function ChartSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
+        <div className="grid flex-1 gap-1 text-center sm:text-left">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-1" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3 mb-4 sm:mb-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex flex-col space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-[280px] w-full" />
+      </CardContent>
+    </Card>
+  );
 }
 
 export function MatchActivityChart({
   chartRange = "monthly",
-
   historyRange = 3,
 }: MatchActivityChartProps) {
   const [sportFilter, setSportFilter] = React.useState<SportFilter>("all");
-
   const [chartType, setChartType] = React.useState<ChartType>("line");
-
   const [hiddenSeries, setHiddenSeries] = React.useState<Set<string>>(
     new Set()
   );
 
-  // Use static mock data based on current props
-  const chartData = React.useMemo(
-    () => getMatchActivityData(chartRange, historyRange),
-    [chartRange, historyRange]
-  );
+  // Convert history range to weeks (approximate)
+  const weeks = historyRange * 4;
+
+  // Fetch real data from API
+  const { data: chartData, isLoading, error } = useMatchActivity(weeks);
 
   const getFilteredConfig = (sport: SportFilter) => {
     if (sport === "all") return chartConfig;
@@ -147,6 +172,8 @@ export function MatchActivityChart({
   };
 
   const aggregatedData = React.useMemo(() => {
+    if (!chartData) return [];
+
     return chartData.map((item) => {
       const keys = getDataKeys(sportFilter).filter(
         (key) => !hiddenSeries.has(key)
@@ -186,16 +213,12 @@ export function MatchActivityChart({
     switch (sport) {
       case "all":
         return "All Sports";
-
       case "tennis":
         return "Tennis";
-
       case "pickleball":
         return "Pickleball";
-
       case "padel":
         return "Padel";
-
       default:
         return "All Sports";
     }
@@ -214,6 +237,28 @@ export function MatchActivityChart({
       return next;
     });
   };
+
+  if (isLoading) {
+    return <ChartSkeleton />;
+  }
+
+  if (error || !chartData || chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
+          <div className="grid flex-1 gap-1 text-center sm:text-left">
+            <CardTitle>Match Activity</CardTitle>
+            <CardDescription>No data available</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+            No match activity data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -289,7 +334,7 @@ export function MatchActivityChart({
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Total matches ({chartData.length} weeks)
+              Total matches ({aggregatedData.length} weeks)
             </div>
           </div>
 
@@ -325,11 +370,8 @@ export function MatchActivityChart({
             data={aggregatedData}
             margin={{
               left: 12,
-
               right: 12,
-
               top: 12,
-
               bottom: 12,
             }}
           >
