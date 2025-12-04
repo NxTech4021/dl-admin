@@ -142,8 +142,6 @@ export default function AssignDivisionModal({
         await onAssigned();
       }
     } catch (error: any) {
-      console.error("Error assigning player(s) to division:", error);
-      console.log(error.response?.data.error);
       toast.error(
         error.response?.data?.error ||
           `Failed to assign ${isTeam ? "team" : "player"} to division`
