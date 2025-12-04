@@ -46,9 +46,21 @@ export const endpoints = {
       getById: (id: string) => `/api/admin/matches/${id}`,
       voidMatch: (id: string) => `/api/admin/matches/${id}/void`,
       editResult: (id: string) => `/api/admin/matches/${id}/edit-result`,
+      editParticipants: (id: string) => `/api/admin/matches/${id}/participants`,
+      validateParticipants: (id: string) => `/api/admin/matches/${id}/participants/validate`,
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
       reviewCancellation: (id: string) => `/api/admin/matches/${id}/review-cancellation`,
       messageParticipants: (id: string) => `/api/admin/matches/${id}/message-participants`,
+      // Friendly match moderation
+      hideMatch: (id: string) => `/api/admin/matches/${id}/hide`,
+      unhideMatch: (id: string) => `/api/admin/matches/${id}/unhide`,
+      reportAbuse: (id: string) => `/api/admin/matches/${id}/report`,
+      clearReport: (id: string) => `/api/admin/matches/${id}/clear-report`,
+    },
+
+    // Division helpers
+    divisions: {
+      availablePlayers: (divisionId: string) => `/api/admin/divisions/${divisionId}/available-players`,
     },
 
     // Dispute management

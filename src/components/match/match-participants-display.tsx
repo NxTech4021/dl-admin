@@ -3,6 +3,17 @@ import { Badge } from "@/components/ui/badge";
 import { MatchParticipant } from "@/constants/zod/match-schema";
 import { getInitials } from "@/components/data-table/constants";
 
+/** Get display name with fallback for undefined user names */
+const getDisplayName = (participant: MatchParticipant): string => {
+  return participant.user?.name || participant.user?.username || "Unknown";
+};
+
+/** Get safe initials with fallback */
+const getSafeInitials = (participant: MatchParticipant): string => {
+  const name = getDisplayName(participant);
+  return getInitials(name);
+};
+
 interface MatchParticipantsDisplayProps {
   participants: MatchParticipant[];
   matchType: "SINGLES" | "DOUBLES";
@@ -30,14 +41,14 @@ export function MatchParticipantsDisplay({
           <div key={participant.id} className="flex items-center gap-2">
             <Avatar className="size-6">
               <AvatarImage
-                src={participant.user.image || undefined}
-                alt={participant.user.name}
+                src={participant.user?.image || undefined}
+                alt={getDisplayName(participant)}
               />
               <AvatarFallback className="text-xs">
-                {getInitials(participant.user.name)}
+                {getSafeInitials(participant)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">{participant.user.name}</span>
+            <span className="text-sm font-medium">{getDisplayName(participant)}</span>
           </div>
         ))}
         {remainingCount > 0 && (
@@ -63,11 +74,11 @@ export function MatchParticipantsDisplay({
             className="size-6 -ml-1 first:ml-0 ring-2 ring-background"
           >
             <AvatarImage
-              src={participant.user.image || undefined}
-              alt={participant.user.name}
+              src={participant.user?.image || undefined}
+              alt={getDisplayName(participant)}
             />
             <AvatarFallback className="text-[10px]">
-              {getInitials(participant.user.name)}
+              {getSafeInitials(participant)}
             </AvatarFallback>
           </Avatar>
         ))}
@@ -86,11 +97,11 @@ export function MatchParticipantsDisplay({
             className="size-6 -ml-1 first:ml-0 ring-2 ring-background"
           >
             <AvatarImage
-              src={participant.user.image || undefined}
-              alt={participant.user.name}
+              src={participant.user?.image || undefined}
+              alt={getDisplayName(participant)}
             />
             <AvatarFallback className="text-[10px]">
-              {getInitials(participant.user.name)}
+              {getSafeInitials(participant)}
             </AvatarFallback>
           </Avatar>
         ))}

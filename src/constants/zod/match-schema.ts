@@ -56,6 +56,84 @@ export const disputePriorityEnum = z.enum([
   "URGENT",
 ]);
 
+export const matchReportCategoryEnum = z.enum([
+  "FAKE_MATCH",
+  "RATING_MANIPULATION",
+  "INAPPROPRIATE_CONTENT",
+  "HARASSMENT",
+  "SPAM",
+  "OTHER",
+]);
+
+export const matchContextEnum = z.enum([
+  "league",
+  "friendly",
+  "all",
+]);
+
+// ===== JSON FIELD SCHEMAS =====
+
+/** Set score entry for matches (stored as JSON) */
+export const setScoreEntrySchema = z.object({
+  setNumber: z.number().optional(),
+  team1Games: z.number().optional(),
+  team2Games: z.number().optional(),
+  // Alternative format from backend
+  player1: z.number().optional(),
+  player2: z.number().optional(),
+});
+
+/** Set scores can come in different formats from backend */
+export const setScoresSchema = z.union([
+  // Array format
+  z.array(setScoreEntrySchema),
+  // Object with sets array format
+  z.object({
+    sets: z.array(z.object({
+      player1: z.number(),
+      player2: z.number(),
+    })),
+  }),
+  // Object with games array format (pickleball)
+  z.object({
+    games: z.array(z.object({
+      player1: z.number(),
+      player2: z.number(),
+    })),
+  }),
+]);
+
+/** Proposed times array (stored as JSON - array of date strings or dates) */
+export const proposedTimesSchema = z.array(
+  z.union([z.string(), z.coerce.date()])
+);
+
+/** Tennis/Padel walkover score set */
+export const walkoverSetScoreSchema = z.object({
+  setNumber: z.number(),
+  winner: z.number(),
+  loser: z.number(),
+});
+
+/** Pickleball walkover score game */
+export const walkoverGameScoreSchema = z.object({
+  gameNumber: z.number(),
+  winner: z.number(),
+  loser: z.number(),
+});
+
+/** Walkover score (stored as JSON - sport-specific format) */
+export const walkoverScoreSchema = z.union([
+  // Tennis/Padel format
+  z.object({
+    sets: z.array(walkoverSetScoreSchema),
+  }),
+  // Pickleball format
+  z.object({
+    games: z.array(walkoverGameScoreSchema),
+  }),
+]);
+
 // ===== NESTED SCHEMAS =====
 
 // Participant schema
@@ -70,14 +148,16 @@ export const matchParticipantSchema = z.object({
   didAttend: z.boolean().nullable().optional(),
   arrivedAt: z.coerce.date().nullable().optional(),
   wasLate: z.boolean().default(false),
+  isStarter: z.boolean().optional(),
+  createdAt: z.coerce.date().optional(),
   user: z.object({
     id: z.string(),
     name: z.string(),
     username: z.string().nullable().optional(),
     displayUsername: z.string().nullable().optional(),
     image: z.string().nullable().optional(),
-  }),
-});
+  }).passthrough(),
+}).passthrough();
 
 // Score schema
 export const matchScoreSchema = z.object({
@@ -90,26 +170,27 @@ export const matchScoreSchema = z.object({
   player1Tiebreak: z.number().nullable().optional(),
   player2Tiebreak: z.number().nullable().optional(),
   tiebreakType: z.enum(["STANDARD_7PT", "MATCH_10PT"]).nullable().optional(),
-});
+  createdAt: z.coerce.date().optional(),
+}).passthrough();
 
 // Dispute schema
 export const matchDisputeSchema = z.object({
   id: z.string(),
-  matchId: z.string(),
-  disputeCategory: z.enum(["WRONG_SCORE", "NO_SHOW", "BEHAVIOR", "OTHER"]),
+  matchId: z.string().optional(),
+  disputeCategory: z.enum(["WRONG_SCORE", "NO_SHOW", "BEHAVIOR", "OTHER"]).optional(),
   status: disputeStatusEnum,
-  priority: disputePriorityEnum,
-  disputedById: z.string(),
+  priority: disputePriorityEnum.optional(),
+  disputedById: z.string().optional(),
   notes: z.string().nullable().optional(),
   evidenceUrl: z.string().nullable().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(),
   resolvedAt: z.coerce.date().nullable().optional(),
   disputedBy: z.object({
     id: z.string(),
     name: z.string(),
     username: z.string().nullable().optional(),
-  }),
-});
+  }).passthrough().optional(),
+}).passthrough();
 
 // Walkover schema
 export const matchWalkoverSchema = z.object({
@@ -120,26 +201,27 @@ export const matchWalkoverSchema = z.object({
   winningPlayerId: z.string(),
   recordedAt: z.coerce.date(),
   recordedById: z.string().nullable().optional(),
-});
+}).passthrough();
 
-// Division schema (minimal)
+// Division schema (minimal - passthrough allows extra fields from backend)
 export const matchDivisionSchema = z.object({
   id: z.string(),
   name: z.string(),
-  divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
-  gameType: z.enum(["singles", "doubles"]),
-  genderCategory: z.enum(["male", "female", "mixed"]).nullable().optional(),
+  // Backend returns uppercase values
+  level: z.string().optional(),
+  gameType: z.string().optional(),
+  genderCategory: z.string().nullable().optional(),
   season: z.object({
     id: z.string(),
     name: z.string(),
     status: z.enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"]).optional(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   league: z.object({
     id: z.string(),
     name: z.string(),
     sportType: z.string().optional(),
-  }).nullable().optional(),
-});
+  }).passthrough().nullable().optional(),
+}).passthrough();
 
 // ===== MAIN MATCH SCHEMA =====
 export const matchSchema = z.object({
@@ -162,7 +244,7 @@ export const matchSchema = z.object({
   scheduledTime: z.coerce.date().nullable().optional(),
   scheduledStartTime: z.coerce.date().nullable().optional(),
   actualStartTime: z.coerce.date().nullable().optional(),
-  proposedTimes: z.any().nullable().optional(), // JSON field
+  proposedTimes: proposedTimesSchema.nullable().optional(),
 
   // Location
   location: z.string().nullable().optional(),
@@ -174,7 +256,7 @@ export const matchSchema = z.object({
   team1Score: z.number().nullable().optional(),
   team2Score: z.number().nullable().optional(),
   outcome: z.string().nullable().optional(),
-  setScores: z.any().nullable().optional(), // JSON field
+  setScores: z.unknown().nullable().optional(),
   duration: z.number().nullable().optional(),
 
   // Result submission
@@ -202,11 +284,22 @@ export const matchSchema = z.object({
   // Walkover
   walkoverReason: walkoverReasonEnum.nullable().optional(),
   walkoverRecordedById: z.string().nullable().optional(),
-  walkoverScore: z.any().nullable().optional(), // JSON field
+  walkoverScore: walkoverScoreSchema.nullable().optional(),
 
   // Admin
   adminNotes: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+
+  // Friendly match moderation
+  isHiddenFromPublic: z.boolean().default(false),
+  hiddenAt: z.coerce.date().nullable().optional(),
+  hiddenByAdminId: z.string().nullable().optional(),
+  hiddenReason: z.string().nullable().optional(),
+  isReportedForAbuse: z.boolean().default(false),
+  reportedAt: z.coerce.date().nullable().optional(),
+  reportedByAdminId: z.string().nullable().optional(),
+  reportReason: z.string().nullable().optional(),
+  reportCategory: matchReportCategoryEnum.nullable().optional(),
 
   // Reschedule
   rescheduledFromId: z.string().nullable().optional(),
@@ -226,13 +319,17 @@ export const matchSchema = z.object({
     id: z.string(),
     name: z.string(),
     username: z.string().nullable().optional(),
-  }).nullable().optional(),
+  }).passthrough().nullable().optional(),
   resultSubmittedBy: z.object({
     id: z.string(),
     name: z.string(),
     username: z.string().nullable().optional(),
-  }).nullable().optional(),
-});
+  }).passthrough().nullable().optional(),
+
+  // Additional fields from backend that may vary
+  courtBooked: z.boolean().nullable().optional(),
+  set3Format: z.string().nullable().optional(),
+}).passthrough(); // Allow extra fields from backend
 
 // ===== TYPES =====
 export type Match = z.infer<typeof matchSchema>;
@@ -248,6 +345,13 @@ export type CancellationReason = z.infer<typeof cancellationReasonEnum>;
 export type WalkoverReason = z.infer<typeof walkoverReasonEnum>;
 export type DisputeStatus = z.infer<typeof disputeStatusEnum>;
 export type DisputePriority = z.infer<typeof disputePriorityEnum>;
+export type MatchReportCategory = z.infer<typeof matchReportCategoryEnum>;
+export type MatchContext = z.infer<typeof matchContextEnum>;
+
+// JSON field types
+export type SetScoreEntry = z.infer<typeof setScoreEntrySchema>;
+export type ProposedTimes = z.infer<typeof proposedTimesSchema>;
+export type WalkoverScoreData = z.infer<typeof walkoverScoreSchema>;
 
 // ===== STATISTICS SCHEMA =====
 export const matchStatsSchema = z.object({
@@ -281,6 +385,9 @@ export interface MatchFilters {
   search?: string;
   isDisputed?: boolean;
   hasLateCancellation?: boolean;
+  matchContext?: MatchContext;
+  showHidden?: boolean;
+  showReported?: boolean;
   page?: number;
   limit?: number;
 }
@@ -315,4 +422,16 @@ export interface EditMatchResultInput {
   setScores?: { setNumber: number; team1Games: number; team2Games: number }[];
   outcome?: string;
   reason: string;
+}
+
+// ===== FRIENDLY MATCH MODERATION TYPES =====
+export interface HideMatchInput {
+  matchId: string;
+  reason: string;
+}
+
+export interface ReportMatchAbuseInput {
+  matchId: string;
+  reason: string;
+  category: MatchReportCategory;
 }
