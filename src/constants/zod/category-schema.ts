@@ -5,8 +5,8 @@ export const categorySchema = z.object({
   name: z.string().nullable(),
   genderRestriction: z.enum(["MALE", "FEMALE", "MIXED"]),
   matchFormat: z.string().nullable(),
-  game_type: z.enum(["SINGLES", "DOUBLES"]).nullable(),
-  gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).nullable(),
+  gameType: z.enum(["SINGLES", "DOUBLES"]).nullable(),
+  genderCategory: z.enum(["MALE", "FEMALE", "MIXED"]).nullable(),
   isActive: z.boolean(),
   categoryOrder: z.number(),
    seasons: z

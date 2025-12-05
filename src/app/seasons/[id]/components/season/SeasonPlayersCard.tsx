@@ -59,8 +59,8 @@ interface SeasonPlayersCardProps {
       id: string;
       name: string | null;
       genderRestriction?: string;
-      gender_category?: string;
-      game_type?: string;
+      genderCategory?: string;
+      gameType?: string;
       matchFormat?: string | null;
     } | null;
     partnerships?: Array<{
@@ -122,8 +122,8 @@ export default function SeasonPlayersCard({
   };
 
   const getGameType = (): "SINGLES" | "DOUBLES" | null => {
-    // Check category.game_type first (more specific to season)
-    const categoryGameType = season?.category?.game_type;
+    // Check category.gameType first (more specific to season)
+    const categoryGameType = season?.category?.gameType;
     if (categoryGameType) {
       const normalized = String(categoryGameType).toUpperCase().trim();
       if (normalized === "DOUBLES") {
@@ -145,7 +145,7 @@ export default function SeasonPlayersCard({
     // Infer from divisions - check if any division has gameType DOUBLES
     if (divisions && divisions.length > 0) {
       const doublesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).game_type;
+        const divGameType = div.gameType || (div as any).gameType;
         if (divGameType) {
           return String(divGameType).toUpperCase().trim() === "DOUBLES";
         }
@@ -158,7 +158,7 @@ export default function SeasonPlayersCard({
       
       // Check if any division is singles
       const singlesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).game_type;
+        const divGameType = div.gameType || (div as any).gameType;
         if (divGameType) {
           return String(divGameType).toUpperCase().trim() === "SINGLES";
         }
@@ -172,7 +172,7 @@ export default function SeasonPlayersCard({
     
     // If no clear indicator, return null (will show N/A)
     console.warn("Could not determine game type from category, partnerships, or divisions", {
-      categoryGameType: season?.category?.game_type,
+      categoryGameType: season?.category?.gameType,
       hasPartnerships: !!(season?.partnerships && season.partnerships.length > 0),
       divisionsCount: divisions?.length || 0,
     });
@@ -219,7 +219,7 @@ export default function SeasonPlayersCard({
       userName: member.user?.name,
       gameType,
       isDoubles,
-      categoryGameType: season?.category?.game_type,
+      categoryGameType: season?.category?.gameType,
       leagueGameType: season?.leagues?.[0]?.gameType,
       singlesRating: questionnaireResponse.result.singles,
       doublesRating: questionnaireResponse.result.doubles,
