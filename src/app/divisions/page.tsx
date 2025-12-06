@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { IconCalendar, IconPlus, IconDownload } from "@tabler/icons-react";
+import { IconCalendar, IconPlus } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
@@ -51,10 +51,6 @@ export default function Page() {
               description="Manage league divisions"
               actions={
                 <>
-                  <Button variant="outline" size="sm">
-                    <IconDownload className="mr-2 size-4" />
-                    Export
-                  </Button>
                   <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
                     <IconPlus className="mr-2 size-4" />
                     Create Division
