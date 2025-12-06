@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const membershipSchema = z.object({
   id: z.string().optional(),
+  odUserId: z.string().nullable().optional(),
+  odDivisionAssignmentId: z.string().nullable().optional(),
   userId: z.string().optional(),
   seasonId: z.string().optional(),
   divisionId: z.string().nullable().optional(),
@@ -13,29 +15,33 @@ export const membershipSchema = z.object({
   paymentStatus: z.enum(["PENDING", "COMPLETED", "FAILED"]).optional(),
   user: z
     .object({
-      name: z.string().optional(),
+      id: z.string().optional(),
+      name: z.string().nullable().optional(),
       email: z.string().email().optional(),
-      initialRatingResult: z.any(),
+      image: z.string().nullable().optional(),
+      username: z.string().optional(),
+      initialRatingResult: z.any().nullable().optional(),
       questionnaireResponses: z
         .array(
           z.object({
-            id: z.number(),
+            id: z.union([z.number(), z.string()]),
             sport: z.string(),
             completedAt: z.coerce.date().nullable(),
             result: z
               .object({
-                id: z.number(),
+                id: z.union([z.number(), z.string()]),
                 singles: z.number().nullable(),
                 doubles: z.number().nullable(),
                 rd: z.number().nullable(),
-                confidence: z.string().nullable(),
-                source: z.string(),
+                confidence: z.union([z.string(), z.number()]).nullable(),
+                source: z.string().nullable().optional(),
               })
               .nullable(),
           })
         )
         .optional(),
     })
+    .nullable()
     .optional(),
 });
 
@@ -44,18 +50,24 @@ export const withdrawalRequestSchema = z.object({
   userId: z.string(),
   seasonId: z.string(),
   reason: z.string(),
+  partnershipId: z.string().nullable().optional(),
   requestDate: z.coerce.date().optional(),
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
   processedByAdminId: z.string().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date().optional(),
-  user: z.object({
-    name: z.string(),
-    email: z.string().email().optional(),
-  }),
+  user: z
+    .object({
+      id: z.string().optional(),
+      name: z.string().nullable().optional(),
+      email: z.string().email().optional(),
+    })
+    .nullable()
+    .optional(),
   processedByAdmin: z
     .object({
-      name: z.string(),
+      name: z.string().nullable().optional(),
+      role: z.string().optional(),
     })
     .nullable()
     .optional(),
