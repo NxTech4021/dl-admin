@@ -470,7 +470,7 @@ export default function LeagueViewPage({
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <SiteHeader />
+          <SiteHeader items={[{ label: "League", href: "/league" }, { label: "Loading..." }]} />
           <div className="p-6 space-y-4">
             <div className="h-6 w-40 bg-muted rounded animate-pulse" />
             <div className="h-10 w-72 bg-muted rounded animate-pulse" />
@@ -493,7 +493,7 @@ export default function LeagueViewPage({
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <SiteHeader />
+          <SiteHeader items={[{ label: "League", href: "/league" }, { label: "Not Found" }]} />
           <div className="flex flex-1 items-center justify-center p-8">
             <Card className="w-full max-w-md border-border/80 shadow-none">
               <CardHeader className="text-center space-y-4">
