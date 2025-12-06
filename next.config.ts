@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
   // If you need webpack, run: next dev --webpack or next build --webpack
   // Turbopack provides 2-5x faster compilation without manual config
   output: "standalone",
+  // Enable file watching polling for Docker on Windows
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        poll: 1000, // Check for changes every second
+        aggregateTimeout: 300, // Delay rebuild after first change
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
