@@ -92,7 +92,7 @@ interface CategoryLeagueRef {
 export interface Category {
   id: string;
   name: string | null;
-  game_type: string | null;
+  gameType: string | null;
   genderRestriction: GenderRestriction | string;
   matchFormat?: string | null;
   maxPlayers?: number;

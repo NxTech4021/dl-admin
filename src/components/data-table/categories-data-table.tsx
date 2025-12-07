@@ -217,10 +217,10 @@ const createColumns = (
     },
   },
   {
-    accessorKey: "game_type",
+    accessorKey: "gameType",
     header: "Game Type",
     cell: ({ row }) => {
-      const gameType = row.original.game_type;
+      const gameType = row.original.gameType;
       return gameType ? (
         <Badge variant={getGameTypeBadgeVariant(gameType)} className="capitalize">
           {gameType.toLowerCase()}
@@ -356,8 +356,8 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
   const uniqueGameTypes = React.useMemo(() => {
     const gameTypesSet = new Set<string>();
     data.forEach((category) => {
-      if (category.game_type) {
-        gameTypesSet.add(category.game_type);
+      if (category.gameType) {
+        gameTypesSet.add(category.gameType);
       }
     });
     return Array.from(gameTypesSet).sort();
@@ -378,7 +378,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     // Apply game type filter
     if (gameTypeFilter !== "all") {
       filtered = filtered.filter(
-        (category) => category.game_type === gameTypeFilter
+        (category) => category.gameType === gameTypeFilter
       );
     }
 

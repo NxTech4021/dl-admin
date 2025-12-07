@@ -117,7 +117,7 @@ export function CategorySelector({
 
     const genderRestriction = normalizeGenderRestriction(category.genderRestriction);
 
-    // Validate game_type against expected values
+    // Validate gameType against expected values
     const normalizeGameType = (gt: string | null | undefined): "SINGLES" | "DOUBLES" | null => {
       if (!gt) return null;
       const upper = gt.toUpperCase();
@@ -131,8 +131,8 @@ export function CategorySelector({
       name: category.name,
       genderRestriction,
       matchFormat: category.matchFormat ?? null,
-      game_type: normalizeGameType(category.game_type),
-      gender_category: category.gender_category ?? null,
+      gameType: normalizeGameType(category.gameType),
+      genderCategory: category.gender_category ?? null,
       isActive: category.isActive ?? true,
       categoryOrder: category.categoryOrder ?? 0,
       seasons: (category.seasons ?? []).map((season) => ({
@@ -149,31 +149,6 @@ export function CategorySelector({
     setSearchTerm("");
   };
 
-  const getGenderRestrictionBadgeVariant = (restriction: string) => {
-    switch (restriction?.toUpperCase()) {
-      case "MALE":
-        return "default";
-      case "FEMALE":
-        return "secondary";
-      case "MIXED":
-        return "outline";
-      case "OPEN":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
-  const getGameTypeBadgeVariant = (gameType: string | null) => {
-    switch (gameType) {
-      case "SINGLES":
-        return "default";
-      case "DOUBLES":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
 
   return (
     <div className={cn("relative", className)}>
@@ -188,7 +163,7 @@ export function CategorySelector({
           <div className="flex items-center gap-2">
             <span className="font-medium">{selectedCategory.name}</span>
             <span className="text-xs capitalize text-muted-foreground">
-              {selectedCategory.game_type?.toLowerCase() || "Unknown"}
+              {selectedCategory.gameType?.toLowerCase() || "Unknown"}
             </span>
             <span className="text-xs capitalize text-muted-foreground">
               {selectedCategory.genderRestriction?.toLowerCase() || "Unknown"}
@@ -259,7 +234,7 @@ export function CategorySelector({
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-xs capitalize text-muted-foreground">
-                        {category.game_type?.toLowerCase() || "Unknown"}
+                        {category.gameType?.toLowerCase() || "Unknown"}
                       </span>
                       <span className="text-xs capitalize text-muted-foreground">
                         {category.genderRestriction?.toLowerCase() || "Unknown"}
@@ -281,7 +256,7 @@ export function CategorySelector({
             <div>
               <Label className="text-muted-foreground">Game Type:</Label>
               <p className="font-medium capitalize">
-                {selectedCategory.game_type?.toLowerCase() || "Not set"}
+                {selectedCategory.gameType?.toLowerCase() || "Not set"}
               </p>
             </div>
             <div>
