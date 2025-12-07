@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -73,7 +73,7 @@ export function BugReportSettingsCard() {
     },
   });
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -106,11 +106,11 @@ export function BugReportSettingsCard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [form]);
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [fetchSettings]);
 
   const onSubmit = async (data: BugReportSettingsFormValues) => {
     if (!appId) return;
