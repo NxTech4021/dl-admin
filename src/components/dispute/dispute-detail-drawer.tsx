@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   IconGavel,
@@ -52,7 +51,8 @@ export function DisputeDetailDrawer({
   const isResolved = dispute.status === "RESOLVED" || dispute.status === "REJECTED";
   const match = dispute.match;
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "?";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -61,14 +61,31 @@ export function DisputeDetailDrawer({
       .slice(0, 2);
   };
 
-  // Get team participants
-  const team1 = match?.participants?.filter((p) => p.team === "team1") || [];
-  const team2 = match?.participants?.filter((p) => p.team === "team2") || [];
+  // Get team participants - handle various team field formats
+  const participants = match?.participants || [];
+  const team1 = participants.filter((p) =>
+    p.team === "team1" || p.team === "TEAM_1" || p.team === "1"
+  );
+  const team2 = participants.filter((p) =>
+    p.team === "team2" || p.team === "TEAM_2" || p.team === "2"
+  );
+
+  // If no team assignments, split by role (CREATOR/PARTNER vs OPPONENT/INVITED)
+  const hasTeamAssignments = team1.length > 0 || team2.length > 0;
+  const fallbackTeam1 = !hasTeamAssignments
+    ? participants.filter((p) => p.role === "CREATOR" || p.role === "PARTNER")
+    : [];
+  const fallbackTeam2 = !hasTeamAssignments
+    ? participants.filter((p) => p.role === "OPPONENT" || p.role === "INVITED")
+    : [];
+
+  const displayTeam1 = hasTeamAssignments ? team1 : fallbackTeam1;
+  const displayTeam2 = hasTeamAssignments ? team2 : fallbackTeam2;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-hidden flex flex-col">
-        <SheetHeader className="space-y-1">
+      <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 gap-0">
+        <SheetHeader className="space-y-1 px-6 pt-6 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <IconAlertCircle className="size-6 text-destructive" />
             <SheetTitle>Dispute Details</SheetTitle>
@@ -78,8 +95,8 @@ export function DisputeDetailDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-4 px-6 pb-4">
             {/* Status Overview */}
             <div className="flex flex-wrap items-center gap-2">
               <DisputeStatusBadge status={dispute.status} />
@@ -169,31 +186,33 @@ export function DisputeDetailDrawer({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Match ID</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground shrink-0">Match ID</span>
                     <Link
                       href={`/matches?id=${match.id}`}
-                      className="font-mono text-sm text-primary hover:underline"
+                      className="font-mono text-sm text-primary hover:underline truncate"
                     >
                       {match.id.slice(0, 12)}...
                     </Link>
                   </div>
 
                   {match.division && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Division</span>
-                      <span className="text-sm font-medium">{match.division.name}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground shrink-0">Division</span>
+                      <span className="text-sm font-medium truncate text-right">
+                        {match.division.name}
+                      </span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Match Date</span>
-                    <span className="text-sm">{formatTableDate(match.matchDate)}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground shrink-0">Match Date</span>
+                    <span className="text-sm truncate">{formatTableDate(match.matchDate)}</span>
                   </div>
 
                   {match.team1Score !== null && match.team2Score !== null && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Reported Score</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground shrink-0">Reported Score</span>
                       <span className="font-mono font-medium">
                         {match.team1Score} - {match.team2Score}
                       </span>
@@ -203,40 +222,62 @@ export function DisputeDetailDrawer({
                   <Separator />
 
                   {/* Participants */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Team 1</p>
-                      <div className="space-y-2">
-                        {team1.map((p) => (
-                          <div key={p.id} className="flex items-center gap-2">
-                            <Avatar className="size-6">
-                              <AvatarImage src={p.user?.image || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(p.user?.name || "?")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{p.user?.name}</span>
-                          </div>
-                        ))}
+                  {participants.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Team 1</p>
+                        <div className="space-y-2">
+                          {displayTeam1.length > 0 ? (
+                            displayTeam1.map((p) => (
+                              <div key={p.id} className="flex items-center gap-2">
+                                <Avatar className="size-6 shrink-0">
+                                  <AvatarImage src={p.user?.image || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {getInitials(p.user?.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm truncate">
+                                  {p.user?.name || "Unknown Player"}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">
+                              No players assigned
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Team 2</p>
+                        <div className="space-y-2">
+                          {displayTeam2.length > 0 ? (
+                            displayTeam2.map((p) => (
+                              <div key={p.id} className="flex items-center gap-2">
+                                <Avatar className="size-6 shrink-0">
+                                  <AvatarImage src={p.user?.image || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {getInitials(p.user?.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm truncate">
+                                  {p.user?.name || "Unknown Player"}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">
+                              No players assigned
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">Team 2</p>
-                      <div className="space-y-2">
-                        {team2.map((p) => (
-                          <div key={p.id} className="flex items-center gap-2">
-                            <Avatar className="size-6">
-                              <AvatarImage src={p.user?.image || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(p.user?.name || "?")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{p.user?.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic text-center py-2">
+                      No participant information available
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -254,15 +295,15 @@ export function DisputeDetailDrawer({
                   <div className="space-y-3">
                     {dispute.adminNotes.map((note) => (
                       <div key={note.id} className="p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
+                          <span className="text-sm font-medium truncate">
                             {note.admin?.user?.name || "Admin"}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground shrink-0">
                             {formatTableDate(note.createdAt)}
                           </span>
                         </div>
-                        <p className="text-sm">{note.note}</p>
+                        <p className="text-sm break-words">{note.note}</p>
                         {note.isInternalOnly && (
                           <Badge variant="outline" className="mt-2 text-xs">
                             Internal Only
@@ -285,25 +326,25 @@ export function DisputeDetailDrawer({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                     <span className="text-sm text-muted-foreground">Action Taken</span>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="w-fit">
                       {getResolutionActionLabel(dispute.resolutionAction)}
                     </Badge>
                   </div>
 
                   {dispute.resolvedByAdmin && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Resolved By</span>
-                      <span className="text-sm font-medium">
-                        {dispute.resolvedByAdmin.user?.name}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground shrink-0">Resolved By</span>
+                      <span className="text-sm font-medium truncate">
+                        {dispute.resolvedByAdmin.user?.name || "Unknown Admin"}
                       </span>
                     </div>
                   )}
 
                   {dispute.resolvedAt && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Resolved At</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-muted-foreground shrink-0">Resolved At</span>
                       <span className="text-sm">{formatTableDate(dispute.resolvedAt)}</span>
                     </div>
                   )}
@@ -374,10 +415,10 @@ export function DisputeDetailDrawer({
               </CardContent>
             </Card>
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t mt-auto">
+        <div className="flex flex-col sm:flex-row gap-2 p-6 pt-4 border-t mt-auto">
           <Button variant="outline" className="flex-1" onClick={onAddNote}>
             <IconNotes className="size-4 mr-2" />
             Add Note
