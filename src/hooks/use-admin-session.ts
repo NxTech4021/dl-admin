@@ -11,8 +11,14 @@ interface AdminUser {
   role: "ADMIN" | "SUPERADMIN";
 }
 
+interface AdminRecord {
+  id: string;
+  status: string;
+}
+
 interface UseAdminSessionReturn {
   user: AdminUser | null;
+  admin: AdminRecord | null;
   loading: boolean;
   error: string | null;
   logout: () => Promise<void>;
@@ -21,6 +27,7 @@ interface UseAdminSessionReturn {
 
 export function useAdminSession(): UseAdminSessionReturn {
   const [user, setUser] = useState<AdminUser | null>(null);
+  const [admin, setAdmin] = useState<AdminRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -39,18 +46,22 @@ export function useAdminSession(): UseAdminSessionReturn {
 
       if (response.data.success) {
         setUser(response.data.data.user);
+        setAdmin(response.data.data.admin || null);
       } else {
         setUser(null);
+        setAdmin(null);
       }
     } catch (err: any) {
       // Don't treat 401 as an error - it just means not logged in
       if (err.response?.status === 401) {
         setUser(null);
+        setAdmin(null);
         setError(null);
       } else {
         console.error("Session fetch error:", err);
         setError(err.response?.data?.message || "Failed to fetch session");
         setUser(null);
+        setAdmin(null);
       }
     } finally {
       setLoading(false);
@@ -70,6 +81,7 @@ export function useAdminSession(): UseAdminSessionReturn {
       console.error("Logout error:", err);
     } finally {
       setUser(null);
+      setAdmin(null);
       router.push("/login");
       router.refresh();
     }
@@ -85,6 +97,7 @@ export function useAdminSession(): UseAdminSessionReturn {
 
   return {
     user,
+    admin,
     loading,
     error,
     logout,
