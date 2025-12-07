@@ -22,7 +22,7 @@ import { DisputeDetailDrawer } from "@/components/dispute/dispute-detail-drawer"
 import { DisputeResolveModal } from "@/components/dispute/dispute-resolve-modal";
 import { DisputeAddNoteModal } from "@/components/dispute/dispute-add-note-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDisputes } from "@/hooks/use-queries";
+import { useDisputes, useStartDisputeReview } from "@/hooks/use-queries";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -62,10 +62,21 @@ export default function DisputesPage() {
     limit: pageSize,
   });
 
+  const startReviewMutation = useStartDisputeReview();
+
   // Action handlers
   const handleView = (dispute: Dispute) => {
     setSelectedDispute(dispute);
     setDetailDrawerOpen(true);
+
+    // Auto-start review when opening an OPEN dispute
+    if (dispute.status === "OPEN") {
+      startReviewMutation.mutate(dispute.id, {
+        onSuccess: () => {
+          refetch();
+        },
+      });
+    }
   };
 
   const handleResolve = (dispute: Dispute) => {
