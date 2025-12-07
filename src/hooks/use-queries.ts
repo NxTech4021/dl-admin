@@ -9,6 +9,7 @@ import { adminSchema, Admin } from "@/constants/zod/admin-schema";
 import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters, MatchReportCategory } from "@/constants/zod/match-schema";
 import { inactivitySettingsSchema, inactivityStatsSchema, InactivitySettings, InactivityStats, InactivitySettingsInput } from "@/constants/zod/inactivity-settings-schema";
 import { dashboardStatsSchema, dashboardKPISchema, sportMetricsSchema, matchActivitySchema, userGrowthSchema, sportComparisonSchema, DashboardStats, DashboardKPI, SportMetrics, MatchActivity, UserGrowth, SportComparison } from "@/constants/zod/dashboard-schema";
+import { teamChangeRequestSchema, teamChangeRequestsResponseSchema, TeamChangeRequest, TeamChangeRequestStatus } from "@/constants/zod/team-change-request-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -87,6 +88,14 @@ export const queryKeys = {
     matchActivity: (weeks?: number) => [...queryKeys.dashboard.all, "matchActivity", weeks] as const,
     userGrowth: (months?: number) => [...queryKeys.dashboard.all, "userGrowth", months] as const,
     sportComparison: () => [...queryKeys.dashboard.all, "sportComparison"] as const,
+  },
+  teamChangeRequests: {
+    all: ["teamChangeRequests"] as const,
+    lists: () => [...queryKeys.teamChangeRequests.all, "list"] as const,
+    list: (filters?: { status?: TeamChangeRequestStatus; seasonId?: string }) =>
+      [...queryKeys.teamChangeRequests.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.teamChangeRequests.all, "detail", id] as const,
+    pendingCount: () => [...queryKeys.teamChangeRequests.all, "pendingCount"] as const,
   },
 };
 
@@ -741,6 +750,28 @@ export function useDispute(id: string) {
 }
 
 /**
+ * Start reviewing a dispute - sets status to UNDER_REVIEW
+ */
+export function useStartDisputeReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (disputeId: string) => {
+      const response = await axiosInstance.post(
+        endpoints.admin.disputes.startReview(disputeId)
+      );
+      return response.data;
+    },
+    onSuccess: (_, disputeId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.disputes.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.disputes.detail(disputeId),
+      });
+    },
+  });
+}
+
+/**
  * Resolve dispute (admin action)
  */
 export function useResolveDispute() {
@@ -1267,6 +1298,95 @@ export function useSportComparison() {
       return z.array(sportComparisonSchema).parse(response.data.data);
     },
     staleTime: 60000,
+  });
+}
+
+// ============================================
+// TEAM CHANGE REQUESTS
+// ============================================
+
+/**
+ * Get all team change requests with optional filters
+ */
+export function useTeamChangeRequests(filters?: {
+  status?: TeamChangeRequestStatus;
+  seasonId?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.teamChangeRequests.list(filters),
+    queryFn: async (): Promise<TeamChangeRequest[]> => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append("status", filters.status);
+      if (filters?.seasonId) params.append("seasonId", filters.seasonId);
+
+      const url = params.toString()
+        ? `${endpoints.teamChangeRequests.getAll}?${params.toString()}`
+        : endpoints.teamChangeRequests.getAll;
+
+      const response = await axiosInstance.get(url);
+      return teamChangeRequestsResponseSchema.parse(response.data);
+    },
+  });
+}
+
+/**
+ * Get a single team change request by ID
+ */
+export function useTeamChangeRequest(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.teamChangeRequests.detail(id || ""),
+    queryFn: async (): Promise<TeamChangeRequest | null> => {
+      if (!id) return null;
+      const response = await axiosInstance.get(endpoints.teamChangeRequests.getById(id));
+      return teamChangeRequestSchema.parse(response.data);
+    },
+    enabled: !!id,
+  });
+}
+
+/**
+ * Get pending team change requests count
+ */
+export function usePendingTeamChangeRequestsCount() {
+  return useQuery({
+    queryKey: queryKeys.teamChangeRequests.pendingCount(),
+    queryFn: async (): Promise<number> => {
+      const response = await axiosInstance.get(endpoints.teamChangeRequests.getPendingCount);
+      return response.data.count || 0;
+    },
+  });
+}
+
+/**
+ * Process a team change request (approve/deny)
+ */
+export function useProcessTeamChangeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      status,
+      adminId,
+      adminNotes,
+    }: {
+      requestId: string;
+      status: "APPROVED" | "DENIED";
+      adminId: string;
+      adminNotes?: string;
+    }) => {
+      const response = await axiosInstance.patch(
+        endpoints.teamChangeRequests.process(requestId),
+        { status, adminId, adminNotes }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.teamChangeRequests.all });
+    },
+    onError: (error) => {
+      console.error("Failed to process team change request:", getErrorMessage(error, "Unknown error"));
+    },
   });
 }
 
