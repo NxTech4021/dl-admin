@@ -18,6 +18,7 @@ import {
   Handshake,
   Search,
   AlertTriangle,
+  ArrowLeftRight,
 } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -35,12 +36,13 @@ import {
 } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useOpenDisputeCount } from "@/hooks/use-queries";
+import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/use-queries";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session, isPending } = authClient.useSession();
   const { unreadCount } = useNotifications();
   const { data: openDisputeCount = 0 } = useOpenDisputeCount();
+  const { data: pendingTeamChangeCount = 0 } = usePendingTeamChangeRequestsCount();
 
   if (isPending) return <div>Loading...</div>;
   if (!session) return redirect("/login");
@@ -84,6 +86,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: AlertTriangle,
             badge: openDisputeCount > 0 ? {
               count: openDisputeCount,
+              variant: "destructive" as const,
+            } : undefined,
+          },
+          {
+            title: "Team Changes",
+            url: "/team-change-requests",
+            icon: ArrowLeftRight,
+            badge: pendingTeamChangeCount > 0 ? {
+              count: pendingTeamChangeCount,
               variant: "destructive" as const,
             } : undefined,
           },
