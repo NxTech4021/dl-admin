@@ -95,8 +95,8 @@ export function EditCategoryModal({
       setFormData({
         name: category.name || "",
         matchFormat: category.matchFormat || "",
-        game_type: category.game_type === "SINGLES" || category.game_type === "DOUBLES"
-          ? category.game_type
+        game_type: category.gameType === "SINGLES" || category.gameType === "DOUBLES"
+          ? category.gameType
           : "SINGLES",
         gender_category,
         isActive: category.isActive ?? true,
