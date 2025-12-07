@@ -29,6 +29,7 @@ export const disputeResolutionActionEnum = z.enum([
   "VOID_MATCH",         // Void the entire match
   "AWARD_WALKOVER",     // Award walkover to one party
   "REQUEST_MORE_INFO",  // Request additional evidence/information
+  "REJECT",             // Dismiss dispute as invalid/spam/insufficient evidence
 ]);
 
 // ===== USER SCHEMA (minimal for references) =====
@@ -298,6 +299,7 @@ export function getResolutionActionLabel(action: DisputeResolutionAction): strin
     VOID_MATCH: "Void Match",
     AWARD_WALKOVER: "Award Walkover",
     REQUEST_MORE_INFO: "Request More Information",
+    REJECT: "Reject Dispute",
   };
   return labels[action];
 }
