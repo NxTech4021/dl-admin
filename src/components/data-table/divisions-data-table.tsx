@@ -774,7 +774,7 @@ export function DivisionsDataTable() {
         },
       },
     ],
-    [handleDeleteRequest, handleEditDivision, handleViewDivision]
+    [handleDeleteRequest, handleEditDivision, handleViewDivision, router]
   );
 
   const table = useReactTable({
