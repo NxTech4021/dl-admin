@@ -7,6 +7,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { ModalProvider } from "@/contexts/modal-context";
 import { GlobalModals } from "@/components/global-modals";
 import { Toaster } from "@/components/ui/sonner";
+import { RouteProgress } from "@/components/ui/route-progress";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <QueryProvider>
             <ModalProvider>
+              <RouteProgress />
               {children}
               <CommandPalette />
               <GlobalModals />
