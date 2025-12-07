@@ -67,6 +67,7 @@ export const endpoints = {
     disputes: {
       getAll: "/api/admin/disputes",
       getById: (id: string) => `/api/admin/disputes/${id}`,
+      startReview: (id: string) => `/api/admin/disputes/${id}/start-review`,
       resolve: (id: string) => `/api/admin/disputes/${id}/resolve`,
     },
 
@@ -199,5 +200,13 @@ export const endpoints = {
     acceptRequest: (requestId: string) => `/api/pairing/request/${requestId}/accept`,
     denyRequest: (requestId: string) => `/api/pairing/request/${requestId}/deny`,
     cancelRequest: (requestId: string) => `/api/pairing/request/${requestId}`,
+  },
+
+  teamChangeRequests: {
+    getAll: "/api/team-change-requests",
+    getById: (id: string) => `/api/team-change-requests/${id}`,
+    getPendingCount: "/api/team-change-requests/count/pending",
+    process: (id: string) => `/api/team-change-requests/${id}/process`,
+    cancel: (id: string) => `/api/team-change-requests/${id}/cancel`,
   },
 };
