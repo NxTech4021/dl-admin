@@ -66,8 +66,8 @@ export default function PlayerActivityReportPage() {
   const fetchData = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch player statistics
-      const response = await axiosInstance.get(endpoints.player.getAll, {
+      // Fetch player statistics from admin endpoint for more detailed data
+      const response = await axiosInstance.get(endpoints.admin.players.getAll, {
         params: {
           limit: 100,
           ...(dateRange?.from && { startDate: dateRange.from.toISOString() }),
