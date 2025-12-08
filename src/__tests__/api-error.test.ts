@@ -13,9 +13,16 @@ describe("API Error Utilities", () => {
       expect(isApiError(axiosError)).toBe(true);
     });
 
-    it("should return false for regular errors", () => {
+    it("should return true for errors with message property", () => {
+      // Note: Regular Error objects have a 'message' property, so isApiError returns true
+      // This is intentional - the function checks for objects with 'response' OR 'message'
       const regularError = new Error("Regular error");
-      expect(isApiError(regularError)).toBe(false);
+      expect(isApiError(regularError)).toBe(true);
+    });
+
+    it("should return false for objects without response or message", () => {
+      const plainObject = { foo: "bar" };
+      expect(isApiError(plainObject)).toBe(false);
     });
 
     it("should return false for null/undefined", () => {

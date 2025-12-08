@@ -8,7 +8,7 @@ const createJestConfig = nextJest({
 /** @type {import('jest').Config} */
 const config = {
   // Add more setup options before each test is run
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.tsx"],
 
   // Test environment
   testEnvironment: "jsdom",
@@ -22,6 +22,11 @@ const config = {
   testMatch: [
     "**/__tests__/**/*.[jt]s?(x)",
     "**/?(*.)+(spec|test).[jt]s?(x)",
+  ],
+
+  // Ignore patterns to fix haste module collision
+  modulePathIgnorePatterns: [
+    "<rootDir>/.next/",
   ],
 
   // Coverage configuration
