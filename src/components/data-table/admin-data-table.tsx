@@ -21,7 +21,7 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from "@tanstack/react-table";;
+} from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -41,7 +41,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useEffect, useState } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import { Admin } from "@/constants/zod/admin-schema";
@@ -226,8 +225,6 @@ const columns: ColumnDef<Admin>[] = [
 ];
 
 export function AdminsDataTable({ data }: AdminsDataTableProps) {
-  const [adminData, setAdminData] = useState<Admin[]>([]);
-  // const [loading, setLoading] = React.useState(true)
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -237,12 +234,8 @@ export function AdminsDataTable({ data }: AdminsDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  useEffect(() => {
-    setAdminData(data);
-  }, [data]);
-
   const table = useReactTable({
-    data: adminData,
+    data,
     columns,
     state: {
       sorting,
