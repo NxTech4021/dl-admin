@@ -63,8 +63,18 @@ export function NavSection({
     localStorage.setItem(sectionKey, JSON.stringify(isOpen));
   }, [isOpen, sectionKey]);
 
+  // Helper to check if a route is active (supports nested routes)
+  const isRouteActive = (url: string) => {
+    // Exact match for root paths like /dashboard
+    if (pathname === url) return true;
+    // For nested routes, check if pathname starts with the url
+    // but only if it's followed by / or end of string (to avoid /admin matching /admin-logs)
+    if (url !== "/" && pathname.startsWith(url + "/")) return true;
+    return false;
+  };
+
   // Check if any item in this section is active
-  const hasActiveItem = items.some((item) => pathname === item.url);
+  const hasActiveItem = items.some((item) => isRouteActive(item.url));
 
   // Auto-expand section if it contains the active page
   React.useEffect(() => {
@@ -76,7 +86,7 @@ export function NavSection({
   const content = (
     <SidebarMenu role="list">
       {items.map((item) => {
-        const isActive = pathname === item.url;
+        const isActive = isRouteActive(item.url);
         return (
           <SidebarMenuItem key={item.title} role="listitem">
             <SidebarMenuButton
