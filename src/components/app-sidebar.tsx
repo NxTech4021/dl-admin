@@ -19,6 +19,8 @@ import {
   Search,
   AlertTriangle,
   ArrowLeftRight,
+  History,
+  BarChart3,
 } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -161,6 +163,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     systemSection: {
       label: "System",
       items: [
+        {
+          title: "Reports",
+          url: "/reports",
+          icon: BarChart3,
+        },
+        {
+          title: "Admin Logs",
+          url: "/admin-logs",
+          icon: History,
+        },
         {
           title: "Categories",
           url: "/utilities/categories",
