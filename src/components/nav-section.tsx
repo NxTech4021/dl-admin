@@ -195,7 +195,7 @@ export function NavSection({
             />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
-        <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <CollapsibleContent className="overflow-hidden transition-all duration-200 ease-out data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
           {content}
         </CollapsibleContent>
       </SidebarGroup>
