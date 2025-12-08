@@ -240,4 +240,11 @@ export const endpoints = {
     process: (id: string) => `/api/team-change-requests/${id}/process`,
     cancel: (id: string) => `/api/team-change-requests/${id}/cancel`,
   },
+
+  bug: {
+    init: "/api/bug/init/dla",
+    apps: "/api/bug/apps",
+    getSettings: (appId: string) => `/api/bug/admin/apps/${appId}/settings`,
+    updateSettings: (appId: string) => `/api/bug/admin/apps/${appId}/settings`,
+  },
 };
