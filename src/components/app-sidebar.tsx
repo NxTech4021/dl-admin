@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -23,7 +25,6 @@ import {
   BarChart3,
 } from "lucide-react";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { NavMain } from "@/components/nav-main";
 import { NavSection } from "@/components/nav-section";
 import { NavUser } from "@/components/nav-user";
@@ -36,18 +37,53 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/use-queries";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, notifications } = useNotifications();
   const { data: openDisputeCount = 0 } = useOpenDisputeCount();
   const { data: pendingTeamChangeCount = 0 } = usePendingTeamChangeRequestsCount();
 
-  if (isPending) return <div>Loading...</div>;
-  if (!session) return redirect("/login");
+  // Detect platform for keyboard shortcut display
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+  }, []);
+
+  // Calculate unread chat messages (filter by CHAT category)
+  const unreadChatCount = React.useMemo(() => {
+    return notifications.filter((n) => n.category === "CHAT" && !n.read).length;
+  }, [notifications]);
+
+  // Redirect to login if no session
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.push("/login");
+    }
+  }, [isPending, session, router]);
+
+  if (isPending) {
+    return (
+      <Sidebar collapsible="offcanvas" {...props}>
+        <SidebarHeader className="border-b p-4">
+          <Skeleton className="h-8 w-32" />
+        </SidebarHeader>
+        <SidebarContent className="p-4 space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
+  if (!session) return null;
 
   const data = {
     navMain: [
@@ -148,8 +184,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Chats",
             url: "/chat",
             icon: MessageCircle,
-            badge: unreadCount > 0 ? {
-              dot: true,
+            badge: unreadChatCount > 0 ? {
+              count: unreadChatCount,
+              variant: "default" as const,
             } : undefined,
           },
           {
@@ -223,7 +260,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Search className="size-4" />
               <span>Search...</span>
               <kbd className="ml-auto hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                <span className="text-xs">⌘</span>K
+                <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>K
               </kbd>
             </button>
           </SidebarMenuItem>
