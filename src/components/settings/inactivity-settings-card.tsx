@@ -25,8 +25,16 @@ import {
   IconUsers,
   IconUserX,
   IconBell,
+  IconPlayerPlay,
+  IconRotate,
 } from "@tabler/icons-react";
-import { useInactivitySettings, useInactivityStats, useUpdateInactivitySettings } from "@/hooks/use-queries";
+import {
+  useInactivitySettings,
+  useInactivityStats,
+  useUpdateInactivitySettings,
+  useDeleteInactivitySettings,
+  useTriggerInactivityCheck,
+} from "@/hooks/use-queries";
 import { inactivitySettingsFormSchema, type InactivitySettingsFormValues } from "@/constants/zod/inactivity-settings-schema";
 import { toast } from "sonner";
 
@@ -34,8 +42,10 @@ export function InactivitySettingsCard() {
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: settings, isLoading: settingsLoading, error: settingsError, refetch: refetchSettings } = useInactivitySettings();
-  const { data: stats, isLoading: statsLoading } = useInactivityStats();
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useInactivityStats();
   const updateMutation = useUpdateInactivitySettings();
+  const deleteMutation = useDeleteInactivitySettings();
+  const triggerCheckMutation = useTriggerInactivityCheck();
 
   const form = useForm<InactivitySettingsFormValues>({
     resolver: zodResolver(inactivitySettingsFormSchema),
@@ -93,6 +103,30 @@ export function InactivitySettingsCard() {
       });
     }
     setIsEditing(false);
+  };
+
+  const handleTriggerCheck = async () => {
+    try {
+      await triggerCheckMutation.mutateAsync();
+      toast.success("Inactivity check triggered successfully. Players have been updated.");
+      refetchStats();
+    } catch {
+      toast.error("Failed to trigger inactivity check. Please try again.");
+    }
+  };
+
+  const handleResetToDefaults = async () => {
+    if (!settings?.id) {
+      toast.error("No settings to reset");
+      return;
+    }
+    try {
+      await deleteMutation.mutateAsync(settings.id);
+      toast.success("Settings reset to defaults");
+      refetchSettings();
+    } catch {
+      toast.error("Failed to reset settings. Please try again.");
+    }
   };
 
   if (settingsLoading) {
@@ -363,6 +397,53 @@ export function InactivitySettingsCard() {
                 </p>
               </div>
             </div>
+
+            {/* Quick Actions */}
+            {!isEditing && (
+              <div className="flex flex-wrap items-center gap-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTriggerCheck}
+                  disabled={triggerCheckMutation.isPending}
+                >
+                  {triggerCheckMutation.isPending ? (
+                    <>
+                      <IconRefresh className="mr-2 size-4 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <IconPlayerPlay className="mr-2 size-4" />
+                      Run Check Now
+                    </>
+                  )}
+                </Button>
+                {settings?.id && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetToDefaults}
+                    disabled={deleteMutation.isPending}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    {deleteMutation.isPending ? (
+                      <>
+                        <IconRefresh className="mr-2 size-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      <>
+                        <IconRotate className="mr-2 size-4" />
+                        Reset to Defaults
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             {isEditing && (
