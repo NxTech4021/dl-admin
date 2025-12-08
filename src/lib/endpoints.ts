@@ -45,12 +45,12 @@ export const endpoints = {
       getStats: "/api/admin/matches/stats",
       getById: (id: string) => `/api/admin/matches/${id}`,
       voidMatch: (id: string) => `/api/admin/matches/${id}/void`,
-      editResult: (id: string) => `/api/admin/matches/${id}/edit-result`,
+      editResult: (id: string) => `/api/admin/matches/${id}/result`, // Fixed: was /edit-result
       editParticipants: (id: string) => `/api/admin/matches/${id}/participants`,
       validateParticipants: (id: string) => `/api/admin/matches/${id}/participants/validate`,
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
-      reviewCancellation: (id: string) => `/api/admin/matches/${id}/review-cancellation`,
-      messageParticipants: (id: string) => `/api/admin/matches/${id}/message-participants`,
+      reviewCancellation: (id: string) => `/api/admin/cancellations/${id}/review`, // Fixed: correct path
+      messageParticipants: (id: string) => `/api/admin/matches/${id}/message`, // Fixed: was /message-participants
       // Friendly match moderation
       hideMatch: (id: string) => `/api/admin/matches/${id}/hide`,
       unhideMatch: (id: string) => `/api/admin/matches/${id}/unhide`,
@@ -89,6 +89,37 @@ export const endpoints = {
       getMatchActivity: "/api/admin/dashboard/match-activity",
       getUserGrowth: "/api/admin/dashboard/user-growth",
       getSportComparison: "/api/admin/dashboard/sport-comparison",
+    },
+
+    // Player management (ban, unban, delete, status, edit)
+    players: {
+      getAll: "/api/admin/players",
+      getById: (id: string) => `/api/admin/players/${id}`,
+      update: (id: string) => `/api/admin/players/${id}`,
+      ban: (id: string) => `/api/admin/players/${id}/ban`,
+      unban: (id: string) => `/api/admin/players/${id}/unban`,
+      delete: (id: string) => `/api/admin/players/${id}`,
+      updateStatus: (id: string) => `/api/admin/players/${id}/status`,
+      getStatusHistory: (id: string) => `/api/admin/players/${id}/status-history`,
+    },
+
+    // Admin action logs
+    logs: {
+      getAll: "/api/admin/logs",
+      getSummary: "/api/admin/logs/summary",
+      getActionTypes: "/api/admin/logs/action-types",
+      getTargetTypes: "/api/admin/logs/target-types",
+      getForTarget: (targetType: string, targetId: string) => `/api/admin/logs/target/${targetType}/${targetId}`,
+    },
+
+    // Admin reports
+    reports: {
+      playerRegistration: "/api/admin/reports/player-registration",
+      playerRetention: "/api/admin/reports/player-retention",
+      seasonPerformance: "/api/admin/reports/season-performance",
+      disputeAnalysis: "/api/admin/reports/dispute-analysis",
+      revenue: "/api/admin/reports/revenue",
+      membership: "/api/admin/reports/membership",
     },
   },
 
