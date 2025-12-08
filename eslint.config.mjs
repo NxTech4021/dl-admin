@@ -13,8 +13,21 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      // Type safety - warn for now to allow gradual migration
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+
+      // Code quality
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+
+      // React best practices
+      "react/jsx-no-leaked-render": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+
+      // Security
+      "no-eval": "error",
+      "no-implied-eval": "error",
     },
   },
 ];
