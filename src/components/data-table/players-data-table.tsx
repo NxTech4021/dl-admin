@@ -60,6 +60,7 @@ import { Player } from "@/constants/zod/player-schema";
 import { usePlayers } from "@/hooks/use-queries";
 import { getSportLabel, getSportColor } from "@/constants/sports";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   formatTableDate,
@@ -260,7 +261,8 @@ const columns: ColumnDef<Player>[] = [
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => {
-                console.log("Edit player:", player.id);
+                // TODO: Implement edit player modal
+                toast.info("Edit player functionality coming soon");
               }}
             >
               <IconEdit className="mr-2 size-4" />
@@ -271,7 +273,8 @@ const columns: ColumnDef<Player>[] = [
               variant="destructive"
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => {
-                console.log("Delete player:", player.id);
+                // TODO: Implement delete player confirmation
+                toast.info("Delete player functionality coming soon");
               }}
             >
               <IconTrash className="mr-2 size-4" />
