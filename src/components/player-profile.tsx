@@ -48,6 +48,8 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
 import LeagueHistory from "./player-profile/league-history-card";
 import SeasonHistory from "./player-profile/season-history-card";
+import { PlayerActions } from "./player-profile/player-actions";
+import { EditPlayerModal } from "./player-profile/edit-player-modal";
 
 interface PlayerProfileData {
   id: string;
@@ -404,8 +406,46 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     </p>
                   </div>
                 )}
+
+                {/* Edit Profile Button */}
+                <div className="pt-3 border-t">
+                  <EditPlayerModal
+                    player={{
+                      id: profile.id,
+                      name: profile.name,
+                      email: profile.email,
+                      phoneNumber: profile.phoneNumber,
+                      area: profile.area,
+                      bio: profile.bio,
+                      gender: profile.gender,
+                      dateOfBirth: profile.dateOfBirth,
+                    }}
+                    onUpdate={(updatedPlayer) => {
+                      setProfile((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              ...updatedPlayer,
+                            }
+                          : prev
+                      );
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
+
+            {/* Player Actions */}
+            <PlayerActions
+              playerId={profile.id}
+              playerName={profile.name}
+              currentStatus={profile.status as "ACTIVE" | "INACTIVE" | "SUSPENDED" | "BANNED" | "DELETED"}
+              onStatusChange={(newStatus) => {
+                setProfile((prev) =>
+                  prev ? { ...prev, status: newStatus } : prev
+                );
+              }}
+            />
           </div>
 
           {/* Right Column: Ratings and History */}
