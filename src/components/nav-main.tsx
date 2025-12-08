@@ -27,12 +27,19 @@ interface NavMainProps {
 export function NavMain({ items }: NavMainProps) {
   const pathname = usePathname();
 
+  // Helper to check if a route is active (supports nested routes)
+  const isRouteActive = (url: string) => {
+    if (pathname === url) return true;
+    if (url !== "/" && pathname.startsWith(url + "/")) return true;
+    return false;
+  };
+
   return (
     <SidebarGroup className="px-3 py-3">
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = pathname === item.url;
+            const isActive = isRouteActive(item.url);
             const isProminent = item.variant === "prominent";
 
             return (
@@ -44,7 +51,8 @@ export function NavMain({ items }: NavMainProps) {
                   size={isProminent ? "lg" : "default"}
                   className={cn(
                     "relative",
-                    isProminent && "bg-primary/10 hover:bg-primary/20 font-semibold",
+                    isProminent && "font-semibold hover:bg-primary/20",
+                    isProminent && isActive && "bg-primary/10",
                     isActive && !isProminent && "border-l-4 border-primary pl-[calc(0.75rem-4px)]"
                   )}
                 >
