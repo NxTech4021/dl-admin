@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,41 +25,49 @@ import {
   IconInfoCircle,
   IconBrandGoogleDrive,
   IconExternalLink,
+  IconBrandSlack,
+  IconBrandDiscord,
+  IconBell,
+  IconCamera,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import {
+  useBugAppInit,
+  useBugReportSettings,
+  useUpdateBugReportSettings,
+  type BugReportSettings,
+} from "@/hooks/use-queries";
 
 const bugReportSettingsSchema = z.object({
+  // Google Sheets
   syncEnabled: z.boolean(),
   googleSheetId: z.string().optional(),
   googleSheetName: z.string().optional(),
+  // Widget settings
   enableScreenshots: z.boolean(),
   enableAutoCapture: z.boolean(),
+  enableConsoleCapture: z.boolean(),
+  enableNetworkCapture: z.boolean(),
   maxScreenshots: z.number().min(1).max(10),
+  // Notifications
+  slackWebhookUrl: z.string().optional(),
+  discordWebhookUrl: z.string().optional(),
+  notifyOnNew: z.boolean(),
+  notifyOnStatusChange: z.boolean(),
 });
 
 type BugReportSettingsFormValues = z.infer<typeof bugReportSettingsSchema>;
 
-interface BugReportSettings {
-  id: string;
-  appId: string;
-  syncEnabled: boolean;
-  googleSheetId: string | null;
-  googleSheetName: string | null;
-  enableScreenshots: boolean;
-  enableAutoCapture: boolean;
-  maxScreenshots: number;
-  updatedAt: string;
-}
-
 export function BugReportSettingsCard() {
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<BugReportSettings | null>(null);
-  const [appId, setAppId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+
+  // Use the new hooks
+  const { data: appData, isLoading: appLoading, error: appError, refetch: refetchApp } = useBugAppInit();
+  const { data: settings, isLoading: settingsLoading, error: settingsError, refetch: refetchSettings } = useBugReportSettings(appData?.appId || null);
+  const updateMutation = useUpdateBugReportSettings();
+
+  const isLoading = appLoading || settingsLoading;
+  const error = appError || settingsError;
 
   const form = useForm<BugReportSettingsFormValues>({
     resolver: zodResolver(bugReportSettingsSchema),
@@ -69,73 +77,62 @@ export function BugReportSettingsCard() {
       googleSheetName: "Bug Reports",
       enableScreenshots: true,
       enableAutoCapture: true,
+      enableConsoleCapture: true,
+      enableNetworkCapture: false,
       maxScreenshots: 5,
+      slackWebhookUrl: "",
+      discordWebhookUrl: "",
+      notifyOnNew: true,
+      notifyOnStatusChange: true,
     },
   });
 
-  const fetchSettings = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // First get the DLA app ID
-      const initRes = await fetch(`${API_URL}/api/bug/init/dla`, {
-        credentials: "include",
-      });
-      if (!initRes.ok) throw new Error("Failed to initialize app");
-      const initData = await initRes.json();
-      setAppId(initData.appId);
-
-      // Then fetch the settings
-      const settingsRes = await fetch(`${API_URL}/api/bug/admin/apps/${initData.appId}/settings`, {
-        credentials: "include",
-      });
-      if (settingsRes.ok) {
-        const settingsData = await settingsRes.json();
-        setSettings(settingsData);
-        form.reset({
-          syncEnabled: settingsData.syncEnabled ?? false,
-          googleSheetId: settingsData.googleSheetId ?? "",
-          googleSheetName: settingsData.googleSheetName ?? "Bug Reports",
-          enableScreenshots: settingsData.enableScreenshots ?? true,
-          enableAutoCapture: settingsData.enableAutoCapture ?? true,
-          maxScreenshots: settingsData.maxScreenshots ?? 5,
-        });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load settings");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [form]);
-
+  // Update form when settings are loaded
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    if (settings) {
+      form.reset({
+        syncEnabled: settings.syncEnabled ?? false,
+        googleSheetId: settings.googleSheetId ?? "",
+        googleSheetName: settings.googleSheetName ?? "Bug Reports",
+        enableScreenshots: settings.enableScreenshots ?? true,
+        enableAutoCapture: settings.enableAutoCapture ?? true,
+        enableConsoleCapture: settings.enableConsoleCapture ?? true,
+        enableNetworkCapture: settings.enableNetworkCapture ?? false,
+        maxScreenshots: settings.maxScreenshots ?? 5,
+        slackWebhookUrl: settings.slackWebhookUrl ?? "",
+        discordWebhookUrl: settings.discordWebhookUrl ?? "",
+        notifyOnNew: settings.notifyOnNew ?? true,
+        notifyOnStatusChange: settings.notifyOnStatusChange ?? true,
+      });
+    }
+  }, [settings, form]);
 
   const onSubmit = async (data: BugReportSettingsFormValues) => {
-    if (!appId) return;
+    if (!appData?.appId) return;
 
-    setIsSaving(true);
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/apps/${appId}/settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(data),
+      await updateMutation.mutateAsync({
+        appId: appData.appId,
+        data: {
+          syncEnabled: data.syncEnabled,
+          googleSheetId: data.googleSheetId || undefined,
+          googleSheetName: data.googleSheetName || undefined,
+          enableScreenshots: data.enableScreenshots,
+          enableAutoCapture: data.enableAutoCapture,
+          enableConsoleCapture: data.enableConsoleCapture,
+          enableNetworkCapture: data.enableNetworkCapture,
+          maxScreenshots: data.maxScreenshots,
+          slackWebhookUrl: data.slackWebhookUrl || undefined,
+          discordWebhookUrl: data.discordWebhookUrl || undefined,
+          notifyOnNew: data.notifyOnNew,
+          notifyOnStatusChange: data.notifyOnStatusChange,
+        },
       });
-
-      if (res.ok) {
-        toast.success("Bug report settings updated successfully");
-        setIsEditing(false);
-        fetchSettings();
-      } else {
-        const errData = await res.json();
-        toast.error(errData.error || "Failed to update settings");
-      }
+      toast.success("Bug report settings updated successfully");
+      setIsEditing(false);
+      refetchSettings();
     } catch {
       toast.error("Failed to update settings. Please try again.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -147,10 +144,21 @@ export function BugReportSettingsCard() {
         googleSheetName: settings.googleSheetName ?? "Bug Reports",
         enableScreenshots: settings.enableScreenshots ?? true,
         enableAutoCapture: settings.enableAutoCapture ?? true,
+        enableConsoleCapture: settings.enableConsoleCapture ?? true,
+        enableNetworkCapture: settings.enableNetworkCapture ?? false,
         maxScreenshots: settings.maxScreenshots ?? 5,
+        slackWebhookUrl: settings.slackWebhookUrl ?? "",
+        discordWebhookUrl: settings.discordWebhookUrl ?? "",
+        notifyOnNew: settings.notifyOnNew ?? true,
+        notifyOnStatusChange: settings.notifyOnStatusChange ?? true,
       });
     }
     setIsEditing(false);
+  };
+
+  const handleRetry = () => {
+    refetchApp();
+    refetchSettings();
   };
 
   if (isLoading) {
@@ -178,11 +186,11 @@ export function BugReportSettingsCard() {
             Error Loading Settings
           </CardTitle>
           <CardDescription>
-            {error}
+            {error instanceof Error ? error.message : "Failed to load settings"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" onClick={fetchSettings}>
+          <Button variant="outline" onClick={handleRetry}>
             <IconRefresh className="mr-2 size-4" />
             Retry
           </Button>
@@ -198,7 +206,7 @@ export function BugReportSettingsCard() {
           <div className="space-y-1">
             <CardTitle>Bug Report Settings</CardTitle>
             <CardDescription>
-              Configure bug report widget and Google Sheets sync
+              Configure bug report widget, notifications, and Google Sheets sync
             </CardDescription>
           </div>
           {!isEditing && (
@@ -211,8 +219,232 @@ export function BugReportSettingsCard() {
       <CardContent className="space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Google Sheets Section */}
+            {/* Widget Capture Settings */}
             <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <IconCamera className="size-5 text-blue-600" />
+                <h4 className="text-sm font-medium">Capture Settings</h4>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="enableScreenshots"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Enable Screenshots</FormLabel>
+                      <FormDescription>
+                        Allow users to attach screenshots to bug reports
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="enableAutoCapture"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Auto-capture Page Info</FormLabel>
+                      <FormDescription>
+                        Automatically capture browser and page information
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="enableConsoleCapture"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Capture Console Logs</FormLabel>
+                      <FormDescription>
+                        Include browser console logs with bug reports
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="enableNetworkCapture"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Capture Network Requests</FormLabel>
+                      <FormDescription>
+                        Include failed network requests with bug reports (may contain sensitive data)
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="maxScreenshots"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Screenshots per Report</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={10}
+                          className="max-w-[120px]"
+                          disabled={!isEditing}
+                          value={field.value}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            field.onChange(val === "" ? 1 : parseInt(val, 10));
+                          }}
+                        />
+                        <span className="text-sm text-muted-foreground">screenshots</span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Notifications Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <IconBell className="size-5 text-orange-600" />
+                <h4 className="text-sm font-medium">Notifications</h4>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="notifyOnNew"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Notify on New Reports</FormLabel>
+                      <FormDescription>
+                        Send notifications when new bug reports are submitted
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notifyOnStatusChange"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Notify on Status Change</FormLabel>
+                      <FormDescription>
+                        Send notifications when bug report status changes
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="slackWebhookUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <IconBrandSlack className="size-4 text-[#4A154B]" />
+                      Slack Webhook URL
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://hooks.slack.com/services/..."
+                        disabled={!isEditing}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Send bug report notifications to a Slack channel
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="discordWebhookUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <IconBrandDiscord className="size-4 text-[#5865F2]" />
+                      Discord Webhook URL
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://discord.com/api/webhooks/..."
+                        disabled={!isEditing}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Send bug report notifications to a Discord channel
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Google Sheets Section */}
+            <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2">
                 <IconBrandGoogleDrive className="size-5 text-green-600" />
                 <h4 className="text-sm font-medium">Google Sheets Sync</h4>
@@ -314,88 +546,11 @@ export function BugReportSettingsCard() {
               )}
             </div>
 
-            {/* Widget Settings */}
-            <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-medium">Widget Settings</h4>
-
-              <FormField
-                control={form.control}
-                name="enableScreenshots"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Enable Screenshots</FormLabel>
-                      <FormDescription>
-                        Allow users to attach screenshots to bug reports
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={!isEditing}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="enableAutoCapture"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Auto-capture Page Info</FormLabel>
-                      <FormDescription>
-                        Automatically capture browser and page information
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={!isEditing}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="maxScreenshots"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Max Screenshots per Report</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={10}
-                          className="max-w-[120px]"
-                          disabled={!isEditing}
-                          value={field.value}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            field.onChange(val === "" ? 1 : parseInt(val, 10));
-                          }}
-                        />
-                        <span className="text-sm text-muted-foreground">screenshots</span>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             {/* Action Buttons */}
             {isEditing && (
               <div className="flex items-center gap-3 pt-4 border-t">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? (
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? (
                     <>
                       <IconRefresh className="mr-2 size-4 animate-spin" />
                       Saving...
@@ -411,7 +566,7 @@ export function BugReportSettingsCard() {
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={isSaving}
+                  disabled={updateMutation.isPending}
                 >
                   Cancel
                 </Button>
