@@ -9,7 +9,8 @@ import {
   IconDatabase,
   IconDashboard,
 } from "@tabler/icons-react";
-import axios from "axios";
+import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,26 +41,29 @@ export function AdminProfile({ adminId }: AdminProfileProps) {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/profile/${adminId}`
-        );
+        const res = await axiosInstance.get(endpoints.admin.getProfile(adminId));
         const data = res.data;
 
-        // to shape the backend with frontend interface
+        // Shape the backend response to match frontend interface
         const mappedProfile: AdminProfileData = {
           id: data.id,
           name: data.user?.name ?? "N/A",
           email: data.user?.email ?? "N/A",
           image: data.user?.image ?? null,
-          area: null, // or map if backend provides it
+          area: null,
           gender: data.user?.gender ?? null,
           status: data.status ?? null,
           accounts: data.user?.accounts ?? [],
         };
 
         setProfile(mappedProfile);
-      } catch (err) {
-        console.error("Failed to fetch admin data:", err);
+      } catch (err: unknown) {
+        const error = err as { response?: { status?: number; data?: { message?: string } } };
+        if (error.response?.status === 401) {
+          toast.error("Please log in to view admin profiles");
+        } else {
+          toast.error(error.response?.data?.message || "Failed to load admin profile");
+        }
       } finally {
         setIsLoading(false);
       }
