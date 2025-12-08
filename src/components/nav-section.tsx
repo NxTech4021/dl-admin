@@ -76,12 +76,17 @@ export function NavSection({
   // Check if any item in this section is active
   const hasActiveItem = items.some((item) => isRouteActive(item.url));
 
-  // Auto-expand section if it contains the active page
+  // Auto-expand section when navigating to a page within it (only on route change)
+  const prevPathname = React.useRef(pathname);
   React.useEffect(() => {
-    if (hasActiveItem && !isOpen) {
-      setIsOpen(true);
+    // Only auto-expand if the pathname changed (navigation occurred)
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      if (hasActiveItem && !isOpen) {
+        setIsOpen(true);
+      }
     }
-  }, [hasActiveItem, isOpen]);
+  }, [pathname, hasActiveItem, isOpen]);
 
   const content = (
     <SidebarMenu role="list">
