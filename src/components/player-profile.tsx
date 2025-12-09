@@ -98,26 +98,7 @@ interface PlayerProfileData {
     expiresAt: string;
     createdAt: string;
   }[];
-  matches: {
-    id: string;
-    sport: string;
-    matchType: string;
-    playerScore: number;
-    opponentScore: number;
-    outcome: string;
-    matchDate: string;
-    location: string | null;
-    notes: string | null;
-    duration: number | null;
-  }[];
-  achievements: {
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    points: number;
-    unlockedAt: string;
-  }[];
+  // Note: matches and achievements are loaded separately on-demand
 }
 
 interface PlayerProfileProps {
@@ -166,9 +147,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
   // History data states
   const [leagueHistory, setLeagueHistory] = React.useState<any[] | null>(null);
   const [seasonHistory, setSeasonHistory] = React.useState<any[] | null>(null);
+  const [matchHistory, setMatchHistory] = React.useState<any[] | null>(null);
   const [historyLoading, setHistoryLoading] = React.useState({
     leagues: false,
     seasons: false,
+    matches: false,
   });
 
   React.useEffect(() => {
@@ -232,6 +215,53 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
     }
   };
 
+  const fetchMatchHistory = async () => {
+    if (matchHistory) return; // Already loaded
+
+    setHistoryLoading((prev) => ({ ...prev, matches: true }));
+    try {
+      const response = await axiosInstance.get(
+        endpoints.player.getMatchHistoryAdmin(playerId)
+      );
+      if (response.status === 200) {
+        // Transform match data to player-specific format
+        const matches = response.data.data.matches || [];
+        const transformedMatches = matches.map((match: any) => {
+          const isTeam1 = match.participation?.team === "team1";
+          const playerScore = isTeam1 ? match.team1Score : match.team2Score;
+          const opponentScore = isTeam1 ? match.team2Score : match.team1Score;
+
+          let outcome = null;
+          if (match.status === "COMPLETED" && playerScore !== null && opponentScore !== null) {
+            if (playerScore > opponentScore) outcome = "win";
+            else if (playerScore < opponentScore) outcome = "loss";
+            else outcome = "draw";
+          }
+
+          return {
+            id: match.id,
+            sport: match.sport?.toLowerCase() || match.division?.league?.sportType?.toLowerCase() || "unknown",
+            matchType: match.matchType?.toLowerCase() || "unknown",
+            playerScore,
+            opponentScore,
+            outcome,
+            matchDate: match.matchDate,
+            location: match.location || match.venue,
+            notes: match.notes,
+            duration: null, // Not available in current schema
+            status: match.status,
+            division: match.division,
+          };
+        });
+        setMatchHistory(transformedMatches);
+      }
+    } catch (error) {
+      console.error("Failed to load match history:", error);
+    } finally {
+      setHistoryLoading((prev) => ({ ...prev, matches: false }));
+    }
+  };
+
   if (isLoading) {
     return <ProfileSkeleton />;
   }
@@ -271,6 +301,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       defaultValue="overview"
       className="space-y-6"
       onValueChange={(value) => {
+        if (value === "matches") {
+          fetchMatchHistory();
+        }
         if (value === "league_history") {
           fetchLeagueHistory();
         }
@@ -796,7 +829,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {profile.matches && profile.matches.length > 0 ? (
+            {historyLoading.matches ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : matchHistory && matchHistory.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -804,13 +841,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     <TableHead>Type</TableHead>
                     <TableHead>Score</TableHead>
                     <TableHead>Outcome</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Duration</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {profile.matches.map((match) => (
+                  {matchHistory.map((match: any) => (
                     <TableRow key={match.id}>
                       <TableCell className="capitalize font-medium">
                         {match.sport}
@@ -819,34 +856,55 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                         {match.matchType}
                       </TableCell>
                       <TableCell className="font-mono">
-                        {match.playerScore} - {match.opponentScore}
+                        {match.playerScore !== null && match.opponentScore !== null
+                          ? `${match.playerScore} - ${match.opponentScore}`
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {match.outcome ? (
+                          <Badge
+                            variant={
+                              match.outcome === "win"
+                                ? "default"
+                                : match.outcome === "loss"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                            className="capitalize"
+                          >
+                            {match.outcome}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            match.outcome === "win"
+                            match.status === "COMPLETED"
                               ? "default"
-                              : match.outcome === "loss"
+                              : match.status === "CANCELLED"
                               ? "destructive"
                               : "secondary"
                           }
-                          className="capitalize"
+                          className="capitalize text-xs"
                         >
-                          {match.outcome}
+                          {match.status?.toLowerCase()}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(match.matchDate)}</TableCell>
                       <TableCell>{match.location || "N/A"}</TableCell>
-                      <TableCell>
-                        {match.duration ? `${match.duration} min` : "N/A"}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            ) : (
+            ) : matchHistory !== null ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 No match history found for this player.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Click on this tab to load match history.
               </p>
             )}
           </CardContent>
@@ -879,37 +937,14 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {profile.achievements && profile.achievements.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {profile.achievements.map((achievement) => (
-                  <Card key={achievement.id} className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{achievement.title}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {achievement.points} pts
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {achievement.description}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <Badge variant="secondary" className="capitalize">
-                          {achievement.category}
-                        </Badge>
-                        <span>
-                          Unlocked: {formatDate(achievement.unlockedAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No achievements unlocked yet.
+            <div className="text-center py-12">
+              <IconStar className="size-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                The achievements system is currently under development.
+                Players will be able to unlock achievements based on their performance and participation.
               </p>
-            )}
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
