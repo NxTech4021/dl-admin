@@ -2,11 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Bug,
-  AlertTriangle,
-  CheckCircle,
-  Clock,  
-  Search,
   MoreVertical,
   Eye,
   Trash2,
@@ -21,14 +16,15 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatsCard } from "@/components/ui/stats-card";
+import { StatsGrid } from "@/components/ui/stats-grid";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { IconBug, IconClock, IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
 import {
   Table,
   TableBody,
@@ -175,6 +171,29 @@ const priorityColors: Record<string, string> = {
   NORMAL: "bg-blue-100 text-blue-800",
   LOW: "bg-gray-100 text-gray-800",
 };
+
+const STATUS_OPTIONS = [
+  { value: "NEW", label: "New" },
+  { value: "TRIAGED", label: "Triaged" },
+  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "NEEDS_INFO", label: "Needs Info" },
+  { value: "RESOLVED", label: "Resolved" },
+  { value: "CLOSED", label: "Closed" },
+];
+
+const SEVERITY_OPTIONS = [
+  { value: "CRITICAL", label: "Critical" },
+  { value: "HIGH", label: "High" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LOW", label: "Low" },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: "URGENT", label: "Urgent" },
+  { value: "HIGH", label: "High" },
+  { value: "NORMAL", label: "Normal" },
+  { value: "LOW", label: "Low" },
+];
 
 export default function BugDashboard() {
   const [reports, setReports] = useState<BugReport[]>([]);
@@ -498,142 +517,104 @@ export default function BugDashboard() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Bug Reports</h1>
-          <p className="text-muted-foreground">
-            Manage and track bug reports across all apps
-          </p>
-        </div>
-        <Button onClick={() => { fetchReports(); fetchStats(); }} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-            <Bug className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.recentlyCreated} this week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(stats.byStatus.NEW || 0) +
-                (stats.byStatus.TRIAGED || 0) +
-                (stats.byStatus.IN_PROGRESS || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Needs attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.bySeverity.CRITICAL || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              High priority issues
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(stats.byStatus.RESOLVED || 0) + (stats.byStatus.CLOSED || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Avg {Math.round(stats.avgResolutionTimeMinutes / 60)}h to resolve
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        icon={IconBug}
+        title="Bug Reports"
+        description="Manage and track bug reports across all apps"
+        actions={
+          <Button onClick={() => { fetchReports(); fetchStats(); }} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      >
+        {/* Stats Cards */}
+        <StatsGrid columns={4}>
+          <StatsCard
+            title="Total Reports"
+            value={stats.total}
+            description={`${stats.recentlyCreated} this week`}
+            icon={IconBug}
+            loading={loading}
+          />
+          <StatsCard
+            title="Open"
+            value={(stats.byStatus.NEW || 0) + (stats.byStatus.TRIAGED || 0) + (stats.byStatus.IN_PROGRESS || 0)}
+            description="Needs attention"
+            icon={IconClock}
+            iconColor="text-yellow-500"
+            loading={loading}
+          />
+          <StatsCard
+            title="Critical"
+            value={stats.bySeverity.CRITICAL || 0}
+            description="High priority issues"
+            icon={IconAlertTriangle}
+            iconColor="text-red-500"
+            loading={loading}
+          />
+          <StatsCard
+            title="Resolved"
+            value={(stats.byStatus.RESOLVED || 0) + (stats.byStatus.CLOSED || 0)}
+            description={`Avg ${Math.round(stats.avgResolutionTimeMinutes / 60)}h to resolve`}
+            icon={IconCircleCheck}
+            iconColor="text-green-500"
+            loading={loading}
+          />
+        </StatsGrid>
+      </PageHeader>
 
       {/* Filters */}
+      <div className="px-4 lg:px-6 space-y-6">
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by title, description, or report number..."
+          <form onSubmit={handleSearch}>
+            <FilterBar
+              onClearAll={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setSeverityFilter("all");
+                setPriorityFilter("all");
+                setPage(1);
+              }}
+              showClearButton={!!(search || statusFilter !== "all" || severityFilter !== "all" || priorityFilter !== "all")}
+            >
+              <SearchInput
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                onChange={setSearch}
+                placeholder="Search by title, description, or report number..."
+                className="flex-1 min-w-[250px]"
               />
-            </div>
 
-            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(1); }}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="NEW">New</SelectItem>
-                <SelectItem value="TRIAGED">Triaged</SelectItem>
-                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                <SelectItem value="NEEDS_INFO">Needs Info</SelectItem>
-                <SelectItem value="RESOLVED">Resolved</SelectItem>
-                <SelectItem value="CLOSED">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+              <FilterSelect
+                value={statusFilter === "all" ? undefined : statusFilter}
+                onChange={(value) => { setStatusFilter(value || "all"); setPage(1); }}
+                options={STATUS_OPTIONS}
+                allLabel="All Status"
+                triggerClassName="w-[140px]"
+              />
 
-            <Select value={severityFilter} onValueChange={(value) => { setSeverityFilter(value); setPage(1); }}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Severity</SelectItem>
-                <SelectItem value="CRITICAL">Critical</SelectItem>
-                <SelectItem value="HIGH">High</SelectItem>
-                <SelectItem value="MEDIUM">Medium</SelectItem>
-                <SelectItem value="LOW">Low</SelectItem>
-              </SelectContent>
-            </Select>
+              <FilterSelect
+                value={severityFilter === "all" ? undefined : severityFilter}
+                onChange={(value) => { setSeverityFilter(value || "all"); setPage(1); }}
+                options={SEVERITY_OPTIONS}
+                allLabel="All Severity"
+                triggerClassName="w-[140px]"
+              />
 
-            <Select value={priorityFilter} onValueChange={(value) => { setPriorityFilter(value); setPage(1); }}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="URGENT">Urgent</SelectItem>
-                <SelectItem value="HIGH">High</SelectItem>
-                <SelectItem value="NORMAL">Normal</SelectItem>
-                <SelectItem value="LOW">Low</SelectItem>
-              </SelectContent>
-            </Select>
+              <FilterSelect
+                value={priorityFilter === "all" ? undefined : priorityFilter}
+                onChange={(value) => { setPriorityFilter(value || "all"); setPage(1); }}
+                options={PRIORITY_OPTIONS}
+                allLabel="All Priority"
+                triggerClassName="w-[140px]"
+              />
 
-            <Button type="submit" size="default">
-              Search
-            </Button>
+              <Button type="submit" size="default">
+                Search
+              </Button>
+            </FilterBar>
           </form>
         </CardContent>
       </Card>
@@ -875,6 +856,7 @@ export default function BugDashboard() {
           </div>
         )}
       </Card>
+      </div>
 
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
