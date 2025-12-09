@@ -4,30 +4,23 @@ import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
   IconHistory,
   IconRefresh,
   IconChevronLeft,
   IconChevronRight,
-  IconSearch,
-  IconFilter,
   IconAlertCircle,
   IconCopy,
   IconExternalLink,
-  IconX,
 } from "@tabler/icons-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -171,8 +164,8 @@ export default function AdminLogsPage() {
   const [selectedLog, setSelectedLog] = React.useState<AdminLogEntry | null>(null);
 
   // Available filter options
-  const [actionTypes, setActionTypes] = React.useState<{ value: string; label: string }[]>([]);
-  const [targetTypes, setTargetTypes] = React.useState<{ value: string; label: string }[]>([]);
+  const [actionTypes, setActionTypes] = React.useState<FilterOption[]>([]);
+  const [targetTypes, setTargetTypes] = React.useState<FilterOption[]>([]);
 
   // Fetch filter options on mount
   React.useEffect(() => {
@@ -317,315 +310,269 @@ export default function AdminLogsPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Actions */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconHistory className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Admin Activity Logs
-                          </h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                          View and audit all administrative actions performed in the system
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={fetchLogs}>
-                          <IconRefresh className="mr-2 size-4" />
-                          Refresh
-                        </Button>
-                        <ExportButton
-                          data={logs}
-                          columns={exportColumns}
-                          filename="admin-logs"
-                          formats={["csv", "excel"]}
-                          size="sm"
-                        />
-                      </div>
+            <PageHeader
+              icon={IconHistory}
+              title="Admin Activity Logs"
+              description="View and audit all administrative actions performed in the system"
+              actions={
+                <>
+                  <Button variant="outline" size="sm" onClick={fetchLogs}>
+                    <IconRefresh className="mr-2 size-4" />
+                    Refresh
+                  </Button>
+                  <ExportButton
+                    data={logs}
+                    columns={exportColumns}
+                    filename="admin-logs"
+                    formats={["csv", "excel"]}
+                    size="sm"
+                  />
+                </>
+              }
+            >
+              {/* Filters */}
+              <FilterBar
+                onClearAll={handleClearFilters}
+                showClearButton={!!(searchQuery || selectedActionType || selectedTargetType || dateRange)}
+              >
+                <SearchInput
+                  value={searchQuery}
+                  onChange={(value) => {
+                    setSearchQuery(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  placeholder="Search logs..."
+                  className="flex-1 min-w-[200px] max-w-sm"
+                />
+
+                <FilterSelect
+                  value={selectedActionType}
+                  onChange={(value) => {
+                    setSelectedActionType(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  options={actionTypes}
+                  allLabel="All Actions"
+                  triggerClassName="w-[180px]"
+                />
+
+                <FilterSelect
+                  value={selectedTargetType}
+                  onChange={(value) => {
+                    setSelectedTargetType(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  options={targetTypes}
+                  allLabel="All Targets"
+                  triggerClassName="w-[150px]"
+                />
+
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={(range) => {
+                    setDateRange(range);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  placeholder="Date range"
+                  className="w-[280px]"
+                />
+              </FilterBar>
+            </PageHeader>
+
+            {/* Logs Table */}
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Activity Log</span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {pagination.total} total entries
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(10)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
                     </div>
-
-                    {/* Filters */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="relative flex-1 min-w-[200px] max-w-sm">
-                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search logs..."
-                          value={searchQuery}
-                          onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setPagination(prev => ({ ...prev, page: 1 }));
-                          }}
-                          className="pl-9"
-                        />
-                      </div>
-
-                      <Select
-                        value={selectedActionType}
-                        onValueChange={(val) => {
-                          setSelectedActionType(val === "all" ? undefined : val);
-                          setPagination(prev => ({ ...prev, page: 1 }));
-                        }}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Action Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Actions</SelectItem>
-                          {actionTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={selectedTargetType}
-                        onValueChange={(val) => {
-                          setSelectedTargetType(val === "all" ? undefined : val);
-                          setPagination(prev => ({ ...prev, page: 1 }));
-                        }}
-                      >
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue placeholder="Target Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Targets</SelectItem>
-                          {targetTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <DateRangePicker
-                        value={dateRange}
-                        onChange={(range) => {
-                          setDateRange(range);
-                          setPagination(prev => ({ ...prev, page: 1 }));
-                        }}
-                        placeholder="Date range"
-                        className="w-[280px]"
-                      />
-
-                      {(searchQuery || selectedActionType || selectedTargetType || dateRange) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleClearFilters}
-                          className="text-muted-foreground"
-                        >
-                          <IconFilter className="mr-2 size-4" />
-                          Clear filters
-                        </Button>
-                      )}
+                  ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <IconAlertCircle className="size-12 text-destructive mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Failed to Load Logs</h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
+                      <Button variant="outline" onClick={fetchLogs} className="gap-2">
+                        <IconRefresh className="size-4" />
+                        Retry
+                      </Button>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  ) : logs.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Admin</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Target</TableHead>
+                          <TableHead>Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {logs.map((log) => {
+                          const actionColor = actionTypeColors[log.actionType] || { bg: "bg-gray-100", text: "text-gray-700" };
+                          const targetColor = targetTypeColors[log.targetType] || { bg: "bg-gray-100", text: "text-gray-700" };
+                          const entityLink = getEntityLink(log.targetType, log.targetId);
 
-              {/* Logs Table */}
-              <div className="flex-1 px-4 lg:px-6 pb-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Activity Log</span>
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {pagination.total} total entries
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        {[...Array(10)].map((_, i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : error ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <IconAlertCircle className="size-12 text-destructive mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Failed to Load Logs</h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
-                        <Button variant="outline" onClick={fetchLogs} className="gap-2">
-                          <IconRefresh className="size-4" />
-                          Retry
-                        </Button>
-                      </div>
-                    ) : logs.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Admin</TableHead>
-                            <TableHead>Action</TableHead>
-                            <TableHead>Target</TableHead>
-                            <TableHead>Description</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {logs.map((log) => {
-                            const actionColor = actionTypeColors[log.actionType] || { bg: "bg-gray-100", text: "text-gray-700" };
-                            const targetColor = targetTypeColors[log.targetType] || { bg: "bg-gray-100", text: "text-gray-700" };
-                            const entityLink = getEntityLink(log.targetType, log.targetId);
-
-                            return (
-                              <TableRow
-                                key={log.id}
-                                className="cursor-pointer hover:bg-muted/50"
-                                onClick={() => setSelectedLog(log)}
-                              >
-                                <TableCell className="text-sm whitespace-nowrap">
-                                  <div className="flex flex-col">
-                                    <span className="text-foreground">{formatRelativeTime(log.createdAt)}</span>
-                                    <span className="text-xs text-muted-foreground">{formatDate(log.createdAt)}</span>
+                          return (
+                            <TableRow
+                              key={log.id}
+                              className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => setSelectedLog(log)}
+                            >
+                              <TableCell className="text-sm whitespace-nowrap">
+                                <div className="flex flex-col">
+                                  <span className="text-foreground">{formatRelativeTime(log.createdAt)}</span>
+                                  <span className="text-xs text-muted-foreground">{formatDate(log.createdAt)}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {log.admin ? (
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="size-6">
+                                      <AvatarImage src={log.admin.image || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {getInitials(log.admin.name)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium">{log.admin.name}</span>
                                   </div>
-                                </TableCell>
-                                <TableCell>
-                                  {log.admin ? (
-                                    <div className="flex items-center gap-2">
-                                      <Avatar className="size-6">
-                                        <AvatarImage src={log.admin.image || undefined} />
-                                        <AvatarFallback className="text-xs">
-                                          {getInitials(log.admin.name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm font-medium">{log.admin.name}</span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">System</span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge className={`${actionColor.bg} ${actionColor.text} font-normal`}>
-                                    {formatActionType(log.actionType)}
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">System</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={`${actionColor.bg} ${actionColor.text} font-normal`}>
+                                  {formatActionType(log.actionType)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  <Badge variant="outline" className={`${targetColor.bg} ${targetColor.text} font-normal w-fit`}>
+                                    {log.targetType}
                                   </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-col gap-1">
-                                    <Badge variant="outline" className={`${targetColor.bg} ${targetColor.text} font-normal w-fit`}>
-                                      {log.targetType}
-                                    </Badge>
-                                    {log.targetId && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-xs text-muted-foreground font-mono">
-                                          {log.targetId.slice(0, 8)}...
-                                        </span>
+                                  {log.targetId && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-muted-foreground font-mono">
+                                        {log.targetId.slice(0, 8)}...
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-5"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(log.targetId!);
+                                        }}
+                                      >
+                                        <IconCopy className="size-3" />
+                                      </Button>
+                                      {entityLink && (
                                         <Button
                                           variant="ghost"
                                           size="icon"
                                           className="size-5"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            copyToClipboard(log.targetId!);
+                                            window.open(entityLink, "_blank");
                                           }}
                                         >
-                                          <IconCopy className="size-3" />
+                                          <IconExternalLink className="size-3" />
                                         </Button>
-                                        {entityLink && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="size-5"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              window.open(entityLink, "_blank");
-                                            }}
-                                          >
-                                            <IconExternalLink className="size-3" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="max-w-[300px]">
-                                  <span className="text-sm truncate block">{log.description}</span>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-12">
-                        <IconHistory className="size-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Logs Found</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {searchQuery || selectedActionType || selectedTargetType || dateRange
-                            ? "Try adjusting your filters to see more results."
-                            : "No admin activity has been recorded yet."}
-                        </p>
-                      </div>
-                    )}
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="max-w-[300px]">
+                                <span className="text-sm truncate block">{log.description}</span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-12">
+                      <IconHistory className="size-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Logs Found</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {searchQuery || selectedActionType || selectedTargetType || dateRange
+                          ? "Try adjusting your filters to see more results."
+                          : "No admin activity has been recorded yet."}
+                      </p>
+                    </div>
+                  )}
 
-                    {/* Pagination */}
-                    {pagination.totalPages > 1 && (
-                      <div className="flex items-center justify-between pt-4 border-t mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                          {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                            disabled={pagination.page === 1}
-                          >
-                            <IconChevronLeft className="size-4 mr-1" />
-                            Previous
-                          </Button>
-                          <div className="flex items-center gap-1">
-                            {Array.from(
-                              { length: Math.min(5, pagination.totalPages) },
-                              (_, i) => {
-                                let pageNum: number;
-                                if (pagination.totalPages <= 5) {
-                                  pageNum = i + 1;
-                                } else if (pagination.page <= 3) {
-                                  pageNum = i + 1;
-                                } else if (pagination.page >= pagination.totalPages - 2) {
-                                  pageNum = pagination.totalPages - 4 + i;
-                                } else {
-                                  pageNum = pagination.page - 2 + i;
-                                }
-                                return (
-                                  <Button
-                                    key={pageNum}
-                                    variant={pagination.page === pageNum ? "default" : "outline"}
-                                    size="sm"
-                                    className="w-8 h-8 p-0"
-                                    onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                                  >
-                                    {pageNum}
-                                  </Button>
-                                );
-                              }
-                            )}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                            disabled={pagination.page === pagination.totalPages}
-                          >
-                            Next
-                            <IconChevronRight className="size-4 ml-1" />
-                          </Button>
-                        </div>
+                  {/* Pagination */}
+                  {pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t mt-4">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                        {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                          disabled={pagination.page === 1}
+                        >
+                          <IconChevronLeft className="size-4 mr-1" />
+                          Previous
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from(
+                            { length: Math.min(5, pagination.totalPages) },
+                            (_, i) => {
+                              let pageNum: number;
+                              if (pagination.totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (pagination.page <= 3) {
+                                pageNum = i + 1;
+                              } else if (pagination.page >= pagination.totalPages - 2) {
+                                pageNum = pagination.totalPages - 4 + i;
+                              } else {
+                                pageNum = pagination.page - 2 + i;
+                              }
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={pagination.page === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => setPagination((prev) => ({ ...prev, page: pageNum }))}
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            }
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                          disabled={pagination.page === pagination.totalPages}
+                        >
+                          Next
+                          <IconChevronRight className="size-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
