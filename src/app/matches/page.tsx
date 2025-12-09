@@ -3,6 +3,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { IconTrophy, IconDownload, IconAlertTriangle, IconRefresh, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
@@ -118,59 +119,42 @@ export default function MatchesPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Actions */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconTrophy className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Matches Dashboard
-                          </h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                          Manage and oversee all matches across the season
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                        </Button>
-                      </div>
-                    </div>
+            <PageHeader
+              icon={IconTrophy}
+              title="Matches Dashboard"
+              description="Manage and oversee all matches across the season"
+              actions={
+                <Button variant="outline" size="sm">
+                  <IconDownload className="mr-2 size-4" />
+                  Export
+                </Button>
+              }
+            >
+              {/* Statistics */}
+              <MatchStatsCards
+                leagueId={selectedLeague}
+                seasonId={selectedSeason}
+                divisionId={selectedDivision}
+              />
 
-                    {/* Statistics */}
-                    <MatchStatsCards
-                      leagueId={selectedLeague}
-                      seasonId={selectedSeason}
-                      divisionId={selectedDivision}
-                    />
-
-                    {/* Filters */}
-                    <MatchFilters
-                      selectedLeague={selectedLeague}
-                      selectedSeason={selectedSeason}
-                      selectedDivision={selectedDivision}
-                      selectedStatus={selectedStatus}
-                      searchQuery={searchQuery}
-                      showDisputedOnly={showDisputedOnly}
-                      showLateCancellations={showLateCancellations}
-                      onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
-                      onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
-                      onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
-                      onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-                      onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                      onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
-                      onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* Filters */}
+              <MatchFilters
+                selectedLeague={selectedLeague}
+                selectedSeason={selectedSeason}
+                selectedDivision={selectedDivision}
+                selectedStatus={selectedStatus}
+                searchQuery={searchQuery}
+                showDisputedOnly={showDisputedOnly}
+                showLateCancellations={showLateCancellations}
+                onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
+                onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
+                onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
+                onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
+                onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
+              />
+            </PageHeader>
 
               {/* Matches Table */}
               <div className="flex-1 px-4 lg:px-6 pb-6">
@@ -370,7 +354,6 @@ export default function MatchesPage() {
                   </CardContent>
                 </Card>
               </div>
-            </div>
           </div>
         </div>
       </SidebarInset>
