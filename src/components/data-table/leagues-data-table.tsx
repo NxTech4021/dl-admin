@@ -314,6 +314,9 @@ export function LeaguesDataTable({
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
 
+  // Track pagination state for re-rendering when page changes
+  const paginationState = table.getState().pagination;
+
   const groupedRows = React.useMemo(() => {
     const groups = new Map<string, { name: string; rows: Row<League>[] }>();
     // Get fresh row model inside the memo to ensure we have latest data
@@ -325,8 +328,7 @@ export function LeaguesDataTable({
       groups.get(key)!.rows.push(row);
     });
     return Array.from(groups.values());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, paginationState, table]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
