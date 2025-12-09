@@ -4,6 +4,7 @@ import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   BarChart3,
   Users,
@@ -133,35 +134,24 @@ export default function ReportsPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <BarChart3 className="size-8 text-primary" />
-                      <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-                    </div>
-                    <p className="text-muted-foreground">
-                      Generate and view reports to gain insights into league operations, player activity, and system performance.
-                    </p>
+            <PageHeader
+              icon={BarChart3}
+              title="Reports"
+              description="Generate and view reports to gain insights into league operations, player activity, and system performance."
+            />
+
+            {/* Report Categories */}
+            <div className="flex-1 px-4 lg:px-6 pb-6 space-y-8">
+              {reportCategories.map((category) => (
+                <div key={category.title} className="space-y-4">
+                  <h2 className="text-xl font-semibold">{category.title}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {category.reports.map((report) => (
+                      <ReportCard key={report.title} {...report} />
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              {/* Report Categories */}
-              <div className="flex-1 px-4 lg:px-6 pb-6 space-y-8">
-                {reportCategories.map((category) => (
-                  <div key={category.title} className="space-y-4">
-                    <h2 className="text-xl font-semibold">{category.title}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {category.reports.map((report) => (
-                        <ReportCard key={report.title} {...report} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </div>
