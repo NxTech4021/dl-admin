@@ -2,14 +2,10 @@
 import React, { useState, useCallback } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/ui/page-header";
+import { StatsCard } from "@/components/ui/stats-card";
+import { StatsGrid } from "@/components/ui/stats-grid";
 import { AnimatedContainer } from "@/components/ui/animated-container";
 import { Button } from "@/components/ui/button";
 import { League, leagueSchema } from "@/constants/zod/league-schema";
@@ -231,71 +227,32 @@ export default function Page() {
 
             {/* League Overview Cards */}
             <AnimatedContainer delay={0.1}>
-              <section
-                className="px-4 sm:px-6"
-                aria-label="League statistics overview"
-              >
-                <div
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-                  role="region"
-                  aria-label="Key metrics"
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Leagues
-                      </CardTitle>
-                      <IconTrophy className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {leagues.length}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {
-                          leagues.filter(
-                            (l) =>
-                              l.status === "ACTIVE" || l.status === "ONGOING"
-                          ).length
-                        }{" "}
-                        currently active
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Members
-                      </CardTitle>
-                      <IconUsers className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{totalMembers}</div>
-                      <p className="text-xs text-muted-foreground">
-                        Total players across all seasons in all leagues
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Seasons
-                      </CardTitle>
-                      <IconCalendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {leagues.reduce(
-                          (sum, league) => sum + (league.seasonCount || 0),
-                          0
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Across all leagues
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
+              <section className="px-4 sm:px-6" aria-label="League statistics overview">
+                <StatsGrid columns={3}>
+                  <StatsCard
+                    title="Total Leagues"
+                    value={leagues.length}
+                    description={`${leagues.filter((l) => l.status === "ACTIVE" || l.status === "ONGOING").length} currently active`}
+                    icon={IconTrophy}
+                    loading={isLoading}
+                  />
+                  <StatsCard
+                    title="Total Members"
+                    value={totalMembers}
+                    description="Total players across all seasons"
+                    icon={IconUsers}
+                    iconColor="text-blue-500"
+                    loading={isLoading}
+                  />
+                  <StatsCard
+                    title="Total Seasons"
+                    value={leagues.reduce((sum, league) => sum + (league.seasonCount || 0), 0)}
+                    description="Across all leagues"
+                    icon={IconCalendar}
+                    iconColor="text-green-500"
+                    loading={isLoading}
+                  />
+                </StatsGrid>
               </section>
             </AnimatedContainer>
 

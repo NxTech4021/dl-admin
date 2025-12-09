@@ -11,6 +11,10 @@ export const dashboardKPISchema = z.object({
   previousTotalUsers: z.number(),
   previousLeagueParticipants: z.number(),
   previousRevenue: z.number(),
+  totalMatches: z.number(),
+  previousMatches: z.number(),
+  activeUsers: z.number(),
+  previousActiveUsers: z.number(),
 });
 
 export type DashboardKPI = z.infer<typeof dashboardKPISchema>;

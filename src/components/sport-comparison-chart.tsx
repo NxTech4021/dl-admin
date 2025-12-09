@@ -41,7 +41,7 @@ const chartConfig = {
 type MetricType = "payingMembers" | "revenue";
 
 interface SportComparisonChartProps {
-  chartRange?: "monthly" | "average" | "thisWeek";
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }
 
@@ -136,7 +136,7 @@ export function SportComparisonChart({
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>Sport Comparison</CardTitle>
           <CardDescription>
-            Compare paying members and revenue across sports - {chartRange === "average" ? "Average per week" : chartRange === "thisWeek" ? "This week" : "Monthly"} ({historyRange} month{historyRange > 1 ? "s" : ""})
+            Compare paying members and revenue across sports - {chartRange === "average" ? "Weekly average" : "Monthly"} ({historyRange} month{historyRange > 1 ? "s" : ""})
           </CardDescription>
         </div>
         <Select

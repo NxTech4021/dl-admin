@@ -40,9 +40,37 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDivisionsLoading, setIsDivisionsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const { data: session } = useSession();
 
   const userId = session?.user.id;
+
+  // Breadcrumb items for header
+  const getBreadcrumbItems = () => {
+    const baseItems = [
+      { label: "Seasons", href: "/seasons" },
+      { label: season?.name ?? "Season Details" },
+    ];
+
+    switch (activeTab) {
+      case "overview":
+        return [...baseItems, { label: "Overview" }];
+      case "players":
+        return [...baseItems, { label: "Players" }];
+      case "divisions":
+        return [...baseItems, { label: "Divisions" }];
+      case "leaderboard":
+        return [...baseItems, { label: "Leaderboard" }];
+      case "withdrawal_requests":
+        return [...baseItems, { label: "Withdrawal Requests" }];
+      case "settings":
+        return [...baseItems, { label: "Settings" }];
+      case "payment":
+        return [...baseItems, { label: "Payment" }];
+      default:
+        return baseItems;
+    }
+  };
 
   // Fetch divisions data
   const fetchDivisions = useCallback(async () => {
@@ -121,7 +149,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <SiteHeader />
+          <SiteHeader items={[{ label: "Seasons", href: "/seasons" }, { label: "Loading..." }]} />
           <div className="space-y-6 p-8">
             {/* Season Header Skeleton */}
             <div className="space-y-4">
@@ -177,13 +205,13 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader items={getBreadcrumbItems()} />
         <div className="space-y-6 p-8">
           {/* <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold tracking-tight">{season.name} Details</h1>
         </div> */}
 
-          <Tabs defaultValue="overview" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <IconUserCircle className="size-4" />
@@ -277,7 +305,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                                 Registered Players
                               </span>
                               <span className="font-medium text-sm">
-                                {season.registeredUserCount}
+                                {Math.max(season.registeredUserCount || 0, (season.memberships || []).length)}
                               </span>
                             </div>
                           </div>

@@ -90,6 +90,12 @@ const RESOLUTION_ACTIONS: {
     description: "Request additional evidence before deciding",
     icon: IconQuestionMark,
   },
+  {
+    value: "REJECT",
+    label: "Reject Dispute",
+    description: "Dismiss this dispute as invalid, spam, or lacking evidence",
+    icon: IconX,
+  },
 ];
 
 export function DisputeResolveModal({
@@ -100,8 +106,8 @@ export function DisputeResolveModal({
 }: DisputeResolveModalProps) {
   const [selectedAction, setSelectedAction] = useState<DisputeResolutionAction | null>(null);
   const [reason, setReason] = useState("");
-  const [team1Score, setTeam1Score] = useState<number>(0);
-  const [team2Score, setTeam2Score] = useState<number>(0);
+  const [team1Score, setTeam1Score] = useState<string>("0");
+  const [team2Score, setTeam2Score] = useState<string>("0");
   const [notifyPlayers, setNotifyPlayers] = useState(true);
 
   const resolveDispute = useResolveDispute();
@@ -117,11 +123,20 @@ export function DisputeResolveModal({
       return;
     }
 
+    // Parse and validate scores
+    const score1 = parseInt(team1Score) || 0;
+    const score2 = parseInt(team2Score) || 0;
+
+    if (requiresScore && (score1 < 0 || score2 < 0 || score1 > 99 || score2 > 99)) {
+      toast.error("Scores must be between 0 and 99");
+      return;
+    }
+
     try {
       const finalScore = requiresScore
         ? {
-            team1Score,
-            team2Score,
+            team1Score: score1,
+            team2Score: score2,
           }
         : undefined;
 
@@ -145,8 +160,8 @@ export function DisputeResolveModal({
   const resetForm = () => {
     setSelectedAction(null);
     setReason("");
-    setTeam1Score(0);
-    setTeam2Score(0);
+    setTeam1Score("0");
+    setTeam2Score("0");
     setNotifyPlayers(true);
   };
 
@@ -197,37 +212,46 @@ export function DisputeResolveModal({
                 <CardTitle className="text-sm font-medium">Current Match Score</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {team1.slice(0, 2).map((p) => (
-                      <Avatar key={p.id} className="size-8">
-                        <AvatarImage src={p.user?.image || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(p.user?.name || "?")}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    <span className="text-sm font-medium">
+                <div className="flex items-center justify-center gap-4">
+                  {/* Team 1 */}
+                  <div className="flex items-center gap-2 flex-1 justify-end">
+                    <div className="flex -space-x-2">
+                      {team1.slice(0, 2).map((p) => (
+                        <Avatar key={p.id} className="size-8 border-2 border-background">
+                          <AvatarImage src={p.user?.image || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(p.user?.name || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium truncate max-w-[120px]">
                       {team1.map((p) => p.user?.name?.split(" ")[0]).join(" & ")}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold">{match.team1Score ?? "-"}</span>
-                    <span className="text-muted-foreground">vs</span>
-                    <span className="text-2xl font-bold">{match.team2Score ?? "-"}</span>
+
+                  {/* Score */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-2xl font-bold min-w-[24px] text-center">{match.team1Score ?? "-"}</span>
+                    <span className="text-muted-foreground text-sm">-</span>
+                    <span className="text-2xl font-bold min-w-[24px] text-center">{match.team2Score ?? "-"}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
+
+                  {/* Team 2 */}
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="text-sm font-medium truncate max-w-[120px]">
                       {team2.map((p) => p.user?.name?.split(" ")[0]).join(" & ")}
                     </span>
-                    {team2.slice(0, 2).map((p) => (
-                      <Avatar key={p.id} className="size-8">
-                        <AvatarImage src={p.user?.image || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(p.user?.name || "?")}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
+                    <div className="flex -space-x-2">
+                      {team2.slice(0, 2).map((p) => (
+                        <Avatar key={p.id} className="size-8 border-2 border-background">
+                          <AvatarImage src={p.user?.image || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(p.user?.name || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -300,29 +324,43 @@ export function DisputeResolveModal({
           {requiresScore && (
             <div className="space-y-3">
               <Label className="text-base font-semibold">Final Score</Label>
-              <div className="flex items-center gap-4">
+              <div className="flex items-end gap-4">
                 <div className="flex-1">
                   <Label className="text-sm text-muted-foreground mb-1 block">
                     {team1.map((p) => p.user?.name?.split(" ")[0]).join(" & ") || "Team 1"}
                   </Label>
                   <Input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={team1Score}
-                    onChange={(e) => setTeam1Score(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
+                      setTeam1Score(val);
+                    }}
+                    onBlur={() => {
+                      if (team1Score === "") setTeam1Score("0");
+                    }}
                     className="text-center text-lg font-bold"
                   />
                 </div>
-                <span className="text-2xl text-muted-foreground pt-6">-</span>
+                <span className="text-2xl text-muted-foreground pb-2">-</span>
                 <div className="flex-1">
                   <Label className="text-sm text-muted-foreground mb-1 block">
                     {team2.map((p) => p.user?.name?.split(" ")[0]).join(" & ") || "Team 2"}
                   </Label>
                   <Input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={team2Score}
-                    onChange={(e) => setTeam2Score(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 2);
+                      setTeam2Score(val);
+                    }}
+                    onBlur={() => {
+                      if (team2Score === "") setTeam2Score("0");
+                    }}
                     className="text-center text-lg font-bold"
                   />
                 </div>

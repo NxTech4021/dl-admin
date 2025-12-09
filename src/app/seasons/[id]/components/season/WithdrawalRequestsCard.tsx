@@ -32,7 +32,8 @@ interface WithdrawalRequestsCardProps {
 }
 
 // Helper functions
-const getInitials = (name: string): string => {
+const getInitials = (name: string | null | undefined): string => {
+  if (!name) return '??';
   return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
 };
 
@@ -53,8 +54,9 @@ const truncateText = (text: string, maxLength: number = 50): string => {
   return text.substring(0, maxLength) + '...';
 };
 
-const getAvatarColor = (name: string): string => {
+const getAvatarColor = (name: string | null | undefined): string => {
   const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
+  if (!name) return colors[0];
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
 };
@@ -149,14 +151,14 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
-                      <AvatarFallback className={`text-white text-xs font-semibold ${getAvatarColor(request.user.name)}`}>
-                        {getInitials(request.user.name)}
+                      <AvatarFallback className={`text-white text-xs font-semibold ${getAvatarColor(request.user?.name)}`}>
+                        {getInitials(request.user?.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium text-sm">{request.user.name}</div>
+                      <div className="font-medium text-sm">{request.user?.name || 'Unknown User'}</div>
                       <div className="text-xs text-muted-foreground">
-                        {request.user.email}
+                        {request.user?.email || '—'}
                       </div>
                     </div>
                   </div>
@@ -308,14 +310,14 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
               {/* Player Info */}
               <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                 <Avatar className="size-10">
-                  <AvatarFallback className={`text-white text-sm font-semibold ${getAvatarColor(selectedRequest.user.name)}`}>
-                    {getInitials(selectedRequest.user.name)}
+                  <AvatarFallback className={`text-white text-sm font-semibold ${getAvatarColor(selectedRequest.user?.name)}`}>
+                    {getInitials(selectedRequest.user?.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{selectedRequest.user.name}</div>
+                  <div className="font-medium">{selectedRequest.user?.name || 'Unknown User'}</div>
                   <div className="text-sm text-muted-foreground">
-                    {selectedRequest.user.email}
+                    {selectedRequest.user?.email || '—'}
                   </div>
                 </div>
               </div>

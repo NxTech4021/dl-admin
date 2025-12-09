@@ -26,9 +26,12 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
   const [formData, setFormData] = useState({
     name: season.name,
     description: season.description || '',
-    sportType: season.sportType || '',
-    seasonType: season.seasonType || '',
   });
+
+  // Get sport type from linked league (season doesn't have sportType directly)
+  const sportType = season.leagues?.[0]?.sportType || season.category?.name || null;
+  // Get game type from category
+  const gameType = season.category?.gameType || season.category?.game_type || null;
 
   const handleSubmit = async () => {
     try {
@@ -46,8 +49,8 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Season Details</CardTitle>
-        <Button 
-          onClick={() => (isEditing ? handleSubmit() : setIsEditing(true))} 
+        <Button
+          onClick={() => (isEditing ? handleSubmit() : setIsEditing(true))}
           variant={isEditing ? 'default' : 'outline'}
         >
           {isEditing ? 'Save Changes' : 'Edit Season'}
@@ -59,18 +62,18 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
             <>
               <div className="col-span-full">
                 <Label htmlFor="name">Season Name</Label>
-                <Input 
-                  id="name" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
               </div>
               <div className="col-span-full">
                 <Label htmlFor="description">Description</Label>
-                <Input 
-                  id="description" 
-                  value={formData.description} 
-                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
                 />
               </div>
             </>
@@ -82,11 +85,17 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
                   {season.status}
                 </Badge>
               } />
-              <DetailField label="Sport Type" value={season.sportType} />
-              <DetailField label="Season Type" value={season.seasonType} />
+              <DetailField label="Category" value={season.category?.name} />
+              <DetailField label="Game Type" value={
+                gameType ? (
+                  <Badge variant="outline" className="capitalize">
+                    {gameType}
+                  </Badge>
+                ) : null
+              } />
               <DetailField label="Start Date" value={formattedDate(season.startDate)} />
               <DetailField label="End Date" value={formattedDate(season.endDate)} />
-              {/* <DetailField label="Registration Deadline" value={formattedDate(season.regiDeadline)} /> */}
+              <DetailField label="Registration Deadline" value={formattedDate(season.regiDeadline)} />
               <div className="col-span-full">
                 <DetailField label="Description" value={season.description || 'No description provided.'} />
               </div>

@@ -63,20 +63,35 @@ export function NavSection({
     localStorage.setItem(sectionKey, JSON.stringify(isOpen));
   }, [isOpen, sectionKey]);
 
-  // Check if any item in this section is active
-  const hasActiveItem = items.some((item) => pathname === item.url);
+  // Helper to check if a route is active (supports nested routes)
+  const isRouteActive = (url: string) => {
+    // Exact match for root paths like /dashboard
+    if (pathname === url) return true;
+    // For nested routes, check if pathname starts with the url
+    // but only if it's followed by / or end of string (to avoid /admin matching /admin-logs)
+    if (url !== "/" && pathname.startsWith(url + "/")) return true;
+    return false;
+  };
 
-  // Auto-expand section if it contains the active page
+  // Check if any item in this section is active
+  const hasActiveItem = items.some((item) => isRouteActive(item.url));
+
+  // Auto-expand section when navigating to a page within it (only on route change)
+  const prevPathname = React.useRef(pathname);
   React.useEffect(() => {
-    if (hasActiveItem && !isOpen) {
-      setIsOpen(true);
+    // Only auto-expand if the pathname changed (navigation occurred)
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      if (hasActiveItem && !isOpen) {
+        setIsOpen(true);
+      }
     }
-  }, [hasActiveItem, isOpen]);
+  }, [pathname, hasActiveItem, isOpen]);
 
   const content = (
     <SidebarMenu role="list">
       {items.map((item) => {
-        const isActive = pathname === item.url;
+        const isActive = isRouteActive(item.url);
         return (
           <SidebarMenuItem key={item.title} role="listitem">
             <SidebarMenuButton
@@ -180,7 +195,7 @@ export function NavSection({
             />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
-        <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <CollapsibleContent className="overflow-hidden transition-all duration-200 ease-out data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
           {content}
         </CollapsibleContent>
       </SidebarGroup>

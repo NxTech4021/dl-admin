@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 interface UseDashboardKeyboardProps {
-  onChartRangeChange: (value: "monthly" | "average" | "thisWeek") => void;
+  onChartRangeChange: (value: "monthly" | "average") => void;
   onHistoryRangeChange: (value: 1 | 3 | 6) => void;
   onRefresh: () => void;
   onShowKeyboardHelp?: () => void;
@@ -27,16 +27,13 @@ export function useDashboardKeyboard({
         return;
       }
 
-      // Chart range shortcuts: M, A, W
+      // Chart range shortcuts: M, W (for Weekly Average)
       if (e.key === "m" || e.key === "M") {
         e.preventDefault();
         onChartRangeChange("monthly");
-      } else if (e.key === "a" || e.key === "A") {
-        e.preventDefault();
-        onChartRangeChange("average");
       } else if (e.key === "w" || e.key === "W") {
         e.preventDefault();
-        onChartRangeChange("thisWeek");
+        onChartRangeChange("average");
       }
       // History range shortcuts: 1, 2, 3 (mapping to 1, 3, 6 months)
       else if (e.key === "1") {

@@ -144,6 +144,37 @@
   --chart-padel-friendly: oklch(0.68 0.18 247);
 }
 
+/* Smooth collapsible animations for sidebar sections */
+@keyframes collapse-down {
+  from {
+    opacity: 0;
+    height: 0;
+  }
+  to {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes collapse-up {
+  from {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    opacity: 0;
+    height: 0;
+  }
+}
+
+.animate-collapse-down {
+  animation: collapse-down 200ms ease-out;
+}
+
+.animate-collapse-up {
+  animation: collapse-up 200ms ease-out;
+}
+
 @layer base {
   * {
     @apply border-border;

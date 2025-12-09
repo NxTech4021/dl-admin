@@ -101,7 +101,7 @@ type SportFilter = "all" | "tennis" | "pickleball" | "padel";
 type ChartType = "line" | "bar";
 
 interface MatchActivityChartProps {
-  chartRange?: "monthly" | "average" | "thisWeek";
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }
 
@@ -269,9 +269,7 @@ export function MatchActivityChart({
           <CardDescription>
             Weekly matches (league + friendly) per sport -{" "}
             {chartRange === "average"
-              ? "Average per week"
-              : chartRange === "thisWeek"
-              ? "This week"
+              ? "Weekly average"
               : "Monthly"}{" "}
             ({historyRange} month{historyRange > 1 ? "s" : ""})
           </CardDescription>

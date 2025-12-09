@@ -38,7 +38,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 interface UserGrowthChartProps {
-  chartRange?: "monthly" | "average" | "thisWeek";
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }
 
@@ -96,7 +96,7 @@ export function UserGrowthChart({
     }
   };
 
-  // === Chart Range logic (monthly, average/week, thisWeek)
+  // === Chart Range logic (monthly, average/week)
   const transformedData = React.useMemo(() => {
     if (!chartData) return [];
 
@@ -108,23 +108,6 @@ export function UserGrowthChart({
         payingMembers: Math.round(item.payingMembers / WEEKS_PER_MONTH),
         month: `Week ${index + 1}`,
       }));
-    }
-
-    if (chartRange === "thisWeek") {
-      // Generate daily data for the current week based on latest month
-      const latestMonth = chartData[chartData.length - 1] || { totalUsers: 0, payingMembers: 0 };
-      const weeklyUsers = Math.round(latestMonth.totalUsers / 4.3);
-      const weeklyMembers = Math.round(latestMonth.payingMembers / 4.3);
-
-      return [
-        { month: "Mon", totalUsers: Math.round(weeklyUsers * 0.8), payingMembers: Math.round(weeklyMembers * 0.8) },
-        { month: "Tue", totalUsers: Math.round(weeklyUsers * 0.85), payingMembers: Math.round(weeklyMembers * 0.85) },
-        { month: "Wed", totalUsers: Math.round(weeklyUsers * 0.9), payingMembers: Math.round(weeklyMembers * 0.9) },
-        { month: "Thu", totalUsers: Math.round(weeklyUsers * 0.95), payingMembers: Math.round(weeklyMembers * 0.95) },
-        { month: "Fri", totalUsers: weeklyUsers, payingMembers: weeklyMembers },
-        { month: "Sat", totalUsers: Math.round(weeklyUsers * 1.05), payingMembers: Math.round(weeklyMembers * 1.05) },
-        { month: "Sun", totalUsers: Math.round(weeklyUsers * 1.1), payingMembers: Math.round(weeklyMembers * 1.1) },
-      ];
     }
 
     // Default monthly
@@ -169,9 +152,7 @@ export function UserGrowthChart({
           <CardTitle>User Growth Over Time</CardTitle>
           <CardDescription>
             Showing {chartRange === "average"
-              ? "average per week"
-              : chartRange === "thisWeek"
-              ? "this week"
+              ? "weekly average"
               : "monthly"}{" "}
             data for the past {historyRange} month
             {historyRange > 1 ? "s" : ""}
@@ -180,7 +161,7 @@ export function UserGrowthChart({
 
         {/* Range info display */}
         <div className="text-sm text-muted-foreground">
-          {chartRange === "average" ? "Weekly Average" : chartRange === "thisWeek" ? "Current Week" : "Monthly"} • {historyRange} month{historyRange > 1 ? "s" : ""}
+          {chartRange === "average" ? "Weekly Average" : "Monthly"} • {historyRange} month{historyRange > 1 ? "s" : ""}
         </div>
       </CardHeader>
 

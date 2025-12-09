@@ -1,10 +1,15 @@
 "use client";
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IconFilter, IconX } from "@tabler/icons-react";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterSelect } from "@/components/ui/filter-select";
+
+const STATUS_OPTIONS = [
+  { value: "UPCOMING", label: "Upcoming" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "FINISHED", label: "Finished" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
 
 interface SeasonFiltersProps {
   globalFilter: string;
@@ -19,50 +24,30 @@ export function SeasonFilters({
   statusFilter,
   onGlobalFilterChange,
   onStatusFilterChange,
-  className = "",
 }: SeasonFiltersProps) {
   const handleClear = () => {
     onGlobalFilterChange("");
     onStatusFilterChange("all");
   };
 
+  const hasFilters = !!globalFilter || statusFilter !== "all";
+
   return (
-    <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className}`}>
-      <div className="flex flex-1 gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Input
-            placeholder="Search seasons by name, sport type..."
-            value={globalFilter}
-            onChange={(event) => onGlobalFilterChange(event.target.value)}
-            className="w-full"
-          />
-        </div>
+    <FilterBar onClearAll={handleClear} showClearButton={hasFilters}>
+      <SearchInput
+        value={globalFilter}
+        onChange={onGlobalFilterChange}
+        placeholder="Search seasons by name, sport type..."
+        className="w-full md:w-64"
+      />
 
-        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-[180px]">
-            <IconFilter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="UPCOMING">Upcoming</SelectItem>
-            <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="FINISHED">Finished</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {(globalFilter || statusFilter !== "all") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-          >
-            <IconX className="h-4 w-4 mr-2" />
-            Clear
-          </Button>
-        )}
-      </div>
-    </div>
+      <FilterSelect
+        value={statusFilter === "all" ? undefined : statusFilter}
+        onChange={(val) => onStatusFilterChange(val || "all")}
+        options={STATUS_OPTIONS}
+        allLabel="All Statuses"
+        triggerClassName="w-[160px]"
+      />
+    </FilterBar>
   );
 }

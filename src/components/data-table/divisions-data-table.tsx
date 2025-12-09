@@ -10,7 +10,13 @@ import {
   IconCalendar,
   IconUsers,
   IconTrophy,
+  IconDownload,
+  IconRefresh,
+  IconUserPlus,
+  IconUserMinus,
+  IconExternalLink,
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -59,6 +65,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
   Table,
   TableBody,
   TableCell,
@@ -100,7 +114,28 @@ const DetailRow = ({
   </div>
 );
 
+interface Season {
+  id: string;
+  name: string;
+}
+
+interface DivisionStats {
+  total: number;
+  active: number;
+  inactive: number;
+  byLevel: { beginner: number; intermediate: number; advanced: number };
+  byGameType: { singles: number; doubles: number };
+}
+
+interface DivisionPlayer {
+  id: string;
+  name: string;
+  email: string;
+  rating?: number;
+}
+
 export function DivisionsDataTable() {
+  const router = useRouter();
   const [data, setData] = React.useState<Division[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -113,6 +148,25 @@ export function DivisionsDataTable() {
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+
+  // Season filter
+  const [seasons, setSeasons] = React.useState<Season[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = React.useState<string>("all");
+
+  // Stats
+  const [stats, setStats] = React.useState<DivisionStats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    byLevel: { beginner: 0, intermediate: 0, advanced: 0 },
+    byGameType: { singles: 0, doubles: 0 },
+  });
+
+  // Player assignment
+  const [divisionPlayers, setDivisionPlayers] = React.useState<DivisionPlayer[]>([]);
+  const [availablePlayers, setAvailablePlayers] = React.useState<DivisionPlayer[]>([]);
+  const [isPlayersLoading, setIsPlayersLoading] = React.useState(false);
+  const [isAssigning, setIsAssigning] = React.useState(false);
 
   const [viewDivision, setViewDivision] = React.useState<Division | null>(null);
   const [isViewOpen, setIsViewOpen] = React.useState(false);
@@ -193,9 +247,216 @@ export function DivisionsDataTable() {
     }
   }, []);
 
+  // Fetch seasons for filter dropdown
+  const fetchSeasons = React.useCallback(async () => {
+    try {
+      const response = await axiosInstance.get(endpoints.season.getAll);
+      const seasonsData = response.data?.data || response.data || [];
+      setSeasons(Array.isArray(seasonsData) ? seasonsData : []);
+    } catch (error) {
+      console.error("Failed to fetch seasons:", error);
+    }
+  }, []);
+
+  // Fetch divisions by season
+  const fetchDivisionsBySeason = React.useCallback(async (seasonId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const url = seasonId === "all"
+        ? endpoints.division.getAll
+        : endpoints.division.getBySeasonId(seasonId);
+      const response = await axiosInstance.get(url);
+
+      let divisionsArray = response.data?.data || response.data?.divisions || response.data || [];
+      if (!Array.isArray(divisionsArray)) divisionsArray = [];
+
+      try {
+        const parsed = z.array(divisionSchema).parse(divisionsArray);
+        setData(parsed);
+      } catch {
+        setData(divisionsArray);
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || error.message || "Failed to load divisions");
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Calculate stats from data
+  React.useEffect(() => {
+    const newStats: DivisionStats = {
+      total: data.length,
+      active: data.filter(d => d.isActive).length,
+      inactive: data.filter(d => !d.isActive).length,
+      byLevel: {
+        beginner: data.filter(d => d.divisionLevel === "beginner").length,
+        intermediate: data.filter(d => d.divisionLevel === "intermediate").length,
+        advanced: data.filter(d => d.divisionLevel === "advanced").length,
+      },
+      byGameType: {
+        singles: data.filter(d => d.gameType === "singles").length,
+        doubles: data.filter(d => d.gameType === "doubles").length,
+      },
+    };
+    setStats(newStats);
+  }, [data]);
+
+  // Export to CSV
+  const exportToCSV = React.useCallback(() => {
+    if (data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = [
+      "Name",
+      "Season",
+      "Level",
+      "Game Type",
+      "Gender",
+      "Max Singles",
+      "Max Doubles Teams",
+      "Current Singles",
+      "Current Doubles",
+      "Threshold",
+      "Prize Pool",
+      "Sponsor",
+      "Status",
+      "Auto Assignment",
+      "Created At",
+      "Updated At"
+    ];
+
+    const rows = data.map(d => [
+      d.name,
+      (d as any).season?.name || "",
+      d.divisionLevel || "",
+      d.gameType || "",
+      d.genderCategory || "",
+      d.maxSingles || "",
+      d.maxDoublesTeams || "",
+      d.currentSinglesCount || 0,
+      d.currentDoublesCount || 0,
+      d.threshold || "",
+      d.prizePoolTotal || "",
+      d.sponsoredDivisionName || "",
+      d.isActive ? "Active" : "Inactive",
+      d.autoAssignmentEnabled ? "Yes" : "No",
+      d.createdAt,
+      d.updatedAt
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `divisions-export-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Divisions exported successfully");
+  }, [data]);
+
+  // Fetch players assigned to a division
+  const fetchDivisionPlayers = React.useCallback(async (divisionId: string) => {
+    setIsPlayersLoading(true);
+    try {
+      const response = await axiosInstance.get(endpoints.division.getDivisionAssignments(divisionId));
+      const players = response.data?.data || response.data?.players || response.data || [];
+      setDivisionPlayers(Array.isArray(players) ? players.map((p: any) => ({
+        id: p.userId || p.id,
+        name: p.user?.name || p.name || "Unknown",
+        email: p.user?.email || p.email || "",
+        rating: p.user?.rating || p.rating,
+      })) : []);
+    } catch (error) {
+      console.error("Failed to fetch division players:", error);
+      setDivisionPlayers([]);
+    } finally {
+      setIsPlayersLoading(false);
+    }
+  }, []);
+
+  // Fetch available players (not in this division)
+  const fetchAvailablePlayers = React.useCallback(async (divisionId: string) => {
+    try {
+      const response = await axiosInstance.get(endpoints.admin.divisions.availablePlayers(divisionId));
+      const players = response.data?.data || response.data || [];
+      setAvailablePlayers(Array.isArray(players) ? players.map((p: any) => ({
+        id: p.id,
+        name: p.name || "Unknown",
+        email: p.email || "",
+        rating: p.rating,
+      })) : []);
+    } catch (error) {
+      console.error("Failed to fetch available players:", error);
+      setAvailablePlayers([]);
+    }
+  }, []);
+
+  // Assign player to division
+  const handleAssignPlayer = React.useCallback(async (playerId: string) => {
+    if (!viewDivision) return;
+    setIsAssigning(true);
+    try {
+      await axiosInstance.post(endpoints.division.assignPlayer, {
+        divisionId: viewDivision.id,
+        userId: playerId,
+      });
+      toast.success("Player assigned successfully");
+      await fetchDivisionPlayers(viewDivision.id);
+      await fetchAvailablePlayers(viewDivision.id);
+      await fetchDivisions();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to assign player");
+    } finally {
+      setIsAssigning(false);
+    }
+  }, [viewDivision, fetchDivisionPlayers, fetchAvailablePlayers, fetchDivisions]);
+
+  // Remove player from division
+  const handleRemovePlayer = React.useCallback(async (playerId: string) => {
+    if (!viewDivision) return;
+    setIsAssigning(true);
+    try {
+      await axiosInstance.delete(endpoints.division.removePlayer(viewDivision.id, playerId));
+      toast.success("Player removed successfully");
+      await fetchDivisionPlayers(viewDivision.id);
+      await fetchAvailablePlayers(viewDivision.id);
+      await fetchDivisions();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to remove player");
+    } finally {
+      setIsAssigning(false);
+    }
+  }, [viewDivision, fetchDivisionPlayers, fetchAvailablePlayers, fetchDivisions]);
+
   React.useEffect(() => {
     fetchDivisions();
-  }, [fetchDivisions]);
+    fetchSeasons();
+  }, [fetchDivisions, fetchSeasons]);
+
+  // Fetch divisions when season filter changes
+  React.useEffect(() => {
+    fetchDivisionsBySeason(selectedSeasonId);
+  }, [selectedSeasonId, fetchDivisionsBySeason]);
+
+  // Fetch players when viewing a division
+  React.useEffect(() => {
+    if (viewDivision && isViewOpen) {
+      fetchDivisionPlayers(viewDivision.id);
+      fetchAvailablePlayers(viewDivision.id);
+    }
+  }, [viewDivision, isViewOpen, fetchDivisionPlayers, fetchAvailablePlayers]);
 
   const handleViewDivision = React.useCallback((division: Division) => {
     setViewDivision(division);
@@ -480,10 +741,17 @@ export function DivisionsDataTable() {
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuItem
                   className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                  onClick={() => router.push(`/divisions/${division.id}`)}
+                >
+                  <IconExternalLink className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
                   onClick={() => handleViewDivision(division)}
                 >
                   <IconEye className="mr-2 h-4 w-4" />
-                  View Division
+                  Quick View
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
@@ -506,7 +774,7 @@ export function DivisionsDataTable() {
         },
       },
     ],
-    [handleDeleteRequest, handleEditDivision, handleViewDivision]
+    [handleDeleteRequest, handleEditDivision, handleViewDivision, router]
   );
 
   const table = useReactTable({
@@ -537,6 +805,58 @@ export function DivisionsDataTable() {
   return (
     <>
       <div className="space-y-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Inactive</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{stats.inactive}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Beginner</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.byLevel.beginner}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Intermediate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{stats.byLevel.intermediate}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Advanced</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{stats.byLevel.advanced}</div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
@@ -558,21 +878,44 @@ export function DivisionsDataTable() {
           </div>
         )}
 
-        {/* Search and Selection Info */}
+        {/* Search, Season Filter, and Actions */}
         <div
-          className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}
+          className={`flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${RESPONSIVE_CLASSES.PADDING_LARGE}`}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
             <Input
               placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.DIVISIONS}
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-80"
+              className="w-full sm:w-80"
             />
+            <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filter by season" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Seasons</SelectItem>
+                {seasons.map((season) => (
+                  <SelectItem key={season.id} value={season.id}>
+                    {season.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} division(s) selected
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <IconDownload className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fetchDivisionsBySeason(selectedSeasonId)}>
+              <IconRefresh className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} selected
+            </span>
           </div>
         </div>
 
@@ -680,13 +1023,13 @@ export function DivisionsDataTable() {
           setIsViewOpen(open);
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {viewDivision?.name ?? "Division details"}
             </DialogTitle>
             <DialogDescription>
-              Overview of this division configuration.
+              Overview of this division configuration and player management.
             </DialogDescription>
           </DialogHeader>
           {viewDivision ? (
@@ -783,6 +1126,95 @@ export function DivisionsDataTable() {
                   </p>
                 </div>
               )}
+
+              {/* Player Management Section */}
+              <div className="rounded-lg border bg-background p-4">
+                <h4 className="mb-4 text-sm font-semibold flex items-center gap-2">
+                  <IconUsers className="h-4 w-4" />
+                  Player Management
+                </h4>
+
+                {/* Current Players */}
+                <div className="mb-4">
+                  <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                    Assigned Players ({divisionPlayers.length})
+                  </h5>
+                  {isPlayersLoading ? (
+                    <div className="text-sm text-muted-foreground">Loading players...</div>
+                  ) : divisionPlayers.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No players assigned</div>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {divisionPlayers.map((player) => (
+                        <div key={player.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{player.name}</span>
+                            <span className="text-xs text-muted-foreground">{player.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {player.rating && (
+                              <Badge variant="outline" className="text-xs">
+                                {player.rating} pts
+                              </Badge>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleRemovePlayer(player.id)}
+                              disabled={isAssigning}
+                            >
+                              <IconUserMinus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Available Players to Add */}
+                <div>
+                  <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                    Add Player
+                  </h5>
+                  {availablePlayers.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No available players</div>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {availablePlayers.slice(0, 10).map((player) => (
+                        <div key={player.id} className="flex items-center justify-between p-2 rounded-md bg-muted/30 hover:bg-muted/50">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{player.name}</span>
+                            <span className="text-xs text-muted-foreground">{player.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {player.rating && (
+                              <Badge variant="outline" className="text-xs">
+                                {player.rating} pts
+                              </Badge>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-green-600 hover:bg-green-600/10"
+                              onClick={() => handleAssignPlayer(player.id)}
+                              disabled={isAssigning}
+                            >
+                              <IconUserPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {availablePlayers.length > 10 && (
+                        <div className="text-xs text-muted-foreground text-center py-2">
+                          +{availablePlayers.length - 10} more players available
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">

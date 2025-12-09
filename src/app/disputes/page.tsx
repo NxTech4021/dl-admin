@@ -3,6 +3,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
   IconAlertTriangle,
@@ -22,7 +23,7 @@ import { DisputeDetailDrawer } from "@/components/dispute/dispute-detail-drawer"
 import { DisputeResolveModal } from "@/components/dispute/dispute-resolve-modal";
 import { DisputeAddNoteModal } from "@/components/dispute/dispute-add-note-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDisputes } from "@/hooks/use-queries";
+import { useDisputes, useStartDisputeReview } from "@/hooks/use-queries";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -62,10 +63,21 @@ export default function DisputesPage() {
     limit: pageSize,
   });
 
+  const startReviewMutation = useStartDisputeReview();
+
   // Action handlers
   const handleView = (dispute: Dispute) => {
     setSelectedDispute(dispute);
     setDetailDrawerOpen(true);
+
+    // Auto-start review when opening an OPEN dispute
+    if (dispute.status === "OPEN") {
+      startReviewMutation.mutate(dispute.id, {
+        onSuccess: () => {
+          refetch();
+        },
+      });
+    }
   };
 
   const handleResolve = (dispute: Dispute) => {
@@ -112,66 +124,51 @@ export default function DisputesPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Actions */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconAlertTriangle className="size-8 text-destructive" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Dispute Resolution
-                          </h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                          Review and resolve match disputes raised by players
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
-                          <IconRefresh className="mr-2 size-4" />
-                          Refresh
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <IconDownload className="mr-2 size-4" />
-                          Export
-                        </Button>
-                      </div>
-                    </div>
+            <PageHeader
+              icon={IconAlertTriangle}
+              title="Dispute Resolution"
+              description="Review and resolve match disputes raised by players"
+              actions={
+                <>
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <IconRefresh className="mr-2 size-4" />
+                    Refresh
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <IconDownload className="mr-2 size-4" />
+                    Export
+                  </Button>
+                </>
+              }
+            >
+              {/* Statistics */}
+              <DisputeStatsCards />
 
-                    {/* Statistics */}
-                    <DisputeStatsCards />
-
-                    {/* Filters */}
-                    <DisputeFilters
-                      selectedStatus={selectedStatus}
-                      selectedPriority={selectedPriority}
-                      selectedCategory={selectedCategory}
-                      searchQuery={searchQuery}
-                      onStatusChange={(val) => {
-                        setSelectedStatus(val);
-                        setCurrentPage(1);
-                      }}
-                      onPriorityChange={(val) => {
-                        setSelectedPriority(val);
-                        setCurrentPage(1);
-                      }}
-                      onCategoryChange={(val) => {
-                        setSelectedCategory(val);
-                        setCurrentPage(1);
-                      }}
-                      onSearchChange={(val) => {
-                        setSearchQuery(val);
-                        setCurrentPage(1);
-                      }}
-                      onClearFilters={handleClearFilters}
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* Filters */}
+              <DisputeFilters
+                selectedStatus={selectedStatus}
+                selectedPriority={selectedPriority}
+                selectedCategory={selectedCategory}
+                searchQuery={searchQuery}
+                onStatusChange={(val) => {
+                  setSelectedStatus(val);
+                  setCurrentPage(1);
+                }}
+                onPriorityChange={(val) => {
+                  setSelectedPriority(val);
+                  setCurrentPage(1);
+                }}
+                onCategoryChange={(val) => {
+                  setSelectedCategory(val);
+                  setCurrentPage(1);
+                }}
+                onSearchChange={(val) => {
+                  setSearchQuery(val);
+                  setCurrentPage(1);
+                }}
+                onClearFilters={handleClearFilters}
+              />
+            </PageHeader>
 
               {/* Disputes Table */}
               <div className="flex-1 px-4 lg:px-6 pb-6">
@@ -354,7 +351,6 @@ export default function DisputesPage() {
                   </CardContent>
                 </Card>
               </div>
-            </div>
           </div>
         </div>
       </SidebarInset>

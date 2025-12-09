@@ -26,13 +26,13 @@ import { toast } from "sonner";
 export interface FilterPreset {
   id: string;
   name: string;
-  chartRange: "monthly" | "average" | "thisWeek";
+  chartRange: "monthly" | "average";
   historyRange: 1 | 3 | 6;
   createdAt: Date;
 }
 
 interface DashboardFilterPresetsProps {
-  currentChartRange: "monthly" | "average" | "thisWeek";
+  currentChartRange: "monthly" | "average";
   currentHistoryRange: 1 | 3 | 6;
   onApplyPreset: (preset: FilterPreset) => void;
 }
@@ -47,8 +47,8 @@ const DEFAULT_PRESETS: FilterPreset[] = [
   },
   {
     id: "default-2",
-    name: "Weekly Snapshot",
-    chartRange: "thisWeek",
+    name: "Weekly Trends",
+    chartRange: "average",
     historyRange: 1,
     createdAt: new Date(),
   },
@@ -151,9 +151,7 @@ export function DashboardFilterPresets({
     const chartRangeLabel =
       preset.chartRange === "monthly"
         ? "Monthly"
-        : preset.chartRange === "average"
-        ? "Average/Week"
-        : "This Week";
+        : "Weekly Average";
 
     return `${chartRangeLabel} • ${preset.historyRange}mo`;
   };
@@ -278,9 +276,7 @@ export function DashboardFilterPresets({
                   <span className="font-medium text-foreground">
                     {currentChartRange === "monthly"
                       ? "Monthly"
-                      : currentChartRange === "average"
-                      ? "Average / Week"
-                      : "This Week"}
+                      : "Weekly Average"}
                   </span>
                 </div>
                 <div>

@@ -16,32 +16,36 @@ interface SeasonOverviewStatsProps {
 export default function SeasonOverviewStats({
   season,
 }: SeasonOverviewStatsProps) {
-  // Calculate player statistics
-  const totalRegisteredUsers = season.registeredUserCount || 0;
-  const activePlayers = season.memberships.filter(
+  // Calculate player statistics with null safety
+  const memberships = season.memberships || [];
+  const activePlayers = memberships.filter(
     (m) => m.status === "ACTIVE"
   ).length;
-  const waitlistedPlayers = season.memberships.filter(
+  const waitlistedPlayers = memberships.filter(
     (m) => m.status === "WAITLISTED"
   ).length;
-  const pendingPlayers = season.memberships.filter(
+  const pendingPlayers = memberships.filter(
     (m) => m.status === "PENDING"
   ).length;
+  // Use the larger of registeredUserCount or actual memberships count
+  // This handles cases where registeredUserCount isn't synced with actual data
+  const totalRegisteredUsers = Math.max(season.registeredUserCount || 0, memberships.length);
 
-  // Calculate division statistics
-  const totalDivisions = season.divisions.length;
+  // Calculate division statistics with null safety
+  const divisions = season.divisions || [];
+  const totalDivisions = divisions.length;
 
-  // Calculate withdrawal requests
-  const pendingWithdrawals = season.withdrawalRequests.filter(
+  // Calculate withdrawal requests with null safety
+  const withdrawalRequests = season.withdrawalRequests || [];
+  const pendingWithdrawals = withdrawalRequests.filter(
     (r) => r.status === "PENDING"
   ).length;
 
-  // Calculate revenue
+  // Calculate revenue with proper type handling
   const calculateRevenue = () => {
-    if (!season.entryFee || season.registeredUserCount === 0) return "RM 0.00";
-    const totalRevenue =
-      parseFloat(season.entryFee as unknown as string) *
-      season.registeredUserCount;
+    const entryFee = typeof season.entryFee === 'number' ? season.entryFee : 0;
+    if (!entryFee || season.registeredUserCount === 0) return "RM 0.00";
+    const totalRevenue = entryFee * season.registeredUserCount;
     return `RM ${totalRevenue.toFixed(2)}`;
   };
 
@@ -86,7 +90,7 @@ export default function SeasonOverviewStats({
           <p className="text-xs text-muted-foreground">
             {season.registeredUserCount > 0
               ? `${season.registeredUserCount} players × RM ${
-                  season.entryFee || "0"
+                  typeof season.entryFee === 'number' ? season.entryFee : 0
                 }`
               : "No revenue yet"}
           </p>
