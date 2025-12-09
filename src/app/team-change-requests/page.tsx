@@ -3,6 +3,9 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatsCard } from "@/components/ui/stats-card";
+import { StatsGrid } from "@/components/ui/stats-grid";
 import { Button } from "@/components/ui/button";
 import {
   IconArrowsExchange,
@@ -11,6 +14,10 @@ import {
   IconChevronRight,
   IconCheck,
   IconX,
+  IconClock,
+  IconCircleCheck,
+  IconCircleX,
+  IconList,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,13 +44,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -56,6 +58,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
+const STATUS_OPTIONS = [
+  { value: "PENDING", label: "Pending" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "DENIED", label: "Denied" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
 
 export default function TeamChangeRequestsPage() {
   const [selectedStatus, setSelectedStatus] = useState<TeamChangeRequestStatus | undefined>();
@@ -133,122 +142,81 @@ export default function TeamChangeRequestsPage() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6">
-              {/* Page Header */}
-              <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="px-4 lg:px-6 py-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Title and Actions */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <IconArrowsExchange className="size-8 text-primary" />
-                          <h1 className="text-3xl font-bold tracking-tight">
-                            Team Change Requests
-                          </h1>
-                          {pendingCount !== undefined && pendingCount > 0 && (
-                            <Badge variant="destructive" className="ml-2">
-                              {pendingCount} pending
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-muted-foreground">
-                          Review and process player division transfer requests
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => refetch()}>
-                          <IconRefresh className="mr-2 size-4" />
-                          Refresh
-                        </Button>
-                      </div>
-                    </div>
+            <PageHeader
+              icon={IconArrowsExchange}
+              title="Team Change Requests"
+              description="Review and process player division transfer requests"
+              actions={
+                <>
+                  {pendingCount !== undefined && pendingCount > 0 && (
+                    <Badge variant="destructive">{pendingCount} pending</Badge>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <IconRefresh className="mr-2 size-4" />
+                    Refresh
+                  </Button>
+                </>
+              }
+            >
+              {/* Stats Cards */}
+              <StatsGrid columns={4}>
+                <StatsCard
+                  title="Pending"
+                  value={requests?.filter((r) => r.status === "PENDING").length || 0}
+                  icon={IconClock}
+                  iconColor="text-yellow-500"
+                  loading={isLoading}
+                />
+                <StatsCard
+                  title="Approved"
+                  value={requests?.filter((r) => r.status === "APPROVED").length || 0}
+                  icon={IconCircleCheck}
+                  iconColor="text-green-500"
+                  loading={isLoading}
+                />
+                <StatsCard
+                  title="Denied"
+                  value={requests?.filter((r) => r.status === "DENIED").length || 0}
+                  icon={IconCircleX}
+                  iconColor="text-red-500"
+                  loading={isLoading}
+                />
+                <StatsCard
+                  title="Total"
+                  value={requests?.length || 0}
+                  icon={IconList}
+                  loading={isLoading}
+                />
+              </StatsGrid>
 
-                    {/* Stats Cards */}
-                    <div className="grid gap-4 md:grid-cols-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Pending
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-yellow-600">
-                            {requests?.filter((r) => r.status === "PENDING").length || 0}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Approved
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-green-600">
-                            {requests?.filter((r) => r.status === "APPROVED").length || 0}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Denied
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-red-600">
-                            {requests?.filter((r) => r.status === "DENIED").length || 0}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Total
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold">{requests?.length || 0}</div>
-                        </CardContent>
-                      </Card>
-                    </div>
+              {/* Filters */}
+              <FilterBar
+                onClearAll={() => {
+                  setSelectedStatus(undefined);
+                  setCurrentPage(1);
+                }}
+                showClearButton={!!selectedStatus}
+              >
+                <FilterSelect
+                  value={selectedStatus}
+                  onChange={(value) => {
+                    setSelectedStatus(value as TeamChangeRequestStatus | undefined);
+                    setCurrentPage(1);
+                  }}
+                  options={STATUS_OPTIONS}
+                  allLabel="All Statuses"
+                  triggerClassName="w-[180px]"
+                />
+              </FilterBar>
+            </PageHeader>
 
-                    {/* Filters */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="status-filter">Status:</Label>
-                        <Select
-                          value={selectedStatus || "all"}
-                          onValueChange={(val) => {
-                            setSelectedStatus(val === "all" ? undefined : (val as TeamChangeRequestStatus));
-                            setCurrentPage(1);
-                          }}
-                        >
-                          <SelectTrigger id="status-filter" className="w-[180px]">
-                            <SelectValue placeholder="All statuses" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="PENDING">Pending</SelectItem>
-                            <SelectItem value="APPROVED">Approved</SelectItem>
-                            <SelectItem value="DENIED">Denied</SelectItem>
-                            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Requests Table */}
-              <div className="flex-1 px-4 lg:px-6 pb-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Requests</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+            {/* Requests Table */}
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Requests</CardTitle>
+                </CardHeader>
+                <CardContent>
                     {isLoading ? (
                       <div className="space-y-4">
                         {[...Array(5)].map((_, i) => (
@@ -414,8 +382,7 @@ export default function TeamChangeRequestsPage() {
                       </div>
                     )}
                   </CardContent>
-                </Card>
-              </div>
+              </Card>
             </div>
           </div>
         </div>
