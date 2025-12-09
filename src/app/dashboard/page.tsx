@@ -13,6 +13,8 @@ import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
 import { DashboardChart } from "@/components/ui/dashboard-chart";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { useDashboardExport } from "@/hooks/use-dashboard-export";
+import { useDashboardKPI, queryKeys } from "@/hooks/use-queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useState, useCallback } from "react";
@@ -27,8 +29,7 @@ const UserGrowthChart = dynamic(() =>
     default: mod.UserGrowthChart,
   }))
 ) as React.ComponentType<{
-  chartRange?: "monthly" | "average" | "thisWeek";
-
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }>;
 
@@ -37,8 +38,7 @@ const SportComparisonChart = dynamic(() =>
     default: mod.SportComparisonChart,
   }))
 ) as React.ComponentType<{
-  chartRange?: "monthly" | "average" | "thisWeek";
-
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }>;
 
@@ -47,8 +47,7 @@ const MatchActivityChart = dynamic(() =>
     default: mod.MatchActivityChart,
   }))
 ) as React.ComponentType<{
-  chartRange?: "monthly" | "average" | "thisWeek";
-
+  chartRange?: "monthly" | "average";
   historyRange?: 1 | 3 | 6;
 }>;
 
@@ -64,31 +63,31 @@ const CHART_LOADING_DELAY_MS = 300;
 export default function Page() {
   // === NEW STATE ===
 
-  const [chartRange, setChartRange] = useState<
-    "monthly" | "average" | "thisWeek"
-  >("monthly");
+  const [chartRange, setChartRange] = useState<"monthly" | "average">("monthly");
 
   const [historyRange, setHistoryRange] = useState<1 | 3 | 6>(3);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isChartLoading, setIsChartLoading] = useState(false);
 
+  const queryClient = useQueryClient();
+
   // Handler functions
   const handleRefresh = useCallback(() => {
+    // Invalidate all dashboard-related queries to force refetch
+    queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
     setLastUpdated(new Date());
     toast.success("Dashboard refreshed", {
       description: "All data has been updated",
     });
-    // In real app, this would trigger data refetch
-  }, []);
+  }, [queryClient]);
 
-  const handleChartRangeChange = useCallback((value: "monthly" | "average" | "thisWeek") => {
+  const handleChartRangeChange = useCallback((value: "monthly" | "average") => {
     setIsChartLoading(true);
     setChartRange(value);
     const labels = {
       monthly: "Monthly view",
-      average: "Average per week view",
-      thisWeek: "This week view",
+      average: "Weekly average view",
     };
     toast.info("Chart range updated", {
       description: `Switched to ${labels[value]}`,
@@ -122,6 +121,9 @@ export default function Page() {
 
   // CSV export
   const { exportDashboardCSV } = useDashboardExport();
+
+  // Dashboard KPI data for KeyInsights
+  const { data: kpiData } = useDashboardKPI();
 
   return (
     <SidebarProvider
@@ -167,12 +169,12 @@ export default function Page() {
             <AnimatedContainer delay={0.1}>
               <section className="px-4 sm:px-6">
                 <KeyInsights
-                  totalRevenue={45250}
-                  previousRevenue={38400}
-                  totalMatches={324}
-                  previousMatches={289}
-                  activeUsers={856}
-                  previousActiveUsers={792}
+                  totalRevenue={kpiData?.totalRevenue ?? 0}
+                  previousRevenue={kpiData?.previousRevenue ?? 0}
+                  totalMatches={kpiData?.totalMatches ?? 0}
+                  previousMatches={kpiData?.previousMatches ?? 0}
+                  activeUsers={kpiData?.activeUsers ?? 0}
+                  previousActiveUsers={kpiData?.previousActiveUsers ?? 0}
                 />
               </section>
             </AnimatedContainer>
