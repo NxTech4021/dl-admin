@@ -9,7 +9,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
+  CommandShortcut,
 } from "@/components/ui/command";
 import {
   LayoutDashboard,
@@ -27,10 +27,7 @@ import {
   Settings,
   Handshake,
   Clock,
-  Zap,
-  Keyboard,
 } from "lucide-react";
-import { ICON_SIZES } from "@/lib/constants/ui";
 import { useModals } from "@/contexts/modal-context";
 
 interface NavItem {
@@ -293,12 +290,10 @@ export function CommandPalette() {
               onSelect={action.action}
               keywords={action.keywords}
             >
-              <action.icon className={ICON_SIZES.nav} />
-              <span>{action.title}</span>
+              <action.icon />
+              {action.title}
               {action.shortcut && (
-                <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  {action.shortcut}
-                </kbd>
+                <CommandShortcut>{action.shortcut}</CommandShortcut>
               )}
             </CommandItem>
           ))}
@@ -306,24 +301,19 @@ export function CommandPalette() {
 
         {showNavigation && (
           <>
-            <CommandSeparator />
-
             {/* Recent Pages */}
             {recentPageDetails.length > 0 && (
-              <>
-                <CommandGroup heading="Recent">
-                  {recentPageDetails.map((item) => (
-                    <CommandItem
-                      key={item.url}
-                      onSelect={() => handleNavigate(item.url)}
-                    >
-                      <Clock className={ICON_SIZES.nav} />
-                      <span>{item.title}</span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-                <CommandSeparator />
-              </>
+              <CommandGroup heading="Recent">
+                {recentPageDetails.map((item) => (
+                  <CommandItem
+                    key={item.url}
+                    onSelect={() => handleNavigate(item.url)}
+                  >
+                    <Clock />
+                    {item.title}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             )}
 
             {/* Navigation Items by Group */}
@@ -335,41 +325,15 @@ export function CommandPalette() {
                     onSelect={() => handleNavigate(item.url)}
                     keywords={item.keywords}
                   >
-                    <item.icon className={ICON_SIZES.nav} />
-                    <span>{item.title}</span>
+                    <item.icon />
+                    {item.title}
                     {item.url === "/dashboard" && (
-                      <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                        <span className="text-xs">⌘</span>/
-                      </kbd>
+                      <CommandShortcut>⌘/</CommandShortcut>
                     )}
                   </CommandItem>
                 ))}
               </CommandGroup>
             ))}
-
-            <CommandSeparator />
-
-            {/* Keyboard Hints */}
-            <CommandGroup heading="Keyboard Shortcuts">
-              <CommandItem disabled>
-                <Keyboard className={ICON_SIZES.nav} />
-                <span className="text-muted-foreground text-xs">
-                  ⌘K or Ctrl+K - Open command palette
-                </span>
-              </CommandItem>
-              <CommandItem disabled>
-                <Zap className={ICON_SIZES.nav} />
-                <span className="text-muted-foreground text-xs">
-                  ⌘⇧P or Ctrl+Shift+P - Quick actions only
-                </span>
-              </CommandItem>
-              <CommandItem disabled>
-                <LayoutDashboard className={ICON_SIZES.nav} />
-                <span className="text-muted-foreground text-xs">
-                  ⌘/ or Ctrl+/ - Jump to Dashboard
-                </span>
-              </CommandItem>
-            </CommandGroup>
           </>
         )}
       </CommandList>
