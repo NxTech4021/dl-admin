@@ -14,6 +14,7 @@ import { MatchStatusBadge } from "./match-status-badge";
 import { MatchParticipantsDisplay } from "./match-participants-display";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Separator } from "@/components/ui/separator";
+import { DetailField } from "@/components/ui/detail-field";
 import {
   IconCalendar,
   IconMapPin,
@@ -21,6 +22,7 @@ import {
   IconUsers,
   IconAlertTriangle,
   IconWalk,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 
 interface MatchDetailModalProps {
@@ -101,13 +103,21 @@ export function MatchDetailModal({
                     {match.team1Score} - {match.team2Score}
                   </span>
                   {(() => {
-                    const scores = match.setScores as Array<{ setNumber?: number; team1Games?: number; team2Games?: number }> | null | undefined;
+                    const scores = match.setScores as
+                      | Array<{
+                          setNumber?: number;
+                          team1Games?: number;
+                          team2Games?: number;
+                        }>
+                      | null
+                      | undefined;
                     if (scores && Array.isArray(scores) && scores.length > 0) {
                       return (
                         <div className="mt-2 text-sm text-muted-foreground">
                           {scores.map((set, idx) => (
                             <span key={idx} className="mr-2">
-                              Set {set.setNumber}: {set.team1Games}-{set.team2Games}
+                              Set {set.setNumber}: {set.team1Games}-
+                              {set.team2Games}
                             </span>
                           ))}
                         </div>
@@ -120,53 +130,41 @@ export function MatchDetailModal({
             )}
 
           {/* Date & Location */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <IconCalendar className="size-4" />
-                Match Date
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {formatTableDate(match.matchDate)}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <IconMapPin className="size-4" />
-                Venue
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {match.venue || match.location || "TBD"}
-              </p>
-            </div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <DetailField
+              label="Match Date"
+              icon={<IconCalendar className="size-3" />}
+              value={formatTableDate(match.matchDate)}
+            />
+            <DetailField
+              label="Venue"
+              icon={<IconMapPin className="size-3" />}
+              value={match.venue || match.location || "TBD"}
+            />
           </div>
 
           {/* Division Info */}
           {match.division && (
             <>
               <Separator />
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Division Information</h4>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Division:</span>
-                    <span className="font-medium">{match.division.name}</span>
-                  </div>
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <IconInfoCircle className="size-4" />
+                  Division Information
+                </h4>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <DetailField label="Division" value={match.division.name} />
                   {match.division.season && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Season:</span>
-                      <span className="font-medium">
-                        {match.division.season.name}
-                      </span>
-                    </div>
+                    <DetailField
+                      label="Season"
+                      value={match.division.season.name}
+                    />
                   )}
                   {match.division.league && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">League:</span>
-                      <span className="font-medium">
-                        {match.division.league.name}
-                      </span>
-                    </div>
+                    <DetailField
+                      label="League"
+                      value={match.division.league.name}
+                    />
                   )}
                 </div>
               </div>
@@ -177,12 +175,14 @@ export function MatchDetailModal({
           {(match.adminNotes || match.notes) && (
             <>
               <Separator />
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Notes</h4>
-                <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
-                  {match.adminNotes || match.notes}
-                </p>
-              </div>
+              <DetailField
+                label="Notes"
+                value={
+                  <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
+                    {match.adminNotes || match.notes}
+                  </p>
+                }
+              />
             </>
           )}
 
@@ -227,20 +227,20 @@ export function MatchDetailModal({
           {match.isWalkover && match.walkover && (
             <>
               <Separator />
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <IconWalk className="size-4" />
                   Walkover Information
                 </h4>
-                <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reason:</span>
-                    <span className="font-medium">{match.walkover.reason}</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-muted-foreground">Recorded:</span>
-                    <span>{formatTableDate(match.walkover.recordedAt)}</span>
-                  </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DetailField
+                    label="Reason"
+                    value={match.walkover.reason}
+                  />
+                  <DetailField
+                    label="Recorded"
+                    value={formatTableDate(match.walkover.recordedAt)}
+                  />
                 </div>
               </div>
             </>

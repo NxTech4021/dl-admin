@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { notFound, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Division, divisionSchema } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
@@ -12,7 +12,6 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/lib/auth-client";
 
@@ -22,8 +21,6 @@ import {
   IconTrophy,
   IconTarget,
   IconSettings,
-  IconArrowLeft,
-  IconEdit,
 } from "@tabler/icons-react";
 
 import DivisionOverviewStats from "./components/division/DivisionOverviewStats";
@@ -58,8 +55,11 @@ interface DivisionMatch {
   winner?: string;
 }
 
-export default function DivisionDetailClient({ divisionId }: { divisionId: string }) {
-  const router = useRouter();
+export default function DivisionDetailClient({
+  divisionId,
+}: {
+  divisionId: string;
+}) {
   const [division, setDivision] = useState<Division | null>(null);
   const [players, setPlayers] = useState<DivisionPlayer[]>([]);
   const [matches, setMatches] = useState<DivisionMatch[]>([]);
@@ -98,7 +98,9 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
   const fetchDivision = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.get(endpoints.division.getById(divisionId));
+      const response = await axiosInstance.get(
+        endpoints.division.getById(divisionId)
+      );
       const data = response.data?.data || response.data;
       const parsed = divisionSchema.parse(data);
       setDivision(parsed);
@@ -117,7 +119,8 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
       const response = await axiosInstance.get(
         endpoints.division.getDivisionAssignments(divisionId)
       );
-      const playersData = response.data?.data || response.data?.players || response.data || [];
+      const playersData =
+        response.data?.data || response.data?.players || response.data || [];
       const mappedPlayers = Array.isArray(playersData)
         ? playersData.map((p: any) => ({
             id: p.userId || p.id,
@@ -140,16 +143,17 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
     }
   }, [divisionId]);
 
-  // Fetch matches for this division (placeholder - adjust endpoint as needed)
+  // Fetch matches for this division
   const fetchMatches = useCallback(async () => {
     setIsMatchesLoading(true);
     try {
-      // This endpoint may need to be created or adjusted based on your backend
-      const response = await axiosInstance.get(`/api/division/${divisionId}/matches`);
-      const matchesData = response.data?.data || response.data?.matches || response.data || [];
+      const response = await axiosInstance.get(
+        `/api/division/${divisionId}/matches`
+      );
+      const matchesData =
+        response.data?.data || response.data?.matches || response.data || [];
       setMatches(Array.isArray(matchesData) ? matchesData : []);
     } catch (error) {
-      // Matches endpoint might not exist yet - silently fail
       console.log("Matches endpoint not available or no matches found");
       setMatches([]);
     } finally {
@@ -165,7 +169,7 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
   // Handle player assignment updates
   const handlePlayersUpdated = useCallback(async () => {
     await fetchPlayers();
-    await fetchDivision(); // Refresh division to update counts
+    await fetchDivision();
   }, [fetchPlayers, fetchDivision]);
 
   useEffect(() => {
@@ -181,7 +185,12 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <SiteHeader items={[{ label: "Divisions", href: "/divisions" }, { label: "Loading..." }]} />
+          <SiteHeader
+            items={[
+              { label: "Divisions", href: "/divisions" },
+              { label: "Loading..." },
+            ]}
+          />
           <div className="space-y-6 p-8">
             <div className="space-y-4">
               <Skeleton className="h-8 w-64" />
@@ -233,47 +242,11 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
       <SidebarInset>
         <SiteHeader items={getBreadcrumbItems()} />
         <div className="space-y-6 p-8">
-          {/* Header with Back Button */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/divisions")}
-                className="gap-2"
-              >
-                <IconArrowLeft className="size-4" />
-                Back to Divisions
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-                  <IconTrophy className="size-6 text-primary" />
-                  {division.name}
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant={division.isActive ? "default" : "secondary"}
-                    className={division.isActive ? "bg-green-100 text-green-800 border-green-200" : ""}
-                  >
-                    {division.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                  <Badge variant="outline" className="capitalize">
-                    {division.divisionLevel}
-                  </Badge>
-                  <Badge variant="outline" className="capitalize">
-                    {division.gameType}
-                  </Badge>
-                  {division.genderCategory && (
-                    <Badge variant="outline" className="capitalize">
-                      {division.genderCategory}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <IconUserCircle className="size-4" />
@@ -303,14 +276,23 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
             {/* Overview Tab */}
             <TabsContent value="overview">
               <div className="space-y-6">
-                <DivisionOverviewStats division={division} playersCount={players.length} />
+                {/* Stats Cards Row */}
+                <DivisionOverviewStats
+                  division={division}
+                  playersCount={players.length}
+                />
+
+                {/* Division Details and Quick Info */}
                 <div className="grid gap-6 lg:grid-cols-3">
+                  {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
                     <DivisionDetailsSection
                       division={division}
                       onDivisionUpdated={fetchDivision}
                     />
                   </div>
+
+                  {/* Quick Info Sidebar - spans 1 column */}
                   <div className="space-y-6">
                     <Card>
                       <CardHeader>
@@ -320,41 +302,85 @@ export default function DivisionDetailClient({ divisionId }: { divisionId: strin
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                        {/* Season Info */}
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Season</span>
-                            <span className="font-medium text-sm">
-                              {(division as any).season?.name || "Not assigned"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Auto Assignment</span>
-                            <Badge variant={division.autoAssignmentEnabled ? "default" : "secondary"}>
-                              {division.autoAssignmentEnabled ? "Enabled" : "Disabled"}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Rating Threshold</span>
-                            <span className="font-medium text-sm">
-                              {division.threshold ? `${division.threshold} pts` : "None"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Prize Pool</span>
-                            <span className="font-medium text-sm text-green-600">
-                              {division.prizePoolTotal
-                                ? `MYR ${division.prizePoolTotal.toLocaleString()}`
-                                : "Not set"}
-                            </span>
-                          </div>
-                          {division.sponsoredDivisionName && (
+                          <h4 className="text-sm font-medium text-foreground">
+                            Season
+                          </h4>
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Sponsor</span>
+                              <span className="text-sm text-muted-foreground">
+                                Name
+                              </span>
                               <span className="font-medium text-sm">
-                                {division.sponsoredDivisionName}
+                                {(division as any).season?.name || "Not assigned"}
                               </span>
                             </div>
-                          )}
+                          </div>
+                        </div>
+
+                        {/* Configuration */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">
+                            Configuration
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Auto Assignment
+                              </span>
+                              <Badge
+                                variant={
+                                  division.autoAssignmentEnabled
+                                    ? "default"
+                                    : "secondary"
+                                }
+                              >
+                                {division.autoAssignmentEnabled
+                                  ? "Enabled"
+                                  : "Disabled"}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Rating Threshold
+                              </span>
+                              <span className="font-medium text-sm">
+                                {division.threshold
+                                  ? `${division.threshold} pts`
+                                  : "None"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Prize & Sponsor */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-foreground">
+                            Prize & Sponsor
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Prize Pool
+                              </span>
+                              <span className="font-medium text-sm text-green-600">
+                                {division.prizePoolTotal
+                                  ? `MYR ${division.prizePoolTotal.toLocaleString()}`
+                                  : "Not set"}
+                              </span>
+                            </div>
+                            {division.sponsoredDivisionName && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">
+                                  Sponsor
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {division.sponsoredDivisionName}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

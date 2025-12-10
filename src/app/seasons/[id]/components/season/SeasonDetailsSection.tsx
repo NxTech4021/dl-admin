@@ -9,10 +9,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Season } from "@/constants/zod/season-schema";
+import { DetailField } from "@/components/ui/detail-field";
 import { format } from "date-fns";
-import { IconEdit, IconInfoCircle } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconInfoCircle,
+  IconCalendar,
+  IconCurrencyDollar,
+} from "@tabler/icons-react";
 import SeasonEditModal from "@/components/modal/season-edit-modal";
 
 interface SeasonDetailsSectionProps {
@@ -20,34 +25,21 @@ interface SeasonDetailsSectionProps {
   onSeasonUpdated?: () => Promise<void>;
 }
 
-const DetailField = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null | undefined | React.ReactNode;
-}) => (
-  <div className="space-y-1">
-    <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
-    <div className="text-sm font-medium">{value ?? "N/A"}</div>
-  </div>
-);
-
 export default function SeasonDetailsSection({
   season,
   onSeasonUpdated,
 }: SeasonDetailsSectionProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const formatDate = (date: Date | null | undefined) => {
     if (!date) return "N/A";
     return format(new Date(date), "PPP");
   };
 
-const formatEntryFee = (fee: number | null | undefined) => {
-  if (fee == null || fee === 0) return "Free";
-  return `RM ${fee.toFixed(2)}`;
-};
-
+  const formatEntryFee = (fee: number | null | undefined) => {
+    if (fee == null || fee === 0) return "Free";
+    return `RM ${fee.toFixed(2)}`;
+  };
 
   return (
     <Card>
@@ -77,22 +69,31 @@ const formatEntryFee = (fee: number | null | undefined) => {
             <DetailField label="Season Name" value={season.name} />
             <DetailField
               label="Entry Fee"
+              icon={<IconCurrencyDollar className="size-3" />}
               value={formatEntryFee(season.entryFee)}
             />
-            {/* <DetailField label="Sport Type" value={season.sportType || 'N/A'} />
-            <DetailField label="Season Type" value={season.seasonType || 'N/A'} /> */}
-            <DetailField label="Created" value={formatDate(season.createdAt)} />
+            <DetailField
+              label="Created"
+              icon={<IconCalendar className="size-3" />}
+              value={formatDate(season.createdAt)}
+            />
           </div>
 
           {/* Dates and Timeline */}
           <div className="space-y-4">
             <DetailField
               label="Start Date"
+              icon={<IconCalendar className="size-3" />}
               value={formatDate(season.startDate)}
             />
-            <DetailField label="End Date" value={formatDate(season.endDate)} />
+            <DetailField
+              label="End Date"
+              icon={<IconCalendar className="size-3" />}
+              value={formatDate(season.endDate)}
+            />
             <DetailField
               label="Registration Deadline"
+              icon={<IconCalendar className="size-3" />}
               value={formatDate(season.regiDeadline)}
             />
           </div>
@@ -104,9 +105,9 @@ const formatEntryFee = (fee: number | null | undefined) => {
             <DetailField
               label="Description"
               value={
-                <div className="text-sm leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {season.description}
-                </div>
+                </p>
               }
             />
           </div>
