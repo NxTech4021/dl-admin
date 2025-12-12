@@ -85,8 +85,33 @@ export function MatchDetailModal({
                 matchType={match.matchType}
                 showTeams
                 maxDisplay={10}
+                showInvitationStatus={match.status === "DRAFT"}
               />
             </div>
+            {/* DRAFT status explanation */}
+            {match.status === "DRAFT" && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Draft Match:</strong> This match is awaiting participant responses.
+                  {match.participants?.some(p => p.invitationStatus === "DECLINED") && (
+                    <span className="block mt-1 text-red-600 dark:text-red-400">
+                      Some invitations have been declined. The creator needs to invite new players.
+                    </span>
+                  )}
+                  {match.participants?.some(p => p.invitationStatus === "EXPIRED") && (
+                    <span className="block mt-1 text-gray-600 dark:text-gray-400">
+                      Some invitations have expired. The creator needs to resend invitations.
+                    </span>
+                  )}
+                  {match.participants?.every(p => p.invitationStatus === "PENDING" || p.invitationStatus === "ACCEPTED") &&
+                   match.participants?.some(p => p.invitationStatus === "PENDING") && (
+                    <span className="block mt-1">
+                      Waiting for all players to accept their invitations.
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Score (if completed) */}
