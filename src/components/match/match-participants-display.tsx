@@ -1,7 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MatchParticipant } from "@/constants/zod/match-schema";
-import { getInitials } from "@/components/data-table/constants";
+import { getInitials, getStatusBadgeColor } from "@/components/data-table/constants";
+import { cn } from "@/lib/utils";
 
 /** Get display name with fallback for undefined user names */
 const getDisplayName = (participant: MatchParticipant): string => {
@@ -19,13 +20,27 @@ interface MatchParticipantsDisplayProps {
   matchType: "SINGLES" | "DOUBLES";
   maxDisplay?: number;
   showTeams?: boolean;
+  showInvitationStatus?: boolean;
 }
+
+/** Get invitation status badge label */
+const getInvitationStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    PENDING: "Pending",
+    ACCEPTED: "Accepted",
+    DECLINED: "Declined",
+    EXPIRED: "Expired",
+    CANCELLED: "Cancelled",
+  };
+  return labels[status] || status;
+};
 
 export function MatchParticipantsDisplay({
   participants,
   matchType,
   maxDisplay = 4,
   showTeams = false,
+  showInvitationStatus = false,
 }: MatchParticipantsDisplayProps) {
   if (!participants || participants.length === 0) {
     return <span className="text-muted-foreground text-xs">No participants</span>;
@@ -49,6 +64,14 @@ export function MatchParticipantsDisplay({
               </AvatarFallback>
             </Avatar>
             <span className="text-sm font-medium">{getDisplayName(participant)}</span>
+            {showInvitationStatus && participant.invitationStatus && (
+              <Badge
+                variant="outline"
+                className={cn("text-[10px] px-1.5 py-0", getStatusBadgeColor("INVITATION", participant.invitationStatus))}
+              >
+                {getInvitationStatusLabel(participant.invitationStatus)}
+              </Badge>
+            )}
           </div>
         ))}
         {remainingCount > 0 && (
@@ -63,6 +86,37 @@ export function MatchParticipantsDisplay({
   // Doubles - group by team
   const team1 = participants.filter((p) => p.team === "team1");
   const team2 = participants.filter((p) => p.team === "team2");
+
+  // Helper to render invitation status for a team
+  const renderTeamInvitationStatus = (teamParticipants: MatchParticipant[]) => {
+    if (!showInvitationStatus) return null;
+    const pendingCount = teamParticipants.filter(p => p.invitationStatus === "PENDING").length;
+    const declinedCount = teamParticipants.filter(p => p.invitationStatus === "DECLINED").length;
+    const expiredCount = teamParticipants.filter(p => p.invitationStatus === "EXPIRED").length;
+
+    if (declinedCount > 0) {
+      return (
+        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 ml-1", getStatusBadgeColor("INVITATION", "DECLINED"))}>
+          Declined
+        </Badge>
+      );
+    }
+    if (expiredCount > 0) {
+      return (
+        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 ml-1", getStatusBadgeColor("INVITATION", "EXPIRED"))}>
+          Expired
+        </Badge>
+      );
+    }
+    if (pendingCount > 0) {
+      return (
+        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 ml-1", getStatusBadgeColor("INVITATION", "PENDING"))}>
+          Pending
+        </Badge>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="flex items-center gap-3">
@@ -85,6 +139,7 @@ export function MatchParticipantsDisplay({
         {showTeams && (
           <span className="text-xs text-muted-foreground ml-1">(Team 1)</span>
         )}
+        {renderTeamInvitationStatus(team1)}
       </div>
 
       <span className="text-muted-foreground">vs</span>
@@ -108,6 +163,7 @@ export function MatchParticipantsDisplay({
         {showTeams && (
           <span className="text-xs text-muted-foreground ml-1">(Team 2)</span>
         )}
+        {renderTeamInvitationStatus(team2)}
       </div>
     </div>
   );
