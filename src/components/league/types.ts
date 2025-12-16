@@ -1,9 +1,11 @@
 // Shared types for league-related components
 
+export type SportType = "TENNIS" | "PICKLEBALL" | "PADEL";
+
 export interface League {
   id: string;
   name: string;
-  sportType: string;
+  sportType: SportType;
   location: string | null;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "UPCOMING" | "ONGOING" | "FINISHED" | "CANCELLED";
   joinType: "OPEN" | "INVITE_ONLY" | "MANUAL";
