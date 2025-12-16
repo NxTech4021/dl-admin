@@ -121,6 +121,12 @@ export default function SeasonPlayersCard({
     return division ? division.name : "Unassigned";
   };
 
+  const getUsername = (user: Membership["user"]) => {
+    if (!user) return "unknown";
+    // Prefer displayUsername, then username, then email prefix as fallback
+    return (user as any).displayUsername || user.username || user.email?.split("@")[0] || "unknown";
+  };
+
   const getGameType = (): "SINGLES" | "DOUBLES" | null => {
     // Check category.gameType first (more specific to season)
     const categoryGameType = season?.category?.gameType;
@@ -420,8 +426,8 @@ export default function SeasonPlayersCard({
                             {member2.user?.name || "Unknown"}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            @{member1.user?.email?.split("@")[0] || "unknown"}{" "}
-                            & @{member2.user?.email?.split("@")[0] || "unknown"}
+                            @{getUsername(member1.user)}{" "}
+                            & @{getUsername(member2.user)}
                           </div>
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -535,7 +541,7 @@ export default function SeasonPlayersCard({
                           {member.user?.name || "Unknown"}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          @{member.user?.email?.split("@")[0] || "unknown"}
+                          @{getUsername(member.user)}
                         </div>
                       </div>
                     </TableCell>
