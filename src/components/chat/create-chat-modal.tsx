@@ -75,8 +75,6 @@ export default function NewChatModal({
         createdBy: currentUserId,
       };
 
-      console.log('Creating thread with user:', user.name);
-      
       const newThread = await createThread(threadData);
       
       if (newThread) {
@@ -91,8 +89,7 @@ export default function NewChatModal({
         
         toast.success(`Chat with ${user.name} started!`);
       }
-    } catch (error) {
-      console.error('Failed to create thread:', error);
+    } catch {
       toast.error('Failed to start chat. Please try again.');
     } finally {
       setCreatingChatWithUser(null);

@@ -75,7 +75,6 @@ export function useChatData(userId?: string) {
       threadId: string;
       lastMessage: Message;
     }) => {
-      console.log("📥 Thread updated:", data.threadId);
       setThreads((prev) =>
         prev.map((thread) =>
           thread.id === data.threadId
@@ -168,8 +167,6 @@ export function useMessages(threadId?: string) {
       if (!threadId) return;
 
       try {
-        console.log("Sending message:", { threadId, senderId, content, repliesToId });
-
         const payload: any = {
           senderId,
           content,
@@ -183,8 +180,6 @@ export function useMessages(threadId?: string) {
           endpoints.chat.sendMessage(threadId),
           payload
         );
-
-        console.log("Send message response:", response.data);
 
         let newMessage = null;
 
@@ -219,16 +214,11 @@ export function useMessages(threadId?: string) {
     async (messageId: string) => {
       if (!threadId) return;
 
+      // Store original messages for rollback
+      const originalMessages = [...messages];
+
       try {
-        console.log("Deleting message:", messageId);
-
-        const response = await axiosInstance.delete(
-          endpoints.chat.deleteMessage(messageId)
-        );
-
-        console.log("Delete message response:", response.data);
-
-        // Optimistically update the UI
+        // Optimistically update the UI first
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageId
@@ -242,10 +232,16 @@ export function useMessages(threadId?: string) {
           )
         );
 
+        await axiosInstance.delete(
+          endpoints.chat.deleteMessage(messageId)
+        );
+
         toast.success("Message deleted successfully");
         return true;
       } catch (err: any) {
-        console.error("Error deleting message:", err);
+        // Rollback optimistic update on failure
+        setMessages(originalMessages);
+
         const errorMessage =
           err.response?.data?.message ||
           err.response?.data?.error ||
@@ -255,7 +251,7 @@ export function useMessages(threadId?: string) {
         throw err;
       }
     },
-    [threadId]
+    [threadId, messages]
   );
 
   // Socket event listeners for real-time messages
@@ -263,8 +259,6 @@ export function useMessages(threadId?: string) {
     if (!socket || !isConnected) return;
 
     const handleNewMessage = (message: Message) => {
-      console.log("📥 Received new message:", message.id);
-
       // Only add message if it belongs to current thread
       if (message.threadId === threadId) {
         setMessages((prev) => [...prev, message]);
@@ -272,8 +266,6 @@ export function useMessages(threadId?: string) {
     };
 
     const handleMessageDeleted = (data: { messageId: string; threadId: string }) => {
-      console.log("🗑️ Message deleted:", data);
-
       if (data.threadId === threadId) {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -301,8 +293,6 @@ export function useMessages(threadId?: string) {
       readerId: string;
       readerName: string;
     }) => {
-      console.log("👁️ Message read:", data);
-
       if (data.threadId === threadId) {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -364,8 +354,8 @@ export function useMessages(threadId?: string) {
   const markAsRead = useCallback(async (messageId: string) => {
     try {
       await axiosInstance.post(endpoints.chat.markAsRead(messageId));
-    } catch (err: any) {
-      console.error("Error marking message as read:", err);
+    } catch {
+      // Silently fail - read receipts shouldn't block user interaction
     }
   }, []);
 
@@ -393,13 +383,20 @@ export function useTypingIndicator(threadId?: string) {
   const user = session?.user;
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+  // Clear typing timeout and reset state when thread changes
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
+      }
+      // Reset typing users when leaving thread
+      setTypingUsers([]);
+    };
+  }, [threadId]);
+
   useEffect(() => {
     if (!socket || !isConnected || !threadId) {
-      console.log("❌ Not setting up typing listener:", {
-        socket: !!socket,
-        isConnected,
-        threadId,
-      });
       return;
     }
 
@@ -408,21 +405,15 @@ export function useTypingIndicator(threadId?: string) {
       senderId: string;
       isTyping: boolean;
     }) => {
-      console.log("📝 Received typing_status event:", data);
-
       if (data.threadId !== threadId) {
-        console.log("❌ Typing event for different thread, ignoring");
         return;
       }
 
       if (data.senderId === user?.id) {
-        console.log("❌ Ignoring typing from current user");
         return;
       }
 
       setTypingUsers((prev) => {
-        console.log("📝 Current typing users:", prev);
-
         if (data.isTyping) {
           const exists = prev.some(
             (typingUser) => typingUser.userId === data.senderId
@@ -431,19 +422,15 @@ export function useTypingIndicator(threadId?: string) {
             return prev;
           }
 
-          // TO DO use actual User name from paticipants
-          const newUsers = [
+          // TODO: use actual User name from participants
+          return [
             ...prev,
             { userId: data.senderId, userName: "Someone" },
           ];
-
-          return newUsers;
         } else {
-          const newUsers = prev.filter(
+          return prev.filter(
             (typingUser) => typingUser.userId !== data.senderId
           );
-
-          return newUsers;
         }
       });
     };
@@ -451,7 +438,6 @@ export function useTypingIndicator(threadId?: string) {
     socket.on("typing_status", handleTypingStatus);
 
     return () => {
-      console.log("🧹 Cleaning up typing listener for thread:", threadId);
       socket.off("typing_status", handleTypingStatus);
     };
   }, [socket, isConnected, threadId, user?.id]);
@@ -459,11 +445,9 @@ export function useTypingIndicator(threadId?: string) {
   const setTyping = useCallback(
     (isTyping: boolean) => {
       if (!threadId) {
-        console.log("❌ No threadId for typing");
         return;
       }
 
-      console.log("⌨️ Setting typing status:", { threadId, isTyping });
       sendTyping(threadId, isTyping);
 
       if (isTyping) {
@@ -472,15 +456,18 @@ export function useTypingIndicator(threadId?: string) {
         }
 
         typingTimeoutRef.current = setTimeout(() => {
-          console.log("⌨️ Auto-stopping typing after timeout");
           sendTyping(threadId, false);
         }, 3000);
+      } else {
+        // Clear timeout when explicitly stopping typing
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = undefined;
+        }
       }
     },
     [threadId, sendTyping]
   );
-
-  console.log("📝 Current typing users in hook:", typingUsers);
 
   return {
     typingUsers,
@@ -566,14 +553,10 @@ export function useCreateThread() {
         setLoading(true);
         setError(null);
 
-        console.log("Creating thread:", data);
-
         const response = await axiosInstance.post(
           endpoints.chat.createThread,
           data
         );
-
-        console.log("Create thread response:", response.data);
 
         if (response.data) {
           let newThread = null;
@@ -632,12 +615,9 @@ export function useAvailableUsers(currentUserId?: string) {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching available users for:", currentUserId);
       const response = await axiosInstance.get(
         endpoints.chat.getAvailableUsers(currentUserId)
       );
-
-      console.log("Available users response:", response.data);
 
       let usersData: AvailableUser[] = [];
 
