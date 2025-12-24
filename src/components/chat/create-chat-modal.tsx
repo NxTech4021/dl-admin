@@ -24,7 +24,7 @@ interface NewChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId?: string;
-  onThreadCreated?: () => void;
+  onThreadCreated?: () => Promise<void> | void;
 }
 
 const UserSkeleton = () => (
@@ -76,10 +76,10 @@ export default function NewChatModal({
       };
 
       const newThread = await createThread(threadData);
-      
+
       if (newThread) {
-        // Trigger refetch FIRST before any navigation/closing
-        onThreadCreated?.();
+        // Trigger refetch and WAIT for it to complete before navigation
+        await onThreadCreated?.();
 
         // Close modal
         handleClose();
