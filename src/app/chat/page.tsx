@@ -231,6 +231,7 @@ function ChatViewContent() {
       selectedConversationId={selectedConversationId}
       user={user}
       onConversationSelect={handleConversationSelect}
+      onThreadCreated={refetchThreads}
     />
   );
 
