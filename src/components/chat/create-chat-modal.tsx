@@ -24,7 +24,7 @@ interface NewChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId?: string;
-  onThreadCreated?: () => void;
+  onThreadCreated?: () => Promise<void> | void;
 }
 
 const UserSkeleton = () => (
@@ -76,22 +76,25 @@ export default function NewChatModal({
       };
 
       const newThread = await createThread(threadData);
-      
+
       if (newThread) {
-        // Close modal and reset state
-        handleClose();
-        
+        // Trigger refetch and WAIT for it to complete before navigation
+        await onThreadCreated?.();
+
+        // Reset creating state first so handleClose doesn't return early
+        setCreatingChatWithUser(null);
+
+        // Close modal
+        onOpenChange(false);
+        setSearchQuery('');
+
         // Navigate to the new thread
         router.push(`/chat?id=${newThread.id}`);
-        
-        // Notify parent component
-        onThreadCreated?.();
-        
+
         toast.success(`Chat with ${user.name} started!`);
       }
     } catch {
       toast.error('Failed to start chat. Please try again.');
-    } finally {
       setCreatingChatWithUser(null);
     }
   };
