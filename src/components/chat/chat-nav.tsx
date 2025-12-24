@@ -80,7 +80,8 @@ export default function ChatNav({
   conversations,
   selectedConversationId,
   onConversationSelect,
-}: ChatNavProps) {
+  onThreadCreated,
+}: ChatNavProps & { onThreadCreated?: () => void }) {
   const router = useRouter();
   const mdUp = useResponsive();
   const {
@@ -163,9 +164,9 @@ export default function ChatNav({
 
   const handleThreadCreated = useCallback(() => {
     closeNewChatModal();
-    // Optionally trigger a refetch of conversations
-    // if (onThreadCreated) onThreadCreated();
-  }, [closeNewChatModal]);
+    // Trigger a refetch of conversations to show the new thread
+    onThreadCreated?.();
+  }, [closeNewChatModal, onThreadCreated]);
 
   // Render Functions
   const renderToggleBtn = () => (
