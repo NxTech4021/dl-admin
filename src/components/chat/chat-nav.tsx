@@ -163,10 +163,10 @@ export default function ChatNav({
   // }, [onConversationSelect, mdUp, onCloseMobile]);
 
   const handleThreadCreated = useCallback(async () => {
-    closeNewChatModal();
     // Trigger a refetch of conversations and wait for completion
+    // Don't close modal here - let the caller handle it after navigation
     await onThreadCreated?.();
-  }, [closeNewChatModal, onThreadCreated]);
+  }, [onThreadCreated]);
 
   // Render Functions
   const renderToggleBtn = () => (
