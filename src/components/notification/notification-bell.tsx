@@ -21,6 +21,7 @@ const varHover = {
 
 export default function NotificationBell({ onClick, className, isOpen = false }: NotificationBellProps) {
   const { unreadCount } = useNotifications();
+  const hasNotifications = unreadCount > 0;
 
   return (
     <Button
@@ -35,17 +36,25 @@ export default function NotificationBell({ onClick, className, isOpen = false }:
         variants={varHover}
         onClick={onClick}
         className={cn(
-          "h-12 w-12 rounded-lg transition-colors border border-border/50 hover:border-border",
+          "h-9 w-9 rounded-md transition-all border cursor-pointer",
           isOpen 
-            ? "bg-primary text-primary-foreground border-primary" 
-            : "hover:bg-accent hover:text-accent-foreground"
+            ? "bg-primary text-primary-foreground border-primary/80 shadow-sm" 
+            : "border-border/60 hover:border-border bg-background hover:bg-muted/60 text-foreground/80 hover:text-foreground",
+          hasNotifications && !isOpen && "ring-2 ring-red-500/20"
         )}
       >
-        <IconBell className="h-6 w-6" />
-        {unreadCount > 0 && (
+        <IconBell className={cn(
+          "h-4 w-4",
+          isOpen ? "text-primary-foreground" : "text-foreground",
+          hasNotifications && !isOpen && "text-red-600 dark:text-red-400"
+        )} />
+        {hasNotifications && (
           <Badge
             variant="destructive"
-            className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 text-xs font-semibold flex items-center justify-center min-w-6 shadow-md"
+            className={cn(
+              "absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-[10px] font-bold flex items-center justify-center min-w-5 shadow-md border-2 border-background animate-pulse",
+              isOpen && "border-primary-foreground/20 animate-none"
+            )}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </Badge>

@@ -204,3 +204,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Touch device utility for hover-only elements */
+@media (hover: none) and (pointer: coarse) {
+  .touch-device\:opacity-100 {
+    opacity: 1 !important;
+  }
+}

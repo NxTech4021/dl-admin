@@ -8,9 +8,8 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -174,9 +173,9 @@ const NotificationItem = React.memo(({
     <div
       onClick={handleClick}
       className={cn(
-        "group relative flex items-start gap-3 p-3 hover:bg-accent/50 transition-colors cursor-pointer border-l-2 border-transparent",
-        !notification.read && "bg-accent/30 border-l-primary",
-        notificationUrl && !selectMode && "hover:bg-accent/70",
+        "group relative flex items-start gap-2.5 p-2.5 hover:bg-accent/40 transition-colors cursor-pointer border-l border-transparent",
+        !notification.read && "bg-primary/5 border-l-primary/60",
+        notificationUrl && !selectMode && "hover:bg-accent/50",
         isSelected && "bg-primary/10 border-l-primary"
       )}
     >
@@ -184,35 +183,37 @@ const NotificationItem = React.memo(({
       {selectMode && (
         <button
           onClick={handleCheckboxClick}
-          className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1.5"
+          className="flex-shrink-0 w-4 h-4 flex items-center justify-center mt-1.5 cursor-pointer"
         >
           {isSelected ? (
-            <IconSquareCheck className="h-4 w-4 text-primary" />
+            <IconSquareCheck className="h-3.5 w-3.5 text-primary" />
           ) : (
-            <IconSquare className="h-4 w-4 text-muted-foreground" />
+            <IconSquare className="h-3.5 w-3.5 text-muted-foreground" />
           )}
         </button>
       )}
 
       {/* Icon with colored background */}
       <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-accent/50 flex items-center justify-center mt-0.5", iconColor)}>
-        {getNotificationIcon(notification.category)}
+        <span className="[&>svg]:h-3 [&>svg]:w-3">
+          {getNotificationIcon(notification.category)}
+        </span>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1">
+      <div className="flex-1 min-w-0 space-y-1 pr-16">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {notification.title && (
-              <p className="text-sm font-medium text-foreground leading-5 truncate">
+              <p className="text-sm font-medium text-foreground leading-tight truncate">
                 {notification.title}
               </p>
             )}
-            <p className="text-xs text-muted-foreground leading-4 line-clamp-2 mt-0.5">
+            <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mt-0.5">
               {notification.message}
             </p>
-            
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 mt-1.5">
+
+            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground/70 mt-1.5">
               <span>{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}</span>
               {/* Status indicator with color based on read status */}
               {!notification.read ? (
@@ -233,48 +234,52 @@ const NotificationItem = React.memo(({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Action buttons - always visible on the right */}
-        <div className="flex items-center justify-end gap-1 mt-2">
-          {!notification.read && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground border-muted-foreground/20"
-                    onClick={handleMarkAsRead}
-                  >
-                    <IconCheck className="h-3 w-3" />
-                    <span>Mark read</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Mark as read</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          
+      {/* Action buttons - hover-only on desktop, always visible on touch */}
+      <div
+        className={cn(
+          "absolute right-2 top-1/2 -translate-y-1/2",
+          "flex items-center gap-0.5",
+          "bg-background/95 backdrop-blur-sm rounded-md p-0.5 shadow-sm border",
+          "opacity-0 group-hover:opacity-100 transition-opacity duration-150",
+          "focus-within:opacity-100",
+          "touch-device:opacity-100"
+        )}
+      >
+        {!notification.read && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                  onClick={handleDelete}
+                <button
+                  onClick={handleMarkAsRead}
+                  className="inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <IconTrash className="h-3 w-3" />
-                </Button>
+                  <IconCheck className="h-3.5 w-3.5" />
+                </button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete notification</p>
+              <TooltipContent side="bottom">
+                <p>Mark as read</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+        )}
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleDelete}
+                className="inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+              >
+                <IconTrash className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Delete</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
@@ -286,7 +291,6 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
   const router = useRouter();
   const {
     notifications,
-    unreadCount,
     loading,
     loadingMore,
     pagination,
@@ -389,154 +393,220 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-[400px] p-0 flex flex-col">
-        {/* Header - Clean and minimal with proper spacing */}
-        <div className="flex items-center justify-between p-4 pr-12 border-b">
-          <DialogTitle asChild>
-            <div className="flex items-center gap-2">
-              <IconBell className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold">Notifications</h2>
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="text-[10px] h-4 px-1.5">
-                  {unreadCount}
-                </Badge>
+      <SheetContent side="right" className="w-full max-w-[400px] p-0 flex flex-col h-full overflow-hidden [&>button]:hidden">
+        {/* Header + Filters (consolidated) */}
+        <div className="px-3 pt-3 pb-2.5 space-y-2.5">
+          {/* Title row with actions */}
+          <div className="flex items-center justify-between">
+            <DialogTitle asChild>
+              <div className="flex items-center gap-2">
+                <IconBell className="h-4 w-4 text-foreground/80" />
+                <h2 className="text-sm font-semibold text-foreground">Notifications</h2>
+                {unreadCountTotal > 0 && (
+                  <span className="text-[11px] text-foreground/70 font-medium">
+                    ({unreadCountTotal} unread)
+                  </span>
+                )}
+              </div>
+            </DialogTitle>
+
+            <div className="flex items-center gap-1">
+              {!selectMode && unreadCountTotal > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={markAllAsRead}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors border border-border/50 cursor-pointer"
+                      >
+                        <IconCheckbox className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Mark all read</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
+
+              {filteredNotifications.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={toggleSelectMode}
+                        className={cn(
+                          "inline-flex items-center justify-center h-8 w-8 rounded-md transition-colors border cursor-pointer",
+                          selectMode
+                            ? "bg-primary text-primary-foreground border-primary/50"
+                            : "text-foreground/80 hover:text-foreground hover:bg-muted/70 border-border/50"
+                        )}
+                      >
+                        {selectMode ? (
+                          <IconX className="h-4 w-4" />
+                        ) : (
+                          <IconSelectAll className="h-4 w-4" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{selectMode ? "Cancel" : "Select"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              {!selectMode && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={refresh}
+                        disabled={loading}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border/50 cursor-pointer"
+                      >
+                        <IconRefresh className={cn("h-4 w-4", loading && "animate-spin")} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Refresh</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onOpenChange(false)}
+                      className="inline-flex items-center justify-center h-8 w-8 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors border border-border/50 cursor-pointer"
+                    >
+                      <IconX className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Close</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-          </DialogTitle>
+          </div>
 
-          <div className="flex items-center gap-1">
-            {/* Select mode toggle */}
-            {filteredNotifications.length > 0 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={selectMode ? "default" : "ghost"}
-                      size="sm"
-                      onClick={toggleSelectMode}
-                      className="h-7 w-7 p-0"
-                    >
-                      {selectMode ? (
-                        <IconX className="h-3.5 w-3.5" />
-                      ) : (
-                        <IconSelectAll className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>{selectMode ? "Cancel selection" : "Select multiple"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {!selectMode && unreadCountTotal > 0 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={markAllAsRead}
-                      className="h-7 w-7 p-0"
-                    >
-                      <IconCheckbox className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>Mark all as read</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {!selectMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={refresh}
-                disabled={loading}
-                className="h-7 w-7 p-0"
+          {/* Search input */}
+          <div className="relative">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/60" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 text-sm pl-9 pr-9 bg-background border border-border/60 rounded-md focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:border-ring text-foreground placeholder:text-foreground/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors border border-border/50 cursor-pointer"
               >
-                <IconRefresh className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-              </Button>
+                <IconX className="h-3 w-3 text-foreground/70" />
+              </button>
             )}
           </div>
-        </div>
 
-        {/* Compact filter section */}
-        <div className="p-3 border-b bg-accent/20 space-y-2">
-          {/* Quick filter buttons */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant={filter === 'all' ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setFilter('all')}
-              className="h-6 px-2 text-xs"
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === 'unread' ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setFilter('unread')}
-              className="h-6 px-2 text-xs gap-1"
-            >
-              Unread
-              {unreadCountTotal > 0 && (
-                <Badge variant="secondary" className="text-[9px] h-3 px-1 bg-red-500 text-white">
-                  {unreadCountTotal}
-                </Badge>
-              )}
-            </Button>
-          </div>
-
-          {/* Search and category filter */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <IconSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-7 text-xs pl-7"
-              />
+          {/* Filter row */}
+          <div className="flex items-center gap-1.5">
+            {/* Tab-style filter buttons */}
+            <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 flex-1 border border-border/50">
+              <button
+                onClick={() => setFilter('all')}
+                className={cn(
+                  "flex-1 inline-flex items-center justify-center rounded px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                  filter === 'all'
+                    ? "bg-background text-foreground shadow-sm border border-border/50"
+                    : "text-foreground/70 hover:text-foreground"
+                )}
+              >
+                All
+                <span className={cn(
+                  "ml-1.5 text-[10px] font-medium",
+                  filter === 'all' ? "text-foreground/70" : "text-foreground/50"
+                )}>
+                  {notifications.filter(n => !n.archive).length}
+                </span>
+              </button>
+              <button
+                onClick={() => setFilter('unread')}
+                className={cn(
+                  "flex-1 inline-flex items-center justify-center rounded px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                  filter === 'unread'
+                    ? "bg-background text-foreground shadow-sm border border-border/50"
+                    : "text-foreground/70 hover:text-foreground"
+                )}
+              >
+                Unread
+                {unreadCountTotal > 0 && (
+                  <span className={cn(
+                    "ml-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1.5 text-[10px] font-semibold rounded-full",
+                    filter === 'unread'
+                      ? "bg-red-600 text-white"
+                      : "bg-red-500/20 text-red-700 dark:text-red-400"
+                  )}>
+                    {unreadCountTotal}
+                  </span>
+                )}
+              </button>
             </div>
-            
+
+            {/* Category filter dropdown */}
             <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as NotificationCategory | "all")}>
-              <SelectTrigger className="w-24 h-7 text-xs">
-                <SelectValue />
+              <SelectTrigger className={cn(
+                "w-auto h-9 text-xs gap-1.5 rounded-md px-2.5 transition-colors border cursor-pointer",
+                categoryFilter !== "all"
+                  ? "bg-primary/10 border-primary/30 text-primary font-medium"
+                  : "bg-background border-border/60 text-foreground/80 hover:text-foreground hover:border-border"
+              )}>
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+              <SelectContent align="end">
+                <SelectItem value="all" className="text-xs text-foreground">All categories</SelectItem>
                 {NOTIFICATION_CATEGORIES.map((category) => (
-                  <SelectItem key={category.value} value={category.value} className="text-xs">
-                    {category.label}
+                  <SelectItem key={category.value} value={category.value} className="text-xs text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      {category.icon}
+                      {category.label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {(searchQuery || categoryFilter !== "all" || filter !== 'all') && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearFilters} 
-              className="h-6 px-2 text-xs w-full"
-            >
-              Clear filters
-            </Button>
+          {/* Active filters summary */}
+          {(searchQuery || categoryFilter !== "all") && (
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-foreground/80 font-medium">
+                {filteredNotifications.length} result{filteredNotifications.length !== 1 ? 's' : ''}
+                {searchQuery && <span className="ml-1">for &ldquo;{searchQuery}&rdquo;</span>}
+                {categoryFilter !== "all" && <span className="ml-1">in {categoryFilter.toLowerCase()}</span>}
+              </span>
+              <button
+                onClick={clearFilters}
+                className="text-foreground/70 hover:text-foreground flex items-center gap-1 px-2 py-1 rounded hover:bg-muted/70 transition-colors border border-border/50 cursor-pointer"
+              >
+                <IconX className="h-3 w-3" />
+                Clear
+              </button>
+            </div>
           )}
         </div>
+        <Separator />
 
         {/* Notification list */}
-        <ScrollArea className="flex-1">
-          <div className="relative">
+        <ScrollArea className="flex-1 min-h-0">
+          <div>
             {loading ? (
               <div className="space-y-0">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex gap-3 p-3 animate-pulse">
+                  <div key={i} className="flex gap-2.5 p-2.5 animate-pulse">
                     <div className="w-8 h-8 rounded-full bg-muted" />
                     <div className="flex-1 space-y-1">
                       <div className="h-3 bg-muted rounded w-3/4" />
@@ -548,54 +618,62 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
               </div>
             ) : filteredNotifications.length > 0 ? (
               <>
-                {filteredNotifications.map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    notification={notification}
-                    onMarkAsRead={markAsRead}
-                    onDelete={deleteNotification}
-                    onNavigate={handleNavigate}
-                    selectMode={selectMode}
-                    isSelected={selectedIds.has(notification.id)}
-                    onToggleSelect={toggleSelect}
-                  />
+                {filteredNotifications.map((notification, index) => (
+                  <React.Fragment key={notification.id}>
+                    <NotificationItem
+                      notification={notification}
+                      onMarkAsRead={markAsRead}
+                      onDelete={deleteNotification}
+                      onNavigate={handleNavigate}
+                      selectMode={selectMode}
+                      isSelected={selectedIds.has(notification.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                    {index < filteredNotifications.length - 1 && <Separator />}
+                  </React.Fragment>
                 ))}
                 {pagination.hasMore && (
-                  <div className="p-3 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="w-full h-8 text-xs"
-                    >
-                      {loadingMore ? (
-                        <>
-                          <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        `Load more (${pagination.total - notifications.length} remaining)`
-                      )}
-                    </Button>
-                  </div>
+                  <>
+                    <Separator />
+                    <div className="p-3">
+                      <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="w-full inline-flex items-center justify-center gap-2 h-8 text-xs font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {loadingMore ? (
+                          <>
+                            <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            Load more
+                            <span className="text-muted-foreground/60">
+                              ({pagination.total - notifications.length} remaining)
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
                 )}
               </>
             ) : (
-              <div className="text-center py-8 px-4">
-                <IconBellOff className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-medium text-foreground mb-1">
-                  {searchQuery || categoryFilter !== "all" 
+              <div className="text-center py-6 px-4">
+                <IconBellOff className="h-6 w-6 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium text-foreground mb-0.5">
+                  {searchQuery || categoryFilter !== "all"
                     ? 'No matching notifications'
-                    : filter === 'unread' 
-                      ? 'All caught up!' 
+                    : filter === 'unread'
+                      ? 'All caught up!'
                       : 'No notifications'
                   }
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground">
                   {searchQuery || categoryFilter !== "all"
                     ? 'Try adjusting your filters.'
-                    : filter === 'unread' 
+                    : filter === 'unread'
                       ? 'You have no unread notifications.'
                       : 'Notifications will appear here.'
                   }
@@ -607,63 +685,58 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
 
         {/* Footer - shows bulk actions in select mode, otherwise simple count */}
         {filteredNotifications.length > 0 && (
-          <div className="p-3 border-t bg-accent/10">
-            {selectMode ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {selectedIds.size} selected
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => selectAllFiltered(filteredNotifications.map(n => n.id))}
-                      className="h-6 px-2 text-xs"
-                      disabled={selectedIds.size === filteredNotifications.length}
-                    >
-                      Select all
-                    </Button>
-                    {selectedIds.size > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={deselectAll}
-                        className="h-6 px-2 text-xs"
+          <>
+            <Separator />
+            <div className="px-3 py-2">
+              {selectMode ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {selectedIds.size} of {filteredNotifications.length} selected
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => selectAllFiltered(filteredNotifications.map(n => n.id))}
+                        disabled={selectedIds.size === filteredNotifications.length}
+                        className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
                       >
-                        Deselect
-                      </Button>
-                    )}
+                        Select all
+                      </button>
+                      {selectedIds.size > 0 && (
+                        <button
+                          onClick={deselectAll}
+                          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteSelected}
+                      disabled={selectedIds.size === 0}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    >
+                      <IconTrash className="h-3.5 w-3.5" />
+                      Delete ({selectedIds.size})
+                    </button>
+                    <button
+                      onClick={handleClearAll}
+                      className="inline-flex items-center justify-center h-8 px-3 text-xs font-medium rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                    >
+                      Clear all
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDeleteSelected}
-                    disabled={selectedIds.size === 0}
-                    className="flex-1 h-7 text-xs"
-                  >
-                    <IconTrash className="h-3 w-3 mr-1" />
-                    Delete selected ({selectedIds.size})
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearAll}
-                    className="h-7 text-xs text-destructive hover:text-destructive"
-                  >
-                    Clear all
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-center text-muted-foreground">
-                {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
-                {filter === 'unread' && unreadCountTotal > 0 && ` • ${unreadCountTotal} unread`}
-              </p>
-            )}
-          </div>
+              ) : (
+                <p className="text-[11px] text-center text-muted-foreground">
+                  {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+                  {filter === 'unread' && unreadCountTotal > 0 && ` • ${unreadCountTotal} unread`}
+                </p>
+              )}
+            </div>
+          </>
         )}
       </SheetContent>
     </Sheet>
