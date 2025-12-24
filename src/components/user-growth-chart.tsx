@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, UserCheck } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
@@ -44,25 +43,19 @@ interface UserGrowthChartProps {
 
 function ChartSkeleton() {
   return (
-    <Card>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-64 mt-1" />
-        </div>
+    <Card className="h-full flex flex-col border-border/40">
+      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+        <Skeleton className="h-5 w-32 mb-1" />
+        <Skeleton className="h-3 w-48" />
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-20" />
-          </div>
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-20" />
-          </div>
+      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
+        <div className="flex items-center gap-6 mb-5">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
         </div>
-        <Skeleton className="h-[300px] w-full" />
+        <div className="flex-1 min-h-[280px]">
+          <Skeleton className="h-full w-full" />
+        </div>
       </CardContent>
     </Card>
   );
@@ -76,32 +69,26 @@ export function UserGrowthChart({
   const { data: chartData, isLoading, error } = useUserGrowth(historyRange);
 
   const formatMonth = (value: string) => {
-    // Handle special cases like "Week X", "Week of...", or other custom labels
     if (value.includes("Week") || value.includes("This Week")) {
       return value;
     }
-    // For day names (Mon, Tue, etc.)
     if (["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(value)) {
       return value;
     }
-    // For regular month strings, format as date
     try {
       const date = new Date(value + "-01");
       return date.toLocaleDateString("en-US", {
         month: "short",
-        day: "numeric",
       });
-    } catch (e) {
-      return value; // Fallback to original value
+    } catch {
+      return value;
     }
   };
 
-  // === Chart Range logic (monthly, average/week)
   const transformedData = React.useMemo(() => {
     if (!chartData) return [];
 
     if (chartRange === "average") {
-      // Calculate weekly averages (divide monthly data by ~4.3 weeks)
       return chartData.map((item, index) => ({
         ...item,
         totalUsers: Math.round(item.totalUsers / WEEKS_PER_MONTH),
@@ -110,7 +97,6 @@ export function UserGrowthChart({
       }));
     }
 
-    // Default monthly
     return chartData;
   }, [chartRange, chartData]);
 
@@ -129,15 +115,13 @@ export function UserGrowthChart({
 
   if (error || !chartData || chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-          <div className="grid flex-1 gap-1 text-center sm:text-left">
-            <CardTitle>User Growth Over Time</CardTitle>
-            <CardDescription>No data available</CardDescription>
-          </div>
+      <Card className="h-full flex flex-col border-border/40">
+        <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+          <CardTitle className="text-base font-medium">User Growth</CardTitle>
+          <CardDescription className="text-xs">No data available</CardDescription>
         </CardHeader>
-        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        <CardContent className="flex-1 flex items-center justify-center px-5 min-h-0">
+          <div className="text-sm text-muted-foreground">
             No user growth data available
           </div>
         </CardContent>
@@ -146,148 +130,119 @@ export function UserGrowthChart({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <CardTitle>User Growth Over Time</CardTitle>
-          <CardDescription>
-            Showing {chartRange === "average"
-              ? "weekly average"
-              : "monthly"}{" "}
-            data for the past {historyRange} month
-            {historyRange > 1 ? "s" : ""}
-          </CardDescription>
-        </div>
-
-        {/* Range info display */}
-        <div className="text-sm text-muted-foreground">
-          {chartRange === "average" ? "Weekly Average" : "Monthly"} • {historyRange} month{historyRange > 1 ? "s" : ""}
-        </div>
+    <Card className="h-full flex flex-col border-border/40">
+      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+        <CardTitle className="text-base font-medium">User Growth</CardTitle>
+        <CardDescription className="text-xs">
+          {chartRange === "average" ? "Weekly average" : "Monthly"} for past {historyRange}mo
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {/* === Totals === */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Total Users</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-bold">
-              {total.totalUsers.toLocaleString()}
-            </div>
+      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
+        {/* Inline legend/totals */}
+        <div className="flex items-center gap-6 mb-5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--chart-user-total)]" />
+            <span className="text-xs text-muted-foreground">Total</span>
+            <span className="text-sm font-medium tabular-nums">{total.totalUsers.toLocaleString()}</span>
           </div>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">Paying Members</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-bold text-yellow-500">
-              {total.payingMembers.toLocaleString()}
-            </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--chart-user-paying)]" />
+            <span className="text-xs text-muted-foreground">Paying</span>
+            <span className="text-sm font-medium tabular-nums">{total.payingMembers.toLocaleString()}</span>
           </div>
         </div>
 
-        {/* === Chart === */}
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[300px] sm:h-[400px] md:h-[450px] w-full"
-        >
-          <LineChart
-            accessibilityLayer
-            data={transformedData}
-            margin={{
-              left: 20,
-              right: 20,
-              top: 20,
-              bottom: 20,
-            }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={formatMonth}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={(value) => value.toString()}
-              domain={["dataMin - 10", "dataMax + 10"]}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  className="w-[180px]"
-                  labelFormatter={(value) => {
-                    // Handle special cases like "Week X", "Week of...", or other custom labels
-                    if (value.includes("Week") || value.includes("This Week")) {
-                      return value;
-                    }
-                    // For day names
-                    if (["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(value)) {
-                      return value;
-                    }
-                    // For regular month strings, format as date
-                    try {
-                      return new Date(value + "-01").toLocaleDateString(
-                        "en-US",
-                        {
+        {/* Chart */}
+        <div className="flex-1 min-h-[280px]">
+          <ChartContainer config={chartConfig} className="h-full w-full">
+            <LineChart
+              accessibilityLayer
+              data={transformedData}
+              margin={{ left: 0, right: 0, top: 10, bottom: 10 }}
+            >
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                strokeOpacity={0.5}
+              />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={formatMonth}
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => value.toString()}
+                domain={["dataMin - 10", "dataMax + 10"]}
+                tick={{ fontSize: 11 }}
+                width={40}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    className="w-[160px]"
+                    labelFormatter={(value) => {
+                      if (value.includes("Week") || value.includes("This Week")) {
+                        return value;
+                      }
+                      if (["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(value)) {
+                        return value;
+                      }
+                      try {
+                        return new Date(value + "-01").toLocaleDateString("en-US", {
                           month: "short",
-                          day: "numeric",
                           year: "numeric",
-                        }
-                      );
-                    } catch (e) {
-                      return value; // Fallback to original value
-                    }
-                  }}
-                  formatter={(value, name) => {
-                    const config =
-                      chartConfig[name as keyof typeof chartConfig];
-                    const color =
-                      "color" in config ? config.color : "#374F35";
-                    return [
-                      <div className="flex items-center gap-2" key={name}>
-                        <div
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="font-medium">
-                          {new Intl.NumberFormat().format(value as number)}
-                        </span>
-                      </div>,
-                      <span
-                        className="text-xs text-muted-foreground"
-                        key={`${name}-label`}
-                      >
-                        {config?.label || name}
-                      </span>,
-                    ];
-                  }}
-                />
-              }
-            />
-            <Line
-              dataKey="totalUsers"
-              type="monotone"
-              stroke="var(--color-totalUsers)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="payingMembers"
-              type="monotone"
-              stroke="var(--color-payingMembers)"
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </ChartContainer>
+                        });
+                      } catch {
+                        return value;
+                      }
+                    }}
+                    formatter={(value, name) => {
+                      const config = chartConfig[name as keyof typeof chartConfig];
+                      const color = "color" in config ? config.color : "#374F35";
+                      return [
+                        <div className="flex items-center gap-2" key={name}>
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-sm font-medium tabular-nums">
+                            {new Intl.NumberFormat().format(value as number)}
+                          </span>
+                        </div>,
+                        <span className="text-xs text-muted-foreground" key={`${name}-label`}>
+                          {config?.label || name}
+                        </span>,
+                      ];
+                    }}
+                  />
+                }
+              />
+              <Line
+                dataKey="totalUsers"
+                type="monotone"
+                stroke="var(--color-totalUsers)"
+                strokeWidth={1.5}
+                dot={false}
+              />
+              <Line
+                dataKey="payingMembers"
+                type="monotone"
+                stroke="var(--color-payingMembers)"
+                strokeWidth={1.5}
+                dot={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

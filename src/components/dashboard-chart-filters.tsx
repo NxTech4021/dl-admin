@@ -1,21 +1,20 @@
 "use client";
 
 import { RefreshCw, Download } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { DashboardFilterPresets, FilterPreset } from "@/components/dashboard-filter-presets";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const CHART_RANGE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
-  { value: "average", label: "Weekly Average" },
+  { value: "average", label: "Weekly Avg" },
 ];
 
 const HISTORY_RANGE_OPTIONS = [
-  { value: "1", label: "1 Month" },
-  { value: "3", label: "3 Months" },
-  { value: "6", label: "6 Months" },
+  { value: "1", label: "1mo" },
+  { value: "3", label: "3mo" },
+  { value: "6", label: "6mo" },
 ];
 
 interface DashboardChartFiltersProps {
@@ -51,63 +50,63 @@ export function DashboardChartFilters({
   };
 
   return (
-    <div className="mx-4 sm:mx-6 rounded-lg border bg-muted/30 p-4">
-      <FilterBar className="justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <FilterSelect
-            value={chartRange}
-            onChange={(value) => onChartRangeChange((value || "monthly") as "monthly" | "average")}
-            options={CHART_RANGE_OPTIONS}
-            placeholder="Chart Range"
-            triggerClassName="w-[130px]"
-          />
+    <AnimatedContainer delay={0.1}>
+      <div className="px-6 md:px-8">
+        {/* Clean inline layout - no bordered container */}
+        <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+          <div className="flex items-center gap-2">
+            <FilterSelect
+              value={chartRange}
+              onChange={(value) => onChartRangeChange((value || "monthly") as "monthly" | "average")}
+              options={CHART_RANGE_OPTIONS}
+              placeholder="View"
+              triggerClassName="w-[100px] h-8 text-xs border-border/50"
+            />
 
-          <FilterSelect
-            value={historyRange.toString()}
-            onChange={(value) => onHistoryRangeChange(Number(value || "3") as 1 | 3 | 6)}
-            options={HISTORY_RANGE_OPTIONS}
-            placeholder="History"
-            triggerClassName="w-[120px]"
-          />
+            <FilterSelect
+              value={historyRange.toString()}
+              onChange={(value) => onHistoryRangeChange(Number(value || "3") as 1 | 3 | 6)}
+              options={HISTORY_RANGE_OPTIONS}
+              placeholder="Period"
+              triggerClassName="w-[70px] h-8 text-xs border-border/50"
+            />
 
-          <DashboardFilterPresets
-            currentChartRange={chartRange}
-            currentHistoryRange={historyRange}
-            onApplyPreset={onApplyPreset}
-          />
-        </div>
+            <DashboardFilterPresets
+              currentChartRange={chartRange}
+              currentHistoryRange={historyRange}
+              onApplyPreset={onApplyPreset}
+            />
+          </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className="font-normal">Live</Badge>
-            <span className="hidden sm:inline" suppressHydrationWarning>
-              {formatLastUpdated()}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:inline" suppressHydrationWarning>
+              Updated {formatLastUpdated()}
             </span>
-          </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              className="h-8 w-8 p-0"
-              aria-label="Refresh"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRefresh}
+                className="h-8 w-8 p-0"
+                aria-label="Refresh"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onExport}
-              className="h-8 gap-2"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onExport}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </FilterBar>
-    </div>
+      </div>
+    </AnimatedContainer>
   );
 }

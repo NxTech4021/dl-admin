@@ -18,7 +18,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaggerContainer, StaggerItem } from "@/components/ui/animated-container";
 import { useDashboardKPI, useSportMetrics } from "@/hooks/use-queries";
+import { cn } from "@/lib/utils";
 
 interface KPICardProps {
   title: string;
@@ -26,60 +28,8 @@ interface KPICardProps {
   previousValue?: number;
   icon: React.ComponentType<{ className?: string }>;
   format?: "number" | "currency" | "percentage";
-  trend?: "up" | "down" | "neutral";
   onClick?: () => void;
   isLoading?: boolean;
-}
-
-// Mock 7-day trend data generator - DETERMINISTIC (no Math.random)
-function generate7DayTrend(currentValue: number, trend: "up" | "down" | "neutral"): number[] {
-  const data: number[] = [];
-  const startValue = currentValue * 0.85; // Start at 85% of current
-
-  // Use deterministic variance pattern based on day index
-  const variancePattern = [0.02, -0.01, 0.03, -0.02, 0.01, 0.02, 0]; // Predefined pattern
-  const trendFactor = trend === "up" ? 0.025 : trend === "down" ? -0.025 : 0;
-
-  let value = startValue;
-  for (let i = 0; i < 7; i++) {
-    const variance = variancePattern[i];
-    value = value * (1 + trendFactor + variance);
-    data.push(Math.round(value));
-  }
-
-  // Ensure last value matches current
-  data[6] = currentValue;
-  return data;
-}
-
-// Simple sparkline component
-function Sparkline({ data, trend }: { data: number[]; trend: "up" | "down" | "neutral" }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-
-  const points = data
-    .map((value, index) => {
-      const x = (index / (data.length - 1)) * 60;
-      const y = 20 - ((value - min) / range) * 18;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const color = trend === "up" ? "#22c55e" : trend === "down" ? "#ef4444" : "#6b7280";
-
-  return (
-    <svg width="60" height="20" className="ml-auto" aria-hidden="true">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 function calculateTrend(
@@ -96,17 +46,14 @@ function calculateTrend(
 
 function KPICardSkeleton() {
   return (
-    <Card className="relative overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 md:px-6 md:pt-6">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-4 w-4" />
+    <Card className="relative overflow-hidden h-full flex flex-col border-border/40">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-4 w-4 rounded" />
       </CardHeader>
-      <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
-        <div className="flex items-center justify-between gap-2">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-5 w-16" />
-        </div>
-        <Skeleton className="h-3 w-32 mt-2" />
+      <CardContent className="flex-1 px-5 pb-5">
+        <Skeleton className="h-9 w-24 mb-3" />
+        <Skeleton className="h-3 w-28" />
       </CardContent>
     </Card>
   );
@@ -130,70 +77,49 @@ function KPICard({
     ? calculateTrend(numValue, previousValue)
     : null;
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (onClick && (e.key === "Enter" || e.key === " ")) {
-      e.preventDefault();
-      onClick();
-    }
-  };
-
   return (
     <Card
-      className="relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group active:scale-[0.98] touch-manipulation"
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`${title}: ${formatValue(value, format)}${trendData ? `. ${trendData.trend === "up" ? "Increased" : "Decreased"} by ${trendData.percentage.toFixed(1)}% from last period` : ""}. Click for details.`}
+      className={cn(
+        "relative overflow-hidden h-full flex flex-col border-border/40",
+        onClick && "cursor-pointer"
+      )}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `${title}: ${formatValue(value, format)}. Click for details.` : undefined}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 md:px-6 md:pt-6">
-        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+        <Icon className="h-4 w-4 text-muted-foreground/60" />
       </CardHeader>
-      <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-xl sm:text-2xl font-bold truncate">{formatValue(value, format)}</div>
-          {trendData && (
-            <Sparkline
-              data={generate7DayTrend(numValue, trendData.trend)}
-              trend={trendData.trend}
-            />
-          )}
+      <CardContent className="flex-1 px-5 pb-5">
+        <div className="text-3xl font-semibold tracking-tight tabular-nums">
+          {formatValue(value, format)}
         </div>
         {trendData && (
-          <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
             {trendData.trend === "up" ? (
-              <>
-                <TrendingUp className="h-3 w-3 shrink-0 text-green-500" aria-hidden="true" />
-                <span className="sr-only">Increase</span>
-              </>
+              <TrendingUp className="h-3 w-3 text-emerald-600" />
             ) : trendData.trend === "down" ? (
-              <>
-                <TrendingDown className="h-3 w-3 shrink-0 text-red-500" aria-hidden="true" />
-                <span className="sr-only">Decrease</span>
-              </>
+              <TrendingDown className="h-3 w-3 text-red-500" />
             ) : null}
             <span
-              className={
-                trendData.trend === "up"
-                  ? "text-green-500"
-                  : trendData.trend === "down"
-                  ? "text-red-500"
-                  : ""
-              }
+              className={cn(
+                trendData.trend === "up" && "text-emerald-600",
+                trendData.trend === "down" && "text-red-500"
+              )}
             >
-              {trendData.percentage > 0 &&
-                `${trendData.percentage.toFixed(1)}%`}
+              {trendData.percentage > 0 && `${trendData.percentage.toFixed(1)}%`}
             </span>
-            <span className="hidden sm:inline">from last period</span>
+            <span>vs last period</span>
           </div>
         )}
       </CardContent>
@@ -264,23 +190,23 @@ export function TopKPICards() {
 
   const details = selectedMetric ? getMetricDetails(selectedMetric) : null;
 
-  // Show loading state
+  // Show loading state with stagger
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICardSkeleton />
-        <KPICardSkeleton />
-        <KPICardSkeleton />
-        <KPICardSkeleton />
-      </div>
+      <StaggerContainer className="grid gap-4 grid-cols-2 lg:grid-cols-4" staggerDelay={0.05}>
+        <StaggerItem><KPICardSkeleton /></StaggerItem>
+        <StaggerItem><KPICardSkeleton /></StaggerItem>
+        <StaggerItem><KPICardSkeleton /></StaggerItem>
+        <StaggerItem><KPICardSkeleton /></StaggerItem>
+      </StaggerContainer>
     );
   }
 
   // Handle no data state
   if (!kpiData) {
     return (
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-full p-6 text-center text-muted-foreground">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <Card className="col-span-full p-6 text-center text-muted-foreground border-border/40">
           No dashboard data available
         </Card>
       </div>
@@ -289,39 +215,47 @@ export function TopKPICards() {
 
   return (
     <>
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard
-          title="Total Users"
-          value={kpiData.totalUsers}
-          previousValue={kpiData.previousTotalUsers}
-          icon={Users}
-          format="number"
-          onClick={() => setSelectedMetric("totalUsers")}
-        />
-        <KPICard
-          title="League Participants"
-          value={kpiData.leagueParticipants}
-          previousValue={kpiData.previousLeagueParticipants}
-          icon={UserCheck}
-          format="number"
-          onClick={() => setSelectedMetric("leagueParticipants")}
-        />
-        <KPICard
-          title="Conversion Rate"
-          value={kpiData.conversionRate}
-          icon={TrendingUp}
-          format="percentage"
-          onClick={() => setSelectedMetric("conversionRate")}
-        />
-        <KPICard
-          title="Total Revenue"
-          value={kpiData.totalRevenue}
-          previousValue={kpiData.previousRevenue}
-          icon={CreditCard}
-          format="currency"
-          onClick={() => setSelectedMetric("totalRevenue")}
-        />
-      </div>
+      <StaggerContainer className="grid gap-4 grid-cols-2 lg:grid-cols-4" staggerDelay={0.05}>
+        <StaggerItem>
+          <KPICard
+            title="Total Users"
+            value={kpiData.totalUsers}
+            previousValue={kpiData.previousTotalUsers}
+            icon={Users}
+            format="number"
+            onClick={() => setSelectedMetric("totalUsers")}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KPICard
+            title="League Participants"
+            value={kpiData.leagueParticipants}
+            previousValue={kpiData.previousLeagueParticipants}
+            icon={UserCheck}
+            format="number"
+            onClick={() => setSelectedMetric("leagueParticipants")}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KPICard
+            title="Conversion Rate"
+            value={kpiData.conversionRate}
+            icon={TrendingUp}
+            format="percentage"
+            onClick={() => setSelectedMetric("conversionRate")}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <KPICard
+            title="Total Revenue"
+            value={kpiData.totalRevenue}
+            previousValue={kpiData.previousRevenue}
+            icon={CreditCard}
+            format="currency"
+            onClick={() => setSelectedMetric("totalRevenue")}
+          />
+        </StaggerItem>
+      </StaggerContainer>
 
       <Dialog open={!!selectedMetric} onOpenChange={(open) => !open && setSelectedMetric(null)}>
         <DialogContent className="sm:max-w-[500px]">
@@ -345,7 +279,7 @@ export function TopKPICards() {
             </div>
 
             {details?.previousValue && (
-              <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border/40">
                 <span className="text-sm font-medium text-muted-foreground">
                   Previous Period
                 </span>

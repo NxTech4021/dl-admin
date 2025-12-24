@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UserCheck, CreditCard } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
@@ -47,26 +46,24 @@ interface SportComparisonChartProps {
 
 function ChartSkeleton() {
   return (
-    <Card>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-64 mt-1" />
+    <Card className="h-full flex flex-col border-border/40">
+      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+        <div className="flex items-start justify-between">
+          <div>
+            <Skeleton className="h-5 w-36 mb-1" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+          <Skeleton className="h-8 w-28" />
         </div>
-        <Skeleton className="h-10 w-40" />
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-8 w-24" />
-          </div>
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-8 w-24" />
-          </div>
+      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
+        <div className="flex items-center gap-6 mb-5">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-28" />
         </div>
-        <Skeleton className="h-[300px] w-full" />
+        <div className="flex-1 min-h-[280px]">
+          <Skeleton className="h-full w-full" />
+        </div>
       </CardContent>
     </Card>
   );
@@ -76,10 +73,8 @@ export function SportComparisonChart({
   chartRange = "monthly",
   historyRange = 3,
 }: SportComparisonChartProps) {
-  const [activeMetric, setActiveMetric] =
-    React.useState<MetricType>("payingMembers");
+  const [activeMetric, setActiveMetric] = React.useState<MetricType>("payingMembers");
 
-  // Fetch real data from API
   const { data: chartData, isLoading, error } = useSportComparison();
 
   const formatMetricValue = (value: number, metric: MetricType) => {
@@ -99,12 +94,12 @@ export function SportComparisonChart({
     return [0, Math.ceil(max * 1.1)];
   };
 
-  const totalMembers = React.useMemo(() =>
-    chartData?.reduce((sum, item) => sum + item.payingMembers, 0) ?? 0,
+  const totalMembers = React.useMemo(
+    () => chartData?.reduce((sum, item) => sum + item.payingMembers, 0) ?? 0,
     [chartData]
   );
-  const totalRevenue = React.useMemo(() =>
-    chartData?.reduce((sum, item) => sum + item.revenue, 0) ?? 0,
+  const totalRevenue = React.useMemo(
+    () => chartData?.reduce((sum, item) => sum + item.revenue, 0) ?? 0,
     [chartData]
   );
 
@@ -114,15 +109,13 @@ export function SportComparisonChart({
 
   if (error || !chartData || chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-          <div className="grid flex-1 gap-1 text-center sm:text-left">
-            <CardTitle>Sport Comparison</CardTitle>
-            <CardDescription>No data available</CardDescription>
-          </div>
+      <Card className="h-full flex flex-col border-border/40">
+        <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+          <CardTitle className="text-base font-medium">Sport Comparison</CardTitle>
+          <CardDescription className="text-xs">No data available</CardDescription>
         </CardHeader>
-        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        <CardContent className="flex-1 flex items-center justify-center px-5 min-h-0">
+          <div className="text-sm text-muted-foreground">
             No sport comparison data available
           </div>
         </CardContent>
@@ -131,177 +124,112 @@ export function SportComparisonChart({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <CardTitle>Sport Comparison</CardTitle>
-          <CardDescription>
-            Compare paying members and revenue across sports - {chartRange === "average" ? "Weekly average" : "Monthly"} ({historyRange} month{historyRange > 1 ? "s" : ""})
-          </CardDescription>
-        </div>
-        <Select
-          value={activeMetric}
-          onValueChange={(value) => setActiveMetric(value as MetricType)}
-        >
-          <SelectTrigger
-            className="w-full sm:w-[160px] h-9 sm:h-10 rounded-lg sm:ml-auto touch-manipulation"
-            aria-label="Select metric"
+    <Card className="h-full flex flex-col border-border/40">
+      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="text-base font-medium">Sport Comparison</CardTitle>
+            <CardDescription className="text-xs">
+              {chartRange === "average" ? "Weekly average" : "Monthly"} for past {historyRange}mo
+            </CardDescription>
+          </div>
+          <Select
+            value={activeMetric}
+            onValueChange={(value) => setActiveMetric(value as MetricType)}
           >
-            <SelectValue placeholder="Select metric" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="payingMembers" className="rounded-lg">
-              Paying Members
-            </SelectItem>
-            <SelectItem value="revenue" className="rounded-lg">
-              Revenue
-            </SelectItem>
-          </SelectContent>
-        </Select>
+            <SelectTrigger className="w-[120px] h-8 text-xs border-border/50" aria-label="Select metric">
+              <SelectValue placeholder="Metric" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="payingMembers" className="text-xs">Members</SelectItem>
+              <SelectItem value="revenue" className="text-xs">Revenue</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-4 sm:mb-6">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Total Paying Members</span>
-            </div>
-            <div className="text-2xl font-bold">
-              {totalMembers.toLocaleString()}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Across all sports
-            </div>
+
+      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
+        {/* Inline totals */}
+        <div className="flex items-center gap-6 mb-5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Members</span>
+            <span className="text-sm font-medium tabular-nums">{totalMembers.toLocaleString()}</span>
           </div>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Total Revenue</span>
-            </div>
-            <div className="text-2xl font-bold">
-              {formatMetricValue(totalRevenue, "revenue")}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Combined from all sports
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Revenue</span>
+            <span className="text-sm font-medium tabular-nums">{formatMetricValue(totalRevenue, "revenue")}</span>
           </div>
         </div>
 
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[300px] w-full"
-        >
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            margin={{
-              left: 12,
-              right: 12,
-              top: 12,
-              bottom: 12,
-            }}
-          >
-            <CartesianGrid
-              vertical={false}
-              strokeDasharray="3 3"
-              className="stroke-muted"
-            />
-            <XAxis
-              dataKey="sport"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              className="text-xs"
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              domain={getYAxisDomain(activeMetric)}
-              tickFormatter={(value) => {
-                if (activeMetric === "revenue") {
-                  return value >= 1000
-                    ? `RM${(value / 1000).toFixed(1)}k`
-                    : `RM${value}`;
-                }
-                return value.toString();
-              }}
-              className="text-xs"
-            />
-            <ChartTooltip
-              cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.3 }}
-              content={
-                <ChartTooltipContent
-                  className="w-[180px]"
-                  labelFormatter={(value) => `${value}`}
-                  formatter={(value, name, payload) => {
-                    const sportData = payload?.payload;
-                    return [
-                      <div className="flex items-center gap-2" key={name}>
-                        <div
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: sportData?.fill }}
-                        />
-                        <span className="font-medium">
-                          {formatMetricValue(value as number, activeMetric)}
-                        </span>
-                      </div>,
-                      <span
-                        className="text-muted-foreground text-xs"
-                        key={`${name}-label`}
-                      >
-                        {activeMetric === "payingMembers"
-                          ? "Paying Members"
-                          : "Revenue"}
-                      </span>,
-                    ];
-                  }}
-                  indicator="dot"
-                />
-              }
-            />
-            <Bar
-              dataKey={activeMetric}
-              fill={`var(--color-${activeMetric})`}
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ChartContainer>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
-          {chartData.map((sport) => (
-            <div
-              key={sport.sport}
-              className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50"
+        {/* Chart */}
+        <div className="flex-1 min-h-[280px]">
+          <ChartContainer config={chartConfig} className="h-full w-full">
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ left: 0, right: 0, top: 10, bottom: 10 }}
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: sport.fill }}
-                />
-                <span className="text-sm font-medium">{sport.sport}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground mb-0.5">Members</p>
-                  <p className="text-sm font-semibold truncate">
-                    {sport.payingMembers.toLocaleString()}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground mb-0.5">Revenue</p>
-                  <p className="text-sm font-semibold truncate">
-                    {formatMetricValue(sport.revenue, "revenue")}
-                  </p>
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground leading-tight">
-                {totalMembers > 0
-                  ? ((sport.payingMembers / totalMembers) * 100).toFixed(1)
-                  : 0}% of total
-              </div>
-            </div>
-          ))}
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                strokeOpacity={0.5}
+              />
+              <XAxis
+                dataKey="sport"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                domain={getYAxisDomain(activeMetric)}
+                tickFormatter={(value) => {
+                  if (activeMetric === "revenue") {
+                    return value >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`;
+                  }
+                  return value.toString();
+                }}
+                tick={{ fontSize: 11 }}
+                width={40}
+              />
+              <ChartTooltip
+                cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.3 }}
+                content={
+                  <ChartTooltipContent
+                    className="w-[160px]"
+                    labelFormatter={(value) => `${value}`}
+                    formatter={(value, name, payload) => {
+                      const sportData = payload?.payload;
+                      return [
+                        <div className="flex items-center gap-2" key={name}>
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: sportData?.fill }}
+                          />
+                          <span className="text-sm font-medium tabular-nums">
+                            {formatMetricValue(value as number, activeMetric)}
+                          </span>
+                        </div>,
+                        <span className="text-xs text-muted-foreground" key={`${name}-label`}>
+                          {activeMetric === "payingMembers" ? "Members" : "Revenue"}
+                        </span>,
+                      ];
+                    }}
+                    indicator="dot"
+                  />
+                }
+              />
+              <Bar
+                dataKey={activeMetric}
+                fill={`var(--color-${activeMetric})`}
+                radius={[3, 3, 0, 0]}
+              />
+            </BarChart>
+          </ChartContainer>
         </div>
       </CardContent>
     </Card>
