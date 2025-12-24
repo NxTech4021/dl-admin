@@ -78,15 +78,15 @@ export default function NewChatModal({
       const newThread = await createThread(threadData);
       
       if (newThread) {
-        // Close modal and reset state
+        // Trigger refetch FIRST before any navigation/closing
+        onThreadCreated?.();
+
+        // Close modal
         handleClose();
-        
+
         // Navigate to the new thread
         router.push(`/chat?id=${newThread.id}`);
-        
-        // Notify parent component
-        onThreadCreated?.();
-        
+
         toast.success(`Chat with ${user.name} started!`);
       }
     } catch {
