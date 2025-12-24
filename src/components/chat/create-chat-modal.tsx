@@ -81,8 +81,12 @@ export default function NewChatModal({
         // Trigger refetch and WAIT for it to complete before navigation
         await onThreadCreated?.();
 
+        // Reset creating state first so handleClose doesn't return early
+        setCreatingChatWithUser(null);
+
         // Close modal
-        handleClose();
+        onOpenChange(false);
+        setSearchQuery('');
 
         // Navigate to the new thread
         router.push(`/chat?id=${newThread.id}`);
@@ -91,7 +95,6 @@ export default function NewChatModal({
       }
     } catch {
       toast.error('Failed to start chat. Please try again.');
-    } finally {
       setCreatingChatWithUser(null);
     }
   };
