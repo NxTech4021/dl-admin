@@ -442,15 +442,15 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
             <div className="hidden md:block rounded-lg border shadow-sm overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/60 hover:bg-muted/60">
-                    <TableHead className="w-[44px] pl-3"></TableHead>
-                    <TableHead className="pl-0 font-semibold">League</TableHead>
-                    <TableHead className="w-[100px] font-semibold">Sport</TableHead>
-                    <TableHead className="w-[100px] font-semibold">Joined</TableHead>
-                    <TableHead className="w-[80px] text-center font-semibold">Seasons</TableHead>
-                    <TableHead className="w-[160px] font-semibold">Division</TableHead>
-                    <TableHead className="w-[100px] font-semibold">Payment</TableHead>
-                    <TableHead className="w-[90px] text-center pr-4 font-semibold">Status</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[44px] py-2.5 pl-3"></TableHead>
+                    <TableHead className="py-2.5 pl-0 font-medium text-xs">League</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Sport</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Joined</TableHead>
+                    <TableHead className="w-[80px] py-2.5 font-medium text-xs text-center">Seasons</TableHead>
+                    <TableHead className="w-[160px] py-2.5 font-medium text-xs">Division</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Payment</TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs text-center pr-4">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

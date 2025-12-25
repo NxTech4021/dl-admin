@@ -470,15 +470,15 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             <div className="hidden md:block rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-[100px] pl-4">Date</TableHead>
-                    <TableHead className="w-[90px]">Sport</TableHead>
-                    <TableHead className="w-[80px]">Type</TableHead>
-                    <TableHead>Opponent</TableHead>
-                    <TableHead>Origin</TableHead>
-                    <TableHead className="w-[120px]">Score</TableHead>
-                    <TableHead className="w-[70px] text-center">Flags</TableHead>
-                    <TableHead className="w-[90px] text-center pr-4">Status</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[100px] py-2.5 pl-4 font-medium text-xs">Date</TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs">Sport</TableHead>
+                    <TableHead className="w-[80px] py-2.5 font-medium text-xs">Type</TableHead>
+                    <TableHead className="py-2.5 font-medium text-xs">Opponent</TableHead>
+                    <TableHead className="py-2.5 font-medium text-xs">Origin</TableHead>
+                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">Score</TableHead>
+                    <TableHead className="w-[70px] py-2.5 font-medium text-xs text-center">Flags</TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs text-center pr-4">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
