@@ -68,7 +68,6 @@ import {
   renderValue,
   LOADING_STATES,
   TABLE_ANIMATIONS,
-  RESPONSIVE_CLASSES,
 } from './constants';
 
 
@@ -129,6 +128,22 @@ const columns: ColumnDef<Player>[] = [
         />
       </div>
     ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 50,
+  },
+  {
+    id: "rowNumber",
+    header: () => <span className="text-center block">#</span>,
+    cell: ({ row, table }) => {
+      const pageIndex = table.getState().pagination.pageIndex;
+      const pageSize = table.getState().pagination.pageSize;
+      return (
+        <span className="text-center text-muted-foreground font-mono text-sm block">
+          {pageIndex * pageSize + row.index + 1}
+        </span>
+      );
+    },
     enableSorting: false,
     enableHiding: false,
     size: 50,
@@ -402,7 +417,7 @@ export function PlayersDataTable() {
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <div className={`${RESPONSIVE_CLASSES.PADDING_LARGE} space-y-4`}>
+      <div className="space-y-4">
         {/* Search Bar and Filter Toggle */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -508,11 +523,11 @@ export function PlayersDataTable() {
       </div>
 
       {/* Table Container */}
-      <div className={`rounded-md border ${RESPONSIVE_CLASSES.MARGIN} bg-background`}>
+      <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="bg-muted/50 hover:bg-muted/50">
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id} colSpan={header.colSpan}>
@@ -564,32 +579,67 @@ export function PlayersDataTable() {
             )}
           </TableBody>
         </Table>
-      </div>
 
-      {/* Pagination */}
-      <div className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING_LARGE}`}>
-        <div className="text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} player(s)
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        {/* Pagination */}
+        {table.getPageCount() > 1 && (
+          <div className="flex items-center justify-between px-4 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+              {Math.min(
+                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                table.getFilteredRowModel().rows.length
+              )} of {table.getFilteredRowModel().rows.length} player(s)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from(
+                  { length: Math.min(5, table.getPageCount()) },
+                  (_, i) => {
+                    const currentPage = table.getState().pagination.pageIndex;
+                    const totalPages = table.getPageCount();
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i;
+                    } else if (currentPage <= 2) {
+                      pageNum = i;
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNum = totalPages - 5 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => table.setPageIndex(pageNum)}
+                      >
+                        {pageNum + 1}
+                      </Button>
+                    );
+                  }
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

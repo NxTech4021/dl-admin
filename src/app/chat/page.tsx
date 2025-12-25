@@ -4,21 +4,20 @@ import { useCallback, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { Loader2, X } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // UI Components
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 // Chat Components
 import ChatNav from "@/components/chat/chat-nav";
 import ChatHeaderDetail from "@/components/chat/chat-header-detail";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatMessageInput from "@/components/chat/chat-message-input";
-import ChatRoom from "@/components/chat/chat-room";
+import ChatDetailsSheet from "@/components/chat/chat-details-sheet";
 
 // Hooks and Types
 import { useChatData, useMessages } from "./hooks/chat";
@@ -35,9 +34,12 @@ function ChatViewContent() {
   const user = session?.user;
 
   const selectedConversationId = searchParams.get("id") || "";
-  
+
   // Reply state
   const [replyingTo, setReplyingTo] = useState<any>(null);
+
+  // Details sheet state
+  const [showDetails, setShowDetails] = useState(false);
 
   // Fetch data
   const {
@@ -51,7 +53,7 @@ function ChatViewContent() {
     messages,
     loading: messagesLoading,
     sendMessage,
-    deleteMessage, // Add this from the hook
+    deleteMessage,
     error: messagesError,
     refetch: refetchMessages,
   } = useMessages(selectedConversationId || undefined);
@@ -82,12 +84,10 @@ function ChatViewContent() {
           .map((m) => m.user.name)
           .join(", ") || "Unknown";
 
-    // Get photo URL (group avatar or other participant's image)
     const photoURL = thread.isGroup
       ? thread.avatarUrl
       : thread.members.find((m) => m.userId !== user?.id)?.user.image;
 
-    // Transform thread members to chat participants
     const participants: ChatParticipant[] = thread.members.map((member) => ({
       id: member.userId,
       name: member.user.name,
@@ -102,7 +102,6 @@ function ChatViewContent() {
       isCurrentUser: member.userId === user?.id,
     }));
 
-    // Get last message for preview
     const lastMessage =
       thread.messages.length > 0
         ? {
@@ -127,56 +126,53 @@ function ChatViewContent() {
     };
   });
 
-  // Get current conversation and participants
   const currentConversation = selectedConversationId
     ? conversations.find((conv) => conv.id === selectedConversationId)
     : null;
 
   const participants = currentConversation?.participants || [];
-  const showDetails = !!currentConversation;
 
-  // Handler for replying to a message
+  // Close details when conversation changes
+  useEffect(() => {
+    setShowDetails(false);
+  }, [selectedConversationId]);
+
+  const handleOpenDetails = useCallback(() => {
+    setShowDetails(true);
+  }, []);
+
   const handleReply = useCallback((message: any) => {
     setReplyingTo(message);
   }, []);
 
-  // Handler for canceling reply
   const handleCancelReply = useCallback(() => {
     setReplyingTo(null);
   }, []);
 
-  // Handler for deleting a message
   const handleDeleteMessage = useCallback(
     async (messageId: string) => {
       if (!deleteMessage) {
         toast.error("Delete functionality not available");
         return;
       }
-
       try {
         await deleteMessage(messageId);
         toast.success("Message deleted successfully");
       } catch (error) {
         console.error("Failed to delete message:", error);
-        // Error toast is already shown in the hook
       }
     },
     [deleteMessage]
   );
 
-  // Handler for sending messages with reply support
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!user?.id || !selectedConversationId) {
         toast.error("Unable to send message. Please select a conversation.");
         return;
       }
-
       try {
-        // Include replyToId if replying
         await sendMessage(content, user.id, replyingTo?.id);
-        
-        // Clear reply after sending
         setReplyingTo(null);
       } catch (error) {
         console.error("Failed to send message:", error);
@@ -195,80 +191,95 @@ function ChatViewContent() {
     [router, searchParams]
   );
 
-  // Loading state
+  // Loading state with full-screen elegant loader
   if (threadsLoading && threads.length === 0) {
     return (
       <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
+        style={{
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties}
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">Chat</h4>
-            <Card className="flex items-center justify-center h-[72vh]">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span>Loading conversations...</span>
+          <div className="flex-1 flex items-center justify-center h-[calc(100vh-4rem)]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark flex items-center justify-center">
+                  <MessageSquare className="w-8 h-8 text-white" />
+                </div>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute -inset-2 border-2 border-brand-light/30 border-t-brand-light rounded-full"
+                />
               </div>
-            </Card>
+              <p className="text-sm text-muted-foreground font-medium">
+                Loading conversations...
+              </p>
+            </motion.div>
           </div>
         </SidebarInset>
       </SidebarProvider>
     );
   }
 
-  // Render functions
-  const renderNavigation = () => (
-    <ChatNav
-      conversations={conversations}
-      loading={threadsLoading}
-      selectedConversationId={selectedConversationId}
-      user={user}
-      onConversationSelect={handleConversationSelect}
-      onThreadCreated={refetchThreads}
-    />
+  // Empty state component - cleaner iMessage style
+  const renderEmptyState = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+      className="flex-1 flex items-center justify-center px-8"
+    >
+      <div className="text-center max-w-sm">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
+          <MessageSquare className="w-10 h-10 text-muted-foreground/40" />
+        </div>
+        <h2 className="text-xl font-semibold text-foreground mb-2">
+          No conversation selected
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Choose a chat from the sidebar to start messaging
+        </p>
+      </div>
+    </motion.div>
   );
 
+  // Header for conversation - cleaner with click-to-details
   const renderHeader = () => (
-    <div className="flex items-center px-4 py-3 min-h-[72px] border-b">
+    <div className="flex items-center px-4 py-3 min-h-[68px] border-b bg-background sticky top-0 z-10">
       {selectedConversationId && currentConversation ? (
         <ChatHeaderDetail
           participants={participants}
           conversation={currentConversation}
+          onDetailsClick={handleOpenDetails}
         />
       ) : (
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-medium">Messages</h3>
-          <span className="text-sm text-muted-foreground">
-            {conversations.length} conversation
-            {conversations.length !== 1 ? "s" : ""}
-          </span>
+          <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold">Messages</h3>
+            <p className="text-xs text-muted-foreground">
+              {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 
-
+  // Messages area
   const renderMessages = () => {
     if (!selectedConversationId || !currentConversation) {
-      return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-muted-foreground max-w-md">
-            <div className="text-6xl mb-4">💬</div>
-            <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
-            <p className="text-sm">
-              Choose a chat from the sidebar to start messaging, or create a new
-              conversation.
-            </p>
-          </div>
-        </div>
-      );
+      return renderEmptyState();
     }
 
     return (
@@ -281,76 +292,68 @@ function ChatViewContent() {
           onReply={handleReply}
           onDelete={handleDeleteMessage}
         />
-        
+
         <ChatMessageInput
           selectedConversationId={selectedConversationId}
           disabled={!selectedConversationId || messagesLoading}
           onSendMessage={handleSendMessage}
-          replyingTo={replyingTo} 
+          replyingTo={replyingTo}
           onCancelReply={handleCancelReply}
         />
       </div>
     );
   };
 
-  const renderChatRoom = () => {
-    if (!showDetails || !currentConversation) return null;
-
-    return (
-      <ChatRoom
-        conversation={currentConversation}
-        participants={participants}
-      />
-    );
-  };
-
-  // Debug logging
-  // console.log("Chat View Debug:", {
-  //   threadsCount: threads.length,
-  //   conversationsCount: conversations.length,
-  //   selectedConversationId,
-  //   currentConversation: currentConversation?.displayName,
-  //   messagesCount: messages.length,
-  //   user: user?.id,
-  // });
-
   return (
     <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
+      style={{
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)",
+      } as React.CSSProperties}
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6 md:mb-10">
-            <h4 className="text-2xl mt-6 font-bold">Chat</h4>
+
+        {/* Two-column chat layout */}
+        <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+          {/* Left: Conversation list */}
+          <div className="w-[340px] flex-shrink-0 border-r border-border/40 bg-background">
+            <ChatNav
+              conversations={conversations}
+              loading={threadsLoading}
+              selectedConversationId={selectedConversationId}
+              user={user}
+              onConversationSelect={handleConversationSelect}
+              onThreadCreated={refetchThreads}
+            />
           </div>
 
-          <Card className="flex flex-row h-[72vh] overflow-hidden">
-            {renderNavigation()}
-
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              {renderHeader()}
-
-              {/* Messages and Chat Room */}
-              <div className="flex flex-row flex-1 overflow-hidden">
-                {/* Messages Area */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  {renderMessages()}
-                </div>
-
-                {/* Chat Room Details */}
-                {renderChatRoom()}
-              </div>
-            </div>
-          </Card>
+          {/* Right: Chat view */}
+          <div className="flex-1 flex flex-col min-w-0 bg-background">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedConversationId || "empty"}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                className="flex-1 flex flex-col h-full overflow-hidden"
+              >
+                {renderHeader()}
+                {renderMessages()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
+
+        {/* Details Sheet - opens on header click */}
+        <ChatDetailsSheet
+          open={showDetails}
+          onOpenChange={setShowDetails}
+          conversation={currentConversation}
+          participants={participants}
+        />
       </SidebarInset>
     </SidebarProvider>
   );
@@ -361,24 +364,25 @@ export default function ChatView() {
     <Suspense
       fallback={
         <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
+          style={{
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties}
         >
           <AppSidebar variant="inset" />
           <SidebarInset>
             <SiteHeader />
-            <div className="mt-20 mx-10 max-w-7xl px-4 sm:px-6 lg:px-8">
-              <h4 className="text-2xl mt-6 font-bold mb-6 md:mb-10">Chat</h4>
-              <Card className="flex items-center justify-center h-[72vh]">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span>Loading...</span>
+            <div className="flex-1 flex items-center justify-center h-[calc(100vh-4rem)]">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
-              </Card>
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              </motion.div>
             </div>
           </SidebarInset>
         </SidebarProvider>

@@ -20,7 +20,6 @@ import {
   IconList,
 } from "@tabler/icons-react";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   useTeamChangeRequests,
@@ -161,8 +160,9 @@ export default function TeamChangeRequestsPage() {
               {/* Stats Cards */}
               <StatsGrid columns={4}>
                 <StatsCard
-                  title="Pending"
+                  title="Pending Requests"
                   value={requests?.filter((r) => r.status === "PENDING").length || 0}
+                  description="Awaiting review"
                   icon={IconClock}
                   iconColor="text-yellow-500"
                   loading={isLoading}
@@ -170,6 +170,7 @@ export default function TeamChangeRequestsPage() {
                 <StatsCard
                   title="Approved"
                   value={requests?.filter((r) => r.status === "APPROVED").length || 0}
+                  description="Transfers completed"
                   icon={IconCircleCheck}
                   iconColor="text-green-500"
                   loading={isLoading}
@@ -177,14 +178,17 @@ export default function TeamChangeRequestsPage() {
                 <StatsCard
                   title="Denied"
                   value={requests?.filter((r) => r.status === "DENIED").length || 0}
+                  description="Requests rejected"
                   icon={IconCircleX}
                   iconColor="text-red-500"
                   loading={isLoading}
                 />
                 <StatsCard
-                  title="Total"
+                  title="Total Requests"
                   value={requests?.length || 0}
+                  description="All time requests"
                   icon={IconList}
+                  iconColor="text-slate-500"
                   loading={isLoading}
                 />
               </StatsGrid>
@@ -212,177 +216,204 @@ export default function TeamChangeRequestsPage() {
 
             {/* Requests Table */}
             <div className="flex-1 px-4 lg:px-6 pb-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Requests</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : error ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <IconArrowsExchange className="size-12 text-destructive mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">
-                          Failed to Load Requests
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                          There was an error loading the requests. Please try again.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => refetch()}
-                          className="gap-2"
-                        >
-                          <IconRefresh className="size-4" />
-                          Retry
-                        </Button>
-                      </div>
-                    ) : paginatedRequests.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Player</TableHead>
-                            <TableHead>Current Division</TableHead>
-                            <TableHead>Requested Division</TableHead>
-                            <TableHead>Season</TableHead>
-                            <TableHead>Reason</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead className="w-[120px]">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {paginatedRequests.map((request) => (
-                            <TableRow key={request.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="size-8">
-                                    <AvatarImage src={request.user?.image || undefined} />
-                                    <AvatarFallback className="text-xs">
-                                      {getInitials(request.user?.name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium text-sm">
-                                      {request.user?.name || "Unknown"}
-                                    </span>
-                                    {request.user?.username && (
-                                      <span className="text-xs text-muted-foreground">
-                                        @{request.user.username}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm">
-                                  {request.currentDivision?.name || "Unknown"}
+              <div className="rounded-lg border bg-card">
+                {isLoading ? (
+                  <div className="p-6 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <IconArrowsExchange className="size-12 text-destructive mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      Failed to Load Requests
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                      There was an error loading the requests. Please try again.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => refetch()}
+                      className="gap-2"
+                    >
+                      <IconRefresh className="size-4" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : paginatedRequests.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="w-[50px] text-center">#</TableHead>
+                        <TableHead>Player</TableHead>
+                        <TableHead>Current Division</TableHead>
+                        <TableHead>Requested Division</TableHead>
+                        <TableHead>Season</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="w-[120px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedRequests.map((request, index) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="text-center text-muted-foreground font-mono text-sm">
+                            {(currentPage - 1) * pageSize + index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-8">
+                                <AvatarImage src={request.user?.image || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(request.user?.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {request.user?.name || "Unknown"}
                                 </span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm font-medium text-primary">
-                                  {request.requestedDivision?.name || "Unknown"}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm text-muted-foreground">
-                                  {request.season?.name || "Unknown"}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">
-                                  {request.reason || "—"}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={getStatusColor(request.status)}>
-                                  {getStatusLabel(request.status)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatTableDate(request.createdAt)}
-                              </TableCell>
-                              <TableCell>
-                                {request.status === "PENDING" && (
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="size-8 text-green-600 hover:text-green-700 hover:bg-green-100"
-                                      onClick={() => handleProcess(request, "APPROVED")}
-                                    >
-                                      <IconCheck className="size-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="size-8 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                      onClick={() => handleProcess(request, "DENIED")}
-                                    >
-                                      <IconX className="size-4" />
-                                    </Button>
-                                  </div>
-                                )}
-                                {request.status !== "PENDING" && request.reviewedByAdmin && (
+                                {request.user?.username && (
                                   <span className="text-xs text-muted-foreground">
-                                    by {request.reviewedByAdmin.user?.name || "Admin"}
+                                    @{request.user.username}
                                   </span>
                                 )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-12">
-                        <IconArrowsExchange className="size-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Requests Found</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedStatus
-                            ? "Try adjusting your filters to see more results."
-                            : "There are no team change requests to review at this time."}
-                        </p>
-                      </div>
-                    )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {request.currentDivision?.name || "Unknown"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium text-primary">
+                              {request.requestedDivision?.name || "Unknown"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {request.season?.name || "Unknown"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">
+                              {request.reason || "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(request.status)}>
+                              {getStatusLabel(request.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {formatTableDate(request.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            {request.status === "PENDING" && (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                  onClick={() => handleProcess(request, "APPROVED")}
+                                >
+                                  <IconCheck className="size-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                  onClick={() => handleProcess(request, "DENIED")}
+                                >
+                                  <IconX className="size-4" />
+                                </Button>
+                              </div>
+                            )}
+                            {request.status !== "PENDING" && request.reviewedByAdmin && (
+                              <span className="text-xs text-muted-foreground">
+                                by {request.reviewedByAdmin.user?.name || "Admin"}
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <IconArrowsExchange className="size-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Requests Found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStatus
+                        ? "Try adjusting your filters to see more results."
+                        : "There are no team change requests to review at this time."}
+                    </p>
+                  </div>
+                )}
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-between pt-4 border-t mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                          {Math.min(currentPage * pageSize, filteredRequests.length)} of{" "}
-                          {filteredRequests.length} requests
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <IconChevronLeft className="size-4 mr-1" />
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setCurrentPage((p) => Math.min(totalPages, p + 1))
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                      {Math.min(currentPage * pageSize, filteredRequests.length)} of{" "}
+                      {filteredRequests.length} requests
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <IconChevronLeft className="size-4 mr-1" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum: number;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
                             }
-                            disabled={currentPage === totalPages}
-                          >
-                            Next
-                            <IconChevronRight className="size-4 ml-1" />
-                          </Button>
-                        </div>
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-              </Card>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <IconChevronRight className="size-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

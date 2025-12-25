@@ -1,33 +1,34 @@
 "use client";
 
 import * as React from "react";
+import {
+  IconTrophy,
+  IconDownload,
+  IconRefresh,
+  IconUsers,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCalendar,
+  IconMapPin,
+} from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
+import { League } from "@/constants/zod/league-schema";
+import { type League as LeagueEditType } from "@/constants/types/league";
+import { toast } from "sonner";
+import Link from "next/link";
+
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type Row,
-  type Cell,
-} from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ConfirmationModal } from "../modal/confirmation-modal";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -37,719 +38,477 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  IconChevronDown,
-  IconSearch,
-  IconFilter,
-  IconTrophy,
-  IconMapPin,
-  IconUsers,
-  IconCalendar,
-  IconTrash,
-  IconAdjustments,
-  IconArrowsMaximize,
-  IconArrowsMinimize,
-} from "@tabler/icons-react";
-import { toast } from "sonner";
-import { League } from "@/constants/zod/league-schema";
+import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
-import { getSportLabel, getSportColor } from "@/constants/sports";
+import { cn } from "@/lib/utils";
+import { getSportIcon, getSportColor, getSportLabel } from "@/constants/sports";
+
+import { LeagueRowActions } from "@/components/league/league-row-actions";
+import { LeagueDetailModal } from "@/components/league/league-detail-modal";
+import dynamic from "next/dynamic";
+
 import {
   formatTableDate,
   formatLocation,
-  getStatusBadgeVariant,
-  LOADING_STATES,
-  TABLE_ANIMATIONS,
-  RESPONSIVE_CLASSES,
   ACTION_MESSAGES,
-  FILTER_OPTIONS,
   formatCount,
 } from "./constants";
-import { StatusBadge } from "../ui/status-badge";
 
-// League Name Cell Component
-const LeagueNameCell = ({ league }: { league: League }) => {
-  const router = useRouter();
+const LeagueEditModal = dynamic(
+  () => import("@/components/modal/league-edit-modal"),
+  { loading: () => null }
+);
 
-  return (
-    <div className="flex items-center gap-3">
-      <div className="p-2 bg-primary/10 rounded-lg">
-        <IconTrophy className="size-4 text-primary" />
-      </div>
-      <div>
-        <div
-          className="font-semibold cursor-pointer hover:text-primary hover:underline group-hover:underline transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/league/view/${league.id}`);
-          }}
-        >
-          {league.name}
-        </div>
-        {/* <div className="text-sm text-muted-foreground">
-          ID: {league.id}
-        </div> */}
-      </div>
-    </div>
-  );
+/** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
+const formatStatus = (status: string | undefined): string => {
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 };
 
-// Dynamic columns based on selection state
-const getColumns = (enableRowSelection: boolean): ColumnDef<League>[] => {
-  const baseColumns: ColumnDef<League>[] = [];
-
-  // Add selection column only when enabled
-  if (enableRowSelection) {
-    baseColumns.push({
-      id: "select",
-      header: ({ table }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Select all"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      size: 50,
-    });
+/** Get status badge styling */
+const getStatusBadgeClass = (status: string | undefined) => {
+  switch (status) {
+    case "UPCOMING":
+      return "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800";
+    case "ACTIVE":
+    case "ONGOING":
+      return "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+    case "FINISHED":
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
+    case "CANCELLED":
+    case "SUSPENDED":
+      return "text-red-700 bg-red-50 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800";
+    case "INACTIVE":
+      return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+    default:
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
   }
-
-  baseColumns.push(
-    {
-      accessorKey: "name",
-      header: "League Name",
-      cell: ({ row }) => {
-        const league = row.original;
-        return <LeagueNameCell league={league} />;
-      },
-      enableHiding: false,
-    },
-    {
-      accessorKey: "sportType",
-      header: "Sport",
-      cell: ({ row }) => {
-        const sport = row.original.sportType;
-        const sportColor = getSportColor(sport);
-        const sportLabel = getSportLabel(sport);
-
-        return (
-          <div
-            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
-            style={{
-              color: sportColor,
-              borderColor: sportColor + "40",
-              backgroundColor: sportColor + "08",
-            }}
-          >
-            <div
-              className="w-2.5 h-2.5 rounded-full mr-2"
-              style={{ backgroundColor: sportColor }}
-            />
-            {sportLabel}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "location",
-      header: "Location",
-      cell: ({ row }) => {
-        const location = row.original.location;
-        return (
-          <div className="flex items-center gap-2">
-            <IconMapPin className="size-4 text-muted-foreground" />
-            <span>{formatLocation(location)}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.original.status;
-        return (
-          // <Badge
-          //   variant={getStatusBadgeVariant("LEAGUE", status)}
-          //   className="capitalize"
-          // >
-          //   {status.toLowerCase()}
-          // </Badge>
-          <StatusBadge entity="LEAGUE" status={status} />
-        );
-      },
-    },
-    // {
-    //   accessorKey: "gameType",
-    //   header: "Game Type",
-    //   cell: ({ row }) => {
-    //     const sport = row.original.sportType;
-    //     const gameType = row.original.gameType;
-    //     const gameTypeOptions = getGameTypeOptionsForSport(sport);
-    //     const label = gameTypeOptions.find(o => o.value === gameType)?.label || getGameTypeLabel(gameType);
-
-    //     return (
-    //       <div className="flex items-center gap-2">
-    //         <IconUsers className="size-4 text-muted-foreground" />
-    //         <span>{label}</span>
-    //       </div>
-    //     );
-    //   },
-    // },
-    {
-      accessorKey: "memberCount",
-      header: "Players",
-      cell: ({ row }) => {
-        const memberCount = row.original.memberCount;
-        return (
-          <div className="flex items-center gap-2">
-            <IconUsers className="size-4 text-muted-foreground" />
-            <span>{formatCount(memberCount)}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "seasonCount",
-      header: "Seasons",
-      cell: ({ row }) => {
-        const seasonCount = row.original.seasonCount;
-        return (
-          <div className="flex items-center gap-2">
-            <IconCalendar className="size-4 text-muted-foreground" />
-            <span>{formatCount(seasonCount)}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created",
-      cell: ({ row }) => {
-        const createdAt = row.original.createdAt;
-        return (
-          <div className="flex items-center gap-2">
-            <IconCalendar className="size-4 text-muted-foreground" />
-            <span>{formatTableDate(createdAt)}</span>
-          </div>
-        );
-      },
-    }
-  );
-
-  return baseColumns;
 };
 
-interface LeaguesDataTableProps {
+/** Get sport-specific background style for icon container */
+const getSportBgClass = (sportType: string | null | undefined): string => {
+  const sport = sportType?.toUpperCase();
+  switch (sport) {
+    case "TENNIS":
+      return "bg-emerald-100 dark:bg-emerald-900/40";
+    case "PICKLEBALL":
+      return "bg-violet-100 dark:bg-violet-900/40";
+    case "PADEL":
+      return "bg-sky-100 dark:bg-sky-900/40";
+    default:
+      return "bg-primary/10";
+  }
+};
+
+/** Format game type display */
+const formatGameType = (gameType: string | undefined): string => {
+  switch (gameType?.toUpperCase()) {
+    case "SINGLES":
+      return "Singles";
+    case "DOUBLES":
+      return "Doubles";
+    case "MIXED":
+      return "Mixed";
+    default:
+      return gameType || "—";
+  }
+};
+
+export type LeaguesDataTableProps = {
   data: League[];
-  isLoading?: boolean;
-  createLeagueButton?: React.ReactNode;
-  onDataChange?: () => void; // Callback to refresh data after operations
-}
+  isLoading: boolean;
+  onDataChange?: () => void;
+};
 
 export function LeaguesDataTable({
   data,
-  isLoading = false,
-  createLeagueButton,
+  isLoading,
   onDataChange,
 }: LeaguesDataTableProps) {
   const router = useRouter();
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [expandedGroups, setExpandedGroups] = React.useState<
-    Record<string, boolean>
-  >({});
-  const [showTools, setShowTools] = React.useState(false);
 
-  // Use the confirmation modal hook
-  const confirmation = useConfirmationModal();
+  // Pagination
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const pageSize = 20;
 
-  const columns = getColumns(true);
+  // Modal states
+  const [viewLeague, setViewLeague] = React.useState<League | null>(null);
+  const [isViewOpen, setIsViewOpen] = React.useState(false);
+  const [editLeague, setEditLeague] = React.useState<League | null>(null);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [deleteLeague, setDeleteLeague] = React.useState<League | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const table = useReactTable({
-    data,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      globalFilter,
-    },
-  });
+  const handleViewLeague = React.useCallback((league: League) => {
+    setViewLeague(league);
+    setIsViewOpen(true);
+  }, []);
 
-  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const handleEditLeague = React.useCallback((league: League) => {
+    setEditLeague(league);
+    setIsEditOpen(true);
+  }, []);
 
-  // Track pagination state for re-rendering when page changes
-  const paginationState = table.getState().pagination;
+  const handleDeleteRequest = React.useCallback((league: League) => {
+    setDeleteLeague(league);
+    setIsDeleteOpen(true);
+  }, []);
 
-  const groupedRows = React.useMemo(() => {
-    const groups = new Map<string, { name: string; rows: Row<League>[] }>();
-    // Get fresh row model inside the memo to ensure we have latest data
-    const rowModel = table.getRowModel();
-    rowModel.rows.forEach((row: Row<League>) => {
-      const name: string = row.original?.name ?? "Untitled";
-      const key = name.trim().toLowerCase();
-      if (!groups.has(key)) groups.set(key, { name, rows: [] });
-      groups.get(key)!.rows.push(row);
-    });
-    return Array.from(groups.values());
-  }, [data, paginationState, table]);
-
-  const toggleGroup = (key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const multiGroupKeys = React.useMemo(
-    () =>
-      groupedRows
-        .filter((g) => g.rows.length > 1)
-        .map((g) => g.name.trim().toLowerCase()),
-    [groupedRows]
-  );
-
-  const allExpanded = React.useMemo(() => {
-    if (!multiGroupKeys.length) return true;
-    return multiGroupKeys.every((k) => (expandedGroups[k] ?? true) === true);
-  }, [multiGroupKeys, expandedGroups]);
-
-  const toggleAllGroups = (expand: boolean) => {
-    const next: Record<string, boolean> = {};
-    multiGroupKeys.forEach((k) => {
-      next[k] = expand;
-    });
-    setExpandedGroups((prev) => ({ ...prev, ...next }));
-  };
-
-  // Delete leagues function
-  const deleteLeagues = async (leagueIds: string[]) => {
-    confirmation.setLoading(true);
-
+  const handleDeleteLeague = React.useCallback(async () => {
+    if (!deleteLeague) return;
     try {
-      // Delete leagues one by one
-      const deletePromises = leagueIds.map((id) =>
-        axiosInstance.delete(endpoints.league.delete(id))
-      );
-
-      await Promise.all(deletePromises);
-
-      toast.success(ACTION_MESSAGES.SUCCESS.DELETE);
-
-      // Clear selection
-      setRowSelection({});
-
-      // Refresh data
+      setIsDeleting(true);
+      const response = await axiosInstance.delete(endpoints.league.delete(deleteLeague.id));
+      toast.success(response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE);
       onDataChange?.();
-
-      // Close modal
-      confirmation.hideConfirmation();
-    } catch (error) {
-      const apiError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        apiError.response?.data?.message || ACTION_MESSAGES.ERROR.DELETE_FAILED
-      );
+      setDeleteLeague(null);
+      setIsDeleteOpen(false);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || ACTION_MESSAGES.ERROR.DELETE_FAILED;
+      toast.error(errorMessage);
     } finally {
-      confirmation.setLoading(false);
+      setIsDeleting(false);
     }
-  };
+  }, [deleteLeague, onDataChange]);
 
-  const handleBulkAction = (action: string) => {
-    const selectedIds = selectedRows.map((row) => row.original.id);
-    const selectedNames = selectedRows.map((row) => row.original.name);
+  const handleEditSuccess = React.useCallback(() => {
+    onDataChange?.();
+    setEditLeague(null);
+    setIsEditOpen(false);
+  }, [onDataChange]);
 
-    switch (action) {
-      case "delete":
-        confirmation.showConfirmation({
-          title: `Delete ${selectedIds.length} League${
-            selectedIds.length > 1 ? "s" : ""
-          }`,
-          description:
-            selectedIds.length === 1
-              ? `Are you sure you want to delete "${selectedNames[0]}"? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`
-              : `Are you sure you want to delete ${selectedIds.length} leagues? This action cannot be undone and will remove all associated data including seasons, divisions, and matches.`,
-          onConfirm: () => deleteLeagues(selectedIds),
-          variant: "destructive",
-          confirmText: "Delete",
-          cancelText: "Cancel",
-        });
-        break;
-      default:
-        break;
+  const exportToCSV = React.useCallback(() => {
+    if (data.length === 0) {
+      toast.error("No data to export");
+      return;
     }
-  };
+
+    const headers = ["Name", "Sport", "Location", "Status", "Game Type", "Players", "Seasons", "Created At"];
+
+    const rows = data.map(l => [
+      l.name,
+      l.sportType || "",
+      l.location || "",
+      l.status || "",
+      l.gameType || "",
+      l.memberCount || 0,
+      l.seasonCount || 0,
+      l.createdAt
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `leagues-export-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Leagues exported successfully");
+  }, [data]);
+
+  // Filter data by search
+  const filteredData = React.useMemo(() => {
+    if (!globalFilter) return data;
+    const search = globalFilter.toLowerCase();
+    return data.filter(l =>
+      l.name.toLowerCase().includes(search) ||
+      l.status?.toLowerCase().includes(search) ||
+      l.sportType?.toLowerCase().includes(search) ||
+      l.location?.toLowerCase().includes(search)
+    );
+  }, [data, globalFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className={`w-full space-y-4 py-4`}>
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        open={confirmation.open}
-        onOpenChange={confirmation.hideConfirmation}
-        title={confirmation.title}
-        description={confirmation.description}
-        confirmText={confirmation.confirmText}
-        cancelText={confirmation.cancelText}
-        onConfirm={confirmation.onConfirm}
-        isLoading={confirmation.isLoading}
-        variant={confirmation.variant}
-        icon={<IconTrash className="h-5 w-5 text-destructive" />}
-      />
-
-      {/* Toolbar */}
-      <div className={`flex items-center justify-between`}>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.LEAGUES}
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(String(event.target.value))}
-              className="pl-8 max-w-sm"
-            />
+    <>
+      <div className="space-y-4">
+        {/* Search and Actions */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <Input
+            placeholder="Search leagues..."
+            value={globalFilter}
+            onChange={(e) => { setGlobalFilter(e.target.value); setCurrentPage(1); }}
+            className="w-full sm:w-80"
+          />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <IconDownload className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            {onDataChange && (
+              <Button variant="outline" size="sm" onClick={onDataChange}>
+                <IconRefresh className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTools((s) => !s)}
-          >
-            <IconAdjustments className="mr-2 h-4 w-4" />
-            Tools
-          </Button>
+        </div>
 
-          {showTools && (
-            <>
-              {/* Expand/Collapse all league groups */}
+        {/* Table */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : paginatedData.length > 0 ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs">League</TableHead>
+                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Sport</TableHead>
+                  <TableHead className="w-[150px] py-2.5 font-medium text-xs">Location</TableHead>
+                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
+                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Game Type</TableHead>
+                  <TableHead className="w-[90px] py-2.5 font-medium text-xs">Players</TableHead>
+                  <TableHead className="w-[90px] py-2.5 font-medium text-xs">Seasons</TableHead>
+                  <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((league, index) => {
+                  const sportIcon = getSportIcon(league.sportType, 16);
+                  const sportColor = getSportColor(league.sportType);
+                  const sportLabel = getSportLabel(league.sportType);
+
+                  return (
+                    <TableRow key={league.id} className="hover:bg-muted/30">
+                      {/* Row Number */}
+                      <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
+                        {((currentPage - 1) * pageSize) + index + 1}
+                      </TableCell>
+
+                      {/* League Name */}
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-lg",
+                            getSportBgClass(league.sportType)
+                          )}>
+                            {sportIcon || <IconTrophy className="size-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/league/view/${league.id}`}
+                              className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
+                            >
+                              {league.name}
+                            </Link>
+                            {league.createdAt && (
+                              <span className="text-xs text-muted-foreground">
+                                Created {formatTableDate(league.createdAt)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Sport */}
+                      <TableCell className="py-3">
+                        <div
+                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
+                          style={{
+                            color: sportColor,
+                            borderColor: sportColor + "40",
+                            backgroundColor: sportColor + "10",
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full mr-1.5"
+                            style={{ backgroundColor: sportColor }}
+                          />
+                          {sportLabel}
+                        </div>
+                      </TableCell>
+
+                      {/* Location */}
+                      <TableCell className="py-3">
+                        {league.location ? (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <IconMapPin className="size-4" />
+                            <span className="truncate max-w-[120px]">{formatLocation(league.location)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell className="py-3">
+                        <Badge
+                          variant="outline"
+                          className={cn("text-xs font-medium border", getStatusBadgeClass(league.status))}
+                        >
+                          {formatStatus(league.status)}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Game Type */}
+                      <TableCell className="py-3">
+                        <span className="text-sm">{formatGameType(league.gameType)}</span>
+                      </TableCell>
+
+                      {/* Players */}
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-1 text-sm">
+                          <IconUsers className="size-4 text-muted-foreground" />
+                          <span className="font-medium">{formatCount(league.memberCount)}</span>
+                        </div>
+                      </TableCell>
+
+                      {/* Seasons */}
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-1 text-sm">
+                          <IconCalendar className="size-4 text-muted-foreground" />
+                          <span className="font-medium">{formatCount(league.seasonCount)}</span>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="py-3 pr-4">
+                        <LeagueRowActions
+                          league={league}
+                          onView={handleViewLeague}
+                          onEdit={handleEditLeague}
+                          onDelete={handleDeleteRequest}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No leagues found
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} leagues
+            </div>
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => toggleAllGroups(!allExpanded)}
-                disabled={!multiGroupKeys.length}
-                aria-label={
-                  allExpanded
-                    ? "Collapse all league groups"
-                    : "Expand all league groups"
-                }
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
               >
-                {allExpanded ? (
-                  <IconArrowsMinimize className="h-4 w-4" />
-                ) : (
-                  <IconArrowsMaximize className="h-4 w-4" />
-                )}
+                <IconChevronLeft className="size-4 mr-1" />
+                Previous
               </Button>
-
-              {/* Filter dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <IconFilter className="mr-2 h-4 w-4" />
-                    Filter
-                    <IconChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {FILTER_OPTIONS.LEAGUE_STATUS.map((status) => (
-                    <DropdownMenuCheckboxItem
-                      key={status}
-                      className="capitalize"
-                      checked={
-                        table.getColumn("status")?.getFilterValue() === status
-                      }
-                      onCheckedChange={(checked) =>
-                        table
-                          .getColumn("status")
-                          ?.setFilterValue(checked ? status : "")
-                      }
-                    >
-                      {status.toLowerCase()}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Columns dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    Columns <IconChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            column.toggleVisibility(!!value)
-                          }
-                        >
-                          {column.id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Create League Button */}
-          {!selectedRows.length && createLeagueButton && (
-            <div>{createLeagueButton}</div>
-          )}
-
-          {selectedRows.length > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedRows.length} selected
-              </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleBulkAction("delete")}
-                disabled={confirmation.isLoading}
-              >
-                <IconTrash className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Data Table */}
-      <div className={`rounded-md border bg-background w-full`}>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
                   return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
                   );
                 })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <div className={TABLE_ANIMATIONS.LOADING_SPINNER}></div>
-                    {LOADING_STATES.LOADING_TEXT}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              groupedRows.map((group) => {
-                const key = group.name.trim().toLowerCase();
-                const isMulti = group.rows.length > 1;
-                const isExpanded = expandedGroups[key] ?? true;
-
-                if (!isMulti) {
-                  const single = group.rows[0];
-                  const league = single.original;
-                  return (
-                    <TableRow
-                      key={single.id}
-                      data-state={single.getIsSelected() && "selected"}
-                      className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
-                      onClick={(e) => {
-                        // Don't navigate if clicking on checkbox or interactive elements
-                        const target = e.target as HTMLElement;
-                        if (
-                          target.closest("button") ||
-                          target.closest('input[type="checkbox"]') ||
-                          target.closest('[role="button"]')
-                        ) {
-                          return;
-                        }
-                        router.push(`/league/view/${league.id}`);
-                      }}
-                    >
-                      {single
-                        .getVisibleCells()
-                        .map((cell: Cell<League, unknown>) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  );
-                }
-
-                return (
-                  <React.Fragment key={key}>
-                    {/* Group header row */}
-                    <TableRow className="bg-muted/30">
-                      <TableCell colSpan={columns.length}>
-                        <button
-                          type="button"
-                          onClick={() => toggleGroup(key)}
-                          className="flex items-center gap-2 font-semibold"
-                        >
-                          <IconChevronDown
-                            className={`h-4 w-4 transition-transform ${
-                              isExpanded ? "rotate-0" : "-rotate-90"
-                            }`}
-                          />
-                          {group.name}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {group.rows.length} league
-                            {group.rows.length !== 1 ? "s" : ""}
-                          </span>
-                        </button>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Child rows */}
-                    {isExpanded &&
-                      group.rows.map((row: Row<League>) => {
-                        const league = row.original;
-                        return (
-                          <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                            className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
-                            onClick={(e) => {
-                              // Don't navigate if clicking on checkbox or interactive elements
-                              const target = e.target as HTMLElement;
-                              if (
-                                target.closest("button") ||
-                                target.closest('input[type="checkbox"]') ||
-                                target.closest('[role="button"]')
-                              ) {
-                                return;
-                              }
-                              router.push(`/league/view/${league.id}`);
-                            }}
-                          >
-                            {row
-                              .getVisibleCells()
-                              .map((cell: Cell<League, unknown>) => (
-                                <TableCell key={cell.id}>
-                                  {/* Indent first column content for hierarchy visual */}
-                                  {cell.column.id === "name" ? (
-                                    <div className="pl-6">
-                                      {flexRender(
-                                        cell.column.columnDef.cell,
-                                        cell.getContext()
-                                      )}
-                                    </div>
-                                  ) : (
-                                    flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )
-                                  )}
-                                </TableCell>
-                              ))}
-                          </TableRow>
-                        );
-                      })}
-                  </React.Fragment>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <IconTrophy className="size-12 text-muted-foreground" />
-                    <span>{LOADING_STATES.NO_DATA_TEXT}</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <IconChevronRight className="size-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Pagination */}
-      <div className={`flex items-center justify-between space-x-2 py-4`}>
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} league(s) selected.
-        </div>
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-    </div>
+      {/* League Detail Modal */}
+      <LeagueDetailModal
+        league={viewLeague}
+        open={isViewOpen}
+        onOpenChange={(open) => {
+          if (!open) setViewLeague(null);
+          setIsViewOpen(open);
+        }}
+        onEdit={handleEditLeague}
+      />
+
+      {/* Edit League Modal */}
+      {editLeague && (
+        <LeagueEditModal
+          open={isEditOpen}
+          onOpenChange={(open) => {
+            if (!open) setEditLeague(null);
+            setIsEditOpen(open);
+          }}
+          league={{
+            ...editLeague,
+            location: editLeague.location ?? null,
+            createdAt: editLeague.createdAt instanceof Date ? editLeague.createdAt.toISOString() : editLeague.createdAt,
+            updatedAt: editLeague.updatedAt instanceof Date ? editLeague.updatedAt.toISOString() : editLeague.updatedAt,
+          } as LeagueEditType}
+          onLeagueUpdated={async () => { handleEditSuccess(); }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open) setDeleteLeague(null);
+          setIsDeleteOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete league</AlertDialogTitle>
+            <AlertDialogDescription>
+              {ACTION_MESSAGES.DELETE_CONFIRM}
+              <br />
+              <span className="font-semibold">{deleteLeague?.name ?? "this league"}</span>? This action cannot be undone and will remove all associated seasons, divisions, and matches.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteLeague}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

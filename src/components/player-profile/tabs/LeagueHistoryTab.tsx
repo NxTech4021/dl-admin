@@ -67,11 +67,10 @@ export function LeagueHistoryTab({
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                         <span>
                           Joined{" "}
-                          {new Date(
-                            league.membership.joinedAt
-                          ).toLocaleDateString()}
+                          {league.membership
+                            ? new Date(league.membership.joinedAt).toLocaleDateString()
+                            : "N/A"}
                         </span>
-                        <span>{league._count.memberships} members</span>
                         <span>{league._count.seasons} seasons</span>
                       </div>
                     </div>

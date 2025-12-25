@@ -82,6 +82,15 @@
   --brand-light: oklch(61.59% 0.13937 239.453);
   --brand-dark: oklch(34.156% 0.10612 253.247);
 
+  /* Chat UI variables */
+  --chat-nav-width: 340px;
+  --bubble-radius: 20px;
+  --bubble-tail-radius: 6px;
+  --input-radius: 22px;
+  --brand-light-20: oklch(61.59% 0.13937 239.453 / 0.2);
+  --message-shadow: 0 1px 2px oklch(0 0 0 / 0.05);
+  --message-shadow-hover: 0 4px 12px oklch(0 0 0 / 0.1);
+
   /* Dashboard chart colors - light mode */
   --chart-user-total: oklch(0.646 0.222 254.6);
   --chart-user-paying: oklch(0.828 0.189 84.429);
@@ -130,6 +139,15 @@
 
   --brand-light: oklch(61.59% 0.13937 239.453);
   --brand-dark: oklch(34.156% 0.10612 253.247);
+
+  /* Chat UI variables - dark mode */
+  --chat-nav-width: 340px;
+  --bubble-radius: 20px;
+  --bubble-tail-radius: 6px;
+  --input-radius: 22px;
+  --brand-light-20: oklch(61.59% 0.13937 239.453 / 0.25);
+  --message-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  --message-shadow-hover: 0 4px 16px oklch(0 0 0 / 0.3);
 
   /* Dashboard chart colors - dark mode */
   --chart-user-total: oklch(0.7 0.22 264);

@@ -5,10 +5,11 @@ import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { IconCalendar, IconPlus } from "@tabler/icons-react";
+import { IconCategory, IconPlus } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
+import { DivisionStatsCards } from "@/components/division/division-stats-cards";
 
 const DivisionsDataTable = dynamic(() => import("@/components/data-table/divisions-data-table").then(mod => ({ default: mod.DivisionsDataTable })), {
   loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />
@@ -44,11 +45,11 @@ export default function Page() {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            {/* Industry-Standard Page Header */}
+            {/* Page Header */}
             <PageHeader
-              icon={IconCalendar}
+              icon={IconCategory}
               title="Divisions"
-              description="Manage league divisions"
+              description="Manage league divisions and player assignments"
               actions={
                 <>
                   <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
@@ -63,7 +64,10 @@ export default function Page() {
                   />
                 </>
               }
-            />
+            >
+              {/* Statistics Cards */}
+              <DivisionStatsCards />
+            </PageHeader>
 
             {/* Data Table */}
             <div className="flex-1 px-4 lg:px-6 pb-6">

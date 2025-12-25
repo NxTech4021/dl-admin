@@ -1,49 +1,32 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
-  IconDotsVertical,
-  IconCalendar,
-  IconTrash,
   IconTrophy,
-  IconChevronDown,
-  IconArrowsMaximize,
-  IconArrowsMinimize,
+  IconDownload,
+  IconRefresh,
+  IconUsers,
+  IconChevronLeft,
+  IconChevronRight,
+  IconClock,
 } from "@tabler/icons-react";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-  type Row,
-  type Cell,
-} from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { Season } from "@/constants/zod/season-schema";
+import { toast } from "sonner";
+import Link from "next/link";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -53,671 +36,498 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { getSportLabel, getSportColor, getSportIcon  } from "@/constants/sports";
+import { cn } from "@/lib/utils";
+import { getSportIcon } from "@/constants/sports";
 
-// Import constants
+import { SeasonRowActions } from "@/components/season/season-row-actions";
+import { SeasonDetailModal } from "@/components/season/season-detail-modal";
+import SeasonEditModal from "@/components/modal/season-edit-modal";
+
 import {
   formatTableDate,
   formatCurrency,
-  getStatusBadgeVariant,
-  LOADING_STATES,
-  TABLE_ANIMATIONS,
-  RESPONSIVE_CLASSES,
   ACTION_MESSAGES,
-  COLUMN_WIDTHS,
 } from "./constants";
-import { StatusBadge } from "../ui/status-badge";
 
-// Season Name Cell Component
-const SeasonNameCell = ({ season }: { season: Season }) => {
-  const router = useRouter();
-  
-  // Add null/undefined checks
-  const sportIcon = season.leagues && season.leagues.length > 0 && season.leagues[0]?.sportType
-    ? getSportIcon(season.leagues[0].sportType, 18)
-    : <IconTrophy className="size-4 text-primary" />;
+/** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
+const formatStatus = (status: string | undefined): string => {
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
 
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black">
-        {sportIcon}
-      </div>
-      <div
-        className="font-medium cursor-pointer hover:text-primary hover:underline group-hover:underline transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          router.push(`/seasons/${season.id}`);
-        }}
-      >
-        {season.name}
-      </div>
-    </div>
-  );
+/** Get status badge styling */
+const getStatusBadgeClass = (status: string | undefined) => {
+  switch (status) {
+    case "UPCOMING":
+      return "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800";
+    case "ACTIVE":
+      return "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+    case "FINISHED":
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
+    case "CANCELLED":
+      return "text-red-700 bg-red-50 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800";
+    case "WAITLISTED":
+      return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+    default:
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
+  }
+};
+
+/** Get sport-specific background style for icon container */
+const getSportBgClass = (sportType: string | null | undefined): string => {
+  const sport = sportType?.toUpperCase();
+  switch (sport) {
+    case "TENNIS":
+      return "bg-emerald-100 dark:bg-emerald-900/40";
+    case "PICKLEBALL":
+      return "bg-violet-100 dark:bg-violet-900/40";
+    case "PADEL":
+      return "bg-sky-100 dark:bg-sky-900/40";
+    default:
+      return "bg-primary/10";
+  }
+};
+
+/** Format category display */
+const formatCategory = (category: Season["category"]): string => {
+  if (!category) return "Open";
+  const gender = category.genderRestriction || category.genderCategory || category.gender_category;
+  const format = category.matchFormat || category.gameType || category.game_type;
+
+  const genderLabel = gender?.toLowerCase() === "male" ? "Men's"
+    : gender?.toLowerCase() === "female" ? "Women's"
+    : gender?.toLowerCase() === "mixed" ? "Mixed"
+    : "";
+
+  const formatLabel = format?.toLowerCase() === "singles" ? "Singles"
+    : format?.toLowerCase() === "doubles" ? "Doubles"
+    : format || "";
+
+  return [genderLabel, formatLabel].filter(Boolean).join(" ") || "Open";
 };
 
 export type SeasonsDataTableProps = {
   data: Season[];
   isLoading: boolean;
   onViewSeason?: (seasonId: string) => void;
+  onRefresh?: () => void;
 };
-
-const getLeaguesDisplay = (season: Season): React.ReactNode => {
-  if (!season.leagues || season.leagues.length === 0) {
-    return <span className="text-muted-foreground text-xs">No leagues</span>;
-  }
-
-  return (
-    <HoverCard>
-      <HoverCardTrigger>
-        <Badge variant="secondary" className="cursor-pointer">
-          {season.leagues.length} League{season.leagues.length !== 1 ? "s" : ""}
-        </Badge>
-      </HoverCardTrigger>
-      <HoverCardContent>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked Leagues</h4>
-          <div className="flex flex-wrap gap-1">
-            {season.leagues.map((league) => {
-              const sportColor = getSportColor(
-                league.sportType?.toUpperCase() || "DEFAULT"
-              );
-              const sportLabel = getSportLabel(
-                league.sportType?.toUpperCase() || league.sportType || "Unknown"
-              );
-
-              return (
-                <div
-                  key={league.id}
-                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
-                  style={{
-                    color: sportColor,
-                    borderColor: sportColor + "40",
-                    backgroundColor: sportColor + "08",
-                  }}
-                >
-                  {league.name} • {sportLabel}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  );
-};
-
-const getCategoryDisplay = (season: Season): React.ReactNode => {
-  if (!season.category) {
-    return <span className="text-muted-foreground text-xs">No category</span>;
-  }
-
-  const categoryName = season.category.name || "Unnamed Category";
-  const genderRestriction = season.category.genderRestriction;
-  const matchFormat = season.category.matchFormat;
-
-  return (
-    <HoverCard>
-      <HoverCardTrigger>
-        <Badge variant="secondary" className="cursor-pointer text-xs">
-          {categoryName}
-        </Badge>
-      </HoverCardTrigger>
-      <HoverCardContent>
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Category Details</h4>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Name:</span>
-              <span className="font-medium">{categoryName}</span>
-            </div>
-            {genderRestriction && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Gender:</span>
-                <Badge variant="outline" className="text-xs">
-                  {genderRestriction}
-                </Badge>
-              </div>
-            )}
-            {matchFormat && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Format:</span>
-                <Badge variant="outline" className="text-xs">
-                  {matchFormat}
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  );
-};
-
-const handleDeleteSeason = async (seasonId: string) => {
-  if (!confirm(ACTION_MESSAGES.DELETE_CONFIRM)) {
-    return;
-  }
-
-  try {
-    await axiosInstance.delete(endpoints.season.delete(seasonId));
-    // Refresh the data after successful deletion
-    window.location.reload();
-  } catch (error) {
-    console.error(ACTION_MESSAGES.ERROR.DELETE_FAILED, error);
-  }
-};
-
-const columns: ColumnDef<Season>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 50,
-  },
-  {
-    accessorKey: "name",
-    header: "Season Name",
-    cell: ({ row }) => {
-      const season = row.original;
-      return <SeasonNameCell season={season} />;
-    },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "leagues",
-    header: "Leagues",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {getLeaguesDisplay(row.original)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {getCategoryDisplay(row.original)}
-      </div>
-    ),
-  },
-  {
-  accessorKey: "status",
-  header: "Status",
-  cell: ({ row }) => {
-    const status = row.original.status;
-    const isActive = status === 'ACTIVE';
-    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-    
-    return (
-      // <Badge 
-      //   variant={getStatusBadgeVariant('SEASON', status)} 
-      //   className={`capitalize ${isActive ? 'bg-green-500 text-white border-transparent' : ''}`}
-      // >
-      //   {statusLabel}
-      // </Badge>
-      <StatusBadge entity="SEASON" status={status} />
-    );
-  },
-},
-  {
-    accessorKey: "entryFee",
-    header: "Entry Fee",
-    cell: ({ row }) => {
-      const entryFee = row.original.entryFee;
-      if (!entryFee) {
-        return <span className="text-muted-foreground">Free</span>;
-      }
-      const feeAmount =
-        typeof entryFee === "string" ? parseFloat(entryFee) : entryFee;
-      if (!isNaN(feeAmount)) {
-        return (
-          <span className="font-medium">
-            {formatCurrency(feeAmount, "MYR")}
-          </span>
-        );
-      }
-
-      // If not a number, display as-is
-      return <span className="font-medium">{entryFee}</span>;
-    },
-  },
-  {
-    accessorKey: "divisions",
-    header: "Divisions",
-    cell: ({ row }) => {
-      const divisionsCount = row.original.divisions?.length || 0;
-      return (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{divisionsCount}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "memberships",
-    header: "Players",
-    cell: ({ row }) => {
-      const membershipsCount = row.original.memberships?.length || 0;
-      return (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{membershipsCount}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "regiDeadline",
-    header: "Registration Deadline",
-    cell: ({ row }) => {
-      const regiDeadline = row.original.regiDeadline;
-      if (!regiDeadline)
-        return <span className="text-muted-foreground">No deadline</span>;
-
-      return (
-        <div className="flex items-center gap-2">
-          <span>{formatTableDate(regiDeadline)}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "duration",
-    header: "Duration",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconCalendar className="size-4 text-muted-foreground" />
-        <span>
-          {row.original.startDate
-            ? formatTableDate(row.original.startDate)
-            : "No start date"}{" "}
-          –{" "}
-          {row.original.endDate
-            ? formatTableDate(row.original.endDate)
-            : "No end date"}
-        </span>
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    cell: ({ row, table }) => {
-      const season = row.original;
-      const onViewSeason = (table.options.meta as any)?.onViewSeason;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className={`${TABLE_ANIMATIONS.ROW_HOVER} ${TABLE_ANIMATIONS.TRANSITION} flex size-8`}
-              size="icon"
-            >
-              <IconDotsVertical className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            {/* <DropdownMenuItem
-              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleViewSeason(season.id, onViewSeason)}
-            >
-              <IconEye className="mr-2 size-4" />
-              View Season
-            </DropdownMenuItem>
-            <DropdownMenuSeparator /> */}
-            <DropdownMenuItem
-              variant="destructive"
-              className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
-              onClick={() => handleDeleteSeason(season.id)}
-            >
-              <IconTrash className="mr-2 size-4" />
-              Delete Season
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
 
 export function SeasonsDataTable({
   data,
   isLoading,
   onViewSeason,
+  onRefresh,
 }: SeasonsDataTableProps) {
   const router = useRouter();
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [expandedGroups, setExpandedGroups] = React.useState<
-    Record<string, boolean>
-  >({});
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-      globalFilter,
-    },
-    meta: { onViewSeason } as any,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    globalFilterFn: "includesString",
-  });
+  // Pagination
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const pageSize = 20;
 
-  // Group the CURRENT row model (after filters/sorts/pagination) by season name
-  const groupedRows = React.useMemo(() => {
-    const groups = new Map<string, { name: string; rows: Row<Season>[] }>();
-    // Get fresh row model inside the memo to ensure we have latest data
-    const rowModel = table.getRowModel();
-    rowModel.rows.forEach((row: Row<Season>) => {
-      const name: string = row.original?.name ?? "Untitled";
-      const key = name.trim().toLowerCase();
-      if (!groups.has(key)) groups.set(key, { name, rows: [] });
-      groups.get(key)!.rows.push(row);
-    });
-    return Array.from(groups.values());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Modal states
+  const [viewSeason, setViewSeason] = React.useState<Season | null>(null);
+  const [isViewOpen, setIsViewOpen] = React.useState(false);
+  const [editSeason, setEditSeason] = React.useState<Season | null>(null);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [deleteSeason, setDeleteSeason] = React.useState<Season | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleViewSeason = React.useCallback((season: Season) => {
+    setViewSeason(season);
+    setIsViewOpen(true);
+  }, []);
+
+  const handleEditSeason = React.useCallback((season: Season) => {
+    setEditSeason(season);
+    setIsEditOpen(true);
+  }, []);
+
+  const handleDeleteRequest = React.useCallback((season: Season) => {
+    setDeleteSeason(season);
+    setIsDeleteOpen(true);
+  }, []);
+
+  const handleDeleteSeason = React.useCallback(async () => {
+    if (!deleteSeason) return;
+    try {
+      setIsDeleting(true);
+      const response = await axiosInstance.delete(endpoints.season.delete(deleteSeason.id));
+      toast.success(response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE);
+      onRefresh?.();
+      setDeleteSeason(null);
+      setIsDeleteOpen(false);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || ACTION_MESSAGES.ERROR.DELETE_FAILED;
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteSeason, onRefresh]);
+
+  const handleEditSuccess = React.useCallback(() => {
+    onRefresh?.();
+    setEditSeason(null);
+    setIsEditOpen(false);
+  }, [onRefresh]);
+
+  const handleManagePlayers = React.useCallback((season: Season) => {
+    router.push(`/seasons/${season.id}?tab=players`);
+  }, [router]);
+
+  const exportToCSV = React.useCallback(() => {
+    if (data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = ["Name", "Status", "Sport Type", "Category", "Entry Fee", "Players", "Divisions", "Start Date", "End Date", "Deadline", "Payment Required", "Created At"];
+
+    const rows = data.map(s => [
+      s.name,
+      s.status || "",
+      s.sportType || "",
+      formatCategory(s.category),
+      s.entryFee || 0,
+      s.registeredUserCount || 0,
+      s.divisions?.length || 0,
+      s.startDate ? new Date(s.startDate).toLocaleDateString() : "",
+      s.endDate ? new Date(s.endDate).toLocaleDateString() : "",
+      s.regiDeadline ? new Date(s.regiDeadline).toLocaleDateString() : "",
+      s.paymentRequired ? "Yes" : "No",
+      s.createdAt
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `seasons-export-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Seasons exported successfully");
   }, [data]);
 
-  const toggleGroup = (key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  // Filter data by search
+  const filteredData = React.useMemo(() => {
+    if (!globalFilter) return data;
+    const search = globalFilter.toLowerCase();
+    return data.filter(s =>
+      s.name.toLowerCase().includes(search) ||
+      s.status?.toLowerCase().includes(search) ||
+      s.sportType?.toLowerCase().includes(search) ||
+      formatCategory(s.category).toLowerCase().includes(search)
+    );
+  }, [data, globalFilter]);
 
-  // Compute keys for groups that actually have multiple seasons
-  const multiGroupKeys = React.useMemo(
-    () =>
-      groupedRows
-        .filter((g) => g.rows.length > 1)
-        .map((g) => g.name.trim().toLowerCase()),
-    [groupedRows]
-  );
-
-  const allExpanded = React.useMemo(() => {
-    if (!multiGroupKeys.length) return true;
-    return multiGroupKeys.every((k) => (expandedGroups[k] ?? true) === true);
-  }, [multiGroupKeys, expandedGroups]);
-
-  const toggleAllGroups = (expand: boolean) => {
-    const next: Record<string, boolean> = {};
-    multiGroupKeys.forEach((k) => {
-      next[k] = expand;
-    });
-    setExpandedGroups((prev) => ({ ...prev, ...next }));
-  };
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="space-y-4">
-      {/* Search and Selection Info */}
-      <div
-        className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}
-      >
-        <div className="flex items-center space-x-2">
+    <>
+      <div className="space-y-4">
+        {/* Search and Actions */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <Input
-            placeholder={LOADING_STATES.SEARCH_PLACEHOLDER.SEASONS}
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-80"
+            placeholder="Search seasons..."
+            value={globalFilter}
+            onChange={(e) => { setGlobalFilter(e.target.value); setCurrentPage(1); }}
+            className="w-full sm:w-80"
           />
-
-          {/* Expand/Collapse all seasons groups (icon) */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toggleAllGroups(!allExpanded)}
-            disabled={!multiGroupKeys.length}
-            aria-label={
-              allExpanded
-                ? "Collapse all season groups"
-                : "Expand all season groups"
-            }
-          >
-            {allExpanded ? (
-              <IconArrowsMinimize className="h-4 w-4" />
-            ) : (
-              <IconArrowsMaximize className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <IconDownload className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            {onRefresh && (
+              <Button variant="outline" size="sm" onClick={onRefresh}>
+                <IconRefresh className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
             )}
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} season(s) selected
           </div>
         </div>
-      </div>
 
-      {/* Table Container */}
-      <div
-        className={`rounded-md border ${RESPONSIVE_CLASSES.CONTAINER} bg-background`}
-      >
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
+        {/* Table */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : paginatedData.length > 0 ? (
+          <TooltipProvider>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                    <TableHead className="py-2.5 font-medium text-xs">Season</TableHead>
+                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">Leagues</TableHead>
+                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">Category</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Entry Fee</TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs">Players</TableHead>
+                    <TableHead className="w-[130px] py-2.5 font-medium text-xs">Deadline</TableHead>
+                    <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedData.map((season, index) => {
+                    const leagues = season.leagues || [];
+                    const sportType = season.sportType || (leagues[0]?.sportType);
+                    const sportIcon = sportType ? getSportIcon(sportType, 16) : <IconTrophy className="size-4" />;
+
+                    return (
+                      <TableRow key={season.id} className="hover:bg-muted/30">
+                        {/* Row Number */}
+                        <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
+                          {((currentPage - 1) * pageSize) + index + 1}
+                        </TableCell>
+
+                        {/* Season Name */}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg",
+                              getSportBgClass(sportType)
+                            )}>
+                              {sportIcon}
+                            </div>
+                            <div className="min-w-0">
+                              <Link
+                                href={`/seasons/${season.id}`}
+                                className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
+                              >
+                                {season.name}
+                              </Link>
+                              {season.startDate && season.endDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  {formatTableDate(season.startDate)} - {formatTableDate(season.endDate)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Leagues */}
+                        <TableCell className="py-3">
+                          {leagues.length > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="cursor-pointer">
+                                  {leagues.length} League{leagues.length !== 1 ? "s" : ""}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  {leagues.slice(0, 5).map((league) => (
+                                    <div key={league.id} className="text-xs">{league.name}</div>
+                                  ))}
+                                  {leagues.length > 5 && (
+                                    <div className="text-xs text-muted-foreground">+{leagues.length - 5} more</div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
                           )}
-                    </TableHead>
+                        </TableCell>
+
+                        {/* Category */}
+                        <TableCell className="py-3">
+                          <span className="text-sm">{formatCategory(season.category)}</span>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs font-medium border", getStatusBadgeClass(season.status))}
+                          >
+                            {formatStatus(season.status)}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Entry Fee */}
+                        <TableCell className="py-3">
+                          {season.entryFee && Number(season.entryFee) > 0 ? (
+                            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(Number(season.entryFee), "MYR")}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Free</span>
+                          )}
+                        </TableCell>
+
+                        {/* Players */}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-1 text-sm">
+                            <IconUsers className="size-4 text-muted-foreground" />
+                            <span className="font-medium">{season.registeredUserCount || 0}</span>
+                          </div>
+                        </TableCell>
+
+                        {/* Deadline */}
+                        <TableCell className="py-3">
+                          {season.regiDeadline ? (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <IconClock className="size-4" />
+                              <span>{formatTableDate(season.regiDeadline)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="py-3 pr-4">
+                          <SeasonRowActions
+                            season={season}
+                            onView={handleViewSeason}
+                            onEdit={handleEditSeason}
+                            onDelete={handleDeleteRequest}
+                            onManagePlayers={handleManagePlayers}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </TooltipProvider>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No seasons found
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} seasons
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <IconChevronLeft className="size-4 mr-1" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
                   );
                 })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <div className={TABLE_ANIMATIONS.LOADING_SPINNER}></div>
-                    {LOADING_STATES.LOADING_TEXT}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              // Render grouped rows: for names with multiple entries, show a collapsible parent row
-              groupedRows.map((group) => {
-                const key = group.name.trim().toLowerCase();
-                const isMulti = group.rows.length > 1;
-                const isExpanded = expandedGroups[key] ?? true; // default expanded for multi
-
-                if (!isMulti) {
-                  const single = group.rows[0];
-                  const season = single.original;
-                  return (
-                    <TableRow
-                      key={single.id}
-                      data-state={single.getIsSelected() && "selected"}
-                      className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
-                      onClick={(e) => {
-                        // Don't navigate if clicking on checkbox or interactive elements
-                        const target = e.target as HTMLElement;
-                        if (
-                          target.closest("button") ||
-                          target.closest('input[type="checkbox"]') ||
-                          target.closest('[role="button"]')
-                        ) {
-                          return;
-                        }
-                        router.push(`/seasons/${season.id}`);
-                      }}
-                    >
-                      {single
-                        .getVisibleCells()
-                        .map((cell: Cell<Season, unknown>) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  );
-                }
-
-                return (
-                  <React.Fragment key={key}>
-                    {/* Group header row */}
-                    <TableRow className="bg-muted/30">
-                      <TableCell colSpan={columns.length}>
-                        <button
-                          type="button"
-                          onClick={() => toggleGroup(key)}
-                          className="flex items-center gap-2 font-semibold"
-                        >
-                          <IconChevronDown
-                            className={`h-4 w-4 transition-transform ${
-                              isExpanded ? "rotate-0" : "-rotate-90"
-                            }`}
-                          />
-                          {group.name}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {group.rows.length} seasons
-                          </span>
-                        </button>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Child rows */}
-                    {isExpanded &&
-                      group.rows.map((row: Row<Season>) => {
-                        const season = row.original;
-                        return (
-                          <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                            className={`group ${TABLE_ANIMATIONS.ROW_HOVER} cursor-pointer`}
-                            onClick={(e) => {
-                              // Don't navigate if clicking on checkbox or interactive elements
-                              const target = e.target as HTMLElement;
-                              if (
-                                target.closest("button") ||
-                                target.closest('input[type="checkbox"]') ||
-                                target.closest('[role="button"]')
-                              ) {
-                                return;
-                              }
-                              router.push(`/seasons/${season.id}`);
-                            }}
-                          >
-                            {row
-                              .getVisibleCells()
-                              .map((cell: Cell<Season, unknown>) => (
-                                <TableCell key={cell.id}>
-                                  {/* Indent first column content for hierarchy visual */}
-                                  {cell.column.id === "name" ? (
-                                    <div className="pl-6">
-                                      {flexRender(
-                                        cell.column.columnDef.cell,
-                                        cell.getContext()
-                                      )}
-                                    </div>
-                                  ) : (
-                                    flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )
-                                  )}
-                                </TableCell>
-                              ))}
-                          </TableRow>
-                        );
-                      })}
-                  </React.Fragment>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {LOADING_STATES.NO_DATA_TEXT}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <IconChevronRight className="size-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Pagination */}
-      <div
-        className={`flex items-center justify-between ${RESPONSIVE_CLASSES.PADDING}`}
+      {/* Season Detail Modal */}
+      <SeasonDetailModal
+        season={viewSeason}
+        open={isViewOpen}
+        onOpenChange={(open) => {
+          if (!open) setViewSeason(null);
+          setIsViewOpen(open);
+        }}
+        onEdit={handleEditSeason}
+        onManagePlayers={handleManagePlayers}
+      />
+
+      {/* Edit Season Modal */}
+      {editSeason && (
+        <SeasonEditModal
+          open={isEditOpen}
+          onOpenChange={(open) => {
+            if (!open) setEditSeason(null);
+            setIsEditOpen(open);
+          }}
+          season={editSeason}
+          onSeasonUpdated={async () => { handleEditSuccess(); }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open) setDeleteSeason(null);
+          setIsDeleteOpen(open);
+        }}
       >
-        <div className="text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} season(s)
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-    </div>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete season</AlertDialogTitle>
+            <AlertDialogDescription>
+              {ACTION_MESSAGES.DELETE_CONFIRM}
+              <br />
+              <span className="font-semibold">{deleteSeason?.name ?? "this season"}</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSeason}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

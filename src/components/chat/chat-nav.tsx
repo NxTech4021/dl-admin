@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 // UI components
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
-  ChevronLeft,
-  ChevronRight,
   Users,
+  SquarePen,
   MessageSquarePlus,
 } from "lucide-react";
 
@@ -71,8 +71,7 @@ const useBoolean = (initialValue = false): UseBooleanReturn => {
 };
 
 // --- CONSTANTS ---
-const NAV_WIDTH = "w-[320px]";
-const NAV_COLLAPSE_WIDTH = "w-[96px]";
+// Width is now controlled by parent container in the main chat page
 
 export default function ChatNav({
   loading,
@@ -85,8 +84,6 @@ export default function ChatNav({
   const router = useRouter();
   const mdUp = useResponsive();
   const {
-    collapseDesktop,
-    onCollapseDesktop,
     openMobile,
     onOpenMobile,
     onCloseMobile,
@@ -129,14 +126,6 @@ export default function ChatNav({
   }, [conversations, searchQuery]);
 
   // Event Handlers
-  const handleToggleNav = useCallback(() => {
-    if (mdUp) {
-      onCollapseDesktop();
-    } else {
-      onCloseMobile();
-    }
-  }, [mdUp, onCloseMobile, onCollapseDesktop]);
-
   const handleClickCompose = useCallback(() => {
     if (!mdUp) {
       onCloseMobile();
@@ -189,12 +178,19 @@ export default function ChatNav({
   );
 
   const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <MessageSquarePlus className="w-12 h-12 text-muted-foreground mb-4" />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="flex flex-col items-center justify-center py-8 text-center"
+    >
+      <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+        <MessageSquarePlus className="w-6 h-6 text-muted-foreground/60" />
+      </div>
       <p className="text-sm text-muted-foreground mb-2">
         {searchQuery ? "No conversations found" : "No conversations yet"}
       </p>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground/70">
         {searchQuery
           ? "Try a different search term"
           : "Start a new conversation"}
@@ -210,117 +206,106 @@ export default function ChatNav({
           New Message
         </Button>
       )}
-    </div>
+    </motion.div>
   );
 
   const renderConversationsList = () => (
     <>
-      {filteredConversations.length > 0
-        ? filteredConversations.map((conversation: Conversation) => (
-            <ChatNavItem
+      {filteredConversations.length > 0 ? (
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.04 } },
+          }}
+        >
+          {filteredConversations.map((conversation: Conversation) => (
+            <motion.div
               key={conversation.id}
-              collapse={collapseDesktop}
-              conversation={conversation}
-              selected={conversation.id === selectedConversationId}
-              onCloseMobile={onCloseMobile}
-              // onClick={() => handleConversationClick(conversation.id)}
-            />
-          ))
-        : renderEmptyState()}
+              variants={{
+                hidden: { opacity: 0, x: -8 },
+                visible: { opacity: 1, x: 0 },
+              }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <ChatNavItem
+                conversation={conversation}
+                selected={conversation.id === selectedConversationId}
+                onCloseMobile={onCloseMobile}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        renderEmptyState()
+      )}
     </>
   );
 
   const renderHeader = () => (
-    <div className="flex flex-row items-center justify-between p-4 border-b">
-      {!collapseDesktop && (
-        <div className="flex-1">
-          <ChatNavAccount user={user} />
-        </div>
-      )}
-
+    <div className="flex items-center justify-between px-4 min-h-[68px] border-b">
+      <ChatNavAccount user={user} />
       <Button
-        variant="ghost"
         size="icon"
-        onClick={handleToggleNav}
-        aria-label={
-          collapseDesktop ? "Expand navigation" : "Collapse navigation"
-        }
+        variant="ghost"
+        onClick={handleClickCompose}
+        className="rounded-full h-9 w-9"
       >
-        {collapseDesktop ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
+        <SquarePen className="h-5 w-5" />
       </Button>
     </div>
   );
 
-  const renderSearch = () => {
-    if (collapseDesktop) return null;
-
-    return (
-      <div className="px-4 pb-4">
-        <div className="relative py-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Search conversations..."
-            className="pl-10 pr-8"
-            aria-label="Search conversations"
-          />
+  const renderSearch = () => (
+    <div className="px-3 py-2">
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+        <Input
+          value={searchQuery}
+          onChange={(event) => handleSearchChange(event.target.value)}
+          placeholder="Search"
+          className="pl-10 h-9 rounded-full bg-muted/50 border-0 focus-visible:ring-0 text-sm"
+          aria-label="Search conversations"
+        />
+        <AnimatePresence>
           {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              onClick={handleClearSearch}
-              aria-label="Clear search"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
             >
-              ×
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground rounded-full"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+              >
+                ×
+              </Button>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
-    );
-  };
-
-  const renderComposeButton = () => {
-    if (collapseDesktop) return null;
-
-    return (
-      <div className="p-4 border-t">
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={handleClickCompose}
-        >
-          <MessageSquarePlus className="w-4 h-4 mr-2" />
-          New Message
-        </Button>
-      </div>
-    );
-  };
+    </div>
+  );
 
   const renderContent = () => (
     <div className="h-full flex flex-col">
-      {/* Header */}
+      {/* Header with compose icon */}
       {renderHeader()}
 
-      {/* Search */}
+      {/* Pill-shaped search */}
       {renderSearch()}
 
       {/* Conversations List */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="px-2 space-y-1">
-            {loading ? renderSkeleton() : renderConversationsList()}
-          </div>
+          {loading ? renderSkeleton() : renderConversationsList()}
         </ScrollArea>
       </div>
-
-      {/* New Chat Button */}
-      {renderComposeButton()}
 
       <NewChatModal
         open={showNewChatModal}
@@ -337,10 +322,7 @@ export default function ChatNav({
       {!mdUp && renderToggleBtn()}
 
       {mdUp ? (
-        <div
-          className={`h-full flex-shrink-0 border-r bg-background transition-[width] duration-200 flex flex-col
-            ${collapseDesktop ? NAV_COLLAPSE_WIDTH : NAV_WIDTH}`}
-        >
+        <div className="h-full w-full flex flex-col">
           {renderContent()}
         </div>
       ) : (

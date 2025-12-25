@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 // Import constants
 import {
@@ -100,14 +102,12 @@ const getGroupInitials = (groupName: string) => {
 // --- CHAT NAV ITEM COMPONENT ---
 interface ChatNavItemProps {
   selected?: boolean;
-  collapse?: boolean;
   conversation: any;
   onCloseMobile?: () => void;
 }
 
 const ChatNavItem = ({
   selected,
-  collapse,
   conversation,
   onCloseMobile,
 }: ChatNavItemProps) => {
@@ -141,102 +141,88 @@ const ChatNavItem = ({
   }, [conversation.id, mdUp, onCloseMobile, router]);
 
   const renderGroup = (
-    <div className="relative">
-      <Avatar
-        className={collapse ? CHAT_UI.AVATAR_SIZES.SMALL : CHAT_UI.AVATAR_SIZES.MEDIUM}
-      >
+    <div className="relative flex-shrink-0">
+      <Avatar className="h-12 w-12">
         <AvatarImage
           src={conversation.avatarUrl || conversation.photoURL}
           alt={displayName || "Group Chat"}
         />
-        <AvatarFallback className="text-sm  bg-gradient-to-br from-brand-dark to-brand-light text-white text-primary-foreground font-semibold">
+        <AvatarFallback className="text-sm bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
           {getGroupInitials(displayName || conversation.name || "Group")}
         </AvatarFallback>
       </Avatar>
       {hasOnlineInGroup && (
-        <span
-          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${getStatusColor(
-            "online"
-          )} ring-2 ring-background`}
-        />
+        <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
       )}
     </div>
   );
 
   const renderSingle = (
-    <div className="relative">
-      <Avatar
-        className={collapse ? CHAT_UI.AVATAR_SIZES.SMALL : CHAT_UI.AVATAR_SIZES.MEDIUM}
-      >
+    <div className="relative flex-shrink-0">
+      <Avatar className="h-12 w-12">
         <AvatarImage
           src={photoURL || singleParticipant?.photoURL}
           alt={displayName || "User"}
         />
-        <AvatarFallback className="text-sm bg-muted">
+        <AvatarFallback className="text-sm bg-muted font-medium">
           {getInitials(displayName || "User")}
         </AvatarFallback>
       </Avatar>
       {status === "online" && (
-        <span
-          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${getStatusColor(
-            "online"
-          )} ring-2 ring-background`}
-        />
+        <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
       )}
     </div>
   );
 
   return (
-    <div
+    <motion.div
       onClick={handleClickConversation}
-      className={`flex items-center p-3 cursor-pointer rounded-lg mb-1
-        ${selected
-          ? "bg-primary/10 border border-primary/20"
-          : `hover:bg-accent/50`
-        }
-      `}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.1 }}
+      className={cn(
+        "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors",
+        selected ? "bg-muted" : "hover:bg-muted/50"
+      )}
     >
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
-        {group ? renderGroup : renderSingle}
-        {conversation.unreadCount > 0 && collapse && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground font-medium">
-            {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+      {/* Avatar with status */}
+      {group ? renderGroup : renderSingle}
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-[15px] truncate">
+            {displayName || DEFAULTS.UNKNOWN_USER}
           </span>
-        )}
-      </div>
-
-      {/* Text content */}
-      {!collapse && (
-        <div className="flex flex-1 justify-between items-center ml-3 min-w-0">
-          <div className="flex flex-col overflow-hidden flex-1 max-w-[65%]">
-            <span className="text-sm font-semibold truncate">
-              {displayName || DEFAULTS.UNKNOWN_USER}
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
-              {displayText || DEFAULTS.EMPTY_MESSAGES}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-end space-y-1 ml-2 flex-shrink-0 min-w-0">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {lastActivity
-                ? formatDistanceToNowStrict(new Date(lastActivity), {
-                    addSuffix: false,
-                  })
-                : ""}
-            </span>
+          <span className="text-xs text-muted-foreground/70 flex-shrink-0 ml-2">
+            {lastActivity
+              ? formatDistanceToNowStrict(new Date(lastActivity), {
+                  addSuffix: false,
+                })
+              : ""}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-sm text-muted-foreground truncate">
+            {displayText || DEFAULTS.EMPTY_MESSAGES}
+          </span>
+          <AnimatePresence>
             {conversation.unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-destructive text-xs text-destructive-foreground font-medium">
+              <motion.span
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className="h-5 min-w-5 px-1.5 rounded-full bg-brand-light text-white text-xs font-medium flex items-center justify-center flex-shrink-0 ml-2"
+              >
                 {conversation.unreadCount > 99
                   ? "99+"
                   : conversation.unreadCount}
-              </span>
+              </motion.span>
             )}
-          </div>
+          </AnimatePresence>
         </div>
-      )}
-    </div>
+      </div>
+    </motion.div>
   );
 };
 

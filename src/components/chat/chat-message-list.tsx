@@ -7,7 +7,8 @@ import { isToday, isYesterday, format } from 'date-fns';
 import ChatMessageItem from './chat-message-item';
 import TypingIndicator from './typing-indicator';
 import { Message } from '../../constants/types/chat';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageSquare } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // interface Message {
 //   id: string;
@@ -48,7 +49,7 @@ const MessageSkeleton = () => (
 
 const DateDivider = ({ date }: { date: string }) => {
   const messageDate = new Date(date);
-  
+
   const getDateLabel = () => {
     if (isToday(messageDate)) return 'Today';
     if (isYesterday(messageDate)) return 'Yesterday';
@@ -56,10 +57,10 @@ const DateDivider = ({ date }: { date: string }) => {
   };
 
   return (
-    <div className="flex items-center justify-center py-4">
-      <div className="bg-muted text-muted-foreground text-xs px-3 py-1 rounded-full">
+    <div className="flex items-center justify-center py-3">
+      <span className="px-3 py-1 rounded-full bg-muted/60 text-xs font-medium text-muted-foreground">
         {getDateLabel()}
-      </div>
+      </span>
     </div>
   );
 };
@@ -129,72 +130,114 @@ export default function ChatMessageList({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <div className="text-6xl mb-4">💬</div>
-          <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-          <p className="text-sm">Start the conversation by sending a message</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
+            <MessageSquare className="w-8 h-8 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-medium text-foreground/80 mb-2">
+            Start a conversation
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            Send a message to begin chatting
+          </p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 relative overflow-hidden">
-      <ScrollArea 
+    <div className="flex-1 relative overflow-hidden bg-background">
+      <ScrollArea
         ref={scrollAreaRef}
         className="h-full"
         onScrollCapture={handleScroll}
       >
-        <div className="min-h-full flex flex-col justify-end">
+        <div className="min-h-full flex flex-col justify-end py-2">
           {Object.entries(groupedMessages).map(([date, dateMessages]) => (
             <div key={date}>
               <DateDivider date={dateMessages[0].createdAt} />
-              {dateMessages.map((message) => (
-                <ChatMessageItem 
-                  key={message.id} 
-                  message={message} 
-                  participants={participants}
-                  onReply={onReply}
-                  onDelete={onDelete}
-                />
-              ))}
+              <AnimatePresence mode="popLayout">
+                {dateMessages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: index < 3 ? index * 0.05 : 0,
+                      ease: [0.4, 0, 0.2, 1],
+                    }}
+                    layout
+                  >
+                    <ChatMessageItem
+                      message={message}
+                      participants={participants}
+                      onReply={onReply}
+                      onDelete={onDelete}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ))}
-              
+
           {/* Typing Indicator */}
           <TypingIndicator threadId={threadId} />
-          
-          {loading && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              <span className="text-sm text-muted-foreground">Sending...</span>
-            </div>
-          )}
+
+          {/* Sending indicator */}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center justify-center py-4"
+              >
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm text-muted-foreground">Sending...</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </ScrollArea>
 
       {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-4 right-4 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:bg-primary/90 transition-colors"
-          aria-label="Scroll to bottom"
-        >
-          <svg 
-            className="h-4 w-4" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+      <AnimatePresence>
+        {showScrollButton && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={scrollToBottom}
+            className="absolute bottom-4 right-4 bg-primary text-primary-foreground rounded-full p-2.5 shadow-lg hover:bg-primary/90 transition-colors"
+            aria-label="Scroll to bottom"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M19 14l-7 7m0 0l-7-7m7 7V3" 
-            />
-          </svg>
-        </button>
-      )}
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

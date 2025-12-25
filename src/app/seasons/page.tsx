@@ -177,7 +177,7 @@ export default function Page() {
                 />
                 <StatsCard
                   title="Total Revenue"
-                  value={totalRevenue}
+                  value={`RM ${totalRevenue.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   description="From all season entry fees"
                   icon={IconCurrency}
                   iconColor="text-green-500"
@@ -204,6 +204,7 @@ export default function Page() {
                 data={seasons}
                 isLoading={isLoading}
                 onViewSeason={handleViewSeason}
+                onRefresh={fetchSeasons}
               />
             </div>
           </div>

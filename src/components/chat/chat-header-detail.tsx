@@ -1,9 +1,8 @@
 "use client";
 
 import { formatDistanceToNow } from 'date-fns';
-import { Phone, Video, MoreVertical, Users } from 'lucide-react';
+import { ChevronRight, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface Participant {
@@ -30,11 +29,13 @@ interface Conversation {
 interface ChatHeaderDetailProps {
   participants: Participant[];
   conversation?: Conversation;
+  onDetailsClick?: () => void;
 }
 
-export default function ChatHeaderDetail({ 
-  participants = [], 
-  conversation 
+export default function ChatHeaderDetail({
+  participants = [],
+  conversation,
+  onDetailsClick
 }: ChatHeaderDetailProps) {
   const isGroup = conversation?.type === 'group';
   
@@ -83,24 +84,24 @@ export default function ChatHeaderDetail({
       {/* Group Avatar */}
       <div className="relative">
         <Avatar className="h-10 w-10">
-          <AvatarImage 
-            src={conversation?.photoURL || conversation?.avatarUrl} 
-            alt={conversation?.displayName || 'Group Chat'} 
+          <AvatarImage
+            src={conversation?.photoURL || conversation?.avatarUrl}
+            alt={conversation?.displayName || 'Group Chat'}
           />
           <AvatarFallback className="text-sm bg-gradient-to-br from-brand-dark to-brand-light text-white font-semibold">
             {getGroupInitials(conversation?.displayName || conversation?.name || 'Group')}
           </AvatarFallback>
         </Avatar>
-        
+
         {/* Online members indicator */}
         {onlineMembers > 0 && (
           <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
         )}
       </div>
-      
+
       {/* Group Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium truncate">
+        <h3 className="text-[15px] font-semibold truncate">
           {conversation?.displayName || conversation?.name || 'Group Chat'}
         </h3>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -115,6 +116,9 @@ export default function ChatHeaderDetail({
           </span>
         </div>
       </div>
+
+      {/* Chevron indicator */}
+      <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
     </div>
   );
 
@@ -123,15 +127,15 @@ export default function ChatHeaderDetail({
       {/* Avatar with Status Badge */}
       <div className="relative">
         <Avatar className="h-10 w-10">
-          <AvatarImage 
-            src={otherParticipant?.photoURL || otherParticipant?.avatarUrl || conversation?.photoURL} 
-            alt={otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'User'} 
+          <AvatarImage
+            src={otherParticipant?.photoURL || otherParticipant?.avatarUrl || conversation?.photoURL}
+            alt={otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'User'}
           />
           <AvatarFallback>
             {(otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'U').charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        
+
         {/* Status Indicator */}
         <div className={cn(
           "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
@@ -141,11 +145,11 @@ export default function ChatHeaderDetail({
 
       {/* Participant Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium truncate">
+        <h3 className="text-[15px] font-semibold truncate">
           {otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'Unknown User'}
         </h3>
         <p className="text-xs text-muted-foreground truncate">
-          {otherParticipant?.status === 'offline' 
+          {otherParticipant?.status === 'offline'
             ? formatLastActivity(otherParticipant.lastActivity)
             : (
               <span className="capitalize">
@@ -155,27 +159,29 @@ export default function ChatHeaderDetail({
           }
         </p>
       </div>
+
+      {/* Chevron indicator */}
+      <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
     </div>
   );
 
   return (
-    <div className="flex items-center gap-3 w-full">
+    <div
+      className={cn(
+        "flex items-center gap-3 w-full py-1 px-2 -mx-2 rounded-xl transition-colors cursor-pointer",
+        onDetailsClick && "hover:bg-muted/50 active:bg-muted/70"
+      )}
+      onClick={onDetailsClick}
+      role={onDetailsClick ? "button" : undefined}
+      tabIndex={onDetailsClick ? 0 : undefined}
+      onKeyDown={onDetailsClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onDetailsClick();
+        }
+      } : undefined}
+    >
       {isGroup ? renderGroup : renderSingle}
-
-      {/* Action Buttons */}
-      {/* <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Phone className="h-4 w-4" />
-        </Button>
-        
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Video className="h-4 w-4" />
-        </Button>
-        
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </div> */}
     </div>
   );
 }

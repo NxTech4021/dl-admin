@@ -303,6 +303,44 @@ export function useDeleteDivision() {
   });
 }
 
+interface DivisionStats {
+  total: number;
+  active: number;
+  inactive: number;
+  byLevel: { beginner: number; intermediate: number; advanced: number };
+  byGameType: { singles: number; doubles: number };
+}
+
+export function useDivisionsStats(seasonId?: string) {
+  return useQuery({
+    queryKey: [...queryKeys.divisions.all, "stats", seasonId],
+    queryFn: async (): Promise<DivisionStats> => {
+      // Fetch divisions and compute stats client-side
+      const url = seasonId
+        ? `/api/division/season/${seasonId}`
+        : "/api/division/";
+      const response = await axiosInstance.get(url);
+      const divisions = response.data?.data || response.data?.divisions || response.data || [];
+      const divisionsArray = Array.isArray(divisions) ? divisions : [];
+
+      return {
+        total: divisionsArray.length,
+        active: divisionsArray.filter((d: any) => d.isActive).length,
+        inactive: divisionsArray.filter((d: any) => !d.isActive).length,
+        byLevel: {
+          beginner: divisionsArray.filter((d: any) => d.divisionLevel === "beginner").length,
+          intermediate: divisionsArray.filter((d: any) => d.divisionLevel === "intermediate").length,
+          advanced: divisionsArray.filter((d: any) => d.divisionLevel === "advanced").length,
+        },
+        byGameType: {
+          singles: divisionsArray.filter((d: any) => d.gameType === "singles").length,
+          doubles: divisionsArray.filter((d: any) => d.gameType === "doubles").length,
+        },
+      };
+    },
+  });
+}
+
 // ============================================
 // ADMINS
 // ============================================

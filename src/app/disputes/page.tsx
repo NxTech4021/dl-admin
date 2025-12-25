@@ -22,7 +22,6 @@ import { DisputeCategoryBadge } from "@/components/dispute/dispute-category-badg
 import { DisputeDetailDrawer } from "@/components/dispute/dispute-detail-drawer";
 import { DisputeResolveModal } from "@/components/dispute/dispute-resolve-modal";
 import { DisputeAddNoteModal } from "@/components/dispute/dispute-add-note-modal";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDisputes, useStartDisputeReview } from "@/hooks/use-queries";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -170,187 +169,186 @@ export default function DisputesPage() {
               />
             </PageHeader>
 
-              {/* Disputes Table */}
-              <div className="flex-1 px-4 lg:px-6 pb-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Disputes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : error ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <IconAlertTriangle className="size-12 text-destructive mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">
-                          Failed to Load Disputes
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                          There was an error loading the disputes data. Please try again.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => refetch()}
-                          className="gap-2"
+            {/* Disputes Table */}
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <div className="rounded-lg border bg-card">
+                {isLoading ? (
+                  <div className="p-6 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <IconAlertTriangle className="size-12 text-destructive mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      Failed to Load Disputes
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                      There was an error loading the disputes data. Please try again.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => refetch()}
+                      className="gap-2"
+                    >
+                      <IconRefresh className="size-4" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : data && data.disputes && data.disputes.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="w-[50px] text-center">#</TableHead>
+                        <TableHead>Raised By</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Match</TableHead>
+                        <TableHead>Priority</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="w-[50px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.disputes.map((dispute: Dispute, index: number) => (
+                        <TableRow
+                          key={dispute.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleView(dispute)}
                         >
-                          <IconRefresh className="size-4" />
-                          Retry
-                        </Button>
-                      </div>
-                    ) : data && data.disputes && data.disputes.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Raised By</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Match</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead className="w-[50px]">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {data.disputes.map((dispute: Dispute) => (
-                            <TableRow
-                              key={dispute.id}
-                              className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => handleView(dispute)}
-                            >
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="size-8">
-                                    <AvatarImage src={dispute.raisedByUser?.image || undefined} />
-                                    <AvatarFallback className="text-xs">
-                                      {getInitials(dispute.raisedByUser?.name || "?")}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium text-sm">
-                                      {dispute.raisedByUser?.name || "Unknown"}
-                                    </span>
-                                    {dispute.raisedByUser?.username && (
-                                      <span className="text-xs text-muted-foreground">
-                                        @{dispute.raisedByUser.username}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <DisputeCategoryBadge category={dispute.disputeCategory} />
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-mono text-xs">
-                                    {dispute.matchId.slice(0, 8)}...
+                          <TableCell className="text-center text-muted-foreground font-mono text-sm">
+                            {(currentPage - 1) * pageSize + index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-8">
+                                <AvatarImage src={dispute.raisedByUser?.image || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(dispute.raisedByUser?.name || "?")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {dispute.raisedByUser?.name || "Unknown"}
+                                </span>
+                                {dispute.raisedByUser?.username && (
+                                  <span className="text-xs text-muted-foreground">
+                                    @{dispute.raisedByUser.username}
                                   </span>
-                                  {dispute.match?.division && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {dispute.match.division.name}
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <DisputePriorityBadge priority={dispute.priority} />
-                              </TableCell>
-                              <TableCell>
-                                <DisputeStatusBadge status={dispute.status} />
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatTableDate(dispute.createdAt)}
-                              </TableCell>
-                              <TableCell onClick={(e) => e.stopPropagation()}>
-                                <DisputeRowActions
-                                  dispute={dispute}
-                                  onView={handleView}
-                                  onResolve={handleResolve}
-                                  onAddNote={handleAddNote}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-12">
-                        <IconAlertTriangle className="size-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Disputes Found</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedStatus || selectedPriority || selectedCategory || searchQuery
-                            ? "Try adjusting your filters to see more results."
-                            : "There are no disputes to review at this time."}
-                        </p>
-                      </div>
-                    )}
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DisputeCategoryBadge category={dispute.disputeCategory} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-mono text-xs">
+                                {dispute.matchId.slice(0, 8)}...
+                              </span>
+                              {dispute.match?.division && (
+                                <span className="text-xs text-muted-foreground">
+                                  {dispute.match.division.name}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DisputePriorityBadge priority={dispute.priority} />
+                          </TableCell>
+                          <TableCell>
+                            <DisputeStatusBadge status={dispute.status} />
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {formatTableDate(dispute.createdAt)}
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <DisputeRowActions
+                              dispute={dispute}
+                              onView={handleView}
+                              onResolve={handleResolve}
+                              onAddNote={handleAddNote}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <IconAlertTriangle className="size-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Disputes Found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStatus || selectedPriority || selectedCategory || searchQuery
+                        ? "Try adjusting your filters to see more results."
+                        : "There are no disputes to review at this time."}
+                    </p>
+                  </div>
+                )}
 
-                    {/* Pagination */}
-                    {data && data.totalPages > 1 && (
-                      <div className="flex items-center justify-between pt-4 border-t mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                          {Math.min(currentPage * pageSize, data.total)} of {data.total} disputes
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <IconChevronLeft className="size-4 mr-1" />
-                            Previous
-                          </Button>
-                          <div className="flex items-center gap-1">
-                            {Array.from(
-                              { length: Math.min(5, data.totalPages) },
-                              (_, i) => {
-                                let pageNum: number;
-                                if (data.totalPages <= 5) {
-                                  pageNum = i + 1;
-                                } else if (currentPage <= 3) {
-                                  pageNum = i + 1;
-                                } else if (currentPage >= data.totalPages - 2) {
-                                  pageNum = data.totalPages - 4 + i;
-                                } else {
-                                  pageNum = currentPage - 2 + i;
-                                }
-                                return (
-                                  <Button
-                                    key={pageNum}
-                                    variant={currentPage === pageNum ? "default" : "outline"}
-                                    size="sm"
-                                    className="w-8 h-8 p-0"
-                                    onClick={() => setCurrentPage(pageNum)}
-                                  >
-                                    {pageNum}
-                                  </Button>
-                                );
-                              }
-                            )}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setCurrentPage((p) => Math.min(data.totalPages, p + 1))
+                {/* Pagination */}
+                {data && data.totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                      {Math.min(currentPage * pageSize, data.total)} of {data.total} disputes
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <IconChevronLeft className="size-4 mr-1" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.min(5, data.totalPages) },
+                          (_, i) => {
+                            let pageNum: number;
+                            if (data.totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= data.totalPages - 2) {
+                              pageNum = data.totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
                             }
-                            disabled={currentPage === data.totalPages}
-                          >
-                            Next
-                            <IconChevronRight className="size-4 ml-1" />
-                          </Button>
-                        </div>
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(data.totalPages, p + 1))
+                        }
+                        disabled={currentPage === data.totalPages}
+                      >
+                        Next
+                        <IconChevronRight className="size-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
           </div>
         </div>
       </SidebarInset>
