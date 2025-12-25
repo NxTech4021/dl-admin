@@ -43,6 +43,7 @@ import WithdrawalRequestsCard from "./components/season/WithdrawalRequestsCard";
 import SeasonSettingsCard from "./components/season/SeasonSettingsCard";
 import SeasonOverviewStats from "./components/season/SeasonOverviewStats";
 import SeasonDetailsSection from "./components/season/SeasonDetailsSection";
+import SeasonPaymentCard from "./components/season/SeasonPaymentCard";
 
 // Tab configuration for reuse
 const TABS = [
@@ -51,8 +52,8 @@ const TABS = [
   { value: "divisions", label: "Divisions", icon: IconTrophy },
   { value: "leaderboard", label: "Leaderboard", icon: IconTarget },
   { value: "withdrawal_requests", label: "Withdrawals", icon: IconCalendar },
-  { value: "settings", label: "Settings", icon: IconSettings },
   { value: "payment", label: "Payment", icon: IconCreditCard },
+  { value: "settings", label: "Settings", icon: IconSettings },
 ] as const;
 
 export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
@@ -490,14 +491,12 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
 
             {/* Payment Tab */}
             <TabsContent value="payment">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Management</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">TODO</p>
-                </CardContent>
-              </Card>
+              <SeasonPaymentCard
+                memberships={season.memberships}
+                entryFee={season.entryFee}
+                paymentRequired={season.paymentRequired}
+                seasonName={season.name}
+              />
             </TabsContent>
           </Tabs>
         </div>
