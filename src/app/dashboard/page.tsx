@@ -5,7 +5,6 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TopKPICards } from "@/components/kpi-cards";
 import { AnimatedContainer } from "@/components/ui/animated-container";
-import { FilterPreset } from "@/components/dashboard-filter-presets";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
 import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
@@ -100,13 +99,6 @@ export default function Page() {
     setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
   }, []);
 
-  const handleApplyPreset = useCallback((preset: FilterPreset) => {
-    setIsChartLoading(true);
-    setChartRange(preset.chartRange);
-    setHistoryRange(preset.historyRange);
-    setTimeout(() => setIsChartLoading(false), CHART_LOADING_DELAY_MS);
-  }, []);
-
   // Keyboard shortcuts
   useDashboardKeyboard({
     onChartRangeChange: handleChartRangeChange,
@@ -156,7 +148,6 @@ export default function Page() {
             onHistoryRangeChange={handleHistoryRangeChange}
             onRefresh={handleRefresh}
             onExport={exportDashboardCSV}
-            onApplyPreset={handleApplyPreset}
             onKeyboardHelpChange={setShowKeyboardHelp}
           />
 

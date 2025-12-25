@@ -3,7 +3,6 @@
 import { RefreshCw, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterSelect } from "@/components/ui/filter-select";
-import { DashboardFilterPresets, FilterPreset } from "@/components/dashboard-filter-presets";
 import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const CHART_RANGE_OPTIONS = [
@@ -26,7 +25,6 @@ interface DashboardChartFiltersProps {
   onHistoryRangeChange: (value: 1 | 3 | 6) => void;
   onRefresh: () => void;
   onExport: () => void;
-  onApplyPreset: (preset: FilterPreset) => void;
   onKeyboardHelpChange: (show: boolean) => void;
 }
 
@@ -38,7 +36,6 @@ export function DashboardChartFilters({
   onHistoryRangeChange,
   onRefresh,
   onExport,
-  onApplyPreset,
 }: DashboardChartFiltersProps) {
   const formatLastUpdated = () => {
     return lastUpdated.toLocaleString("en-US", {
@@ -60,7 +57,7 @@ export function DashboardChartFilters({
               onChange={(value) => onChartRangeChange((value || "monthly") as "monthly" | "average")}
               options={CHART_RANGE_OPTIONS}
               placeholder="View"
-              triggerClassName="w-[100px] h-8 text-xs border-border/50"
+              triggerClassName="w-[120px] h-9 text-sm border-border/50"
             />
 
             <FilterSelect
@@ -68,13 +65,7 @@ export function DashboardChartFilters({
               onChange={(value) => onHistoryRangeChange(Number(value || "3") as 1 | 3 | 6)}
               options={HISTORY_RANGE_OPTIONS}
               placeholder="Period"
-              triggerClassName="w-[70px] h-8 text-xs border-border/50"
-            />
-
-            <DashboardFilterPresets
-              currentChartRange={chartRange}
-              currentHistoryRange={historyRange}
-              onApplyPreset={onApplyPreset}
+              triggerClassName="w-[85px] h-9 text-sm border-border/50"
             />
           </div>
 

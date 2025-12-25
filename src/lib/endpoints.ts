@@ -200,6 +200,7 @@ export const endpoints = {
     getById: (id: string) => `/api/match/${id}`,
     update: (id: string) => `/api/match/${id}`,
     delete: (id: string) => `/api/match/delete/${id}`,
+    getDivisionResults: (divisionId: string) => `/api/match/division/${divisionId}/results`,
   },
 
   chat: {

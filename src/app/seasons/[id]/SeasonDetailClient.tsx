@@ -25,7 +25,16 @@ import {
   IconSettings,
   IconCreditCard,
   IconCalendar,
+  IconChevronDown,
 } from "@tabler/icons-react";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import SeasonPlayersCard from "./components/season/SeasonPlayersCard";
 import SeasonDivisionsCard from "./components/season/SeasonDivisionsCard";
@@ -34,6 +43,17 @@ import WithdrawalRequestsCard from "./components/season/WithdrawalRequestsCard";
 import SeasonSettingsCard from "./components/season/SeasonSettingsCard";
 import SeasonOverviewStats from "./components/season/SeasonOverviewStats";
 import SeasonDetailsSection from "./components/season/SeasonDetailsSection";
+
+// Tab configuration for reuse
+const TABS = [
+  { value: "overview", label: "Overview", icon: IconUserCircle },
+  { value: "players", label: "Players", icon: IconUsers },
+  { value: "divisions", label: "Divisions", icon: IconTrophy },
+  { value: "leaderboard", label: "Leaderboard", icon: IconTarget },
+  { value: "withdrawal_requests", label: "Withdrawals", icon: IconCalendar },
+  { value: "settings", label: "Settings", icon: IconSettings },
+  { value: "payment", label: "Payment", icon: IconCreditCard },
+] as const;
 
 export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
   const [season, setSeason] = useState<Season | null>(null);
@@ -212,44 +232,51 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
         </div> */}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <IconUserCircle className="size-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="players" className="flex items-center gap-2">
-                <IconUsers className="size-4" />
-                Players
-              </TabsTrigger>
-              <TabsTrigger
-                value="divisions"
-                className="flex items-center gap-2"
-              >
-                <IconTrophy className="size-4" />
-                Divisions
-              </TabsTrigger>
-              <TabsTrigger
-                value="leaderboard"
-                className="flex items-center gap-2"
-              >
-                <IconTarget className="size-4" />
-                Leaderboard
-              </TabsTrigger>
-              <TabsTrigger
-                value="withdrawal_requests"
-                className="flex items-center gap-2"
-              >
-                <IconCalendar className="size-4" />
-                Withdrawal Requests
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <IconSettings className="size-4" />
-                Settings
-              </TabsTrigger>
-              <TabsTrigger value="payment" className="flex items-center gap-2">
-                <IconCreditCard className="size-4" />
-                Payment
-              </TabsTrigger>
+            {/* Mobile: Dropdown Select */}
+            <div className="md:hidden">
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {(() => {
+                      const currentTab = TABS.find(tab => tab.value === activeTab);
+                      if (!currentTab) return null;
+                      const Icon = currentTab.icon;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <Icon className="size-4" />
+                          <span>{currentTab.label}</span>
+                        </div>
+                      );
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {TABS.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <SelectItem key={tab.value} value={tab.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="size-4" />
+                          <span>{tab.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Desktop: Tab List */}
+            <TabsList className="hidden md:grid w-full grid-cols-7">
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                    <Icon className="size-4" />
+                    <span className="hidden lg:inline">{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
 
             {/* Overview Tab */}
