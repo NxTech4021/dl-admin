@@ -7,7 +7,7 @@ export const adminSchema = z.object({
   role: z.string().optional(),
   status: z.enum(["PENDING", "ACTIVE", "SUSPENDED"]),
   createdAt: z.string(),
-  image: z.string().optional(),
+  image: z.string().nullable().optional(),
   updatedAt: z.string().optional(),
   expiresAt: z.string().optional(),
 });
