@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -24,25 +23,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   IconPlus,
-  IconEdit,
-  IconTrash,
   IconTrophy,
+  IconCategory,
   IconUsers,
-  IconTarget,
-  IconCalendar,
-  IconDotsVertical,
+  IconUser,
+  IconChevronLeft,
+  IconChevronRight,
 } from "@tabler/icons-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import DivisionCreateModal from "@/components/modal/division-create-modal";
 import { Division } from "@/constants/zod/division-schema";
+import { DivisionRowActions } from "@/components/division/division-row-actions";
+import { DivisionDetailModal } from "@/components/division/division-detail-modal";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface SeasonDivisionsCardProps {
   seasonId: string;
@@ -54,6 +51,38 @@ interface SeasonDivisionsCardProps {
   onDivisionDeleted?: () => Promise<void>;
 }
 
+/** Get level badge styling */
+const getLevelBadgeClass = (level: string | null | undefined) => {
+  switch (level?.toLowerCase()) {
+    case "beginner":
+      return "text-sky-700 bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800";
+    case "intermediate":
+      return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+    case "advanced":
+      return "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800";
+    default:
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
+  }
+};
+
+/** Format level label */
+const formatLevel = (level: string | null | undefined): string => {
+  if (!level) return "Unknown";
+  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+};
+
+/** Get capacity status and color */
+const getCapacityDisplay = (current: number, max: number | null | undefined) => {
+  if (!max || max === 0) {
+    return { percentage: 0, colorClass: "bg-slate-400", textColor: "text-slate-600", label: current.toString() };
+  }
+  const percentage = Math.min((current / max) * 100, 100);
+  if (percentage >= 100) return { percentage: 100, colorClass: "bg-red-500", textColor: "text-red-600 dark:text-red-400", label: "Full" };
+  if (percentage >= 90) return { percentage, colorClass: "bg-red-500", textColor: "text-red-600 dark:text-red-400", label: "Almost full" };
+  if (percentage >= 70) return { percentage, colorClass: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400", label: "Filling" };
+  return { percentage, colorClass: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", label: "" };
+};
+
 export default function SeasonDivisionsCard({
   seasonId,
   adminId,
@@ -63,6 +92,7 @@ export default function SeasonDivisionsCard({
   onDivisionUpdated,
   onDivisionDeleted,
 }: SeasonDivisionsCardProps) {
+  const router = useRouter();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingDivision, setEditingDivision] = useState<Division | null>(null);
@@ -70,8 +100,23 @@ export default function SeasonDivisionsCard({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // View modal state
+  const [viewDivision, setViewDivision] = useState<Division | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const totalPages = Math.ceil(divisions.length / pageSize);
+  const paginatedDivisions = divisions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const handleDivisionCreated = () => {
     onDivisionCreated?.();
+  };
+
+  const handleViewDivision = (division: Division) => {
+    setViewDivision(division);
+    setIsViewOpen(true);
   };
 
   const handleEditDivision = (division: Division) => {
@@ -108,48 +153,59 @@ export default function SeasonDivisionsCard({
     }
   };
 
-  const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return "—";
-    const dateObj = typeof date === "string" ? new Date(date) : date;
-    if (isNaN(dateObj.getTime())) return "—";
-    return dateObj.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const handleManagePlayers = (division: Division) => {
+    router.push(`/divisions/${division.id}?tab=players`);
   };
 
-  const renderValue = (value: any) => {
-    if (value === null || value === undefined) return "—";
-    return String(value);
-  };
+  // Map editingDivision for the modal
+  const mappedEditDivision = React.useMemo(() => {
+    if (!editingDivision) return null;
+    return {
+      id: editingDivision.id,
+      seasonId: editingDivision.seasonId,
+      name: editingDivision.name,
+      description: editingDivision.description ?? null,
+      threshold: editingDivision.threshold ?? null,
+      divisionLevel: editingDivision.divisionLevel,
+      gameType: editingDivision.gameType,
+      genderCategory: editingDivision.genderCategory ?? null,
+      maxSingles: editingDivision.maxSingles ?? null,
+      maxDoublesTeams: editingDivision.maxDoublesTeams ?? null,
+      autoAssignmentEnabled: editingDivision.autoAssignmentEnabled ?? false,
+      isActive: editingDivision.isActive,
+      prizePoolTotal: editingDivision.prizePoolTotal ?? null,
+      sponsoredDivisionName: editingDivision.sponsoredDivisionName ?? null,
+    };
+  }, [editingDivision]);
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <IconTrophy className="size-5" />
-            Divisions ({divisions.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            Loading divisions...
+            <span className="text-lg font-semibold">Divisions</span>
           </div>
-        </CardContent>
-      </Card>
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="rounded-lg border bg-card p-6 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <div className="space-y-4">
+        {/* Header with title and create button */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <IconTrophy className="size-5" />
-            Divisions ({divisions.length})
-          </CardTitle>
+            <span className="text-lg font-semibold">Divisions ({divisions.length})</span>
+          </div>
           <DivisionCreateModal
             open={isCreateModalOpen}
             adminId={adminId}
@@ -165,140 +221,138 @@ export default function SeasonDivisionsCard({
               Create Division
             </Button>
           </DivisionCreateModal>
-        </CardHeader>
-        <CardContent>
-          {divisions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
+        </div>
+
+        {/* Table Container */}
+        <div className="rounded-lg border bg-card">
+          {paginatedDivisions.length > 0 ? (
+            <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px]">
-                      <div className="flex items-center gap-2">
-                        <IconTrophy className="size-4" />
-                        Division
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[100px]">
-                      <div className="flex items-center gap-2">
-                        <IconTarget className="size-4" />
-                        Game Type
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[90px]">Level</TableHead>
-                    <TableHead className="w-[90px]">Gender</TableHead>
-                    <TableHead className="w-[110px]">
-                      <div className="flex items-center gap-2">
-                        <IconTarget className="size-4" />
-                        Rating Threshold
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[100px]">
-                      <div className="flex items-center gap-2">
-                        <IconUsers className="size-4" />
-                        Players
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[80px]">Status</TableHead>
-                    <TableHead className="w-[100px]">
-                      <div className="flex items-center gap-2">
-                        <IconCalendar className="size-4" />
-                        Created
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[70px] text-right">
-                      Actions
-                    </TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                    <TableHead className="py-2.5 font-medium text-xs">Division</TableHead>
+                    <TableHead className="w-[110px] py-2.5 font-medium text-xs">Level</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Type</TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Rating</TableHead>
+                    <TableHead className="w-[150px] py-2.5 font-medium text-xs">Capacity</TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs">Status</TableHead>
+                    <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {divisions.map((division) => (
-                    <TableRow key={division.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">
-                            {division.name}
-                          </div>
-                          {division.description && (
-                            <div className="text-xs text-muted-foreground truncate max-w-[180px]">
-                              {division.description}
+                  {paginatedDivisions.map((division, index) => {
+                    const isDoubles = division.gameType?.toLowerCase() === "doubles";
+                    const currentCount = isDoubles ? (division.currentDoublesCount || 0) : (division.currentSinglesCount || 0);
+                    const maxCount = isDoubles ? division.maxDoublesTeams : division.maxSingles;
+                    const capacity = getCapacityDisplay(currentCount, maxCount);
+
+                    return (
+                      <TableRow key={division.id} className="hover:bg-muted/30">
+                        {/* Row Number */}
+                        <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
+                          {((currentPage - 1) * pageSize) + index + 1}
+                        </TableCell>
+
+                        {/* Division Name */}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                              <IconCategory className="h-4 w-4 text-primary" />
                             </div>
+                            <div className="min-w-0">
+                              <Link
+                                href={`/divisions/${division.id}`}
+                                className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
+                              >
+                                {division.name}
+                              </Link>
+                              {division.description && (
+                                <span className="text-xs text-muted-foreground truncate block max-w-[200px]">
+                                  {division.description}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Level */}
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs font-medium border", getLevelBadgeClass(division.divisionLevel))}
+                          >
+                            {formatLevel(division.divisionLevel)}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Type */}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            {isDoubles ? (
+                              <IconUsers className="size-4" />
+                            ) : (
+                              <IconUser className="size-4" />
+                            )}
+                            <span>{isDoubles ? "Doubles" : "Singles"}</span>
+                          </div>
+                        </TableCell>
+
+                        {/* Rating */}
+                        <TableCell className="py-3">
+                          <span className="text-sm">
+                            {division.threshold ? `${division.threshold}+ pts` : "—"}
+                          </span>
+                        </TableCell>
+
+                        {/* Capacity */}
+                        <TableCell className="py-3">
+                          {maxCount ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={cn("h-full rounded-full transition-all", capacity.colorClass)}
+                                  style={{ width: `${capacity.percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-medium">
+                                {currentCount}<span className="text-muted-foreground font-normal">/{maxCount}</span>
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm">{currentCount} {isDoubles ? "teams" : "players"}</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize text-xs">
-                          {division.gameType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize text-xs">
-                          {division.divisionLevel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize text-xs">
-                          {division.genderCategory}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {division.threshold ? division.threshold : "—"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {division.gameType === "singles"
-                            ? `${
-                                division.currentSinglesCount || 0
-                              }/${renderValue(division.maxSingles)}`
-                            : `${
-                                division.currentDoublesCount || 0
-                              }/${renderValue(division.maxDoublesTeams)}`}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={division.isActive ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {division.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {formatDate(division.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <IconDotsVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleEditDivision(division)}
-                            >
-                              <IconEdit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteRequest(division)}
-                              className="text-destructive"
-                            >
-                              <IconTrash className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-xs",
+                              division.isActive
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                                : "bg-slate-50 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400"
+                            )}
+                          >
+                            {division.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="py-3 pr-4">
+                          <DivisionRowActions
+                            division={division}
+                            onView={handleViewDivision}
+                            onEdit={handleEditDivision}
+                            onDelete={handleDeleteRequest}
+                            onManagePlayers={handleManagePlayers}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
-            </div>
           ) : (
             <div className="text-center py-16">
               <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -312,8 +366,74 @@ export default function SeasonDivisionsCard({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, divisions.length)} of {divisions.length} divisions
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <IconChevronLeft className="size-4 mr-1" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <IconChevronRight className="size-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Division Detail Modal */}
+      <DivisionDetailModal
+        division={viewDivision}
+        open={isViewOpen}
+        onOpenChange={(open) => {
+          if (!open) setViewDivision(null);
+          setIsViewOpen(open);
+        }}
+        onEdit={handleEditDivision}
+        onManagePlayers={handleManagePlayers}
+      />
 
       {/* Edit Division Modal */}
       <DivisionCreateModal
@@ -325,7 +445,7 @@ export default function SeasonDivisionsCard({
           setIsEditModalOpen(open);
         }}
         mode="edit"
-        division={editingDivision}
+        division={mappedEditDivision}
         seasonId={seasonId}
         adminId={adminId}
         onDivisionCreated={handleDivisionUpdated}
