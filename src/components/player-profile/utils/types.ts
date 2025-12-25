@@ -80,17 +80,48 @@ export interface Achievement {
   unlockedAt: string;
 }
 
+export interface SeasonMembership {
+  id: string;
+  joinedAt: string;
+  status: string;
+  paymentStatus: string;
+  seasonId: string;
+  seasonName: string;
+  seasonStartDate: string | null;
+  seasonEndDate: string | null;
+  seasonStatus: string;
+  division: {
+    id: string;
+    name: string;
+    gameType: string;
+    genderCategory: string;
+    level: number;
+  } | null;
+}
+
 export interface LeagueHistory {
   id: string;
   name: string;
   sportType: string;
+  gameType: string;
   location: string | null;
+  description: string | null;
   status: string;
+  createdAt: string;
   membership: {
     joinedAt: string;
-  };
+    status?: string;
+    paymentStatus?: string;
+    division?: {
+      id: string;
+      name: string;
+      gameType: string;
+      genderCategory: string;
+      level: number;
+    } | null;
+  } | null;
+  seasonMemberships: SeasonMembership[];
   _count: {
-    memberships: number;
     seasons: number;
   };
 }

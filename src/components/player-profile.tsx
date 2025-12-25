@@ -44,12 +44,31 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
 import LeagueHistory from "./player-profile/league-history-card";
 import SeasonHistory from "./player-profile/season-history-card";
+import MatchHistory from "./player-profile/match-history-card";
 import { PlayerActions } from "./player-profile/player-actions";
 import { EditPlayerModal } from "./player-profile/edit-player-modal";
+
+// Tab configuration for reuse
+const TABS = [
+  { value: "overview", label: "Overview", icon: IconUserCircle },
+  { value: "activity", label: "Activity", icon: IconActivity },
+  { value: "matches", label: "Matches", icon: IconTarget },
+  { value: "league_history", label: "Leagues", icon: IconTrophy },
+  { value: "season_history", label: "Seasons", icon: IconCalendar },
+  { value: "achievements", label: "Achievements", icon: IconStar },
+  { value: "raw_data", label: "Raw Data", icon: IconDatabase },
+] as const;
 
 interface PlayerProfileData {
   id: string;
@@ -143,6 +162,7 @@ const formatAnswerValue = (value: any): string => {
 export function PlayerProfile({ playerId }: PlayerProfileProps) {
   const [profile, setProfile] = React.useState<PlayerProfileData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState("overview");
 
   // History data states
   const [leagueHistory, setLeagueHistory] = React.useState<any[] | null>(null);
@@ -227,10 +247,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         // Transform match data to player-specific format
         const matches = response.data.data.matches || [];
         const transformedMatches = matches.map((match: any) => {
-          const isTeam1 = match.participation?.team === "team1";
-          const playerScore = isTeam1 ? match.team1Score : match.team2Score;
-          const opponentScore = isTeam1 ? match.team2Score : match.team1Score;
+          // Use the pre-calculated scores from the backend
+          const playerScore = match.playerScore;
+          const opponentScore = match.opponentScore;
 
+          // Calculate outcome
           let outcome = null;
           if (match.status === "COMPLETED" && playerScore !== null && opponentScore !== null) {
             if (playerScore > opponentScore) outcome = "win";
@@ -238,19 +259,59 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             else outcome = "draw";
           }
 
+          // Format opponents info
+          const opponents = match.opponents || [];
+          const opponentNames = opponents.map((opp: any) => opp.name).filter(Boolean);
+
+          // Format set scores for display (e.g., "6-4, 7-5")
+          let formattedScore = null;
+          if (match.setScores && match.setScores.length > 0) {
+            formattedScore = match.setScores
+              .map((set: any) => {
+                let score = `${set.player}-${set.opponent}`;
+                if (set.tiebreak) {
+                  score += `(${set.tiebreak.player}-${set.tiebreak.opponent})`;
+                }
+                return score;
+              })
+              .join(", ");
+          } else if (match.pickleballScores && match.pickleballScores.length > 0) {
+            formattedScore = match.pickleballScores
+              .map((game: any) => `${game.player}-${game.opponent}`)
+              .join(", ");
+          }
+
           return {
             id: match.id,
-            sport: match.sport?.toLowerCase() || match.division?.league?.sportType?.toLowerCase() || "unknown",
-            matchType: match.matchType?.toLowerCase() || "unknown",
+            sport: match.sport?.toLowerCase() || "unknown",
+            matchType: match.matchType?.toLowerCase() || "singles",
             playerScore,
             opponentScore,
+            formattedScore,
             outcome,
             matchDate: match.matchDate,
-            location: match.location || match.venue,
+            location: match.location,
+            venue: match.venue,
             notes: match.notes,
-            duration: null, // Not available in current schema
+            duration: match.duration || null,
             status: match.status,
-            division: match.division,
+            isFriendly: match.isFriendly,
+            isWalkover: match.isWalkover,
+            isDisputed: match.isDisputed,
+            requiresAdminReview: match.requiresAdminReview,
+            isReportedForAbuse: match.isReportedForAbuse,
+            // Opponent info
+            opponents: opponents,
+            opponentName: opponentNames.length > 0 ? opponentNames.join(" & ") : null,
+            // Division info
+            division: match.division ? {
+              id: match.division.id,
+              name: match.division.name,
+              league: match.division.league ? {
+                id: match.division.league.id,
+                name: match.division.league.name,
+              } : null,
+            } : null,
           };
         });
         setMatchHistory(transformedMatches);
@@ -296,51 +357,71 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       minute: "numeric",
     });
 
+  // Handle tab change and trigger data fetching
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === "matches") {
+      fetchMatchHistory();
+    }
+    if (value === "league_history") {
+      fetchLeagueHistory();
+    }
+    if (value === "season_history") {
+      fetchSeasonHistory();
+    }
+  };
+
   return (
     <Tabs
-      defaultValue="overview"
+      value={activeTab}
+      onValueChange={handleTabChange}
       className="space-y-6"
-      onValueChange={(value) => {
-        if (value === "matches") {
-          fetchMatchHistory();
-        }
-        if (value === "league_history") {
-          fetchLeagueHistory();
-        }
-        if (value === "season_history") {
-          fetchSeasonHistory();
-        }
-      }}
     >
-      <TabsList className="grid w-full grid-cols-7">
-        <TabsTrigger value="overview" className="flex items-center gap-2">
-          <IconUserCircle className="size-4" />
-          Overview
-        </TabsTrigger>
-        <TabsTrigger value="activity" className="flex items-center gap-2">
-          <IconActivity className="size-4" />
-          Activity
-        </TabsTrigger>
-        <TabsTrigger value="matches" className="flex items-center gap-2">
-          <IconTarget className="size-4" />
-          Matches
-        </TabsTrigger>
-        <TabsTrigger value="league_history" className="flex items-center gap-2">
-          <IconTrophy className="size-4" />
-          League History
-        </TabsTrigger>
-        <TabsTrigger value="season_history" className="flex items-center gap-2">
-          <IconCalendar className="size-4" />
-          Season History
-        </TabsTrigger>
-        <TabsTrigger value="achievements" className="flex items-center gap-2">
-          <IconStar className="size-4" />
-          Achievements
-        </TabsTrigger>
-        <TabsTrigger value="raw_data" className="flex items-center gap-2">
-          <IconDatabase className="size-4" />
-          Raw Data
-        </TabsTrigger>
+      {/* Mobile: Dropdown Select */}
+      <div className="md:hidden">
+        <Select value={activeTab} onValueChange={handleTabChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue>
+              {(() => {
+                const currentTab = TABS.find(tab => tab.value === activeTab);
+                if (!currentTab) return null;
+                const Icon = currentTab.icon;
+                return (
+                  <div className="flex items-center gap-2">
+                    <Icon className="size-4" />
+                    <span>{currentTab.label}</span>
+                  </div>
+                );
+              })()}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <SelectItem key={tab.value} value={tab.value}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="size-4" />
+                    <span>{tab.label}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop: Tab List */}
+      <TabsList className="hidden md:grid w-full grid-cols-7">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+              <Icon className="size-4" />
+              <span className="hidden lg:inline">{tab.label}</span>
+            </TabsTrigger>
+          );
+        })}
       </TabsList>
 
       {/* OVERVIEW TAB */}
@@ -821,94 +902,11 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
 
       {/* MATCHES TAB */}
       <TabsContent value="matches">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <IconTarget className="size-5" />
-              Match History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {historyLoading.matches ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : matchHistory && matchHistory.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sport</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Outcome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Location</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {matchHistory.map((match: any) => (
-                    <TableRow key={match.id}>
-                      <TableCell className="capitalize font-medium">
-                        {match.sport}
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {match.matchType}
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {match.playerScore !== null && match.opponentScore !== null
-                          ? `${match.playerScore} - ${match.opponentScore}`
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {match.outcome ? (
-                          <Badge
-                            variant={
-                              match.outcome === "win"
-                                ? "default"
-                                : match.outcome === "loss"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                            className="capitalize"
-                          >
-                            {match.outcome}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            match.status === "COMPLETED"
-                              ? "default"
-                              : match.status === "CANCELLED"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                          className="capitalize text-xs"
-                        >
-                          {match.status?.toLowerCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(match.matchDate)}</TableCell>
-                      <TableCell>{match.location || "N/A"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : matchHistory !== null ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No match history found for this player.
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Click on this tab to load match history.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <MatchHistory
+          matches={matchHistory}
+          isLoading={historyLoading.matches}
+          playerId={playerId}
+        />
       </TabsContent>
 
       {/* LEAGUE HISTORY TAB */}

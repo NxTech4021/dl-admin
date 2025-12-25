@@ -1,23 +1,33 @@
-import React from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  IconCalendar, 
-  IconTrophy, 
-  IconUsers, 
-  IconMapPin, 
-  IconExternalLink,
-  IconTrendingUp,
-  IconClock,
-  IconTarget,
-  IconCheck,
-  IconX
-} from '@tabler/icons-react';
+"use client";
+
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatsCard } from "@/components/ui/stats-card";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { SearchInput } from "@/components/ui/search-input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  IconCalendar,
+  IconMapPin,
+  IconActivity,
+  IconTrophy,
+  IconX,
+} from "@tabler/icons-react";
 
 interface SeasonHistoryData {
   id: string;
@@ -28,6 +38,7 @@ interface SeasonHistoryData {
   membership: {
     joinedAt: string;
     status: string;
+    paymentStatus?: string;
     division?: {
       id: string;
       name: string;
@@ -36,292 +47,560 @@ interface SeasonHistoryData {
       level: string;
     };
   };
-  categories?: Array<{
+  // Direct leagues array from backend
+  leagues?: Array<{
     id: string;
     name: string;
-    game_type: string;
-    gender_category: string;
-    leagues: Array<{
-      id: string;
-      name: string;
-      sportType: string;
-      location: string;
-    }>;
+    sportType: string;
+    location: string;
+    status?: string;
   }>;
+  // Category info
+  category?: {
+    id: string;
+    name: string;
+    gameType: string;
+    genderCategory: string;
+  };
 }
-
-interface SeasonHistoryCardProps {
-  season: SeasonHistoryData;
-}
-
-const SeasonHistoryCard: React.FC<SeasonHistoryCardProps> = ({ season }) => {
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'default';
-      case 'UPCOMING':
-        return 'secondary';
-      case 'FINISHED':
-        return 'outline';
-      case 'CANCELLED':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400';
-      case 'UPCOMING':
-        return 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'FINISHED':
-        return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20 dark:text-gray-400';
-      case 'CANCELLED':
-        return 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400';
-      default:
-        return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20 dark:text-gray-400';
-    }
-  };
-
-  const getMembershipStatusIcon = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return <IconCheck className="size-4 text-green-600" />;
-      case 'PENDING':
-        return <IconClock className="size-4 text-yellow-600" />;
-      case 'INACTIVE':
-        return <IconX className="size-4 text-red-600" />;
-      default:
-        return <IconClock className="size-4 text-gray-600" />;
-    }
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'TBD';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatDateRange = (startDate: string | null, endDate: string | null) => {
-    if (!startDate && !endDate) return 'Dates TBD';
-    if (!startDate) return `Until ${formatDate(endDate)}`;
-    if (!endDate) return `From ${formatDate(startDate)}`;
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-  };
-
-  const formatSportType = (sportType: string) => {
-    return sportType.charAt(0).toUpperCase() + sportType.slice(1).toLowerCase();
-  };
-
-  const getLeagueInfo = () => {
-    if (!season.categories || season.categories.length === 0) {
-      return { name: 'No league information', sportType: '', location: '', id: '' };
-    }
-    
-    const firstCategory = season.categories[0];
-    if (!firstCategory.leagues || firstCategory.leagues.length === 0) {
-      return { name: 'No league information', sportType: '', location: '', id: '' };
-    }
-    
-    const firstLeague = firstCategory.leagues[0];
-    return {
-      name: firstLeague.name,
-      sportType: formatSportType(firstLeague.sportType),
-      location: firstLeague.location,
-      id: firstLeague.id
-    };
-  };
-
-  const leagueInfo = getLeagueInfo();
-
-  return (
-    <div className="group border-l-2 border-l-primary/20 hover:border-l-primary transition-colors">
-      <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            {/* Season Icon */}
-            <div className="flex-shrink-0">
-              <div className="p-1.5 bg-primary/5 rounded-md">
-                <IconCalendar className="size-3.5 text-primary" />
-              </div>
-            </div>
-
-            {/* Season Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-medium text-sm truncate">
-                  <Link 
-                    href={`/seasons/${season.id}`} 
-                    className="hover:text-primary transition-colors"
-                  >
-                    {season.name}
-                  </Link>
-                </h3>
-                <Badge 
-                  variant={getStatusVariant(season.status)}
-                  className={`${getStatusColor(season.status)} text-xs h-4 px-1.5`}
-                >
-                  {season.status}
-                </Badge>
-              </div>
-
-              {/* League and Division Info */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {leagueInfo.id ? (
-                  <>
-                    <Link 
-                      href={`/league/view/${leagueInfo.id}`} 
-                      className="hover:text-primary transition-colors truncate"
-                    >
-                      {leagueInfo.name}
-                    </Link>
-                    <span>•</span>
-                    <span className="text-xs">{leagueInfo.sportType}</span>
-                    {leagueInfo.location && (
-                      <>
-                        <span>•</span>
-                        <div className="flex items-center gap-0.5">
-                          <IconMapPin className="size-2.5" />
-                          <span className="truncate">{leagueInfo.location}</span>
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <span>No league information</span>
-                )}
-              </div>
-
-              {/* Division and Stats */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                {season.membership.division && (
-                  <>
-                    {season.membership.division.id ? (
-                      <Link 
-                        href={`/league/divisions/${season.membership.division.id}`}
-                        className="hover:text-primary transition-colors"
-                      >
-                        {season.membership.division.name}
-                      </Link>
-                    ) : (
-                      <span>{season.membership.division.name}</span>
-                    )}
-                    <span>•</span>
-                    <span>{season.membership.division.gameType}</span>
-                    <span>•</span>
-                  </>
-                )}
-                <span>{formatDateRange(season.startDate, season.endDate)}</span>
-                <span>•</span>
-                <div className="flex items-center gap-0.5">
-                  {getMembershipStatusIcon(season.membership.status)}
-                  <span>{season.membership.status}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 interface SeasonHistoryProps {
   seasons: SeasonHistoryData[] | null;
   isLoading: boolean;
 }
 
+const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "UPCOMING", label: "Upcoming" },
+  { value: "FINISHED", label: "Finished" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
+
+// Sport color mapping - using official sport config colors
+const getSportColor = (sport: string) => {
+  switch (sport?.toLowerCase()) {
+    case "tennis":
+      return "text-[#518516] bg-[#518516]/10 border border-[#518516]/30 dark:bg-[#518516]/20 dark:text-[#7cb82f] dark:border-[#518516]/40";
+    case "badminton":
+      return "text-rose-700 bg-rose-100 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800";
+    case "pickleball":
+      return "text-[#8e41e6] bg-[#8e41e6]/10 border border-[#8e41e6]/30 dark:bg-[#8e41e6]/20 dark:text-[#b57aff] dark:border-[#8e41e6]/40";
+    case "padel":
+      return "text-[#3880c0] bg-[#3880c0]/10 border border-[#3880c0]/30 dark:bg-[#3880c0]/20 dark:text-[#6ba8e0] dark:border-[#3880c0]/40";
+    default:
+      return "text-slate-600 bg-slate-100 border border-slate-200 dark:bg-slate-900/30 dark:text-slate-400 dark:border-slate-700";
+  }
+};
+
+// Season status badge styles
+const getSeasonStatusStyle = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":
+    case "IN_PROGRESS":
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+    case "UPCOMING":
+    case "REGISTRATION":
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    case "COMPLETED":
+    case "FINISHED":
+      return "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400";
+    case "CANCELLED":
+      return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+    default:
+      return "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400";
+  }
+};
+
+// Membership status badge styles
+const getMembershipStatusStyle = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":
+    case "CONFIRMED":
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+    case "PENDING":
+      return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+    case "INACTIVE":
+    case "CANCELLED":
+      return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+    default:
+      return "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400";
+  }
+};
+
+// Payment status badge styles
+const getPaymentStatusStyle = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case "PAID":
+    case "CONFIRMED":
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+    case "PENDING":
+    case "AWAITING":
+      return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+    case "OVERDUE":
+    case "FAILED":
+      return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+    case "WAIVED":
+    case "FREE":
+      return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400";
+    default:
+      return "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400";
+  }
+};
+
+// Format short date helper
+const formatShortDate = (dateString: string | null) => {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
+// Format status helper
+const formatStatus = (status: string) => {
+  if (!status) return "";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replace(/_/g, " ");
+};
+
+// Format sport type
+const formatSportType = (sportType: string) => {
+  if (!sportType) return "Unknown";
+  return sportType.toLowerCase().replace(/^\w/, c => c.toUpperCase());
+};
+
 const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => {
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | undefined>();
+
+  const hasActiveFilters = searchQuery || statusFilter;
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setStatusFilter(undefined);
+  };
+
+  // Computed statistics
+  const stats = useMemo(() => {
+    if (!seasons || seasons.length === 0) {
+      return {
+        totalSeasons: 0,
+        activeSeasons: 0,
+        completedSeasons: 0,
+        cancelledSeasons: 0,
+      };
+    }
+
+    const activeSeasons = seasons.filter((s) => s.status === "ACTIVE").length;
+    const completedSeasons = seasons.filter((s) => s.status === "FINISHED").length;
+    const cancelledSeasons = seasons.filter((s) => s.status === "CANCELLED").length;
+
+    return {
+      totalSeasons: seasons.length,
+      activeSeasons,
+      completedSeasons,
+      cancelledSeasons,
+    };
+  }, [seasons]);
+
+  // Filtered seasons
+  const filteredSeasons = useMemo(() => {
+    if (!seasons) return [];
+
+    return seasons.filter((season) => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          season.name.toLowerCase().includes(query) ||
+          season.membership?.division?.name?.toLowerCase().includes(query) ||
+          season.leagues?.some((l) => l.name.toLowerCase().includes(query));
+        if (!matchesSearch) return false;
+      }
+
+      if (statusFilter && season.status !== statusFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [seasons, searchQuery, statusFilter]);
+
+  // Helper to get league info from season
+  const getLeagueInfo = (season: SeasonHistoryData) => {
+    // Backend returns leagues directly on the season object
+    if (!season.leagues || season.leagues.length === 0) {
+      return null;
+    }
+    return season.leagues[0];
+  };
+
+  // Loading state
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <IconCalendar className="size-4" />
-            Season History
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-0">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="border-l-2 border-l-muted p-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-7 w-7 rounded-md" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-3.5 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                    <Skeleton className="h-3 w-40" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-4 w-12" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* Stats skeleton */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="size-4 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-7 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Table skeleton */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2 border-b px-4">
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
+  // Empty state
   if (!seasons || seasons.length === 0) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <IconCalendar className="size-4" />
-            Season History
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="text-center py-8">
-            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <IconCalendar className="size-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium mb-1">No season history yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Season participation history will appear here once the player joins seasons.
-            </p>
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="mb-4 rounded-full bg-muted p-4">
+            <IconCalendar className="size-8 text-muted-foreground" />
           </div>
+          <h3 className="text-lg font-semibold mb-2">No season history yet</h3>
+          <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+            Season participation history will appear here once the player joins
+            seasons.
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/seasons">Browse Seasons</Link>
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
-  // Group seasons by status for better organization
-  const activeSeasons = seasons.filter(s => s.status === 'ACTIVE');
-  const upcomingSeasons = seasons.filter(s => s.status === 'UPCOMING');
-  const finishedSeasons = seasons.filter(s => s.status === 'FINISHED');
-  const otherSeasons = seasons.filter(s => !['ACTIVE', 'UPCOMING', 'FINISHED'].includes(s.status));
-
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <IconCalendar className="size-4" />
-            Season History
-          </CardTitle>
-          <div className="text-xs text-muted-foreground">
-            {seasons.length} season{seasons.length !== 1 ? 's' : ''}
+    <div className="space-y-6">
+      {/* Stats Row */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="Total Seasons"
+          value={stats.totalSeasons}
+          icon={IconCalendar}
+          description={`${filteredSeasons.length} shown`}
+        />
+        <StatsCard
+          title="Active Seasons"
+          value={stats.activeSeasons}
+          icon={IconActivity}
+          iconColor={stats.activeSeasons > 0 ? "text-green-600" : "text-muted-foreground"}
+          description="Currently participating"
+        />
+        <StatsCard
+          title="Completed"
+          value={stats.completedSeasons}
+          icon={IconTrophy}
+          iconColor="text-blue-600"
+          description="Finished seasons"
+        />
+        <StatsCard
+          title="Cancelled"
+          value={stats.cancelledSeasons}
+          icon={IconX}
+          iconColor={stats.cancelledSeasons > 0 ? "text-red-600" : "text-muted-foreground"}
+          description="Cancelled seasons"
+        />
+      </div>
+
+      {/* Season Table Card */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2 border-b px-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-1.5 text-base">
+              <IconCalendar className="size-4" />
+              Season History
+            </CardTitle>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {filteredSeasons.length} season{filteredSeasons.length !== 1 ? "s" : ""}
+            </span>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-0">
-          {seasons.map((season, index) => (
-            <React.Fragment key={season.id}>
-              <SeasonHistoryCard season={season} />
-              {index < seasons.length - 1 && <Separator className="my-0" />}
-            </React.Fragment>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search seasons..."
+              className="flex-1 max-w-sm"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={STATUS_OPTIONS}
+                placeholder="Status"
+                allLabel="All"
+                triggerClassName="w-[95px] h-9 text-xs"
+              />
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="py-2.5 pl-4 font-medium text-xs">Season</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs">League</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs">Sport</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs">Dates</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs">Division</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs text-center">Membership</TableHead>
+                  <TableHead className="py-2.5 font-medium text-xs text-center pr-4">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSeasons.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No seasons found matching your filters.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredSeasons.map((season) => {
+                    const leagueInfo = getLeagueInfo(season);
+
+                    return (
+                      <TableRow
+                        key={season.id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        {/* Season name */}
+                        <TableCell className="py-3 pl-4">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/seasons/${season.id}`}
+                              className="text-sm font-medium hover:text-primary transition-colors line-clamp-1"
+                            >
+                              {season.name}
+                            </Link>
+                          </div>
+                        </TableCell>
+
+                        {/* League */}
+                        <TableCell className="py-3">
+                          {leagueInfo ? (
+                            <div className="min-w-0">
+                              <Link
+                                href={`/league/view/${leagueInfo.id}`}
+                                className="text-sm hover:text-primary transition-colors line-clamp-1"
+                              >
+                                {leagueInfo.name}
+                              </Link>
+                              {leagueInfo.location && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                  <IconMapPin className="size-3 flex-shrink-0" />
+                                  <span className="truncate max-w-[150px]">{leagueInfo.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Sport */}
+                        <TableCell className="py-3">
+                          {leagueInfo?.sportType ? (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getSportColor(
+                                leagueInfo.sportType
+                              )}`}
+                            >
+                              {formatSportType(leagueInfo.sportType)}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Dates */}
+                        <TableCell className="py-3">
+                          <div className="text-sm">
+                            {formatShortDate(season.startDate)}
+                            {season.endDate && (
+                              <span className="text-muted-foreground"> — {formatShortDate(season.endDate)}</span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Division */}
+                        <TableCell className="py-3">
+                          {season.membership.division ? (
+                            <Link
+                              href={`/divisions/${season.membership.division.id}`}
+                              className="text-sm hover:text-primary transition-colors"
+                            >
+                              {season.membership.division.name}
+                            </Link>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Membership status */}
+                        <TableCell className="py-3 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getMembershipStatusStyle(
+                              season.membership.status
+                            )}`}
+                          >
+                            {formatStatus(season.membership.status)}
+                          </span>
+                        </TableCell>
+
+                        {/* Season status */}
+                        <TableCell className="py-3 text-center pr-4">
+                          <span
+                            className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-medium ${getSeasonStatusStyle(
+                              season.status
+                            )}`}
+                          >
+                            {formatStatus(season.status)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredSeasons.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                No seasons found matching your filters.
+              </div>
+            ) : (
+              filteredSeasons.map((season) => {
+                const leagueInfo = getLeagueInfo(season);
+
+                return (
+                  <div
+                    key={season.id}
+                    className="border rounded-lg bg-card shadow-sm"
+                  >
+                    <div className="p-4 space-y-3">
+                      {/* Header with sport badge and status */}
+                      <div className="flex items-center justify-between">
+                        {leagueInfo?.sportType ? (
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getSportColor(
+                              leagueInfo.sportType
+                            )}`}
+                          >
+                            {formatSportType(leagueInfo.sportType)}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getSeasonStatusStyle(
+                            season.status
+                          )}`}
+                        >
+                          {formatStatus(season.status)}
+                        </span>
+                      </div>
+
+                      {/* Season name */}
+                      <div>
+                        <Link
+                          href={`/seasons/${season.id}`}
+                          className="text-sm font-medium hover:text-primary transition-colors"
+                        >
+                          {season.name}
+                        </Link>
+                        {leagueInfo && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            <Link
+                              href={`/league/view/${leagueInfo.id}`}
+                              className="hover:text-primary transition-colors"
+                            >
+                              {leagueInfo.name}
+                            </Link>
+                            {leagueInfo.location && (
+                              <span className="ml-1">· {leagueInfo.location}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info row */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <IconCalendar className="size-3" />
+                          <span>
+                            {formatShortDate(season.startDate)}
+                            {season.endDate && ` — ${formatShortDate(season.endDate)}`}
+                          </span>
+                        </div>
+                        {season.membership.division && (
+                          <Link
+                            href={`/divisions/${season.membership.division.id}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {season.membership.division.name}
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Membership status */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Membership:</span>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${getMembershipStatusStyle(
+                            season.membership.status
+                          )}`}
+                        >
+                          {formatStatus(season.membership.status)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
