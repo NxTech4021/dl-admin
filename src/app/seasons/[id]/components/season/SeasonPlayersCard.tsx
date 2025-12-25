@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -13,22 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Membership } from "@/constants/zod/season-schema";
 import { Division } from "@/constants/zod/division-schema";
 import {
@@ -36,9 +22,9 @@ import {
   IconStar,
   IconCalendar,
   IconTarget,
-  IconLoader2,
+  IconSearch,
+  IconX,
 } from "@tabler/icons-react";
-import { toast } from "sonner";
 import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 
 interface SeasonPlayersCardProps {
@@ -102,18 +88,77 @@ export default function SeasonPlayersCard({
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Membership | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<Membership[] | null>(null);
-  const [selectedDivisionId, setSelectedDivisionId] = useState<string>("");
-  const [isAssigning, setIsAssigning] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const activePlayers = memberships.filter(
-    (m) => m.status === "ACTIVE" || m.status === "PENDING"
-  );
-  const waitlistedPlayers = memberships.filter(
-    (m) =>
-      m.status === "INACTIVE" ||
-      m.status === "FLAGGED" ||
-      m.status === "REMOVED"
-  );
+  // Helper function to get initials from name
+  const getInitials = (name: string | null | undefined): string => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Helper function to get consistent avatar background color
+  const getAvatarColor = (name: string | null | undefined): string => {
+    const colors = [
+      "bg-slate-600",
+      "bg-emerald-600",
+      "bg-sky-600",
+      "bg-violet-600",
+      "bg-amber-600",
+      "bg-rose-600",
+      "bg-teal-600",
+      "bg-indigo-600",
+    ];
+    if (!name) return colors[0];
+    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
+  // Filter memberships based on search query
+  const filteredMemberships = useMemo(() => {
+    if (!searchQuery.trim()) return memberships;
+    const query = searchQuery.toLowerCase().trim();
+    return memberships.filter((m) => {
+      const name = m.user?.name?.toLowerCase() || "";
+      const username = m.user?.username?.toLowerCase() || "";
+      const email = m.user?.email?.toLowerCase() || "";
+      return name.includes(query) || username.includes(query) || email.includes(query);
+    });
+  }, [memberships, searchQuery]);
+
+  // Helper to check if a player has a division assigned (individual or via partnership)
+  const hasDivisionAssigned = (member: Membership): boolean => {
+    // Check individual division assignment
+    if (member.divisionId !== null && member.divisionId !== undefined) {
+      return true;
+    }
+
+    // For doubles, check partnership division assignment
+    const partnership = season?.partnerships?.find(
+      (p) => p.captainId === member.userId || p.partnerId === member.userId
+    );
+    if (partnership?.divisionId !== null && partnership?.divisionId !== undefined) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Players who are in a division (have been assigned)
+  const activePlayers = filteredMemberships.filter((m) => {
+    const isActiveOrPending = m.status === "ACTIVE" || m.status === "PENDING";
+    return isActiveOrPending && hasDivisionAssigned(m);
+  });
+
+  // Players waiting for division assignment (no division yet)
+  const waitlistedPlayers = filteredMemberships.filter((m) => {
+    const isActiveOrPending = m.status === "ACTIVE" || m.status === "PENDING";
+    return isActiveOrPending && !hasDivisionAssigned(m);
+  });
 
   const getDivisionName = (divisionId: string | null) => {
     if (!divisionId) return "Unassigned";
@@ -133,21 +178,18 @@ export default function SeasonPlayersCard({
     if (categoryGameType) {
       const normalized = String(categoryGameType).toUpperCase().trim();
       if (normalized === "DOUBLES") {
-        console.log("Game type determined from category:", normalized);
         return "DOUBLES";
       }
       if (normalized === "SINGLES") {
-        console.log("Game type determined from category:", normalized);
         return "SINGLES";
       }
     }
-    
+
     // Infer from partnerships - if season has active partnerships, it's likely doubles
     if (season?.partnerships && season.partnerships.length > 0) {
-      console.log("Inferring DOUBLES from partnerships:", season.partnerships.length);
       return "DOUBLES";
     }
-    
+
     // Infer from divisions - check if any division has gameType DOUBLES
     if (divisions && divisions.length > 0) {
       const doublesDivision = divisions.find((div: any) => {
@@ -158,10 +200,9 @@ export default function SeasonPlayersCard({
         return false;
       });
       if (doublesDivision) {
-        console.log("Inferring DOUBLES from division:", doublesDivision.name);
         return "DOUBLES";
       }
-      
+
       // Check if any division is singles
       const singlesDivision = divisions.find((div: any) => {
         const divGameType = div.gameType || (div as any).gameType;
@@ -171,17 +212,11 @@ export default function SeasonPlayersCard({
         return false;
       });
       if (singlesDivision && !doublesDivision) {
-        console.log("Inferring SINGLES from division:", singlesDivision.name);
         return "SINGLES";
       }
     }
-    
+
     // If no clear indicator, return null (will show N/A)
-    console.warn("Could not determine game type from category, partnerships, or divisions", {
-      categoryGameType: season?.category?.gameType,
-      hasPartnerships: !!(season?.partnerships && season.partnerships.length > 0),
-      divisionsCount: divisions?.length || 0,
-    });
     return null;
   };
 
@@ -191,7 +226,6 @@ export default function SeasonPlayersCard({
     const gameType = getGameType();
 
     if (!leagueSportType || !gameType) {
-      console.warn("Missing sport type or game type:", { leagueSportType, gameType });
       return {
         display: "N/A",
         value: 0,
@@ -218,32 +252,17 @@ export default function SeasonPlayersCard({
 
     // Get the appropriate rating based on game type (singles/doubles)
     const isDoubles = gameType === "DOUBLES";
-    
-    // Debug logging to verify which rating is being used
-    console.log("Rating selection:", {
-      userId: member.userId,
-      userName: member.user?.name,
-      gameType,
-      isDoubles,
-      categoryGameType: season?.category?.gameType,
-      leagueGameType: season?.leagues?.[0]?.gameType,
-      singlesRating: questionnaireResponse.result.singles,
-      doublesRating: questionnaireResponse.result.doubles,
-      selectedRating: isDoubles
-        ? questionnaireResponse.result.doubles
-        : questionnaireResponse.result.singles,
-    });
 
     // Get the appropriate rating based on game type
     let rating: number | null | undefined;
-    
+
     if (isDoubles) {
       // For doubles seasons, use doubles rating
       rating = questionnaireResponse.result.doubles;
     } else {
       // For singles seasons, use singles rating
       rating = questionnaireResponse.result.singles;
-      
+
       // If singles rating is not available, check if there's a general rating field as fallback
       // This handles cases where the rating might be stored differently
       if (!rating || rating === 0) {
@@ -256,18 +275,6 @@ export default function SeasonPlayersCard({
     }
 
     if (!rating || rating === 0) {
-      // Log warning for debugging
-      console.warn("Rating not available:", {
-        gameType,
-        isDoubles,
-        hasSingles: !!questionnaireResponse.result.singles,
-        hasDoubles: !!questionnaireResponse.result.doubles,
-        singlesValue: questionnaireResponse.result.singles,
-        doublesValue: questionnaireResponse.result.doubles,
-        generalRating: (questionnaireResponse.result as any).rating,
-        userId: member.userId,
-        userName: member.user?.name,
-      });
       return {
         display: "N/A",
         value: 0,
@@ -367,7 +374,7 @@ export default function SeasonPlayersCard({
     setIsAssignModalOpen(true);
   };
 
-  const PlayerTable = ({ players }: { players: Membership[] }) => {
+  const PlayerTable = ({ players, isWaitlistTab = false }: { players: Membership[]; isWaitlistTab?: boolean }) => {
     const groupedPlayers = groupMembershipsByPartnerships(players);
 
     return (
@@ -375,19 +382,19 @@ export default function SeasonPlayersCard({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">
+            <TableHead className="w-[240px] pl-4">
               <div className="flex items-center gap-2">
                 <IconUser className="size-4" />
                 Player
               </div>
             </TableHead>
-            <TableHead className="w-[180px]">
+            <TableHead className="w-[160px]">
               <div className="flex items-center gap-2">
                 <IconTarget className="size-4" />
                 Division
               </div>
             </TableHead>
-            <TableHead className="w-[120px]">
+            <TableHead className="w-[100px]">
               <div className="flex items-center gap-2">
                 <IconStar className="size-4" />
                 Rating
@@ -396,11 +403,11 @@ export default function SeasonPlayersCard({
             <TableHead className="w-[120px]">
               <div className="flex items-center gap-2">
                 <IconCalendar className="size-4" />
-                Join Date
+                Joined
               </div>
             </TableHead>
             <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[120px] text-right">Actions</TableHead>
+            <TableHead className="w-[140px] text-right pr-4">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -418,21 +425,33 @@ export default function SeasonPlayersCard({
                     key={`partnership-${partnership.id}`}
                     className="hover:bg-muted/50"
                   >
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">
-                            {member1.user?.name || "Unknown"} &{" "}
-                            {member2.user?.name || "Unknown"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            @{getUsername(member1.user)}{" "}
-                            & @{getUsername(member2.user)}
-                          </div>
+                    <TableCell className="pl-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                          <Avatar className="size-9 ring-2 ring-background">
+                            <AvatarImage src={member1.user?.image || undefined} />
+                            <AvatarFallback className={`text-white font-semibold text-xs ${getAvatarColor(member1.user?.name)}`}>
+                              {getInitials(member1.user?.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Avatar className="size-9 ring-2 ring-background">
+                            <AvatarImage src={member2.user?.image || undefined} />
+                            <AvatarFallback className={`text-white font-semibold text-xs ${getAvatarColor(member2.user?.name)}`}>
+                              {getInitials(member2.user?.name)}
+                            </AvatarFallback>
+                          </Avatar>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          Doubles Team
-                        </Badge>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {member1.user?.name || "Unknown"} & {member2.user?.name || "Unknown"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            @{getUsername(member1.user)} & @{getUsername(member2.user)}
+                          </p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            Doubles Team
+                          </Badge>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -511,7 +530,7 @@ export default function SeasonPlayersCard({
                           : member1.status?.toLowerCase() || "pending"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-4">
                       <Button
                         variant="outline"
                         size="sm"
@@ -535,13 +554,21 @@ export default function SeasonPlayersCard({
                 const rating = getSportRating(member);
                 return (
                   <TableRow key={member.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium text-sm">
-                          {member.user?.name || "Unknown"}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          @{getUsername(member.user)}
+                    <TableCell className="pl-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-9 ring-2 ring-background">
+                          <AvatarImage src={member.user?.image || undefined} />
+                          <AvatarFallback className={`text-white font-semibold text-xs ${getAvatarColor(member.user?.name)}`}>
+                            {getInitials(member.user?.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {member.user?.name || "Unknown"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            @{getUsername(member.user)}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -588,7 +615,7 @@ export default function SeasonPlayersCard({
                         {member?.status?.toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-4">
                       <Button
                         variant="outline"
                         size="sm"
@@ -608,11 +635,17 @@ export default function SeasonPlayersCard({
             <TableRow>
               <TableCell colSpan={6} className="h-32 text-center">
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <IconUser className="size-12 opacity-50" />
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                    <IconUser className="size-8 opacity-50" />
+                  </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium">No players found</p>
                     <p className="text-xs">
-                      Players will appear here once they join the season
+                      {searchQuery
+                        ? "Try adjusting your search"
+                        : isWaitlistTab
+                        ? "All players have been assigned to divisions"
+                        : "Players will appear here once they are assigned to divisions"}
                     </p>
                   </div>
                 </div>
@@ -631,21 +664,41 @@ export default function SeasonPlayersCard({
         <CardHeader>
           <CardTitle>Season Players ({memberships.length})</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by name or username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <IconX className="size-4" />
+              </button>
+            )}
+          </div>
+
           <Tabs defaultValue="active">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="active">
-                Active ({activePlayers.length})
+                In Division ({activePlayers.length})
               </TabsTrigger>
               <TabsTrigger value="waitlisted">
-                Waitlist ({waitlistedPlayers.length})
+                Awaiting Division ({waitlistedPlayers.length})
               </TabsTrigger>
             </TabsList>
             <TabsContent value="active">
-              <PlayerTable players={activePlayers} />
+              <PlayerTable players={activePlayers} isWaitlistTab={false} />
             </TabsContent>
             <TabsContent value="waitlisted">
-              <PlayerTable players={waitlistedPlayers} />
+              <PlayerTable players={waitlistedPlayers} isWaitlistTab={true} />
             </TabsContent>
           </Tabs>
         </CardContent>
