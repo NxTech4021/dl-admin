@@ -56,6 +56,12 @@ const getSportColor = (sport: string) => {
   }
 };
 
+// Format sport name to title case
+const formatSport = (sport: string | null | undefined): string => {
+  if (!sport) return "Unknown";
+  return sport.charAt(0).toUpperCase() + sport.slice(1).toLowerCase();
+};
+
 export default function MatchesPage() {
   const [selectedLeague, setSelectedLeague] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<string>();
@@ -232,11 +238,11 @@ export default function MatchesPage() {
                                   {/* Sport */}
                                   <TableCell className="py-3">
                                     <span
-                                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getSportColor(
+                                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getSportColor(
                                         match.sport
                                       )}`}
                                     >
-                                      {match.sport || "Unknown"}
+                                      {formatSport(match.sport)}
                                     </span>
                                   </TableCell>
 
