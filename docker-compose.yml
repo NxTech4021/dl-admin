@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web-frontend:
     build:
@@ -11,25 +9,15 @@ services:
       - "3030:3030"
     environment:
       - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_BASE_URL=http://localhost:82
+      - VITE_AUTH_URL=http://localhost:82
     volumes:
       - .:/app
       - /app/node_modules
     networks:
-      - dlmobile_deuceleague # Use the same network as dl-mobile
-
-  # nginx:
-  #   build: ./nginx
-  #   ports:
-  #     - "81:80"
-  #   restart: always
-  #   volumes:
-  #     - ./nginx:/etc/nginx/conf.d
-  #   networks:
-  #     - deuceleague
+      - dlmobile_deuceleague
 
 networks:
   dlmobile_deuceleague:
     external: true
-    name: dlmobile_deuceleague # Explicitly specify the external network name
+    name: dlmobile_deuceleague

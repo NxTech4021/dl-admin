@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
   IconCalendar,
   IconPlus,
@@ -12,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Season, FormatDateFunction, Category } from "./types";
-import dynamic from "next/dynamic";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,15 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const SeasonCreateModal = dynamic(
-  () =>
-    import("@/components/modal/season-create-modal").then((mod) => ({
-      default: mod.default,
-    })),
-  {
-    loading: () => <div className="h-8 w-24 animate-pulse bg-muted rounded" />,
-  }
-);
+const SeasonCreateModal = lazy(() => import("@/components/modal/season-create-modal"));
 
 interface SeasonCardProps {
   seasons: Season[];
@@ -184,13 +173,15 @@ export function SeasonCard({
       </CardContent>
 
       {/* SeasonCreateModal */}
-      <SeasonCreateModal
-        open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
-        leagueId={leagueId}
-        categories={categories}
-        onSeasonCreated={handleSeasonCreated}
-      />
+      <Suspense fallback={null}>
+        <SeasonCreateModal
+          open={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+          leagueId={leagueId}
+          categories={categories}
+          onSeasonCreated={handleSeasonCreated}
+        />
+      </Suspense>
     </Card>
   );
 }

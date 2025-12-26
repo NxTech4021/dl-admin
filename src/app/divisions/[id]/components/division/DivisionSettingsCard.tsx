@@ -25,7 +25,7 @@ import {
   IconTrash,
   IconRefresh,
 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 interface DivisionSettingsCardProps {
   division: Division;
@@ -36,7 +36,7 @@ export default function DivisionSettingsCard({
   division,
   onDivisionUpdated,
 }: DivisionSettingsCardProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -84,7 +84,7 @@ export default function DivisionSettingsCard({
     try {
       await axiosInstance.delete(endpoints.division.delete(division.id));
       toast.success("Division deleted successfully");
-      router.push("/divisions");
+      navigate({ to: "/divisions" });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete division");
       setIsDeleting(false);

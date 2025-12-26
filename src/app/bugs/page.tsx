@@ -2,7 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Metadata } from "next";
-import dynamic from "next/dynamic";
+
 
 const BugDashboard = dynamic(
   () => import("@/components/bug-report/BugDashboard"),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Loader2, MessageSquare } from "lucide-react";
@@ -28,12 +28,12 @@ import type {
 } from "@/constants/types/chat";
 
 function ChatViewContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const searchParams = useSearch({ strict: false }) as { id?: string };
+  const navigate = useNavigate();
   const { data: session } = useSession();
   const user = session?.user;
 
-  const selectedConversationId = searchParams.get("id") || "";
+  const selectedConversationId = searchParams?.id || "";
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<any>(null);
@@ -184,11 +184,9 @@ function ChatViewContent() {
 
   const handleConversationSelect = useCallback(
     (conversationId: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("id", conversationId);
-      router.push(`/chat?${params.toString()}`);
+      navigate({ to: "/chat", search: { id: conversationId } });
     },
-    [router, searchParams]
+    [navigate]
   );
 
   // Loading state with full-screen elegant loader

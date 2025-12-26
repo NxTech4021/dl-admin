@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { Send, Smile, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,16 +8,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import dynamic from "next/dynamic";
 import { useTypingIndicator } from "@/app/chat/hooks/chat";
 import { motion, AnimatePresence } from "framer-motion";
 
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-80 h-96 flex items-center justify-center">Loading...</div>
-  ),
-});
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 interface ChatMessageInputProps {
   selectedConversationId?: string;
@@ -346,17 +338,19 @@ export default function ChatMessageInput({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <EmojiPicker
-                    onEmojiClick={handleEmojiClick}
-                    autoFocusSearch={false}
-                    height={400}
-                    width={350}
-                    previewConfig={{
-                      showPreview: false,
-                    }}
-                    skinTonesDisabled
-                    searchDisabled={false}
-                  />
+                  <Suspense fallback={<div className="w-80 h-96 flex items-center justify-center">Loading...</div>}>
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiClick}
+                      autoFocusSearch={false}
+                      height={400}
+                      width={350}
+                      previewConfig={{
+                        showPreview: false,
+                      }}
+                      skinTonesDisabled
+                      searchDisabled={false}
+                    />
+                  </Suspense>
                 </motion.div>
               </PopoverContent>
             </Popover>

@@ -1,8 +1,8 @@
-"use client";
+
 
 import { AdminRegisterForm } from "@/components/admin-register-form";
-import Image from "next/image";
-import Link from "next/link";
+// import Image from "next/image";
+import { Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 
 export default function Page() {
@@ -10,10 +10,10 @@ export default function Page() {
     <div className="bg-muted flex min-h-screen flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link
-          href="/"
+          to="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <Image
+          <img
             src="/dl-logo.svg"
             alt="Deuce League Logo"
             className="w-8 h-8"

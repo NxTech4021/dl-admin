@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import {
   IconTarget,
   IconTrendingUp,
@@ -352,7 +352,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             matches.
           </p>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/leagues">Browse Leagues</Link>
+            <Link to="/leagues">Browse Leagues</Link>
           </Button>
         </CardContent>
       </Card>
@@ -541,7 +541,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                               </div>
                               {match.opponents[0]?.id ? (
                                 <Link
-                                  href={`/players/${match.opponents[0].id}`}
+                                  to={`/players/${match.opponents[0].id}`}
                                   className="text-sm font-medium hover:text-primary transition-colors"
                                 >
                                   {match.opponentName || match.opponents.map((o: OpponentInfo) => o.name || o.username).filter(Boolean).join(" & ") || "Unknown"}
@@ -578,14 +578,14 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                               <div className="text-sm">
                                 {match.division.league && (
                                   <Link
-                                    href={`/league/view/${match.division.league.id}`}
+                                    to={`/league/view/${match.division.league.id}`}
                                     className="text-muted-foreground hover:text-primary transition-colors block truncate max-w-[200px]"
                                   >
                                     {match.division.league.name}
                                   </Link>
                                 )}
                                 <Link
-                                  href={`/divisions/${match.division.id}`}
+                                  to={`/divisions/${match.division.id}`}
                                   className="text-xs text-muted-foreground hover:text-primary transition-colors"
                                 >
                                   {match.division.name}

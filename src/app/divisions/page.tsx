@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { IconCategory, IconPlus } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
+
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { DivisionStatsCards } from "@/components/division/division-stats-cards";

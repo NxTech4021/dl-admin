@@ -61,19 +61,10 @@ import {
 import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/constants/zod/category-schema";
 import { endpoints } from "@/lib/endpoints";
-import dynamic from "next/dynamic";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { toast } from "sonner";
 
-const CategoryEditModal = dynamic(
-  () =>
-    import("@/components/modal/category-edit-modal").then((mod) => ({
-      default: mod.default,
-    })),
-  {
-    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
-  }
-);
+const CategoryEditModal = React.lazy(() => import("@/components/modal/category-edit-modal"));
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-MY", {
@@ -825,12 +816,14 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
 
       {/* Edit Category Modal */}
       {selectedCategoryId && (
-        <CategoryEditModal
-          open={editModalOpen}
-          onOpenChange={setEditModalOpen}
-          categoryId={selectedCategoryId}
-          onCategoryUpdated={handleCategoryUpdated}
-        />
+        <React.Suspense fallback={null}>
+          <CategoryEditModal
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            categoryId={selectedCategoryId}
+            onCategoryUpdated={handleCategoryUpdated}
+          />
+        </React.Suspense>
       )}
 
       {/* Single Delete Confirmation Modal */}

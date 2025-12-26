@@ -1,4 +1,4 @@
-"use client";
+
 
 import * as React from "react";
 import {
@@ -13,11 +13,11 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 import { z } from "zod";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 import DivisionCreateModal from "@/components/modal/division-create-modal";
 import {
@@ -103,7 +103,7 @@ const getCapacityDisplay = (current: number, max: number | null | undefined) => 
 };
 
 export function DivisionsDataTable() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [data, setData] = React.useState<Division[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -292,8 +292,8 @@ export function DivisionsDataTable() {
   }, [fetchDivisions]);
 
   const handleManagePlayers = React.useCallback((division: Division) => {
-    router.push(`/divisions/${division.id}?tab=players`);
-  }, [router]);
+    navigate({ to: `/divisions/${division.id}?tab=players` });
+  }, [navigate]);
 
   const mappedEditDivision = React.useMemo(() => {
     if (!editDivision) return null;
@@ -432,7 +432,7 @@ export function DivisionsDataTable() {
                             </div>
                             <div className="min-w-0">
                               <Link
-                                href={`/divisions/${division.id}`}
+                                to={`/divisions/${division.id}`}
                                 className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                               >
                                 {division.name}

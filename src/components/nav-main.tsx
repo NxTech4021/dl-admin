@@ -1,8 +1,5 @@
-"use client";
-
 import { type LucideIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { ICON_SIZES, TYPOGRAPHY } from "@/lib/constants/ui";
 import {
@@ -25,7 +22,8 @@ interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   // Helper to check if a route is active (supports nested routes)
   const isRouteActive = (url: string) => {
@@ -56,7 +54,7 @@ export function NavMain({ items }: NavMainProps) {
                     isActive && !isProminent && "border-l-4 border-primary pl-[calc(0.75rem-4px)]"
                   )}
                 >
-                  <Link href={item.url} className="flex items-center gap-3">
+                  <Link to={item.url} className="flex items-center gap-3">
                     {item.icon && (
                       <item.icon
                         className={cn(

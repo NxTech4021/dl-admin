@@ -1,10 +1,8 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Card,
   CardContent,
@@ -46,7 +44,7 @@ export function LoginForm({
   const [error, setError] = useState<LoginError | null>(null);
   const [loading, setLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Check if user is already authenticated
@@ -56,9 +54,9 @@ export function LoginForm({
   useEffect(() => {
     if (session?.user && !sessionLoading) {
       setIsRedirecting(true);
-      router.replace("/dashboard");
+      navigate({ to: "/dashboard", replace: true });
     }
-  }, [session, sessionLoading, router]);
+  }, [session, sessionLoading, navigate]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -245,7 +243,7 @@ export function LoginForm({
       // Success - redirect to dashboard
       toast.success("Login successful! Redirecting...");
       setIsRedirecting(true);
-      router.push("/dashboard");
+      navigate({ to: "/dashboard" });
 
     } catch (err) {
       const loginError = parseLoginError(err);

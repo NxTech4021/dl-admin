@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState, useEffect, useRef } from "react";
 import { Bug, X, Upload, Send, Loader2 } from "lucide-react";
@@ -20,13 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import Image from "next/image";
+// import Image from "next/image";
 
 interface BugReportWidgetProps {
   apiUrl?: string;
 }
 
-export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || "" }: BugReportWidgetProps) {
+export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || "" }: BugReportWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appId, setAppId] = useState<string | null>(null);
@@ -446,7 +446,7 @@ export function BugReportWidget({ apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
               <div className="flex flex-wrap gap-2">
                 {screenshotPreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <Image
+                    <img
                       src={preview as string}
                       alt={`Screenshot ${index + 1}`}
                       className="h-20 w-20 object-cover rounded border"

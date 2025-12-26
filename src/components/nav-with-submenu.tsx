@@ -1,7 +1,5 @@
-"use client"
-
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import Link from "next/link"
+import { Link } from "@tanstack/react-router"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -49,7 +47,7 @@ export function NavWithSubmenu({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
-                        <Link href={subItem.url}>
+                        <Link to={subItem.url}>
                           {subItem.icon && <subItem.icon className="mr-2" />}
                           <span>{subItem.title}</span>
                         </Link>

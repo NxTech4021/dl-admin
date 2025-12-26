@@ -1,4 +1,4 @@
-"use client";
+
 
 import * as React from "react";
 import {
@@ -10,10 +10,10 @@ import {
   IconChevronRight,
   IconClock,
 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { Season } from "@/constants/zod/season-schema";
 import { toast } from "sonner";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 import {
   AlertDialog,
@@ -127,7 +127,7 @@ export function SeasonsDataTable({
   onViewSeason,
   onRefresh,
 }: SeasonsDataTableProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Pagination
@@ -182,8 +182,8 @@ export function SeasonsDataTable({
   }, [onRefresh]);
 
   const handleManagePlayers = React.useCallback((season: Season) => {
-    router.push(`/seasons/${season.id}?tab=players`);
-  }, [router]);
+    navigate({ to: `/seasons/${season.id}?tab=players` });
+  }, [navigate]);
 
   const exportToCSV = React.useCallback(() => {
     if (data.length === 0) {
@@ -311,7 +311,7 @@ export function SeasonsDataTable({
                             </div>
                             <div className="min-w-0">
                               <Link
-                                href={`/seasons/${season.id}`}
+                                to={`/seasons/${season.id}`}
                                 className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                               >
                                 {season.name}

@@ -1,7 +1,7 @@
-"use client";
+
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 
 // UI components
@@ -81,7 +81,7 @@ export default function ChatNav({
   onConversationSelect,
   onThreadCreated,
 }: ChatNavProps & { onThreadCreated?: () => Promise<void> | void }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const mdUp = useResponsive();
   const {
     openMobile,

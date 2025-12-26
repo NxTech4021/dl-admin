@@ -21,7 +21,7 @@ export function PlayerStats() {
       try {
         const response = await axiosInstance.get(
           endpoints.player.getStats
-          // `${process.env.NEXT_PUBLIC_HOST_URL}/api/player/stats`
+          // `${import.meta.env.VITE_API_BASE_URL}/api/player/stats`
         );
         if (response.status !== 200) {
           throw new Error("Failed to fetch stats");

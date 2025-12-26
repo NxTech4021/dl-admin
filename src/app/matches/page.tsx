@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
 import { MatchFilters } from "@/components/match/match-filters";
@@ -285,7 +285,7 @@ export default function MatchesPage() {
                                       <div className="space-y-0.5">
                                         {match.division.league && (
                                           <Link
-                                            href={`/league/view/${match.division.league.id}`}
+                                            to={`/league/view/${match.division.league.id}`}
                                             className="text-sm font-medium hover:text-primary transition-colors block truncate max-w-[160px]"
                                           >
                                             {match.division.league.name}
@@ -297,7 +297,7 @@ export default function MatchesPage() {
                                           </span>
                                         )}
                                         <Link
-                                          href={`/divisions/${match.division.id}`}
+                                          to={`/divisions/${match.division.id}`}
                                           className="text-xs text-muted-foreground/70 hover:text-primary transition-colors block truncate max-w-[160px]"
                                         >
                                           {match.division.name}

@@ -29,7 +29,7 @@ import { DisputeStatusBadge } from "./dispute-status-badge";
 import { DisputePriorityBadge } from "./dispute-priority-badge";
 import { DisputeCategoryBadge } from "./dispute-category-badge";
 import { formatTableDate } from "@/components/data-table/constants";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 interface DisputeDetailDrawerProps {
   dispute: Dispute | null;
@@ -189,7 +189,7 @@ export function DisputeDetailDrawer({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm text-muted-foreground shrink-0">Match ID</span>
                     <Link
-                      href={`/matches?id=${match.id}`}
+                      to={`/matches?id=${match.id}`}
                       className="font-mono text-sm text-primary hover:underline truncate"
                     >
                       {match.id.slice(0, 12)}...

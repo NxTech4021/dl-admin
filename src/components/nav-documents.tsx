@@ -1,8 +1,8 @@
-"use client";
+
 
 import { type Icon } from "@tabler/icons-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 
 import {
   SidebarGroup,
@@ -23,7 +23,7 @@ export function NavDocuments({
   }[];
 }) {
   const { isMobile } = useSidebar();
-  const pathname = usePathname();
+  const location = useLocation(); const pathname = location.pathname;
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -32,7 +32,7 @@ export function NavDocuments({
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild isActive={pathname === item.url}>
-              <Link href={item.url}>
+              <Link to={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
               </Link>

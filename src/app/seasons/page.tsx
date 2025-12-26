@@ -16,10 +16,10 @@ import {
   IconUsers,
   IconTrophy,
 } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
+
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 // Dynamic imports for performance
 const SeasonsDataTable = dynamic(
@@ -36,7 +36,7 @@ export default function Page() {
   const [data, setData] = React.useState<Season[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const fetchSeasons = React.useCallback(async () => {
     setIsLoading(true);
@@ -101,7 +101,7 @@ export default function Page() {
   }, [fetchSeasons]);
 
   const handleViewSeason = (seasonId: string) => {
-    router.push(`/seasons/${seasonId}`);
+    navigate({ to: `/seasons/${seasonId}` });
   };
 
   const seasons = data;

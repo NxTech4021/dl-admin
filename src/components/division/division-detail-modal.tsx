@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import {
@@ -28,7 +28,7 @@ import {
   IconSparkles,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 /** Get level-specific styling */
 const getLevelStyles = (level: string | null | undefined) => {
@@ -112,7 +112,7 @@ export function DivisionDetailModal({
   onEdit,
   onManagePlayers,
 }: DivisionDetailModalProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   if (!division) return null;
 
@@ -372,7 +372,7 @@ export function DivisionDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/divisions/${division.id}?tab=standings`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/divisions/${division.id}?tab=standings` }); onOpenChange(false); }}
             >
               <IconChartBar className="size-4 mr-1.5" />
               Standings
@@ -381,7 +381,7 @@ export function DivisionDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/divisions/${division.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/divisions/${division.id}` }); onOpenChange(false); }}
             >
               <IconExternalLink className="size-4 mr-1.5" />
               Full Page

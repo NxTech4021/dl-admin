@@ -1,4 +1,4 @@
-"use client";
+
 
 import * as React from "react";
 import {
@@ -69,7 +69,7 @@ import {
   IconSend
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useConfirmationModal } from "@/hooks/use-confirmation-modal";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
@@ -175,11 +175,11 @@ interface PlayerActionsProps {
 }
 
 function PlayerActions({ player, onRemoveClick }: PlayerActionsProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleViewProfile = () => {
     toast.info(`Viewing profile for ${player.name}`);
-    router.push(`/players/${player.id}`);
+    navigate({ to: `/players/${player.id}` });
   };
 
   const handleRemove = () => {
@@ -404,7 +404,7 @@ interface LeaguePlayersTableProps {
 }
 
 export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -584,7 +584,7 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
     setIsAddPlayerOpen(false);
     toast.info("Opening invite form...");
     if (leagueId) {
-      router.push(`/league/${leagueId}/invite`);
+      navigate({ to: `/league/${leagueId}/invite` });
     }
   };
 

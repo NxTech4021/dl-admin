@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconArrowRight } from "@tabler/icons-react";
@@ -82,7 +82,7 @@ export function ReportCard({
   );
 
   if (isAvailable) {
-    return <Link href={href}>{content}</Link>;
+    return <Link to={href}>{content}</Link>;
   }
 
   return content;

@@ -1,8 +1,6 @@
-"use client";
-
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, Link } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
@@ -24,7 +22,6 @@ import {
   History,
   BarChart3,
 } from "lucide-react";
-import Image from "next/image";
 import { NavMain } from "@/components/nav-main";
 import { NavSection } from "@/components/nav-section";
 import { NavUser } from "@/components/nav-user";
@@ -43,7 +40,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/use-queries";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
   const { unreadCount, notifications } = useNotifications();
   const { data: openDisputeCount = 0 } = useOpenDisputeCount();
@@ -63,9 +60,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Redirect to login if no session
   useEffect(() => {
     if (!isPending && !session) {
-      router.push("/login");
+      navigate({ to: "/login" });
     }
-  }, [isPending, session, router]);
+  }, [isPending, session, navigate]);
 
   if (isPending) {
     return (
@@ -233,8 +230,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-2"
             >
-              <a href="/dashboard">
-                <Image
+              <Link to="/dashboard">
+                <img
                   src="/dl-logo.svg"
                   alt="DeuceLeague Logo"
                   width={20}
@@ -242,7 +239,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="!size-5"
                 />
                 <span className="text-base font-semibold">DeuceLeague</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

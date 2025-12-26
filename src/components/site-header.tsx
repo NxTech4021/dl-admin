@@ -1,8 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { useLocation, Link } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { IconBell } from "@tabler/icons-react";
@@ -29,7 +26,8 @@ export function SiteHeader({
   items?: BreadcrumbItem[];
 }) {
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const pageTitle =
     title || pageMap[pathname as keyof typeof pageMap] || "Dashboard";
 
@@ -55,7 +53,7 @@ export function SiteHeader({
                   >
                     {item.href && !isLast ? (
                       <Link
-                        href={item.href}
+                        to={item.href}
                         className="text-base font-medium text-foreground hover:underline"
                       >
                         {item.label}

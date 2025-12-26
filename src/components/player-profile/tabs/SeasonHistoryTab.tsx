@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { IconCalendar } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,7 +55,7 @@ export function SeasonHistoryTab({
                     <div>
                       <h4 className="font-semibold flex items-center gap-3">
                         <Link
-                          href={`/seasons/${season.id}`}
+                          to={`/seasons/${season.id}`}
                           className="hover:underline"
                         >
                           {season.name}
@@ -63,7 +63,7 @@ export function SeasonHistoryTab({
                       </h4>
                       <p className="text-sm text-muted-foreground">
                         <Link
-                          href={`/league/view/${season.category.league.id}`}
+                          to={`/league/view/${season.category.league.id}`}
                           className="hover:underline"
                         >
                           {season.category.league.name}
@@ -81,7 +81,7 @@ export function SeasonHistoryTab({
                           Division:{" "}
                           {season.membership.division?.id ? (
                             <Link
-                              href={`/league/divisions/${season.membership.division.id}`}
+                              to={`/league/divisions/${season.membership.division.id}`}
                               className="hover:underline"
                             >
                               {season.membership.division.name}

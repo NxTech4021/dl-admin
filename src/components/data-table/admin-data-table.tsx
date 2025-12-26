@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import {
   IconDotsVertical,
   IconMail,
@@ -172,7 +172,7 @@ const columns: ColumnDef<Admin>[] = [
               <>
                 <DropdownMenuItem asChild>
                   <Link
-                    href={`/admin/view/profile/${admin.id}`}
+                    to={`/admin/view/profile/${admin.id}`}
                     className="flex items-center w-full cursor-pointer focus:bg-accent focus:text-accent-foreground"
                   >
                     <IconEye className="mr-2 size-4" />

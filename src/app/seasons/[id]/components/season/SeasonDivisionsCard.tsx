@@ -37,8 +37,8 @@ import { Division } from "@/constants/zod/division-schema";
 import { DivisionRowActions } from "@/components/division/division-row-actions";
 import { DivisionDetailModal } from "@/components/division/division-detail-modal";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 interface SeasonDivisionsCardProps {
@@ -92,7 +92,7 @@ export default function SeasonDivisionsCard({
   onDivisionUpdated,
   onDivisionDeleted,
 }: SeasonDivisionsCardProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingDivision, setEditingDivision] = useState<Division | null>(null);
@@ -154,7 +154,7 @@ export default function SeasonDivisionsCard({
   };
 
   const handleManagePlayers = (division: Division) => {
-    router.push(`/divisions/${division.id}?tab=players`);
+    navigate({ to: `/divisions/${division.id}`, search: { tab: "players" } });
   };
 
   // Map editingDivision for the modal
@@ -261,7 +261,7 @@ export default function SeasonDivisionsCard({
                             </div>
                             <div className="min-w-0">
                               <Link
-                                href={`/divisions/${division.id}`}
+                                to={`/divisions/${division.id}`}
                                 className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                               >
                                 {division.name}

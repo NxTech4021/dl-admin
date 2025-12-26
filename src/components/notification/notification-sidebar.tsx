@@ -1,7 +1,7 @@
-"use client";
+
 
 import React, { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   Sheet,
@@ -288,7 +288,7 @@ const NotificationItem = React.memo(({
 NotificationItem.displayName = "NotificationItem";
 
 export default function NotificationsSidebar({ open, onOpenChange }: NotificationsSidebarProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const {
     notifications,
     loading,
@@ -310,9 +310,9 @@ export default function NotificationsSidebar({ open, onOpenChange }: Notificatio
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const handleNavigate = useCallback((url: string) => {
-    router.push(url);
+    navigate({ to: url });
     onOpenChange(false);
-  }, [router, onOpenChange]);
+  }, [navigate, onOpenChange]);
 
   const toggleSelectMode = useCallback(() => {
     setSelectMode((prev) => !prev);

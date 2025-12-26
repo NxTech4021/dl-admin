@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
+
 import { PlayerStatsRefactored } from "@/components/player-stats-refactored";
 
 // Dynamic imports for performance

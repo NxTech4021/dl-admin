@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Search, MessageSquare, Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -43,7 +41,7 @@ export default function NewChatModal({
   currentUserId,
   onThreadCreated,
 }: NewChatModalProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [creatingChatWithUser, setCreatingChatWithUser] = useState<string | null>(null);
 
@@ -89,7 +87,7 @@ export default function NewChatModal({
         setSearchQuery('');
 
         // Navigate to the new thread
-        router.push(`/chat?id=${newThread.id}`);
+        navigate({ to: '/chat', search: { id: newThread.id } });
 
         toast.success(`Chat with ${user.name} started!`);
       }

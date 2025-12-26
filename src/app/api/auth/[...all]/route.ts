@@ -1,12 +1,12 @@
-const host = process.env.NEXT_PUBLIC_HOST_URL;
+const host = import.meta.env.VITE_API_BASE_URL;
 
 // Allowed origins for CSRF protection
 const getAllowedOrigins = (): string[] => {
   const origins: string[] = [];
 
   // Add frontend URL
-  if (process.env.NEXT_PUBLIC_AUTH_URL) {
-    origins.push(process.env.NEXT_PUBLIC_AUTH_URL);
+  if (import.meta.env.VITE_AUTH_URL) {
+    origins.push(import.meta.env.VITE_AUTH_URL);
   }
 
   // Add localhost variants for development

@@ -43,7 +43,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     if (!user?.id) return;
 
     const socketInstance = io(
-      process.env.NEXT_PUBLIC_HOST_URL || "http://localhost:3001",
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001",
       {
         auth: {
           userId: user.id,

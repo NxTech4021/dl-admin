@@ -11,7 +11,7 @@ import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { useDashboardExport } from "@/hooks/use-dashboard-export";
 import { queryKeys } from "@/hooks/use-queries";
 import { useQueryClient } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
+
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 

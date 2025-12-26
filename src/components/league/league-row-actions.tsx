@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { League } from "@/constants/zod/league-schema";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 interface LeagueRowActionsProps {
   league: League;
@@ -36,7 +36,7 @@ export function LeagueRowActions({
   onEdit,
   onDelete,
 }: LeagueRowActionsProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <DropdownMenu>
@@ -58,7 +58,7 @@ export function LeagueRowActions({
 
         {/* View Full Page */}
         <DropdownMenuItem
-          onClick={() => router.push(`/league/view/${league.id}`)}
+          onClick={() => navigate({ to: `/league/view/${league.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconExternalLink className="mr-2 size-4" />
@@ -90,7 +90,7 @@ export function LeagueRowActions({
 
         {/* View Seasons */}
         <DropdownMenuItem
-          onClick={() => router.push(`/seasons?leagueId=${league.id}`)}
+          onClick={() => navigate({ to: `/seasons?leagueId=${league.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconCalendar className="mr-2 size-4" />
@@ -99,7 +99,7 @@ export function LeagueRowActions({
 
         {/* View Players */}
         <DropdownMenuItem
-          onClick={() => router.push(`/players?leagueId=${league.id}`)}
+          onClick={() => navigate({ to: `/players?leagueId=${league.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconUsers className="mr-2 size-4" />

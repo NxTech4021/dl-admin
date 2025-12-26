@@ -19,7 +19,7 @@ export default function AdminAccountPage() {
     try {
       await axiosInstance.put(
         endpoints.admin.updateAccount,
-        // `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/account/update`,
+        // `${import.meta.env.VITE_API_BASE_URL}/api/admin/account/update`,
         {
           adminId: user?.id,
           ...data,

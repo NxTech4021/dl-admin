@@ -1,4 +1,4 @@
-import Image from "next/image";
+// import Image from "next/image";
 
 
 
@@ -64,7 +64,7 @@ const PickleballIcon = ({ size = 18 }: { size?: number }) => (
 );
 
 const TennisIcon = ({ size = 18 }: { size?: number }) => (
-  <Image
+  <img
     src="/tennis-icon.svg"
     alt="Tennis"
     width={size}
@@ -74,7 +74,7 @@ const TennisIcon = ({ size = 18 }: { size?: number }) => (
 );
 
  const PadelIcon = ({ size = 18 }: { size?: number }) => (
-  <Image
+  <img
     src="/padel-icon.svg"
     alt="Padel"
     width={size}

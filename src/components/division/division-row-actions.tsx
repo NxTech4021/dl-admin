@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Division } from "@/constants/zod/division-schema";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 interface DivisionRowActionsProps {
   division: Division;
@@ -38,7 +38,7 @@ export function DivisionRowActions({
   onDelete,
   onManagePlayers,
 }: DivisionRowActionsProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <DropdownMenu>
@@ -60,7 +60,7 @@ export function DivisionRowActions({
 
         {/* View Full Page */}
         <DropdownMenuItem
-          onClick={() => router.push(`/divisions/${division.id}`)}
+          onClick={() => navigate({ to: `/divisions/${division.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconExternalLink className="mr-2 size-4" />
@@ -103,7 +103,7 @@ export function DivisionRowActions({
 
         {/* View Standings */}
         <DropdownMenuItem
-          onClick={() => router.push(`/divisions/${division.id}?tab=standings`)}
+          onClick={() => navigate({ to: `/divisions/${division.id}?tab=standings` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconChartBar className="mr-2 size-4" />

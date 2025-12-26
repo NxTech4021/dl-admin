@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { IconTrophy } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,7 +55,7 @@ export function LeagueHistoryTab({
                     <div>
                       <h4 className="font-semibold flex items-center gap-3">
                         <Link
-                          href={`/league/view/${league.id}`}
+                          to={`/league/view/${league.id}`}
                           className="hover:underline"
                         >
                           {league.name}

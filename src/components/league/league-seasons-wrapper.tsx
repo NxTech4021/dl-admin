@@ -1,7 +1,7 @@
-"use client";
+
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/constants/zod/season-schema";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
@@ -24,7 +24,7 @@ export function LeagueSeasonsWrapper({
   leagueName,
   onRefresh,
 }: LeagueSeasonsWrapperProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(false);
@@ -115,7 +115,7 @@ export function LeagueSeasonsWrapper({
   }, [leagueId]);
 
   const handleViewSeason = (seasonId: string) => {
-    router.push(`/seasons/${seasonId}`);
+    navigate({ to: `/seasons/${seasonId}` });
   };
 
   const handleCreateSeason = () => {

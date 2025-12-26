@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import {
   Card,
   CardContent,
@@ -347,7 +347,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
             leagues.
           </p>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/leagues">Browse Leagues</Link>
+            <Link to="/leagues">Browse Leagues</Link>
           </Button>
         </CardContent>
       </Card>
@@ -505,7 +505,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                             <TableCell className="py-4 pl-0" onClick={(e) => e.stopPropagation()}>
                               <div className="space-y-1">
                                 <Link
-                                  href={`/league/view/${league.id}`}
+                                  to={`/league/view/${league.id}`}
                                   className="font-semibold text-sm hover:text-primary transition-colors inline-block"
                                 >
                                   {league.name}
@@ -556,7 +556,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                               {latestDivision ? (
                                 <div className="space-y-1">
                                   <Link
-                                    href={`/divisions/${latestDivision.id}`}
+                                    to={`/divisions/${latestDivision.id}`}
                                     className="text-sm font-medium hover:text-primary transition-colors inline-block"
                                   >
                                     {latestDivision.name}
@@ -623,7 +623,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                                       <div className="flex items-center gap-3 flex-shrink-0">
                                         {season.division && (
                                           <Link
-                                            href={`/divisions/${season.division.id}`}
+                                            to={`/divisions/${season.division.id}`}
                                             className="text-sm hover:text-primary transition-colors"
                                           >
                                             {season.division.name}
@@ -703,7 +703,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                         {/* League name */}
                         <div className="space-y-1.5">
                           <Link
-                            href={`/league/view/${league.id}`}
+                            to={`/league/view/${league.id}`}
                             className="font-semibold text-base hover:text-primary transition-colors inline-block"
                           >
                             {league.name}
@@ -732,7 +732,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                         <div className="flex items-center gap-2 flex-wrap">
                           {latestDivision && (
                             <Link
-                              href={`/divisions/${latestDivision.id}`}
+                              to={`/divisions/${latestDivision.id}`}
                               className="flex items-center gap-1.5 text-xs bg-muted hover:bg-muted/80 px-2.5 py-1.5 rounded-lg transition-colors"
                             >
                               {latestDivision.gameType === "DOUBLES" ? (
@@ -794,7 +794,7 @@ const LeagueHistory: React.FC<LeagueHistoryProps> = ({ leagues, isLoading }) => 
                                   {formatShortDate(season.seasonStartDate)}
                                   {season.seasonEndDate && ` — ${formatShortDate(season.seasonEndDate)}`}
                                   {season.division && (
-                                    <> · <Link href={`/divisions/${season.division.id}`} className="hover:text-primary">{season.division.name}</Link></>
+                                    <> · <Link to={`/divisions/${season.division.id}`} className="hover:text-primary">{season.division.name}</Link></>
                                   )}
                                 </div>
                               </div>

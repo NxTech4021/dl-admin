@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation"
 import { IconChevronLeft } from "@tabler/icons-react"
-import Link from "next/link"
+import { Link } from "@tanstack/react-router"
 
 import { SiteHeader } from "@/components/site-header"
 import { PlayerProfile } from "@/components/player-profile"
@@ -31,7 +31,7 @@ export default function PlayerProfilePage() {
           <div className="container p-6">
             <div className="mb-6">
               <Button asChild variant="outline" size="sm">
-                <Link href="/players">
+                <Link to="/players">
                   <IconChevronLeft className="mr-2 size-4" />
                   Back to All Players
                 </Link>

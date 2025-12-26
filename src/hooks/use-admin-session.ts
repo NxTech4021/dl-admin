@@ -1,8 +1,8 @@
-"use client";
+
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 interface AdminUser {
   id: string;
@@ -30,7 +30,7 @@ export function useAdminSession(): UseAdminSessionReturn {
   const [admin, setAdmin] = useState<AdminRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const fetchSession = async () => {
     try {
@@ -38,7 +38,7 @@ export function useAdminSession(): UseAdminSessionReturn {
       setError(null);
 
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/session`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/session`,
         {
           withCredentials: true,
         }
@@ -71,7 +71,7 @@ export function useAdminSession(): UseAdminSessionReturn {
   const logout = async () => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_HOST_URL}/api/admin/logout`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/logout`,
         {},
         {
           withCredentials: true,
@@ -82,8 +82,7 @@ export function useAdminSession(): UseAdminSessionReturn {
     } finally {
       setUser(null);
       setAdmin(null);
-      router.push("/login");
-      router.refresh();
+      navigate({ to: "/login" });
     }
   };
 

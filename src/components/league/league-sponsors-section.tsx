@@ -1,7 +1,7 @@
-"use client";
+
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -47,7 +47,7 @@ export function LeagueSponsorsSection({
   onAssignSponsor,
   onSponsorDeleted,
 }: LeagueSponsorsSectionProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
   const [available, setAvailable] = React.useState<SponsorSelectOption[]>([]);
   const [selectedId, setSelectedId] = React.useState<string>("");
@@ -102,7 +102,7 @@ export function LeagueSponsorsSection({
 
   const handleViewSponsor = (sponsorId?: string) => {
     if (!sponsorId) return;
-    router.push(`/utilities/sponsors/view/${sponsorId}`);
+    navigate({ to: `/utilities/sponsors/view/${sponsorId}` });
   };
 
   const handleDeleteSponsorClick = React.useCallback(

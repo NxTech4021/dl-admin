@@ -1,4 +1,4 @@
-"use client";
+
 
 import { formatDistanceToNowStrict } from "date-fns";
 import { Reply, Smile, Trash2, MoreHorizontal } from "lucide-react";
@@ -22,7 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import Image from "next/image";
+// import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -200,7 +200,7 @@ function ChatMessageItem({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <Image
+          <img
             src={messageContent}
             alt="attachment"
             width={400}

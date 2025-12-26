@@ -1,10 +1,10 @@
-"use client";
+
 
 import { Suspense, useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "@tanstack/react-router";
 
 function RouteProgressInner() {
-  const pathname = usePathname();
+  const location = useLocation(); const pathname = location.pathname;
   const searchParams = useSearchParams();
   const [isNavigating, setIsNavigating] = useState(false);
   const [progress, setProgress] = useState(0);

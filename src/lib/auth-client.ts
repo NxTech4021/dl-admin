@@ -3,7 +3,7 @@ import { usernameClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
   // This MUST point to your backend server's URL
-  baseURL: process.env.NEXT_PUBLIC_AUTH_URL, // Or whatever port your dl-backend runs on
+  baseURL: import.meta.env.VITE_AUTH_URL,
   basePath: "/api/auth",
   plugins: [usernameClient()],
 });

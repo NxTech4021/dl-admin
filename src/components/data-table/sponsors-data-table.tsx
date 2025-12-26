@@ -1,7 +1,7 @@
-"use client";
+
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -60,17 +60,8 @@ import {
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { sponsorSchema, Sponsor } from "@/constants/zod/sponsor-schema";
-import dynamic from "next/dynamic";
 
-const SponsorEditModal = dynamic(
-  () =>
-    import("@/components/modal/sponsor-edit-modal").then((mod) => ({
-      default: mod.SponsorEditModal,
-    })),
-  {
-    loading: () => <div className="h-96 animate-pulse bg-muted rounded-lg" />,
-  }
-);
+const SponsorEditModal = React.lazy(() => import("@/components/modal/sponsor-edit-modal").then((mod) => ({ default: mod.SponsorEditModal })));
 
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return "N/A";
@@ -605,12 +596,14 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
 
       {/* Edit Sponsor Modal */}
       {selectedSponsorId && (
-        <SponsorEditModal
-          open={editModalOpen}
-          onOpenChange={setEditModalOpen}
-          sponsorId={selectedSponsorId}
-          onSponsorUpdated={handleSponsorUpdated}
-        />
+        <React.Suspense fallback={null}>
+          <SponsorEditModal
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            sponsorId={selectedSponsorId}
+            onSponsorUpdated={handleSponsorUpdated}
+          />
+        </React.Suspense>
       )}
     </div>
   );

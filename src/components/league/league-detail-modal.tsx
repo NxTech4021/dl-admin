@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import {
@@ -26,7 +26,7 @@ import {
   IconMail,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { getSportIcon, getSportColor, getSportLabel } from "@/constants/sports";
 
 /** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
@@ -129,7 +129,7 @@ export function LeagueDetailModal({
   onOpenChange,
   onEdit,
 }: LeagueDetailModalProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   if (!league) return null;
 
@@ -276,7 +276,7 @@ export function LeagueDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/seasons?leagueId=${league.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/seasons?leagueId=${league.id}` }); onOpenChange(false); }}
             >
               <IconCalendar className="size-4 mr-1.5" />
               Seasons
@@ -285,7 +285,7 @@ export function LeagueDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/divisions?leagueId=${league.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/divisions?leagueId=${league.id}` }); onOpenChange(false); }}
             >
               <IconCategory className="size-4 mr-1.5" />
               Divisions
@@ -294,7 +294,7 @@ export function LeagueDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/league/view/${league.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/league/view/${league.id}` }); onOpenChange(false); }}
             >
               <IconExternalLink className="size-4 mr-1.5" />
               Full Page

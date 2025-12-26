@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Season } from "@/constants/zod/season-schema";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 interface SeasonRowActionsProps {
   season: Season;
@@ -38,7 +38,7 @@ export function SeasonRowActions({
   onDelete,
   onManagePlayers,
 }: SeasonRowActionsProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <DropdownMenu>
@@ -60,7 +60,7 @@ export function SeasonRowActions({
 
         {/* View Full Page */}
         <DropdownMenuItem
-          onClick={() => router.push(`/seasons/${season.id}`)}
+          onClick={() => navigate({ to: `/seasons/${season.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconExternalLink className="mr-2 size-4" />
@@ -103,7 +103,7 @@ export function SeasonRowActions({
 
         {/* View Divisions */}
         <DropdownMenuItem
-          onClick={() => router.push(`/divisions?seasonId=${season.id}`)}
+          onClick={() => navigate({ to: `/divisions?seasonId=${season.id}` })}
           className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
         >
           <IconCategory className="mr-2 size-4" />

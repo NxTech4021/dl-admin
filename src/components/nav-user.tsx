@@ -5,6 +5,7 @@ import {
   LogOut,
   UserCircle,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -86,10 +87,10 @@ export function NavUser({ user }: { user: User }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <a href="/admin/account" className="flex items-center gap-2 cursor-pointer">
+                <Link to="/admin/account" className="flex items-center gap-2 cursor-pointer">
                   <UserCircle className="size-4" />
                   Account
-                </a>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

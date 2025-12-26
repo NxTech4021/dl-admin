@@ -1,4 +1,4 @@
-"use client";
+
 
 import React from "react";
 import {
@@ -30,7 +30,7 @@ import {
   IconTrophy,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 
 /** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
 const formatStatus = (status: string | undefined): string => {
@@ -123,7 +123,7 @@ export function SeasonDetailModal({
   onEdit,
   onManagePlayers,
 }: SeasonDetailModalProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   if (!season) return null;
 
@@ -310,7 +310,7 @@ export function SeasonDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/divisions?seasonId=${season.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/divisions?seasonId=${season.id}` }); onOpenChange(false); }}
             >
               <IconCategory className="size-4 mr-1.5" />
               Divisions
@@ -330,7 +330,7 @@ export function SeasonDetailModal({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { router.push(`/seasons/${season.id}`); onOpenChange(false); }}
+              onClick={() => { navigate({ to: `/seasons/${season.id}` }); onOpenChange(false); }}
             >
               <IconExternalLink className="size-4 mr-1.5" />
               Full Page

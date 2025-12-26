@@ -1,9 +1,6 @@
-"use client";
-
 import * as React from "react";
 import { type LucideIcon, ChevronDown } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { ICON_SIZES, TYPOGRAPHY } from "@/lib/constants/ui";
 import {
@@ -48,7 +45,8 @@ export function NavSection({
   collapsible = true,
   defaultOpen = true,
 }: NavSectionProps) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const sectionKey = `sidebar-section-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
   // Load collapsed state from localStorage
@@ -104,7 +102,7 @@ export function NavSection({
               )}
             >
               <Link
-                href={item.url}
+                to={item.url}
                 className="flex items-center justify-between w-full"
               >
                 <div className="flex items-center gap-3">

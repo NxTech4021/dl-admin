@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { useModals } from "@/contexts/modal-context";
 import SeasonCreateModal from "@/components/modal/season-create-modal";

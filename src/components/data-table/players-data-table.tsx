@@ -55,7 +55,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Player } from "@/constants/zod/player-schema";
 import { usePlayers } from "@/hooks/use-queries";
 import { getSportLabel, getSportColor } from "@/constants/sports";
@@ -268,7 +268,7 @@ const columns: ColumnDef<Player>[] = [
               asChild
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
             >
-              <Link href={`/players/${player.id}`}>
+              <Link to={`/players/${player.id}`}>
                 <IconEye className="mr-2 size-4" />
                 View Profile
               </Link>

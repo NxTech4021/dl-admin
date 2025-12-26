@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -90,7 +90,7 @@ export default function RevenueReportPage() {
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-2">
                         <Button asChild variant="ghost" size="sm" className="-ml-2">
-                          <Link href="/reports">
+                          <Link to="/reports">
                             <IconChevronLeft className="mr-1 size-4" />
                             Back to Reports
                           </Link>

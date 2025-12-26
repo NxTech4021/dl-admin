@@ -1,7 +1,7 @@
-"use client";
+
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -113,7 +113,7 @@ const ChatNavItem = ({
 }: ChatNavItemProps) => {
   const { data: session } = useSession();
   const user = session?.user;
-  const router = useRouter();
+  const navigate = useNavigate();
   const mdUp = useResponsive("up", "md");
 
   const {
@@ -134,11 +134,11 @@ const ChatNavItem = ({
   const handleClickConversation = useCallback(async () => {
     try {
       if (!mdUp && onCloseMobile) onCloseMobile();
-      router.push(`${paths.dashboard.chat}?id=${conversation.id}`);
+      navigate({ to: `${paths.dashboard.chat}?id=${conversation.id}` });
     } catch (error) {
       console.error(error);
     }
-  }, [conversation.id, mdUp, onCloseMobile, router]);
+  }, [conversation.id, mdUp, onCloseMobile, navigate]);
 
   const renderGroup = (
     <div className="relative flex-shrink-0">

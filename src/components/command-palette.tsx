@@ -1,7 +1,5 @@
-"use client";
-
 import * as React from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import {
   CommandDialog,
   CommandEmpty,
@@ -161,8 +159,9 @@ interface QuickAction {
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = React.useState<"all" | "actions">("all");
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
   const { openSeasonCreate, openPlayerCreate, openMatchCreate } = useModals();
   const [recentPages, setRecentPages] = React.useState<string[]>([]);
 
@@ -201,14 +200,14 @@ export function CommandPalette() {
       else if (e.key === "/" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (pathname !== "/dashboard") {
-          router.push("/dashboard");
+          navigate({ to: "/dashboard" });
         }
       }
     };
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [pathname, router]);
+  }, [pathname, navigate]);
 
   const handleNavigate = (url: string) => {
     setOpen(false);
@@ -218,7 +217,7 @@ export function CommandPalette() {
     setRecentPages(updated);
     localStorage.setItem("recentPages", JSON.stringify(updated));
 
-    router.push(url);
+    navigate({ to: url });
   };
 
   // Quick actions - open modals for create operations

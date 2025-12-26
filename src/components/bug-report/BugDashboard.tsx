@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -67,9 +67,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import Image from "next/image";
+// import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const PAGE_SIZE = 20;
 
@@ -963,7 +963,7 @@ export default function BugDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Image
+                          <img
                             src={screenshot.thumbnailUrl || screenshot.imageUrl}
                             alt={screenshot.fileName}
                             width={80}

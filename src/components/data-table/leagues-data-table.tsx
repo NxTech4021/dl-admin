@@ -1,4 +1,4 @@
-"use client";
+
 
 import * as React from "react";
 import {
@@ -11,11 +11,11 @@ import {
   IconCalendar,
   IconMapPin,
 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "@tanstack/react-router";
 import { League } from "@/constants/zod/league-schema";
 import { type League as LeagueEditType } from "@/constants/types/league";
 import { toast } from "sonner";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 
 import {
   AlertDialog,
@@ -45,7 +45,6 @@ import { getSportIcon, getSportColor, getSportLabel } from "@/constants/sports";
 
 import { LeagueRowActions } from "@/components/league/league-row-actions";
 import { LeagueDetailModal } from "@/components/league/league-detail-modal";
-import dynamic from "next/dynamic";
 
 import {
   formatTableDate,
@@ -54,10 +53,7 @@ import {
   formatCount,
 } from "./constants";
 
-const LeagueEditModal = dynamic(
-  () => import("@/components/modal/league-edit-modal"),
-  { loading: () => null }
-);
+const LeagueEditModal = React.lazy(() => import("@/components/modal/league-edit-modal"));
 
 /** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
 const formatStatus = (status: string | undefined): string => {
@@ -125,7 +121,7 @@ export function LeaguesDataTable({
   isLoading,
   onDataChange,
 }: LeaguesDataTableProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Pagination
@@ -300,7 +296,7 @@ export function LeaguesDataTable({
                           </div>
                           <div className="min-w-0">
                             <Link
-                              href={`/league/view/${league.id}`}
+                              to={`/league/view/${league.id}`}
                               className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                             >
                               {league.name}
@@ -464,20 +460,22 @@ export function LeaguesDataTable({
 
       {/* Edit League Modal */}
       {editLeague && (
-        <LeagueEditModal
-          open={isEditOpen}
-          onOpenChange={(open) => {
-            if (!open) setEditLeague(null);
-            setIsEditOpen(open);
-          }}
-          league={{
-            ...editLeague,
-            location: editLeague.location ?? null,
-            createdAt: editLeague.createdAt instanceof Date ? editLeague.createdAt.toISOString() : editLeague.createdAt,
-            updatedAt: editLeague.updatedAt instanceof Date ? editLeague.updatedAt.toISOString() : editLeague.updatedAt,
-          } as LeagueEditType}
-          onLeagueUpdated={async () => { handleEditSuccess(); }}
-        />
+        <React.Suspense fallback={null}>
+          <LeagueEditModal
+            open={isEditOpen}
+            onOpenChange={(open) => {
+              if (!open) setEditLeague(null);
+              setIsEditOpen(open);
+            }}
+            league={{
+              ...editLeague,
+              location: editLeague.location ?? null,
+              createdAt: editLeague.createdAt instanceof Date ? editLeague.createdAt.toISOString() : editLeague.createdAt,
+              updatedAt: editLeague.updatedAt instanceof Date ? editLeague.updatedAt.toISOString() : editLeague.updatedAt,
+            } as LeagueEditType}
+            onLeagueUpdated={async () => { handleEditSuccess(); }}
+          />
+        </React.Suspense>
       )}
 
       {/* Delete Confirmation Dialog */}

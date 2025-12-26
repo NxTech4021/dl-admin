@@ -15,7 +15,7 @@ import {
   IconUsers,
   IconCalendar,
 } from "@tabler/icons-react";
-import dynamic from "next/dynamic";
+
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
