@@ -80,7 +80,11 @@ export default function ChatNav({
   selectedConversationId,
   onConversationSelect,
   onThreadCreated,
-}: ChatNavProps & { onThreadCreated?: () => Promise<void> | void }) {
+  forceMobileList = false,
+}: ChatNavProps & { 
+  onThreadCreated?: () => Promise<void> | void;
+  forceMobileList?: boolean;
+}) {
   const navigate = useNavigate();
   const mdUp = useResponsive();
   const {
@@ -162,10 +166,10 @@ export default function ChatNav({
     <Button
       onClick={onOpenMobile}
       variant="ghost"
-      className="fixed left-0 top-[84px] z-10 w-8 h-8 rounded-r-md bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 md:hidden"
+      className="fixed left-0 top-[68px] md:top-[84px] z-50 h-11 w-11 rounded-r-lg bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 md:hidden transition-all"
       aria-label="Open chat navigation"
     >
-      <Users className="w-4 h-4" />
+      <Users className="w-5 h-5" />
     </Button>
   );
 
@@ -232,7 +236,7 @@ export default function ChatNav({
               <ChatNavItem
                 conversation={conversation}
                 selected={conversation.id === selectedConversationId}
-                onCloseMobile={onCloseMobile}
+                onCloseMobile={forceMobileList ? undefined : onCloseMobile}
               />
             </motion.div>
           ))}
@@ -319,9 +323,9 @@ export default function ChatNav({
   // Main Render
   return (
     <>
-      {!mdUp && renderToggleBtn()}
+      {!mdUp && !forceMobileList && renderToggleBtn()}
 
-      {mdUp ? (
+      {mdUp || forceMobileList ? (
         <div className="h-full w-full flex flex-col">
           {renderContent()}
         </div>

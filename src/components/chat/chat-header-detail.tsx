@@ -1,9 +1,11 @@
 "use client";
 
 import { formatDistanceToNow } from 'date-fns';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, Users, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface Participant {
   id: string;
@@ -30,12 +32,14 @@ interface ChatHeaderDetailProps {
   participants: Participant[];
   conversation?: Conversation;
   onDetailsClick?: () => void;
+  onBack?: () => void;
 }
 
 export default function ChatHeaderDetail({
   participants = [],
   conversation,
-  onDetailsClick
+  onDetailsClick,
+  onBack
 }: ChatHeaderDetailProps) {
   const isGroup = conversation?.type === 'group';
   
@@ -83,7 +87,7 @@ export default function ChatHeaderDetail({
     <div className="flex items-center gap-3 flex-1">
       {/* Group Avatar */}
       <div className="relative">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-9 w-9 md:h-10 md:w-10">
           <AvatarImage
             src={conversation?.photoURL || conversation?.avatarUrl}
             alt={conversation?.displayName || 'Group Chat'}
@@ -101,10 +105,10 @@ export default function ChatHeaderDetail({
 
       {/* Group Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-semibold truncate">
+        <h3 className="text-sm md:text-[15px] font-semibold truncate">
           {conversation?.displayName || conversation?.name || 'Group Chat'}
         </h3>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
           <span>
             {totalMembers} members
@@ -126,7 +130,7 @@ export default function ChatHeaderDetail({
     <div className="flex items-center gap-3 flex-1">
       {/* Avatar with Status Badge */}
       <div className="relative">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-9 w-9 md:h-10 md:w-10">
           <AvatarImage
             src={otherParticipant?.photoURL || otherParticipant?.avatarUrl || conversation?.photoURL}
             alt={otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'User'}
@@ -145,10 +149,10 @@ export default function ChatHeaderDetail({
 
       {/* Participant Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-semibold truncate">
+        <h3 className="text-sm md:text-[15px] font-semibold truncate">
           {otherParticipant?.name || otherParticipant?.displayName || conversation?.displayName || 'Unknown User'}
         </h3>
-        <p className="text-xs text-muted-foreground truncate">
+        <p className="text-[10px] md:text-xs text-muted-foreground truncate">
           {otherParticipant?.status === 'offline'
             ? formatLastActivity(otherParticipant.lastActivity)
             : (
@@ -166,22 +170,48 @@ export default function ChatHeaderDetail({
   );
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 w-full py-1 px-2 -mx-2 rounded-xl transition-colors cursor-pointer",
-        onDetailsClick && "hover:bg-muted/50 active:bg-muted/70"
+    <div className="flex items-center gap-2 w-full">
+      {/* Mobile Back Button */}
+      {onBack && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+          className="md:hidden"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onBack();
+            }}
+            className="h-11 w-11 rounded-full flex-shrink-0"
+            aria-label="Back to conversations"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </motion.div>
       )}
-      onClick={onDetailsClick}
-      role={onDetailsClick ? "button" : undefined}
-      tabIndex={onDetailsClick ? 0 : undefined}
-      onKeyDown={onDetailsClick ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onDetailsClick();
-        }
-      } : undefined}
-    >
-      {isGroup ? renderGroup : renderSingle}
+      
+      {/* Main Content */}
+      <div
+        className={cn(
+          "flex items-center gap-2 md:gap-3 flex-1 py-1 px-2 -mx-2 rounded-xl transition-colors",
+          onDetailsClick && "cursor-pointer hover:bg-muted/50 active:bg-muted/70"
+        )}
+        onClick={onDetailsClick}
+        role={onDetailsClick ? "button" : undefined}
+        tabIndex={onDetailsClick ? 0 : undefined}
+        onKeyDown={onDetailsClick ? (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onDetailsClick();
+          }
+        } : undefined}
+      >
+        {isGroup ? renderGroup : renderSingle}
+      </div>
     </div>
   );
 }
