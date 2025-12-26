@@ -143,6 +143,14 @@ export function MatchFilters({
   return (
     <div className={className}>
       <FilterBar onClearAll={handleClear} showClearButton={!!hasActiveFilters}>
+        {/* Search Input */}
+        <SearchInput
+          value={searchQuery}
+          onChange={onSearchChange}
+          placeholder="Search matches..."
+          className="w-[200px]"
+        />
+
         {/* League Filter */}
         {leaguesLoading ? (
           <Skeleton className="h-9 w-[160px]" />
@@ -189,14 +197,6 @@ export function MatchFilters({
           options={MATCH_STATUSES}
           allLabel="All Statuses"
           triggerClassName="w-[160px]"
-        />
-
-        {/* Search Input */}
-        <SearchInput
-          value={searchQuery}
-          onChange={onSearchChange}
-          placeholder="Search matches..."
-          className="w-[200px]"
         />
 
         {/* Match Context Filter */}
