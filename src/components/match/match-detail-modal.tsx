@@ -220,30 +220,7 @@ export function MatchDetailModal({
             )}
 
             {/* Set Scores if available */}
-            {match.status === "COMPLETED" && (() => {
-              const scores = match.setScores as Array<{
-                setNumber?: number;
-                team1Games?: number;
-                team2Games?: number;
-              }> | null | undefined;
-              if (scores && Array.isArray(scores) && scores.length > 0) {
-                return (
-                  <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-center gap-3">
-                    {scores.map((set, idx) => (
-                      <div key={idx} className="text-center">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
-                          Set {set.setNumber || idx + 1}
-                        </div>
-                        <div className="font-mono text-sm font-semibold">
-                          {set.team1Games}-{set.team2Games}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {match.status === "COMPLETED" && <SetScoresDisplay setScores={match.setScores} sport={match.sport} />}
           </div>
 
           {/* DRAFT status explanation */}
@@ -749,6 +726,91 @@ function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string
         <span className="text-[10px] uppercase tracking-wider">{label}</span>
       </div>
       <p className="text-sm font-medium truncate">{value}</p>
+    </div>
+  );
+}
+
+/** Parse and normalize set scores from various backend formats */
+interface NormalizedSetScore {
+  setNumber: number;
+  team1Score: number;
+  team2Score: number;
+  team1Tiebreak?: number;
+  team2Tiebreak?: number;
+  hasTiebreak?: boolean;
+}
+
+function parseSetScores(setScores: unknown, _sport?: string | null): NormalizedSetScore[] {
+  if (!setScores) return [];
+
+  try {
+    // Parse if it's a JSON string
+    const parsed = typeof setScores === 'string' ? JSON.parse(setScores) : setScores;
+
+    // Handle array format (most common): [{ setNumber, team1Games, team2Games }, ...]
+    if (Array.isArray(parsed)) {
+      return parsed.map((set, idx) => ({
+        setNumber: set.setNumber ?? idx + 1,
+        team1Score: set.team1Games ?? set.player1Games ?? set.player1 ?? set.team1Points ?? set.player1Points ?? 0,
+        team2Score: set.team2Games ?? set.player2Games ?? set.player2 ?? set.team2Points ?? set.player2Points ?? 0,
+        team1Tiebreak: set.team1Tiebreak ?? set.player1Tiebreak,
+        team2Tiebreak: set.team2Tiebreak ?? set.player2Tiebreak,
+        hasTiebreak: set.hasTiebreak ?? (set.team1Tiebreak !== undefined || set.player1Tiebreak !== undefined),
+      }));
+    }
+
+    // Handle object with sets array: { sets: [{ player1, player2 }, ...] }
+    if (parsed.sets && Array.isArray(parsed.sets)) {
+      return parsed.sets.map((set: any, idx: number) => ({
+        setNumber: idx + 1,
+        team1Score: set.player1 ?? set.team1 ?? 0,
+        team2Score: set.player2 ?? set.team2 ?? 0,
+      }));
+    }
+
+    // Handle object with games array (pickleball): { games: [{ player1, player2 }, ...] }
+    if (parsed.games && Array.isArray(parsed.games)) {
+      return parsed.games.map((game: any, idx: number) => ({
+        setNumber: idx + 1,
+        team1Score: game.player1 ?? game.team1 ?? game.player1Points ?? game.team1Points ?? 0,
+        team2Score: game.player2 ?? game.team2 ?? game.player2Points ?? game.team2Points ?? 0,
+      }));
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+/** Set Scores Display Component */
+function SetScoresDisplay({ setScores, sport }: { setScores: unknown; sport?: string | null }) {
+  const normalizedScores = parseSetScores(setScores, sport);
+
+  if (normalizedScores.length === 0) return null;
+
+  const isPickleball = sport?.toLowerCase() === 'pickleball';
+  const setLabel = isPickleball ? 'Game' : 'Set';
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/50">
+      <div className="flex items-center justify-center gap-4">
+        {normalizedScores.map((set) => (
+          <div key={set.setNumber} className="text-center">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+              {setLabel} {set.setNumber}
+            </div>
+            <div className="font-mono text-sm font-semibold">
+              {set.team1Score}-{set.team2Score}
+              {set.hasTiebreak && set.team1Tiebreak !== undefined && set.team2Tiebreak !== undefined && (
+                <span className="text-xs text-muted-foreground ml-0.5">
+                  ({set.team1Tiebreak}-{set.team2Tiebreak})
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
