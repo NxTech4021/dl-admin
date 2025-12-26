@@ -7,13 +7,11 @@ import {
   IconEye,
   IconEdit,
   IconTrash,
-  IconFilter,
-  IconX,
-  IconChevronDown,
-  IconChevronUp,
-  IconUsers,
   IconCalendar,
   IconTrashX,
+  IconChevronLeft,
+  IconChevronRight,
+  IconTags,
 } from "@tabler/icons-react";
 
 import {
@@ -41,14 +39,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
+import { SearchInput } from "@/components/ui/search-input";
 import {
   Table,
   TableBody,
@@ -57,12 +50,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/constants/zod/category-schema";
 import { endpoints } from "@/lib/endpoints";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const CategoryEditModal = React.lazy(() => import("@/components/modal/category-edit-modal"));
 
@@ -74,30 +69,40 @@ const formatDate = (date: Date) => {
   });
 };
 
-const getGenderRestrictionBadgeVariant = (restriction: string) => {
+/** Get gender restriction badge styling with dark mode support */
+const getGenderBadgeClass = (restriction: string): string => {
   switch (restriction) {
     case "MALE":
-      return "default";
+      return "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800";
     case "FEMALE":
-      return "secondary";
+      return "text-pink-700 bg-pink-50 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-800";
     case "MIXED":
-      return "outline";
+      return "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800";
     case "OPEN":
-      return "destructive";
+      return "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
     default:
-      return "outline";
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
   }
 };
 
-const getGameTypeBadgeVariant = (gameType: string | null) => {
+/** Get game type badge styling with dark mode support */
+const getGameTypeBadgeClass = (gameType: string | null): string => {
   switch (gameType) {
     case "SINGLES":
-      return "default";
+      return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
     case "DOUBLES":
-      return "secondary";
+      return "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800";
     default:
-      return "outline";
+      return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
   }
+};
+
+/** Get status badge styling with dark mode support */
+const getStatusBadgeClass = (isActive: boolean): string => {
+  if (isActive) {
+    return "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+  }
+  return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
 };
 
 
@@ -178,6 +183,7 @@ const createColumns = (
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
+          onClick={(e) => e.stopPropagation()}
         />
       </div>
     ),
@@ -190,7 +196,7 @@ const createColumns = (
     cell: ({ row }) => {
       const category = row.original;
       return (
-        <div className="font-medium">{category.name || "Unnamed Category"}</div>
+        <div className="font-medium text-foreground">{category.name || "Unnamed Category"}</div>
       );
     },
     enableHiding: false,
@@ -201,7 +207,10 @@ const createColumns = (
     cell: ({ row }) => {
       const restriction = row.original.genderRestriction;
       return (
-        <Badge variant={getGenderRestrictionBadgeVariant(restriction)} className="capitalize">
+        <Badge
+          variant="outline"
+          className={cn("text-xs font-medium border capitalize", getGenderBadgeClass(restriction))}
+        >
           {restriction.toLowerCase()}
         </Badge>
       );
@@ -213,11 +222,14 @@ const createColumns = (
     cell: ({ row }) => {
       const gameType = row.original.gameType;
       return gameType ? (
-        <Badge variant={getGameTypeBadgeVariant(gameType)} className="capitalize">
+        <Badge
+          variant="outline"
+          className={cn("text-xs font-medium border capitalize", getGameTypeBadgeClass(gameType))}
+        >
           {gameType.toLowerCase()}
         </Badge>
       ) : (
-        <span className="text-muted-foreground">-</span>
+        <span className="text-muted-foreground text-sm">-</span>
       );
     },
   },
@@ -227,9 +239,9 @@ const createColumns = (
     cell: ({ row }) => {
       const format = row.original.matchFormat;
       return format ? (
-        <span className="text-sm">{format}</span>
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{format}</code>
       ) : (
-        <span className="text-muted-foreground">-</span>
+        <span className="text-muted-foreground text-sm">-</span>
       );
     },
   },
@@ -246,7 +258,10 @@ const createColumns = (
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={row.original.isActive ? "default" : "secondary"} className="capitalize">
+      <Badge
+        variant="outline"
+        className={cn("text-xs font-medium border", getStatusBadgeClass(row.original.isActive))}
+      >
         {row.original.isActive ? "Active" : "Inactive"}
       </Badge>
     ),
@@ -255,14 +270,15 @@ const createColumns = (
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconCalendar className="size-4 text-muted-foreground" />
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <IconCalendar className="size-3.5" />
         <span className="text-sm">{formatDate(row.original.createdAt)}</span>
       </div>
     ),
   },
   {
     id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => {
       const category = row.original;
 
@@ -271,40 +287,26 @@ const createColumns = (
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="hover:bg-muted hover:text-foreground transition-colors flex size-8"
+              className="size-8"
               size="icon"
+              onClick={(e) => e.stopPropagation()}
             >
               <IconDotsVertical className="size-4" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
-              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => {
-                // TODO: Implement view category functionality
-                console.log("View category:", category.id);
-              }}
-            >
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEditCategory(category.id)}>
               <IconEye className="mr-2 size-4" />
               View Details
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => handleEditCategory(category.id)}
-            >
-              <IconEdit className="mr-2 size-4" />
-              Edit Category
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
               variant="destructive"
-              className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
-              onClick={() => handleDeleteCategory(category.id)} // Remove the window.confirm here
+              onClick={() => handleDeleteCategory(category.id)}
             >
               <IconTrash className="mr-2 size-4" />
               Delete Category
@@ -572,247 +574,199 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     globalFilterFn: "includesString",
   });
 
+  // Filter options for FilterSelect
+  const gameTypeOptions: FilterOption[] = React.useMemo(() =>
+    uniqueGameTypes.map(type => ({ value: type, label: type.charAt(0) + type.slice(1).toLowerCase() })),
+    [uniqueGameTypes]
+  );
+
+  const genderOptions: FilterOption[] = React.useMemo(() =>
+    uniqueGenderRestrictions.map(gender => ({ value: gender, label: gender.charAt(0) + gender.slice(1).toLowerCase() })),
+    [uniqueGenderRestrictions]
+  );
+
+  const statusOptions: FilterOption[] = [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+  ];
+
+  // Pagination state
+  const currentPage = table.getState().pagination.pageIndex;
+  const totalPages = table.getPageCount();
+
   return (
-    <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="px-4 lg:px-6 space-y-4">
-        {/* Search Bar and Filter Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Search categories by name or match format..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-80"
-            />
+    <div className="space-y-4 px-4 lg:px-6">
+      {/* Filter Bar */}
+      <FilterBar
+        onClearAll={clearFilters}
+        showClearButton={hasActiveFilters}
+      >
+        <SearchInput
+          value={globalFilter ?? ""}
+          onChange={setGlobalFilter}
+          placeholder="Search categories..."
+          className="flex-1 min-w-[200px] max-w-sm"
+        />
+        <FilterSelect
+          value={gameTypeFilter === "all" ? undefined : gameTypeFilter}
+          onChange={(value) => setGameTypeFilter(value || "all")}
+          options={gameTypeOptions}
+          allLabel="All Game Types"
+          triggerClassName="w-[150px]"
+        />
+        <FilterSelect
+          value={genderRestrictionFilter === "all" ? undefined : genderRestrictionFilter}
+          onChange={(value) => setGenderRestrictionFilter(value || "all")}
+          options={genderOptions}
+          allLabel="All Genders"
+          triggerClassName="w-[140px]"
+        />
+        <FilterSelect
+          value={statusFilter === "all" ? undefined : statusFilter}
+          onChange={(value) => setStatusFilter(value || "all")}
+          options={statusOptions}
+          allLabel="All Status"
+          triggerClassName="w-[130px]"
+        />
+        {table.getFilteredSelectedRowModel().rows.length > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleBulkDelete}
+          >
+            <IconTrashX className="mr-2 size-4" />
+            Delete ({table.getFilteredSelectedRowModel().rows.length})
+          </Button>
+        )}
+      </FilterBar>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`${hasActiveFilters ? "border-primary bg-primary/10" : ""}`}
-            >
-              <IconFilter className="size-4 mr-2" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {(gameTypeFilter !== "all" ? 1 : 0) +
-                    (genderRestrictionFilter !== "all" ? 1 : 0) +
-                    (statusFilter !== "all" ? 1 : 0)}
-                </Badge>
-              )}
-              {showFilters ? (
-                <IconChevronUp className="size-4 ml-2" />
-              ) : (
-                <IconChevronDown className="size-4 ml-2" />
-              )}
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {table.getFilteredSelectedRowModel().rows.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete} // Remove the window.confirm here
-                className="mr-2"
-              >
-                <IconTrashX className="mr-2 size-4" />
-                Delete Selected ({table.getFilteredSelectedRowModel().rows.length})
-              </Button>
-            )}
-            <div className="text-sm text-muted-foreground">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} category(ies) selected
-            </div>
-          </div>
+      {/* Header with count */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{filteredData.length.toLocaleString()}</span>
+          <span className="text-sm text-muted-foreground">
+            {filteredData.length === 1 ? "category" : "categories"}
+            {hasActiveFilters && ` (filtered from ${data.length})`}
+          </span>
         </div>
-
-        {/* Filter Controls - Collapsible */}
-        {showFilters && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg border animate-in slide-in-from-top-2 duration-200">
-            {/* Game Type Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Game Type:</span>
-              <Select value={gameTypeFilter} onValueChange={setGameTypeFilter}>
-                <SelectTrigger
-                  className={`w-[140px] ${gameTypeFilter !== "all" ? "border-primary" : ""}`}
-                >
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {uniqueGameTypes.map((gameType) => (
-                    <SelectItem key={gameType} value={gameType} className="capitalize">
-                      {gameType.toLowerCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {gameTypeFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {gameTypeFilter.toLowerCase()}
-                </Badge>
-              )}
-            </div>
-
-            {/* Gender Restriction Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Gender:</span>
-              <Select value={genderRestrictionFilter} onValueChange={setGenderRestrictionFilter}>
-                <SelectTrigger
-                  className={`w-[140px] ${genderRestrictionFilter !== "all" ? "border-primary" : ""}`}
-                >
-                  <SelectValue placeholder="All Genders" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genders</SelectItem>
-                  {uniqueGenderRestrictions.map((restriction) => (
-                    <SelectItem key={restriction} value={restriction} className="capitalize">
-                      {restriction.toLowerCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {genderRestrictionFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {genderRestrictionFilter.toLowerCase()}
-                </Badge>
-              )}
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger
-                  className={`w-[140px] ${statusFilter !== "all" ? "border-primary" : ""}`}
-                >
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              {statusFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {statusFilter}
-                </Badge>
-              )}
-            </div>
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-2 lg:px-3"
-              >
-                <IconX className="size-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
-
-            {/* Active Filters Count */}
-            {hasActiveFilters && (
-              <div className="text-sm text-muted-foreground">
-                Showing {filteredData.length} of {data.length} categories
-              </div>
-            )}
-          </div>
+        {table.getFilteredSelectedRowModel().rows.length > 0 && (
+          <span className="text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} selected
+          </span>
         )}
       </div>
 
-      {/* Table Container */}
-      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
+      {/* Table */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-md" />
+          ))}
+        </div>
+      ) : filteredData.length > 0 ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-muted/50 hover:bg-muted/50">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className="py-2.5 font-medium text-xs"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
 
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Loading categories...
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
+                  className="cursor-pointer hover:bg-muted/30"
+                  onClick={() => handleEditCategory(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No categories found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="text-center py-16 rounded-md border bg-muted/10">
+          <IconTags className="size-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Categories Found</h3>
+          <p className="text-sm text-muted-foreground">
+            {hasActiveFilters
+              ? "Try adjusting your filters."
+              : "No categories have been created yet."}
+          </p>
+        </div>
+      )}
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <div className="text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} category(ies)
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage + 1} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <IconChevronLeft className="size-4 mr-1" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i;
+                } else if (currentPage <= 2) {
+                  pageNum = i;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNum = totalPages - 5 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    className="w-8 h-8 p-0"
+                    onClick={() => table.setPageIndex(pageNum)}
+                  >
+                    {pageNum + 1}
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+              <IconChevronRight className="size-4 ml-1" />
+            </Button>
+          </div>
         </div>
-
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Edit Category Modal */}
       {selectedCategoryId && (

@@ -1,7 +1,8 @@
 import React, { useState, lazy, Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { IconPlus, IconDownload, IconTags } from "@tabler/icons-react";
+import { IconPlus, IconTags } from "@tabler/icons-react";
 import { CategoriesDataTable } from "@/components/data-table/categories-data-table";
 
 const CategoryCreateModal = lazy(() => import("@/components/modal/category-create-modal"));
@@ -19,33 +20,20 @@ export default function Page() {
       <SiteHeader title="Categories" />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
-          {/* Page Header */}
-          <div className="px-4 lg:px-6 py-6 border-b border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <IconTags className="size-6 text-muted-foreground" />
-                <div>
-                  <h1 className="text-2xl font-semibold">Categories</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Manage tournament categories and their configurations
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <IconDownload className="mr-2 size-4" />
-                  Export
-                </Button>
-                <Button size="sm" onClick={() => setCreateModalOpen(true)}>
-                  <IconPlus className="mr-2 size-4" />
-                  Create Category
-                </Button>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            icon={IconTags}
+            title="Categories"
+            description="Manage tournament categories and their configurations"
+            actions={
+              <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+                <IconPlus className="mr-2 size-4" />
+                Create Category
+              </Button>
+            }
+          />
 
           {/* Data Table */}
-          <div className="flex-1 px-4 lg:px-6 pb-6">
+          <div className="flex-1 pb-6">
             <CategoriesDataTable refreshTrigger={refreshTrigger} />
           </div>
         </div>
