@@ -1,12 +1,12 @@
 
 
 import { formatDistanceToNowStrict } from "date-fns";
-import { Reply, Smile, Trash2, MoreHorizontal } from "lucide-react";
+import { Reply, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { useGetMessage } from "@/app/chat/hooks";
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,17 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 // import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-// Quick reactions for the reaction picker
-const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢'];
+import MatchMessageCard from "./match-message-card";
+import type { MatchData } from "@/constants/types/chat";
 
 // Reaction type for local state
 interface Reaction {
@@ -54,7 +48,6 @@ function ChatMessageItem({
   const { data: session } = useSession();
   const user = session?.user;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactions, setReactions] = useState<Reaction[]>(
     message.reactions || []
   );
@@ -70,6 +63,39 @@ function ChatMessageItem({
   const messageContent = message.content || message.body || "";
   const createdAt = message.createdAt;
   const isDeleted = message.isDeleted || false;
+
+  // Check if this is a match message
+  const matchData = useMemo((): MatchData | null => {
+    // Check for explicit match message type
+    if (message.messageType === "MATCH" && message.matchData) {
+      // Parse matchData if it's a string
+      if (typeof message.matchData === "string") {
+        try {
+          return JSON.parse(message.matchData);
+        } catch {
+          return null;
+        }
+      }
+      return message.matchData;
+    }
+    // Check for matchData object even without explicit messageType
+    if (message.matchData && typeof message.matchData === "object") {
+      return message.matchData;
+    }
+    return null;
+  }, [message.messageType, message.matchData]);
+
+  const isMatchMessage = matchData !== null;
+
+  // Render match message card if this is a match message
+  if (isMatchMessage && !isDeleted) {
+    return (
+      <MatchMessageCard
+        message={{ ...message, matchData }}
+        senderDetails={senderDetails}
+      />
+    );
+  }
 
   const handleReply = () => {
     if (onReply && !isDeleted) {
@@ -114,7 +140,6 @@ function ChatMessageItem({
       // New reaction
       return [...prev, { emoji, count: 1, isSelected: true }];
     });
-    setShowReactionPicker(false);
   };
 
   const isReplyMine = message.repliesTo?.sender?.id === user?.id;
@@ -249,107 +274,56 @@ function ChatMessageItem({
   );
 
 
-  const renderTimestampAndActions = (
+  const renderTimestamp = (
     <div
       className={cn(
-        "flex items-center gap-1.5 mt-1",
-        me ? "flex-row-reverse" : "flex-row"
+        "flex items-center mt-1",
+        me ? "justify-end" : "justify-start"
       )}
     >
-      {/* Timestamp - smaller, closer to bubble */}
       <span className="text-[10px] text-muted-foreground/60 px-1">
         {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
       </span>
-
-      {/* Actions - only show if not deleted */}
-      {!isDeleted && (
-        <AnimatePresence>
-          {showActions && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="flex items-center gap-0.5"
-            >
-              {/* Reply Button */}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 hover:bg-muted rounded-full"
-                onClick={handleReply}
-                title="Reply to message"
-              >
-                <Reply className="h-3.5 w-3.5" />
-              </Button>
-
-              {/* React Button with Popover */}
-              <Popover open={showReactionPicker} onOpenChange={setShowReactionPicker}>
-                <PopoverTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0 hover:bg-muted rounded-full"
-                    title="React to message"
-                  >
-                    <Smile className="h-3.5 w-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="top"
-                  align="center"
-                  className="p-0 border-none bg-transparent shadow-none w-auto"
-                  sideOffset={8}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="flex gap-1 p-1.5 bg-popover rounded-full shadow-lg border"
-                  >
-                    {QUICK_REACTIONS.map((emoji) => (
-                      <motion.button
-                        key={emoji}
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleReaction(emoji)}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-full text-lg transition-colors"
-                      >
-                        {emoji}
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Delete Button - only for own messages */}
-              {me && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive rounded-full"
-                  onClick={handleDelete}
-                  title="Delete message"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              )}
-
-              {/* More Options */}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 hover:bg-muted rounded-full"
-                title="More options"
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
     </div>
+  );
+
+  const renderFloatingActions = (
+    <AnimatePresence>
+      {showActions && !isDeleted && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.1 }}
+          className={cn(
+            "absolute -top-8 z-10 flex items-center gap-0.5",
+            "bg-background/95 backdrop-blur-sm rounded-full px-1 py-0.5 shadow-md border",
+            me ? "right-0" : "left-0"
+          )}
+        >
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 hover:bg-muted rounded-full"
+            onClick={handleReply}
+            title="Reply to message"
+          >
+            <Reply className="h-3.5 w-3.5" />
+          </Button>
+          {me && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive rounded-full"
+              onClick={handleDelete}
+              title="Delete message"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 
   return (
@@ -361,10 +335,7 @@ function ChatMessageItem({
           isDeleted && "opacity-50"
         )}
         onMouseEnter={() => setShowActions(true)}
-        onMouseLeave={() => {
-          setShowActions(false);
-          setShowReactionPicker(false);
-        }}
+        onMouseLeave={() => setShowActions(false)}
       >
         {/* Avatar only for received messages, positioned at bottom */}
         {!me && (
@@ -384,8 +355,12 @@ function ChatMessageItem({
           )}
         >
           {renderSenderName}
-          {renderBody}
-          {renderTimestampAndActions}
+          {/* Wrapper for bubble and floating actions */}
+          <div className="relative">
+            {renderFloatingActions}
+            {renderBody}
+          </div>
+          {renderTimestamp}
         </div>
       </div>
 

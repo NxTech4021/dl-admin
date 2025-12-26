@@ -36,6 +36,42 @@ export interface ThreadMember {
   user: ChatUser;
 }
 
+// Match Participant for match messages
+export interface MatchParticipant {
+  id: string;
+  odId?: string;
+  userId: string;
+  name?: string;
+  username?: string;
+  image?: string;
+  invitationStatus: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  team?: string;
+  role?: 'CREATOR' | 'OPPONENT' | 'PARTNER' | 'INVITED';
+}
+
+// Match Data embedded in match messages
+export interface MatchData {
+  matchId: string;
+  matchType: 'SINGLES' | 'DOUBLES';
+  sportType: 'PICKLEBALL' | 'TENNIS' | 'PADEL';
+  date: string;
+  time: string;
+  duration: number;
+  numberOfPlayers?: string;
+  location: string;
+  fee: 'FREE' | 'SPLIT' | 'FIXED';
+  feeAmount?: string;
+  courtBooked?: boolean;
+  leagueName?: string;
+  description?: string;
+  isFriendly?: boolean;
+  isFriendlyRequest?: boolean;
+  requestStatus?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+  requestExpiresAt?: string;
+  status?: 'DRAFT' | 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED' | 'VOID';
+  participants?: MatchParticipant[];
+}
+
 // Message Interface
 export interface Message {
   id: string;
@@ -52,6 +88,10 @@ export interface Message {
   };
   repliesTo?: Message;
   readBy?: any[];
+  // Match message fields
+  messageType?: 'TEXT' | 'MATCH' | 'SYSTEM';
+  matchId?: string;
+  matchData?: MatchData;
 }
 
 // Message Read Status
