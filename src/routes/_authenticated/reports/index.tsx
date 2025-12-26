@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   BarChart3,
@@ -121,11 +122,13 @@ function ReportsPage() {
   ];
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={BarChart3}
-          title="Reports"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={BarChart3}
+            title="Reports"
           description="Generate and view reports to gain insights into league operations, player activity, and system performance."
         />
 
@@ -140,8 +143,9 @@ function ReportsPage() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

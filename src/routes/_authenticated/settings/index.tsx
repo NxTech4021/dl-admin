@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { IconSettings, IconClock, IconBug } from "@tabler/icons-react";
 import { InactivitySettingsCard } from "@/components/settings/inactivity-settings-card";
@@ -10,11 +11,13 @@ export const Route = createFileRoute("/_authenticated/settings/")({
 
 function SettingsPage() {
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={IconSettings}
-          title="Settings"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={IconSettings}
+            title="Settings"
           description="Configure system-wide settings and preferences"
         />
 
@@ -36,8 +39,9 @@ function SettingsPage() {
               <BugReportSettingsCard />
             </section>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

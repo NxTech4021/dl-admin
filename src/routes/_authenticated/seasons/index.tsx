@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import React, { lazy, Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { StatsGrid } from "@/components/ui/stats-grid";
@@ -109,11 +110,13 @@ function SeasonsPage() {
     : 0;
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={IconCalendar}
-          title="Seasons Management"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={IconCalendar}
+            title="Seasons Management"
           description="Manage league seasons and tournaments"
           actions={
             <>
@@ -177,8 +180,9 @@ function SeasonsPage() {
               onRefresh={fetchSeasons}
             />
           </Suspense>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

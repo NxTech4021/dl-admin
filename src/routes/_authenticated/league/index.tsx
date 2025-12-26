@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useState, useCallback, lazy, Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { StatsGrid } from "@/components/ui/stats-grid";
@@ -98,11 +99,13 @@ function LeaguePage() {
   const leagues = data;
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={IconTrophy}
-          title="League Management"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={IconTrophy}
+            title="League Management"
           description="Manage leagues, seasons, and player memberships"
           actions={
             <>
@@ -155,8 +158,9 @@ function LeaguePage() {
               onDataChange={fetchLeagues}
             />
           </Suspense>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

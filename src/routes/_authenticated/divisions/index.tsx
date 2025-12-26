@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { IconCategory, IconPlus } from "@tabler/icons-react";
@@ -34,11 +35,13 @@ function DivisionsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={IconCategory}
-          title="Divisions"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={IconCategory}
+            title="Divisions"
           description="Manage league divisions and player assignments"
           actions={
             <>
@@ -64,8 +67,9 @@ function DivisionsPage() {
           <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
             <DivisionsDataTable key={refreshKey} />
           </Suspense>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

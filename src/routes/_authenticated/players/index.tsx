@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react";
@@ -17,11 +18,13 @@ export const Route = createFileRoute("/_authenticated/players/")({
 
 function PlayersPage() {
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <PageHeader
-          icon={IconUsers}
-          title="Players"
+    <>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <PageHeader
+            icon={IconUsers}
+            title="Players"
           description="Manage and view all registered players in the system"
           actions={
             <>
@@ -43,8 +46,9 @@ function PlayersPage() {
           <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
             <PlayersDataTable />
           </Suspense>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
