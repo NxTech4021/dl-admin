@@ -261,15 +261,15 @@ export function LeaguesDataTable({
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
-                  <TableHead className="py-2.5 font-medium text-xs">League</TableHead>
-                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Sport</TableHead>
-                  <TableHead className="w-[150px] py-2.5 font-medium text-xs">Location</TableHead>
-                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
-                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Game Type</TableHead>
-                  <TableHead className="w-[90px] py-2.5 font-medium text-xs">Players</TableHead>
-                  <TableHead className="w-[90px] py-2.5 font-medium text-xs">Seasons</TableHead>
-                  <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
+                  <TableHead className="w-[60px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                  <TableHead className="min-w-[250px] py-2.5 font-medium text-xs">League</TableHead>
+                  <TableHead className="w-[120px] py-2.5 font-medium text-xs">Sport</TableHead>
+                  <TableHead className="w-[180px] py-2.5 font-medium text-xs">Location</TableHead>
+                  <TableHead className="w-[110px] py-2.5 font-medium text-xs">Status</TableHead>
+                  <TableHead className="w-[120px] py-2.5 font-medium text-xs">Game Type</TableHead>
+                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Players</TableHead>
+                  <TableHead className="w-[100px] py-2.5 font-medium text-xs">Seasons</TableHead>
+                  <TableHead className="w-[80px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,15 +297,10 @@ export function LeaguesDataTable({
                           <div className="min-w-0">
                             <Link
                               to={`/league/view/${league.id}`}
-                              className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
+                              className="font-medium hover:text-primary transition-colors"
                             >
                               {league.name}
                             </Link>
-                            {league.createdAt && (
-                              <span className="text-xs text-muted-foreground">
-                                Created {formatTableDate(league.createdAt)}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </TableCell>
