@@ -42,31 +42,31 @@ function DivisionsPage() {
           <PageHeader
             icon={IconCategory}
             title="Divisions"
-          description="Manage league divisions and player assignments"
-          actions={
-            <>
-              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                <IconPlus className="mr-2 size-4" />
-                Create Division
-              </Button>
-              <Suspense fallback={null}>
-                <DivisionCreateModal
-                  open={isCreateModalOpen}
-                  onOpenChange={setIsCreateModalOpen}
-                  onDivisionCreated={handleDivisionCreated}
-                  adminId={adminId}
-                />
-              </Suspense>
-            </>
-          }
-        >
-          <DivisionStatsCards />
-        </PageHeader>
+            description="Manage league divisions and player assignments"
+            actions={
+              <>
+                <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                  <IconPlus className="mr-2 size-4" />
+                  Create Division
+                </Button>
+                <Suspense fallback={null}>
+                  <DivisionCreateModal
+                    open={isCreateModalOpen}
+                    onOpenChange={setIsCreateModalOpen}
+                    onDivisionCreated={handleDivisionCreated}
+                    adminId={adminId}
+                  />
+                </Suspense>
+              </>
+            }
+          >
+            <DivisionStatsCards />
+          </PageHeader>
 
-        <div className="flex-1 px-4 lg:px-6 pb-6">
-          <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-            <DivisionsDataTable key={refreshKey} />
-          </Suspense>
+          <div className="flex-1 px-4 lg:px-6 pb-6">
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+              <DivisionsDataTable key={refreshKey} />
+            </Suspense>
           </div>
         </div>
       </div>

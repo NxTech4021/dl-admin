@@ -6,21 +6,8 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {
     const { auth } = context;
 
-    // Wait for auth loading to complete
-    if (auth?.isLoading) {
-      await new Promise<void>((resolve) => {
-        const checkAuth = () => {
-          if (!auth.isLoading) {
-            resolve();
-          } else {
-            setTimeout(checkAuth, 50);
-          }
-        };
-        checkAuth();
-      });
-    }
-
-    // Redirect to login if not authenticated
+    // Auth is guaranteed to be loaded (handled in main.tsx)
+    // Simply check if authenticated and redirect to login if not
     if (!auth?.isAuthenticated) {
       throw redirect({
         to: "/login",

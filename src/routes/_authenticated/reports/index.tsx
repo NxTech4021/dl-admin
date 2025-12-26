@@ -129,20 +129,20 @@ function ReportsPage() {
           <PageHeader
             icon={BarChart3}
             title="Reports"
-          description="Generate and view reports to gain insights into league operations, player activity, and system performance."
-        />
+            description="Generate and view reports to gain insights into league operations, player activity, and system performance."
+          />
 
-        <div className="flex-1 px-4 lg:px-6 pb-6 space-y-8">
-          {reportCategories.map((category) => (
-            <div key={category.title} className="space-y-4">
-              <h2 className="text-xl font-semibold">{category.title}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {category.reports.map((report) => (
-                  <ReportCard key={report.title} {...report} />
-                ))}
+          <div className="flex-1 px-4 lg:px-6 pb-6 space-y-8">
+            {reportCategories.map((category) => (
+              <div key={category.title} className="space-y-4">
+                <h2 className="text-xl font-semibold">{category.title}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {category.reports.map((report) => (
+                    <ReportCard key={report.title} {...report} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         </div>
       </div>

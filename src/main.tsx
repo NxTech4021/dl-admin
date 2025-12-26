@@ -49,11 +49,21 @@ declare module "@tanstack/react-router" {
 function InnerApp() {
   const { data: session, isPending } = useSession();
 
+  // Don't render router until initial auth check completes
+  // This prevents race conditions with protected route guards
+  if (isPending) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   const auth = {
     isAuthenticated: !!session?.user,
     user: session?.user ?? null,
     session: session,
-    isLoading: isPending,
+    isLoading: false, // Always false once we render - auth is loaded
   };
 
   return <RouterProvider router={router} context={{ auth, queryClient }} />;
