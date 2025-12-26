@@ -9,7 +9,6 @@ import {
   Grid3x3,
   Swords,
   CreditCard,
-  MessageSquare,
   MessageCircle,
   Shield,
   Bug,
@@ -147,15 +146,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Admins",
             url: "/admin",
             icon: Shield,
-          },
-          {
-            title: "Feedback",
-            url: "/feedback",
-            icon: MessageSquare,
-            badge: unreadCount > 0 ? {
-              count: unreadCount,
-              variant: "warning" as const,
-            } : undefined,
           },
         ],
       },
