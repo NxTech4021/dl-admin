@@ -46,12 +46,12 @@ function calculateTrend(
 
 function KPICardSkeleton() {
   return (
-    <Card className="relative overflow-hidden h-full flex flex-col border-border/40">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+    <Card className="relative overflow-hidden h-full flex flex-col border border-border">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
         <Skeleton className="h-3 w-20" />
         <Skeleton className="h-4 w-4 rounded" />
       </CardHeader>
-      <CardContent className="flex-1 px-5 pb-5">
+      <CardContent className="flex-1 px-4 pb-4">
         <Skeleton className="h-9 w-24 mb-3" />
         <Skeleton className="h-3 w-28" />
       </CardContent>
@@ -80,8 +80,8 @@ function KPICard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden h-full flex flex-col border-border/40",
-        onClick && "cursor-pointer"
+        "relative overflow-hidden h-full flex flex-col border border-border",
+        onClick && "cursor-pointer hover:bg-muted/30 transition-colors"
       )}
       onClick={onClick}
       onKeyDown={(e) => {
@@ -94,13 +94,13 @@ function KPICard({
       tabIndex={onClick ? 0 : undefined}
       aria-label={onClick ? `${title}: ${formatValue(value, format)}. Click for details.` : undefined}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
         <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {title}
         </CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground/60" />
       </CardHeader>
-      <CardContent className="flex-1 px-5 pb-5">
+      <CardContent className="flex-1 px-4 pb-4">
         <div className="text-3xl font-semibold tracking-tight tabular-nums">
           {formatValue(value, format)}
         </div>
@@ -206,7 +206,7 @@ export function TopKPICards() {
   if (!kpiData) {
     return (
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-full p-6 text-center text-muted-foreground border-border/40">
+        <Card className="col-span-full p-6 text-center text-muted-foreground border border-border">
           No dashboard data available
         </Card>
       </div>
@@ -279,7 +279,7 @@ export function TopKPICards() {
             </div>
 
             {details?.previousValue && (
-              <div className="flex items-center justify-between p-4 rounded-lg border border-border/40">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border">
                 <span className="text-sm font-medium text-muted-foreground">
                   Previous Period
                 </span>

@@ -43,7 +43,7 @@ interface UserGrowthChartProps {
 
 function ChartSkeleton() {
   return (
-    <Card className="h-full flex flex-col border-border/40">
+    <Card className="h-full flex flex-col border border-border">
       <CardHeader className="pb-0 pt-5 px-5 shrink-0">
         <Skeleton className="h-5 w-32 mb-1" />
         <Skeleton className="h-3 w-48" />
@@ -115,7 +115,7 @@ export function UserGrowthChart({
 
   if (error || !chartData || chartData.length === 0) {
     return (
-      <Card className="h-full flex flex-col border-border/40">
+      <Card className="h-full flex flex-col border border-border">
         <CardHeader className="pb-0 pt-5 px-5 shrink-0">
           <CardTitle className="text-base font-medium">User Growth</CardTitle>
           <CardDescription className="text-xs">No data available</CardDescription>
@@ -130,7 +130,7 @@ export function UserGrowthChart({
   }
 
   return (
-    <Card className="h-full flex flex-col border-border/40">
+    <Card className="h-full flex flex-col border border-border">
       <CardHeader className="pb-0 pt-5 px-5 shrink-0">
         <CardTitle className="text-base font-medium">User Growth</CardTitle>
         <CardDescription className="text-xs">

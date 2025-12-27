@@ -38,7 +38,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMatchActivity } from "@/hooks/use-queries";
 import { MatchActivity } from "@/constants/zod/dashboard-schema";
@@ -107,7 +106,7 @@ interface MatchActivityChartProps {
 
 function ChartSkeleton() {
   return (
-    <Card>
+    <Card className="border border-border">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <Skeleton className="h-6 w-48" />
@@ -244,7 +243,7 @@ export function MatchActivityChart({
 
   if (error || !chartData || chartData.length === 0) {
     return (
-      <Card>
+      <Card className="border border-border">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
           <div className="grid flex-1 gap-1 text-center sm:text-left">
             <CardTitle>Match Activity</CardTitle>
@@ -261,7 +260,7 @@ export function MatchActivityChart({
   }
 
   return (
-    <Card>
+    <Card className="border border-border">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-2 sm:flex-row">
         <div className="grid flex-1 gap-1 text-center sm:text-left">
           <CardTitle>Match Activity</CardTitle>
@@ -303,18 +302,30 @@ export function MatchActivityChart({
             </SelectContent>
           </Select>
 
-          <ToggleGroup
-            type="single"
-            value={chartType}
-            onValueChange={(value) => value && setChartType(value as ChartType)}
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-          >
-            <ToggleGroupItem value="line" className="h-9 sm:h-10 touch-manipulation">Line</ToggleGroupItem>
-
-            <ToggleGroupItem value="bar" className="h-9 sm:h-10 touch-manipulation">Bar</ToggleGroupItem>
-          </ToggleGroup>
+          <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 shrink-0 border border-border/50">
+            <button
+              onClick={() => setChartType("line")}
+              className={cn(
+                "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer h-9 sm:h-8 touch-manipulation",
+                chartType === "line"
+                  ? "bg-background text-foreground shadow-sm border border-border/50"
+                  : "text-foreground/70 hover:text-foreground"
+              )}
+            >
+              Line
+            </button>
+            <button
+              onClick={() => setChartType("bar")}
+              className={cn(
+                "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer h-9 sm:h-8 touch-manipulation",
+                chartType === "bar"
+                  ? "bg-background text-foreground shadow-sm border border-border/50"
+                  : "text-foreground/70 hover:text-foreground"
+              )}
+            >
+              Bar
+            </button>
+          </div>
         </div>
       </CardHeader>
 
@@ -537,7 +548,7 @@ export function MatchActivityChart({
 
         {sportFilter !== "all" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
-            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border border-border bg-muted/50">
               <div className="flex items-center gap-2">
                 <div
                   className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"
@@ -565,7 +576,7 @@ export function MatchActivityChart({
               </div>
             </div>
 
-            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border bg-muted/50">
+            <div className="flex flex-col space-y-2 p-3 sm:p-4 rounded-lg border border-border bg-muted/50">
               <div className="flex items-center gap-2">
                 <div
                   className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0"

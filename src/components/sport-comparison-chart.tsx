@@ -46,7 +46,7 @@ interface SportComparisonChartProps {
 
 function ChartSkeleton() {
   return (
-    <Card className="h-full flex flex-col border-border/40">
+    <Card className="h-full flex flex-col border border-border">
       <CardHeader className="pb-0 pt-5 px-5 shrink-0">
         <div className="flex items-start justify-between">
           <div>
@@ -109,7 +109,7 @@ export function SportComparisonChart({
 
   if (error || !chartData || chartData.length === 0) {
     return (
-      <Card className="h-full flex flex-col border-border/40">
+      <Card className="h-full flex flex-col border border-border">
         <CardHeader className="pb-0 pt-5 px-5 shrink-0">
           <CardTitle className="text-base font-medium">Sport Comparison</CardTitle>
           <CardDescription className="text-xs">No data available</CardDescription>
@@ -124,7 +124,7 @@ export function SportComparisonChart({
   }
 
   return (
-    <Card className="h-full flex flex-col border-border/40">
+    <Card className="h-full flex flex-col border border-border">
       <CardHeader className="pb-0 pt-5 px-5 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div>

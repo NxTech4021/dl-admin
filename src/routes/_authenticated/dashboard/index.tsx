@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { TopKPICards } from "@/components/kpi-cards";
-import { AnimatedContainer } from "@/components/ui/animated-container";
 import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
 import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
@@ -11,6 +10,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
+import {
+  settingsContainerVariants,
+  settingsCardVariants,
+  defaultTransition,
+} from "@/lib/animation-variants";
 
 // Lazy load heavy chart components
 const UserGrowthChart = lazy(() =>
@@ -98,35 +103,57 @@ function DashboardPage() {
     <>
       <SiteHeader />
 
-      <div className="flex flex-1 flex-col">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={settingsContainerVariants}
+        className="flex flex-1 flex-col"
+      >
         {/* Minimal Page Header */}
-        <div className="px-6 md:px-8 py-8 border-b border-border/50">
+        <motion.div
+          variants={settingsCardVariants}
+          transition={defaultTransition}
+          className="px-6 md:px-8 py-8 border-b border-border/50"
+        >
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Monitor key metrics and performance
           </p>
-        </div>
+        </motion.div>
 
-        {/* KPI Cards with stagger animation */}
-        <AnimatedContainer delay={0.05} className="px-6 md:px-8 py-6">
+        {/* KPI Cards Section */}
+        <motion.div
+          variants={settingsCardVariants}
+          transition={defaultTransition}
+          className="px-6 md:px-8 py-6"
+        >
           <TopKPICards />
-        </AnimatedContainer>
+        </motion.div>
 
         {/* Minimal Inline Filters */}
-        <DashboardChartFilters
-          chartRange={chartRange}
-          historyRange={historyRange}
-          lastUpdated={lastUpdated}
-          showKeyboardHelp={showKeyboardHelp}
-          onChartRangeChange={handleChartRangeChange}
-          onHistoryRangeChange={handleHistoryRangeChange}
-          onRefresh={handleRefresh}
-          onExport={exportDashboardCSV}
-          onKeyboardHelpChange={setShowKeyboardHelp}
-        />
+        <motion.div
+          variants={settingsCardVariants}
+          transition={defaultTransition}
+        >
+          <DashboardChartFilters
+            chartRange={chartRange}
+            historyRange={historyRange}
+            lastUpdated={lastUpdated}
+            showKeyboardHelp={showKeyboardHelp}
+            onChartRangeChange={handleChartRangeChange}
+            onHistoryRangeChange={handleHistoryRangeChange}
+            onRefresh={handleRefresh}
+            onExport={exportDashboardCSV}
+            onKeyboardHelpChange={setShowKeyboardHelp}
+          />
+        </motion.div>
 
         {/* Charts Section */}
-        <AnimatedContainer delay={0.15} className="px-6 md:px-8 py-6">
+        <motion.div
+          variants={settingsCardVariants}
+          transition={defaultTransition}
+          className="px-6 md:px-8 py-6"
+        >
           <h2 className="text-lg font-medium mb-6">Analytics</h2>
 
           {/* Equal-height 2-column grid */}
@@ -151,10 +178,14 @@ function DashboardPage() {
               </Suspense>
             </div>
           </div>
-        </AnimatedContainer>
+        </motion.div>
 
         {/* Match Activity */}
-        <AnimatedContainer delay={0.25} className="px-6 md:px-8 pb-8">
+        <motion.div
+          variants={settingsCardVariants}
+          transition={defaultTransition}
+          className="px-6 md:px-8 pb-8"
+        >
           <div className="relative">
             <ChartLoadingOverlay isLoading={isChartLoading} />
             <Suspense fallback={<ChartSkeleton />}>
@@ -164,8 +195,8 @@ function DashboardPage() {
               />
             </Suspense>
           </div>
-        </AnimatedContainer>
-      </div>
+        </motion.div>
+      </motion.div>
     </>
   );
 }
