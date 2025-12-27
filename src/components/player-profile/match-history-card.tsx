@@ -352,7 +352,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             matches.
           </p>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/leagues">Browse Leagues</Link>
+            <Link to="/league">Browse Leagues</Link>
           </Button>
         </CardContent>
       </Card>
@@ -541,7 +541,8 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                               </div>
                               {match.opponents[0]?.id ? (
                                 <Link
-                                  to={`/players/${match.opponents[0].id}`}
+                                  to="/players/$playerId"
+                                  params={{ playerId: match.opponents[0].id }}
                                   className="text-sm font-medium hover:text-primary transition-colors"
                                 >
                                   {match.opponentName || match.opponents.map((o: OpponentInfo) => o.name || o.username).filter(Boolean).join(" & ") || "Unknown"}
@@ -578,14 +579,16 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                               <div className="text-sm">
                                 {match.division.league && (
                                   <Link
-                                    to={`/league/view/${match.division.league.id}`}
+                                    to="/league/view/$leagueId"
+                                    params={{ leagueId: match.division.league.id }}
                                     className="text-muted-foreground hover:text-primary transition-colors block truncate max-w-[200px]"
                                   >
                                     {match.division.league.name}
                                   </Link>
                                 )}
                                 <Link
-                                  to={`/divisions/${match.division.id}`}
+                                  to="/divisions/$divisionId"
+                                  params={{ divisionId: match.division.id }}
                                   className="text-xs text-muted-foreground hover:text-primary transition-colors"
                                 >
                                   {match.division.name}

@@ -55,7 +55,8 @@ export function SeasonHistoryTab({
                     <div>
                       <h4 className="font-semibold flex items-center gap-3">
                         <Link
-                          to={`/seasons/${season.id}`}
+                          to="/seasons/$seasonId"
+                          params={{ seasonId: season.id }}
                           className="hover:underline"
                         >
                           {season.name}
@@ -63,7 +64,8 @@ export function SeasonHistoryTab({
                       </h4>
                       <p className="text-sm text-muted-foreground">
                         <Link
-                          to={`/league/view/${season.category.league.id}`}
+                          to="/league/view/$leagueId"
+                          params={{ leagueId: season.category.league.id }}
                           className="hover:underline"
                         >
                           {season.category.league.name}
@@ -81,7 +83,8 @@ export function SeasonHistoryTab({
                           Division:{" "}
                           {season.membership.division?.id ? (
                             <Link
-                              to={`/league/divisions/${season.membership.division.id}`}
+                              to="/divisions/$divisionId"
+                              params={{ divisionId: season.membership.division.id }}
                               className="hover:underline"
                             >
                               {season.membership.division.name}
