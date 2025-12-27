@@ -107,7 +107,8 @@ export default function CategoryEditModal({
     onOpenChange(false);
   };
 
-  const leagues = category?.leagues || [];
+  // Note: leagues may come from API but not in schema - use type assertion
+  const leagues = (category as Category & { leagues?: Array<{ id: string; name: string }> })?.leagues || [];
   const seasons = category?.seasons || [];
 
   return (

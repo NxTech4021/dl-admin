@@ -87,7 +87,7 @@ export function NavUser({ user }: { user: User }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link to="/admin/account" className="flex items-center gap-2 cursor-pointer">
+                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
                   <UserCircle className="size-4" />
                   Account
                 </Link>
