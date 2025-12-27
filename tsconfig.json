@@ -30,5 +30,5 @@
     "types": ["vite/client", "node"]
   },
   "include": ["src", "src/vite-env.d.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/__tests__"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "src/__tests__", "src/app"]
 }
