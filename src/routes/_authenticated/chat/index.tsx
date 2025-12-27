@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Loader2, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { SiteHeader } from "@/components/site-header";
 import ChatNav from "@/components/chat/chat-nav";
 import ChatHeaderDetail from "@/components/chat/chat-header-detail";
 import ChatMessageList from "@/components/chat/chat-message-list";
@@ -41,6 +42,7 @@ function ChatPage() {
     loading: threadsLoading,
     error: threadsError,
     refetch: refetchThreads,
+    updateThreadLastMessage,
   } = useChatData(user?.id);
 
   const {
@@ -162,14 +164,18 @@ function ChatPage() {
         return;
       }
       try {
-        await sendMessage(content, user.id, replyingTo?.id);
+        const newMessage = await sendMessage(content, user.id, replyingTo?.id);
         setReplyingTo(null);
+        // Update the thread list with the new message
+        if (newMessage) {
+          updateThreadLastMessage(selectedConversationId, newMessage);
+        }
       } catch (error) {
         console.error("Failed to send message:", error);
         toast.error("Failed to send message. Please try again.");
       }
     },
-    [sendMessage, user?.id, selectedConversationId, replyingTo]
+    [sendMessage, user?.id, selectedConversationId, replyingTo, updateThreadLastMessage]
   );
 
   const handleConversationSelect = useCallback(
@@ -179,28 +185,35 @@ function ChatPage() {
     [navigate]
   );
 
+  const handleBackToConversations = useCallback(() => {
+    navigate({ to: "/chat", search: { id: "" } });
+  }, [navigate]);
+
   if (threadsLoading && threads.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center h-[calc(100vh-4rem)]">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark flex items-center justify-center">
-              <MessageSquare className="w-8 h-8 text-white" />
+      <div className="absolute inset-0 flex flex-col">
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark flex items-center justify-center">
+                <MessageSquare className="w-8 h-8 text-white" />
+              </div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-2 border-2 border-brand-light/30 border-t-brand-light rounded-full"
+              />
             </div>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-2 border-2 border-brand-light/30 border-t-brand-light rounded-full"
-            />
-          </div>
-          <p className="text-sm text-muted-foreground font-medium">
-            Loading conversations...
-          </p>
-        </motion.div>
+            <p className="text-sm text-muted-foreground font-medium">
+              Loading conversations...
+            </p>
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -210,16 +223,16 @@ function ChatPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-      className="flex-1 flex items-center justify-center px-8"
+      className="flex-1 flex items-center justify-center px-4 md:px-8"
     >
       <div className="text-center max-w-sm">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
           <MessageSquare className="w-10 h-10 text-muted-foreground/40" />
         </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">
+        <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2">
           No conversation selected
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs md:text-sm text-muted-foreground">
           Choose a chat from the sidebar to start messaging
         </p>
       </div>
@@ -227,12 +240,13 @@ function ChatPage() {
   );
 
   const renderHeader = () => (
-    <div className="flex items-center px-4 py-3 min-h-[68px] border-b bg-background sticky top-0 z-10">
+    <div className="flex items-center px-3 md:px-4 py-2 md:py-3 min-h-[60px] md:min-h-[68px] border-b bg-background sticky top-0 z-10">
       {selectedConversationId && currentConversation ? (
         <ChatHeaderDetail
           participants={participants}
           conversation={currentConversation}
           onDetailsClick={handleOpenDetails}
+          onBack={handleBackToConversations}
         />
       ) : (
         <div className="flex items-center gap-3">
@@ -278,9 +292,11 @@ function ChatPage() {
   };
 
   return (
-    <>
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-        <div className="w-[340px] flex-shrink-0 border-r border-border/40 bg-background">
+    <div className="absolute inset-0 flex flex-col">
+      <SiteHeader />
+      <div className="flex-1 flex min-h-0">
+        {/* Desktop: Sidebar always visible */}
+        <div className="hidden md:block md:w-[340px] flex-shrink-0 border-r border-border/40 bg-background overflow-y-auto">
           <ChatNav
             conversations={conversations}
             loading={threadsLoading}
@@ -291,20 +307,62 @@ function ChatPage() {
           />
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0 bg-background">
+        {/* Mobile/Tablet: Show list view when no conversation selected, chat view when selected */}
+        {/* Desktop: Always show chat view area */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-background">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedConversationId || "empty"}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-              className="flex-1 flex flex-col h-full overflow-hidden"
-            >
-              {renderHeader()}
-              {renderMessages()}
-            </motion.div>
+            {!selectedConversationId ? (
+              // Mobile: Conversation list view (hidden on desktop)
+              <motion.div
+                key="conversation-list"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                className="flex-1 flex flex-col min-h-0 md:hidden"
+              >
+                <ChatNav
+                  conversations={conversations}
+                  loading={threadsLoading}
+                  selectedConversationId={selectedConversationId}
+                  user={user}
+                  onConversationSelect={handleConversationSelect}
+                  onThreadCreated={refetchThreads}
+                  forceMobileList={true}
+                />
+              </motion.div>
+            ) : (
+              // Mobile: Chat view with messages (hidden on desktop)
+              <motion.div
+                key={selectedConversationId}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                className="flex-1 flex flex-col min-h-0 md:hidden"
+              >
+                {renderHeader()}
+                {renderMessages()}
+              </motion.div>
+            )}
           </AnimatePresence>
+
+          {/* Desktop: Always show chat view area (even when no conversation selected) */}
+          <div className="hidden md:flex flex-1 flex flex-col min-h-0">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedConversationId || "empty"}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                className="flex-1 flex flex-col min-h-0"
+              >
+                {renderHeader()}
+                {renderMessages()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -314,6 +372,6 @@ function ChatPage() {
         conversation={currentConversation}
         participants={participants}
       />
-    </>
+    </div>
   );
 }

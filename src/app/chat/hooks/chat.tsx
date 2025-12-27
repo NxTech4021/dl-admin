@@ -88,12 +88,41 @@ export function useChatData(userId?: string) {
       );
     };
 
+    // Listen for new messages to update thread's last message in the list
+    const handleNewMessage = (message: Message) => {
+      setThreads((prev) => {
+        const threadIndex = prev.findIndex((t) => t.id === message.threadId);
+        if (threadIndex === -1) return prev;
+
+        const updatedThreads = [...prev];
+        const thread = updatedThreads[threadIndex];
+
+        // Update the thread's messages array (used for lastMessage display)
+        updatedThreads[threadIndex] = {
+          ...thread,
+          messages: [message],
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Move the updated thread to the top of the list
+        updatedThreads.splice(threadIndex, 1);
+        updatedThreads.unshift(updatedThreads[threadIndex] ? thread : updatedThreads[threadIndex]);
+
+        return [
+          { ...thread, messages: [message], updatedAt: new Date().toISOString() },
+          ...prev.filter((t) => t.id !== message.threadId),
+        ];
+      });
+    };
+
     socket.on("new_thread", handleNewThread);
     socket.on("thread_updated", handleThreadUpdate);
+    socket.on("new_message", handleNewMessage);
 
     return () => {
       socket.off("new_thread", handleNewThread);
       socket.off("thread_updated", handleThreadUpdate);
+      socket.off("new_message", handleNewMessage);
     };
   }, [socket, isConnected]);
 
@@ -101,11 +130,26 @@ export function useChatData(userId?: string) {
     fetchThreads();
   }, [fetchThreads]);
 
+  // Function to update a thread's last message (for optimistic updates when sending)
+  const updateThreadLastMessage = useCallback((threadId: string, message: Message) => {
+    setThreads((prev) => {
+      const threadExists = prev.some((t) => t.id === threadId);
+      if (!threadExists) return prev;
+
+      const thread = prev.find((t) => t.id === threadId)!;
+      return [
+        { ...thread, messages: [message], updatedAt: new Date().toISOString() },
+        ...prev.filter((t) => t.id !== threadId),
+      ];
+    });
+  }, []);
+
   return {
     threads,
     loading,
     error,
     refetch: fetchThreads,
+    updateThreadLastMessage,
   };
 }
 
@@ -194,6 +238,8 @@ export function useMessages(threadId?: string) {
         }
 
         if (newMessage) {
+          // Add message to local state immediately for instant UI feedback
+          setMessages((prev) => [...prev, newMessage]);
           return newMessage;
         }
       } catch (err: any) {
@@ -261,7 +307,13 @@ export function useMessages(threadId?: string) {
     const handleNewMessage = (message: Message) => {
       // Only add message if it belongs to current thread
       if (message.threadId === threadId) {
-        setMessages((prev) => [...prev, message]);
+        // Prevent duplicate if we already added it optimistically
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
       }
     };
 
@@ -381,7 +433,7 @@ export function useTypingIndicator(threadId?: string) {
   const { socket, isConnected, sendTyping } = useSocket();
   const { data: session } = useSession();
   const user = session?.user;
-  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Clear typing timeout and reset state when thread changes
   useEffect(() => {

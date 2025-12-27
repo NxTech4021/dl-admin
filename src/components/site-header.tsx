@@ -14,6 +14,7 @@ const pageMap = {
   "/divisions": "Divisions",
   "/settings": "Settings",
   "/bugs": "Bug Reports",
+  "/chat": "Chat",
 } as const;
 
 type BreadcrumbItem = { label: string; href?: string };
