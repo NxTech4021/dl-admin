@@ -59,7 +59,7 @@ function ChatMessageItem({
     currentUserId: user?.id || "",
   });
 
-  const { firstName, avatarUrl } = senderDetails;
+  const { firstName, avatarUrl, color: senderColor } = senderDetails;
   const messageContent = message.content || message.body || "";
   const createdAt = message.createdAt;
   const isDeleted = message.isDeleted || false;
@@ -182,7 +182,7 @@ function ChatMessageItem({
 
   const renderSenderName = !me && (
     <div className="mb-1">
-      <p className="text-xs text-muted-foreground font-medium">{firstName}</p>
+      <p className="text-xs font-medium" style={{ color: senderColor }}>{firstName}</p>
     </div>
   );
 
@@ -341,7 +341,10 @@ function ChatMessageItem({
         {!me && (
           <Avatar className="h-8 w-8 flex-shrink-0 mt-auto mb-1">
             <AvatarImage src={avatarUrl} alt={firstName} />
-            <AvatarFallback className="text-xs bg-muted font-medium">
+            <AvatarFallback
+              className="text-xs font-medium text-white"
+              style={{ backgroundColor: senderColor }}
+            >
               {firstName?.charAt(0)?.toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
