@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const divisionLevelEnum = z.enum([
   "beginner",
-  "intermediate", 
+  "improver",
+  "intermediate",
+  "upper_intermediate",
+  "expert",
   "advanced",
 ]);
 
@@ -119,7 +122,10 @@ export const defaultFormValues: DivisionFormValues = {
 export const getDisplayLabels = () => ({
   divisionLevel: {
     beginner: "Beginner",
-    intermediate: "Intermediate", 
+    improver: "Improver",
+    intermediate: "Intermediate",
+    upper_intermediate: "Upper Intermediate",
+    expert: "Expert",
     advanced: "Advanced"
   },
   gameType: {

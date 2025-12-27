@@ -99,7 +99,8 @@ export function useChatUnreadCount(activeThreadId?: string | null) {
       previousUnreadCount?: number;
     }) => {
       if (data.previousUnreadCount !== undefined) {
-        setTotalUnread((prev) => Math.max(0, prev - data.previousUnreadCount));
+        const count = data.previousUnreadCount;
+        setTotalUnread((prev) => Math.max(0, prev - count));
       } else {
         // Refetch to get accurate count
         fetchTotalUnread();

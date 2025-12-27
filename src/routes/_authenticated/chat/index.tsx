@@ -46,6 +46,10 @@ function ChatPage() {
     markThreadAsRead,
   } = useChatData(user?.id, selectedConversationId);
 
+  const handleThreadCreated = useCallback(async () => {
+    await refetchThreads();
+  }, [refetchThreads]);
+
   const {
     messages,
     loading: messagesLoading,
@@ -339,7 +343,7 @@ function ChatPage() {
             selectedConversationId={selectedConversationId}
             user={user}
             onConversationSelect={handleConversationSelect}
-            onThreadCreated={refetchThreads}
+            onThreadCreated={handleThreadCreated}
           />
         </div>
 
@@ -363,7 +367,7 @@ function ChatPage() {
                   selectedConversationId={selectedConversationId}
                   user={user}
                   onConversationSelect={handleConversationSelect}
-                  onThreadCreated={refetchThreads}
+                  onThreadCreated={handleThreadCreated}
                   forceMobileList={true}
                 />
               </motion.div>

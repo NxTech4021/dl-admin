@@ -1,4 +1,11 @@
-export default function ChatMatchBadge() {
+import { MatchData } from "@/constants/types/chat";
+
+interface ChatMatchBadgeProps {
+  matchData?: MatchData;
+}
+
+export default function ChatMatchBadge({ matchData }: ChatMatchBadgeProps) {
+  void matchData;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
       Scheduled a match

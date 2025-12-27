@@ -53,7 +53,7 @@ type DivisionBase = {
   name: string;
   description?: string | null;
   threshold?: number | null;
-  divisionLevel: "beginner" | "intermediate" | "advanced";
+  divisionLevel: "beginner" | "improver" | "intermediate" | "upper_intermediate" | "expert" | "advanced";
   gameType: "singles" | "doubles";
   genderCategory?: "male" | "female" | "mixed" | null;
   maxSingles?: number | null;
@@ -94,7 +94,7 @@ const divisionSchema = z
   .object({
     name: z.string().min(2, "Name is required"),
     seasonId: z.string().min(1, "Select a season"),
-    divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
+    divisionLevel: z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
     genderCategory: z.enum(["male", "female", "mixed"]),
     maxSinglesPlayers: z.preprocess((val) => {
@@ -184,6 +184,14 @@ const getLevelStyles = (level: string | null | undefined) => {
         iconBg: "bg-sky-100 dark:bg-sky-900/50",
         iconColor: "text-sky-600 dark:text-sky-400",
       };
+    case "improver":
+      return {
+        badge: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+        accent: "bg-teal-500",
+        bg: "bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/20",
+        iconBg: "bg-teal-100 dark:bg-teal-900/50",
+        iconColor: "text-teal-600 dark:text-teal-400",
+      };
     case "intermediate":
       return {
         badge: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
@@ -191,6 +199,22 @@ const getLevelStyles = (level: string | null | undefined) => {
         bg: "bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20",
         iconBg: "bg-amber-100 dark:bg-amber-900/50",
         iconColor: "text-amber-600 dark:text-amber-400",
+      };
+    case "upper_intermediate":
+      return {
+        badge: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
+        accent: "bg-orange-500",
+        bg: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20",
+        iconBg: "bg-orange-100 dark:bg-orange-900/50",
+        iconColor: "text-orange-600 dark:text-orange-400",
+      };
+    case "expert":
+      return {
+        badge: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
+        accent: "bg-rose-500",
+        bg: "bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-900/20",
+        iconBg: "bg-rose-100 dark:bg-rose-900/50",
+        iconColor: "text-rose-600 dark:text-rose-400",
       };
     case "advanced":
       return {
@@ -214,7 +238,15 @@ const getLevelStyles = (level: string | null | undefined) => {
 /** Format level label */
 const formatLevel = (level: string | null | undefined): string => {
   if (!level) return "Unknown";
-  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+  const labels: Record<string, string> = {
+    beginner: "Beginner",
+    improver: "Improver",
+    intermediate: "Intermediate",
+    upper_intermediate: "Upper Intermediate",
+    expert: "Expert",
+    advanced: "Advanced",
+  };
+  return labels[level.toLowerCase()] || level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
 };
 
 /** Format game type label */
@@ -770,10 +802,28 @@ export default function DivisionCreateModal({
                                   Beginner
                                 </div>
                               </SelectItem>
+                              <SelectItem value="improver">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-teal-500" />
+                                  Improver
+                                </div>
+                              </SelectItem>
                               <SelectItem value="intermediate">
                                 <div className="flex items-center gap-2">
                                   <div className="size-2 rounded-full bg-amber-500" />
                                   Intermediate
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="upper_intermediate">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-orange-500" />
+                                  Upper Intermediate
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="expert">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-rose-500" />
+                                  Expert
                                 </div>
                               </SelectItem>
                               <SelectItem value="advanced">

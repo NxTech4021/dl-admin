@@ -53,11 +53,11 @@ export function PaymentRowActions({
   );
 
   const handleViewPlayer = React.useCallback(() => {
-    navigate({ to: "/players/$id", params: { id: payment.userId } });
+    navigate({ to: "/players/$playerId", params: { playerId: payment.userId } });
   }, [navigate, payment.userId]);
 
   const handleViewSeason = React.useCallback(() => {
-    navigate({ to: "/seasons/$id", params: { id: payment.seasonId } });
+    navigate({ to: "/seasons/$seasonId", params: { seasonId: payment.seasonId } });
   }, [navigate, payment.seasonId]);
 
   const currentStatus = payment.paymentStatus;
