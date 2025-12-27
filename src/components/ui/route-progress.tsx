@@ -1,11 +1,10 @@
-
-
 import { Suspense, useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 
 function RouteProgressInner() {
-  const location = useLocation(); const pathname = location.pathname;
-  const searchParams = useSearchParams();
+  const location = useLocation();
+  const pathname = location.pathname;
+  const searchParams = location.search;
   const [isNavigating, setIsNavigating] = useState(false);
   const [progress, setProgress] = useState(0);
 
