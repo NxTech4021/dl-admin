@@ -43,6 +43,19 @@ import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
+type SeasonWithCategory = {
+  id: string;
+  name: string;
+  category?: {
+    id: string;
+    name: string | null;
+    game_type?: "SINGLES" | "DOUBLES" | string | null;
+    gender_category?: "MALE" | "FEMALE" | "MIXED" | string | null;
+    genderCategory?: string | null;
+    gameType?: string | null;
+  } | null;
+};
+
 interface SeasonDivisionsCardProps {
   seasonId: string;
   adminId: string;
@@ -51,6 +64,8 @@ interface SeasonDivisionsCardProps {
   onDivisionCreated?: () => Promise<void>;
   onDivisionUpdated?: () => Promise<void>;
   onDivisionDeleted?: () => Promise<void>;
+  /** Pass the season object to auto-populate and lock fields when creating divisions */
+  season?: SeasonWithCategory | null;
 }
 
 /** Get level badge styling */
@@ -93,6 +108,7 @@ export default function SeasonDivisionsCard({
   onDivisionCreated,
   onDivisionUpdated,
   onDivisionDeleted,
+  season,
 }: SeasonDivisionsCardProps) {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -214,6 +230,7 @@ export default function SeasonDivisionsCard({
             onOpenChange={setIsCreateModalOpen}
             onDivisionCreated={handleDivisionCreated}
             seasonId={seasonId}
+            season={season}
           >
             <Button
               className="flex items-center gap-2"

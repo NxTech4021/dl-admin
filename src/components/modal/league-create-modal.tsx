@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -27,10 +26,15 @@ import {
   IconLoader2,
   IconTrophy,
   IconX,
-  IconCheck,
+  IconPlus,
   IconMapPin,
-  IconBuilding
+  IconBuilding,
+  IconForms,
+  IconFileDescription,
+  IconSettings,
 } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useSession } from "@/lib/auth-client";
 import { getErrorMessage } from "@/lib/api-error";
@@ -226,126 +230,167 @@ const handleCreateLeague = async () => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              <IconTrophy className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex flex-col">
-              <span>Create New League</span>
-              {selectedTemplate && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  Using template: {selectedTemplate.name}
-                </span>
-              )}
-            </div>
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            Set up the basic information for your new league
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* League Information Section */}
-          <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* League Name */}
-              <div className="space-y-2">
-                <Label htmlFor="leagueName" className="text-sm font-medium">
-                  League Name *
-                </Label>
-                <Input
-                  id="leagueName"
-                  type="text"
-                  placeholder="e.g., KL League"
-                  value={formData.leagueName}
-                  onChange={(e) => updateFormData("leagueName", e.target.value)}
-                  className="h-11"
-                />
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border/50">
+          <DialogHeader className="px-6 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 rounded-xl bg-primary/10">
+                <IconTrophy className="size-5 text-primary" />
               </div>
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-semibold">
+                  New League
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  {selectedTemplate
+                    ? `Using template: ${selectedTemplate.name}`
+                    : "Set up a new league"}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+        </div>
 
-              {/* Sport */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Sport *</Label>
-                <Select value={formData.sport} onValueChange={(value) => updateFormData("sport", value)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select a sport" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SPORTS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: getSportColor(option.value) }}
-                          />
+        <div className="px-6 py-5 space-y-4">
+          {/* Basic Information Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconForms className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Basic Information
+              </span>
+            </div>
+            <div className="p-3 space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                {/* League Name */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="leagueName" className="text-sm font-medium flex items-center gap-1">
+                    League Name
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="leagueName"
+                    type="text"
+                    placeholder="e.g., KL League"
+                    value={formData.leagueName}
+                    onChange={(e) => updateFormData("leagueName", e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+
+                {/* Sport */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    Sport
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.sport} onValueChange={(value) => updateFormData("sport", value)}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select a sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPORTS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="size-2 rounded-full"
+                              style={{ backgroundColor: getSportColor(option.value) }}
+                            />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <IconMapPin className="size-3.5" />
+                    Location
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={formData.location} onValueChange={(value) => updateFormData("location", value)}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOCATION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
                           {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Location */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Location *</Label>
-                <Select value={formData.location} onValueChange={(value) => updateFormData("location", value)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATION_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <IconMapPin className="h-4 w-4 text-muted-foreground" />
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Status */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <IconSettings className="size-3.5" />
+                    Status
+                  </Label>
+                  <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "size-2 rounded-full",
+                              option.value === "ACTIVE" && "bg-emerald-500",
+                              option.value === "UPCOMING" && "bg-blue-500"
+                            )} />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Sponsor Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
+          {/* Sponsor Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconBuilding className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Sponsorship
+              </span>
+              <Badge variant="outline" className="text-[10px] ml-auto bg-background">
+                Optional
+              </Badge>
+            </div>
+            <div className="p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "size-2 rounded-full",
+                    formData.hasSponsor ? "bg-emerald-500" : "bg-slate-400"
+                  )} />
+                  <Label htmlFor="hasSponsor" className="text-sm font-medium cursor-pointer">
+                    This league has a sponsor
+                  </Label>
+                </div>
                 <Checkbox
                   id="hasSponsor"
                   checked={formData.hasSponsor}
                   onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
                 />
-                <Label htmlFor="hasSponsor" className="text-sm font-medium flex items-center gap-2">
-                  <IconBuilding className="h-4 w-4" />
-                  This league has a sponsor
-                </Label>
               </div>
-              
+
               {formData.hasSponsor && (
-                <div className="space-y-4 pl-6 border-l-2 border-primary/20 bg-muted/30 p-4 rounded-lg">
-                  {/* Existing sponsor selection */}
-                  <div className="space-y-2 relative">
-                    <Label htmlFor="existingSponsor" className="text-sm font-medium">
-                      Select Existing Sponsor *
+                <div className="pt-3 border-t border-border/50">
+                  <div className="space-y-1.5 relative">
+                    <Label htmlFor="existingSponsor" className="text-sm font-medium flex items-center gap-1">
+                      Select Sponsor
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="existingSponsor"
@@ -358,16 +403,16 @@ const handleCreateLeague = async () => {
                         }
                       }}
                       onBlur={handleSponsorInputBlur}
-                      className="h-11"
+                      className="h-9"
                     />
-                    
+
                     {/* Suggestions dropdown */}
                     {showSuggestions && filteredSponsors.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
                         {filteredSponsors.map((sponsor) => (
                           <div
                             key={sponsor.id}
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
                             onClick={() => handleSponsorSelect(sponsor)}
                           >
                             {sponsor.name}
@@ -375,11 +420,11 @@ const handleCreateLeague = async () => {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* No results message */}
                     {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
-                        <div className="px-4 py-2 text-sm text-gray-500">
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg">
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
                           No sponsors found
                         </div>
                       </div>
@@ -388,62 +433,75 @@ const handleCreateLeague = async () => {
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
+          {/* Description Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconFileDescription className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Description
-              </Label>
+              </span>
+              <Badge variant="outline" className="text-[10px] ml-auto bg-background">
+                Optional
+              </Badge>
+            </div>
+            <div className="p-3">
               <Textarea
                 id="description"
                 placeholder="Brief description of the league..."
                 value={formData.description}
                 onChange={(e) => updateFormData("description", e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[80px] resize-none"
               />
             </div>
           </div>
 
           {/* Error Display */}
           {error && (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-              <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
-                <IconX className="h-2.5 w-2.5" />
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center size-8 rounded-lg bg-destructive/10">
+                  <IconX className="size-4 text-destructive" />
+                </div>
+                <p className="text-sm text-destructive">{error}</p>
               </div>
-              {error}
             </div>
           )}
         </div>
 
-        <DialogFooter className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-            className="flex-1 sm:flex-none"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleCreateLeague}
-            disabled={loading || !isFormValid}
-            className="flex-1 sm:flex-none min-w-[160px]"
-          >
-            {loading ? (
-              <>
-                <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
-                Creating League...
-              </>
-            ) : (
-              <>
-                <IconCheck className="mr-2 h-4 w-4" />
-                Create League
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-background border-t border-border/50 px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateLeague}
+              disabled={loading || !isFormValid}
+              className="gap-2 min-w-[140px]"
+            >
+              {loading ? (
+                <>
+                  <IconLoader2 className="animate-spin size-4" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <IconPlus className="size-4" />
+                  Create League
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
