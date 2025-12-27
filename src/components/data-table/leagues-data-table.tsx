@@ -296,7 +296,8 @@ export function LeaguesDataTable({
                           </div>
                           <div className="min-w-0">
                             <Link
-                              to={`/league/view/${league.id}`}
+                              to="/league/view/$leagueId"
+                              params={{ leagueId: league.id }}
                               className="font-medium hover:text-primary transition-colors"
                             >
                               {league.name}

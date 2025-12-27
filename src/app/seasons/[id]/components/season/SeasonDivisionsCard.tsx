@@ -154,7 +154,7 @@ export default function SeasonDivisionsCard({
   };
 
   const handleManagePlayers = (division: Division) => {
-    navigate({ to: `/divisions/${division.id}`, search: { tab: "players" } });
+    navigate({ to: "/divisions/$divisionId", params: { divisionId: division.id }, search: { tab: "players" } });
   };
 
   // Map editingDivision for the modal
@@ -261,7 +261,8 @@ export default function SeasonDivisionsCard({
                             </div>
                             <div className="min-w-0">
                               <Link
-                                to={`/divisions/${division.id}`}
+                                to="/divisions/$divisionId"
+                                params={{ divisionId: division.id }}
                                 className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                               >
                                 {division.name}
