@@ -15,16 +15,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSportComparison } from "@/hooks/use-queries";
 import { formatValue as formatCurrency } from "@/lib/utils/format";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   payingMembers: {
@@ -47,7 +41,7 @@ interface SportComparisonChartProps {
 function ChartSkeleton() {
   return (
     <Card className="h-full flex flex-col border border-border">
-      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+      <CardHeader className="pb-0 pt-2 px-5 shrink-0">
         <div className="flex items-start justify-between">
           <div>
             <Skeleton className="h-5 w-36 mb-1" />
@@ -56,7 +50,7 @@ function ChartSkeleton() {
           <Skeleton className="h-8 w-28" />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
+      <CardContent className="flex-1 flex flex-col pt-4 px-5 pb-5 min-h-0">
         <div className="flex items-center gap-6 mb-5">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-4 w-28" />
@@ -84,14 +78,28 @@ export function SportComparisonChart({
     return formatCurrency(value, "number");
   };
 
-  const getYAxisDomain = (metric: MetricType) => {
+  const getYAxisDomain = (metric: MetricType): [number, number] => {
     if (!chartData) return [0, 100];
     const values = chartData.map((item) => item[metric]);
     const max = Math.max(...values);
     if (!isFinite(max) || max <= 0) {
       return [0, 100];
     }
-    return [0, Math.ceil(max * 1.1)];
+    // Round up to nice even numbers
+    const rawMax = max * 1.1;
+    let niceMax: number;
+    if (rawMax <= 10) {
+      niceMax = Math.ceil(rawMax / 2) * 2; // Round to nearest 2
+    } else if (rawMax <= 50) {
+      niceMax = Math.ceil(rawMax / 10) * 10; // Round to nearest 10
+    } else if (rawMax <= 200) {
+      niceMax = Math.ceil(rawMax / 25) * 25; // Round to nearest 25
+    } else if (rawMax <= 1000) {
+      niceMax = Math.ceil(rawMax / 100) * 100; // Round to nearest 100
+    } else {
+      niceMax = Math.ceil(rawMax / 500) * 500; // Round to nearest 500
+    }
+    return [0, niceMax];
   };
 
   const totalMembers = React.useMemo(
@@ -110,7 +118,7 @@ export function SportComparisonChart({
   if (error || !chartData || chartData.length === 0) {
     return (
       <Card className="h-full flex flex-col border border-border">
-        <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+        <CardHeader className="pb-0 pt-2 px-5 shrink-0">
           <CardTitle className="text-base font-medium">Sport Comparison</CardTitle>
           <CardDescription className="text-xs">No data available</CardDescription>
         </CardHeader>
@@ -125,7 +133,7 @@ export function SportComparisonChart({
 
   return (
     <Card className="h-full flex flex-col border border-border">
-      <CardHeader className="pb-0 pt-5 px-5 shrink-0">
+      <CardHeader className="pb-4 pt-2 px-5 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="text-base font-medium">Sport Comparison</CardTitle>
@@ -133,41 +141,53 @@ export function SportComparisonChart({
               {chartRange === "average" ? "Weekly average" : "Monthly"} for past {historyRange}mo
             </CardDescription>
           </div>
-          <Select
-            value={activeMetric}
-            onValueChange={(value) => setActiveMetric(value as MetricType)}
-          >
-            <SelectTrigger className="w-[120px] h-8 text-xs border-border/50" aria-label="Select metric">
-              <SelectValue placeholder="Metric" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="payingMembers" className="text-xs">Members</SelectItem>
-              <SelectItem value="revenue" className="text-xs">Revenue</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Members</span>
+              <span className="text-sm font-medium tabular-nums">{totalMembers.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Revenue</span>
+              <span className="text-sm font-medium tabular-nums">{formatMetricValue(totalRevenue, "revenue")}</span>
+            </div>
+            <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 shrink-0 border border-border/50">
+              <button
+                onClick={() => setActiveMetric("payingMembers")}
+                className={cn(
+                  "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer h-8 touch-manipulation",
+                  activeMetric === "payingMembers"
+                    ? "bg-background text-foreground shadow-sm border border-border/50"
+                    : "text-foreground/70 hover:text-foreground"
+                )}
+              >
+                Members
+              </button>
+              <button
+                onClick={() => setActiveMetric("revenue")}
+                className={cn(
+                  "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer h-8 touch-manipulation",
+                  activeMetric === "revenue"
+                    ? "bg-background text-foreground shadow-sm border border-border/50"
+                    : "text-foreground/70 hover:text-foreground"
+                )}
+              >
+                Revenue
+              </button>
+            </div>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col pt-5 px-5 pb-5 min-h-0">
-        {/* Inline totals */}
-        <div className="flex items-center gap-6 mb-5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Members</span>
-            <span className="text-sm font-medium tabular-nums">{totalMembers.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Revenue</span>
-            <span className="text-sm font-medium tabular-nums">{formatMetricValue(totalRevenue, "revenue")}</span>
-          </div>
-        </div>
+      <CardContent className="flex-1 flex flex-col px-5 pb-5 min-h-0">
 
         {/* Chart */}
         <div className="flex-1 min-h-[280px]">
           <ChartContainer config={chartConfig} className="h-full w-full">
             <BarChart
+              key={activeMetric}
               accessibilityLayer
               data={chartData}
-              margin={{ left: 0, right: 0, top: 10, bottom: 10 }}
+              margin={{ left: 10, right: 10, top: 10, bottom: 25 }}
             >
               <CartesianGrid
                 vertical={false}
@@ -181,6 +201,12 @@ export function SportComparisonChart({
                 axisLine={false}
                 tickMargin={8}
                 tick={{ fontSize: 11 }}
+                label={{
+                  value: "Sport",
+                  position: "bottom",
+                  offset: 10,
+                  style: { fontSize: 11, fill: "hsl(var(--muted-foreground))" },
+                }}
               />
               <YAxis
                 tickLine={false}
@@ -194,7 +220,14 @@ export function SportComparisonChart({
                   return value.toString();
                 }}
                 tick={{ fontSize: 11 }}
-                width={40}
+                width={45}
+                label={{
+                  value: activeMetric === "payingMembers" ? "Members" : "Revenue (RM)",
+                  angle: -90,
+                  position: "insideLeft",
+                  offset: 0,
+                  style: { fontSize: 11, fill: "hsl(var(--muted-foreground))", textAnchor: "middle" },
+                }}
               />
               <ChartTooltip
                 cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.3 }}
@@ -227,6 +260,8 @@ export function SportComparisonChart({
                 dataKey={activeMetric}
                 fill={`var(--color-${activeMetric})`}
                 radius={[3, 3, 0, 0]}
+                animationDuration={500}
+                animationEasing="ease-out"
               />
             </BarChart>
           </ChartContainer>

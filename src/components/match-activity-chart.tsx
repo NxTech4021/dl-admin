@@ -399,7 +399,11 @@ export function MatchActivityChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              className="text-xs"
+              tickFormatter={(value) => {
+                if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+                return value.toString();
+              }}
+              tick={{ fontSize: 11 }}
             />
 
             <ChartTooltip
