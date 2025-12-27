@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { tableContainerVariants, tableRowVariants, fastTransition } from '@/lib/animation-variants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -144,10 +146,19 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
             <TableHead className="w-[120px] text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <motion.tbody
+          initial="hidden"
+          animate="visible"
+          variants={tableContainerVariants}
+        >
           {requests.length > 0 ? (
             requests.map((request) => (
-              <TableRow key={request.id} className="hover:bg-muted/50">
+              <motion.tr
+                key={request.id}
+                variants={tableRowVariants}
+                transition={fastTransition}
+                className="hover:bg-muted/50 border-b transition-colors"
+              >
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
@@ -229,7 +240,7 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
                     </Button>
                   </div>
                 </TableCell>
-              </TableRow>
+              </motion.tr>
             ))
           ) : (
             <TableRow>
@@ -244,7 +255,7 @@ export default function WithdrawalRequestsCard({ requests }: WithdrawalRequestsC
               </TableCell>
             </TableRow>
           )}
-        </TableBody>
+        </motion.tbody>
       </Table>
     </div>
   );

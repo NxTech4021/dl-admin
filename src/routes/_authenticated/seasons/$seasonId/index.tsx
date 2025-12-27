@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
 import { Season, seasonSchema } from "@/constants/zod/season-schema";
 import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import { fadeInUp, fastTransition } from "@/lib/animation-variants";
 
 import {
   IconUserCircle,
@@ -247,7 +249,13 @@ function SeasonDetailPage() {
                     onSeasonUpdated={fetchSeasonData}
                   />
                 </div>
-                <div className="space-y-6">
+                <motion.div
+                  className="space-y-6"
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInUp}
+                  transition={fastTransition}
+                >
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
@@ -336,7 +344,7 @@ function SeasonDetailPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </motion.div>
               </div>
             </div>
           </TabsContent>

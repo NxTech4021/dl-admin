@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   IconDotsVertical,
   IconMail,
@@ -44,9 +44,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
+// Animation variants now handled inline for better control over loading state transitions
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "@tanstack/react-router";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Player } from "@/constants/zod/player-schema";
 import { usePlayers } from "@/hooks/use-queries";
 import { getSportLabel, getSportColor } from "@/constants/sports";
@@ -64,6 +69,14 @@ import {
 
 const getOnboardingBadgeVariant = (completedOnboarding: boolean) => {
   return completedOnboarding ? "default" : "secondary";
+};
+
+const getGenderIcon = (gender: string | null): React.ReactNode => {
+  if (!gender) return null;
+  const g = gender.toLowerCase();
+  if (g === 'male') return <span className="text-blue-500 ml-1" title="Male">♂</span>;
+  if (g === 'female') return <span className="text-pink-500 ml-1" title="Female">♀</span>;
+  return null;
 };
 
 
@@ -98,12 +111,12 @@ const getSportsDisplay = (player: Player): React.ReactNode => {
 const columns: ColumnDef<Player>[] = [
   {
     id: "rowNumber",
-    header: () => <span className="text-center block">#</span>,
+    header: () => <span className="text-center block pl-2">#</span>,
     cell: ({ row, table }) => {
       const pageIndex = table.getState().pagination.pageIndex;
       const pageSize = table.getState().pagination.pageSize;
       return (
-        <span className="text-center text-muted-foreground font-mono text-sm block">
+        <span className="text-center text-muted-foreground font-mono text-sm block pl-2">
           {pageIndex * pageSize + row.index + 1}
         </span>
       );
@@ -126,7 +139,10 @@ const columns: ColumnDef<Player>[] = [
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <div className="font-medium">{player.name}</div>
+            <div className="font-medium flex items-center">
+              {player.name}
+              {getGenderIcon(player.gender)}
+            </div>
             {player.displayUsername && (
               <div className="text-sm text-muted-foreground">
                 @{player.displayUsername}
@@ -167,20 +183,6 @@ const columns: ColumnDef<Player>[] = [
     ),
   },
   {
-    accessorKey: "gender",
-    header: "Gender",
-    cell: ({ row }) => {
-      const gender = row.original.gender;
-      return gender ? (
-        <Badge variant="outline" className="capitalize">
-          {gender}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">-</span>
-      );
-    },
-  },
-  {
     accessorKey: "sports",
     header: "Sports",
     cell: ({ row }) => (
@@ -188,6 +190,77 @@ const columns: ColumnDef<Player>[] = [
         {getSportsDisplay(row.original)}
       </div>
     ),
+  },
+  {
+    accessorKey: "leagueCount",
+    header: "Leagues",
+    cell: ({ row }) => {
+      const count = row.original.leagueCount ?? 0;
+      return (
+        <div className="flex justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-muted font-medium text-sm cursor-default">
+                {count}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {count} {count === 1 ? "league" : "leagues"} joined
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      );
+    },
+    size: 80,
+  },
+  {
+    accessorKey: "seasonCount",
+    header: "Seasons",
+    cell: ({ row }) => {
+      const count = row.original.seasonCount ?? 0;
+      return (
+        <div className="flex justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-muted font-medium text-sm cursor-default">
+                {count}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {count} {count === 1 ? "season" : "seasons"} joined
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      );
+    },
+    size: 80,
+  },
+  {
+    id: "matchesPlayed",
+    header: "Matches",
+    cell: ({ row }) => {
+      const leagueMatches = row.original.leagueMatchesPlayed ?? 0;
+      const friendlyMatches = row.original.friendlyMatchesPlayed ?? 0;
+      const totalMatches = leagueMatches + friendlyMatches;
+      return (
+        <div className="flex justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-muted font-medium text-sm cursor-default">
+                {totalMatches}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="flex flex-col gap-0.5">
+                <span>{leagueMatches} league {leagueMatches === 1 ? "match" : "matches"} played</span>
+                <span>{friendlyMatches} friendly {friendlyMatches === 1 ? "match" : "matches"} played</span>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      );
+    },
+    size: 80,
   },
   {
     accessorKey: "registeredDate",
@@ -267,6 +340,7 @@ const columns: ColumnDef<Player>[] = [
 ];
 
 export function PlayersDataTable() {
+  const navigate = useNavigate();
   // React Query for data fetching
   const { data: queryData, isLoading, isError, error, refetch } = usePlayers();
   
@@ -432,11 +506,7 @@ export function PlayersDataTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <motion.tbody
-            initial="hidden"
-            animate="visible"
-            variants={tableContainerVariants}
-          >
+          <tbody>
             {isLoading ? (
               <TableRow>
                 <TableCell
@@ -450,21 +520,32 @@ export function PlayersDataTable() {
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <motion.tr
-                  key={row.id}
-                  variants={tableRowVariants}
-                  transition={fastTransition}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={`${TABLE_ANIMATIONS.ROW_HOVER} border-b transition-colors`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </motion.tr>
-              ))
+              <AnimatePresence>
+                {table.getRowModel().rows.map((row, index) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: index * 0.03,
+                      ease: [0.4, 0, 0.2, 1]
+                    }}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={`${TABLE_ANIMATIONS.ROW_HOVER} border-b transition-colors cursor-pointer`}
+                    onClick={() => navigate({ to: "/players/$playerId", params: { playerId: row.original.id } })}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        onClick={cell.column.id === "actions" ? (e) => e.stopPropagation() : undefined}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             ) : (
               <TableRow>
                 <TableCell
@@ -475,7 +556,7 @@ export function PlayersDataTable() {
                 </TableCell>
               </TableRow>
             )}
-          </motion.tbody>
+          </tbody>
         </Table>
 
         {/* Pagination */}

@@ -428,7 +428,8 @@ export function DivisionsDataTable() {
                         key={division.id}
                         variants={tableRowVariants}
                         transition={fastTransition}
-                        className="hover:bg-muted/30 border-b transition-colors"
+                        className="hover:bg-muted/30 border-b transition-colors cursor-pointer"
+                        onClick={() => navigate({ to: "/divisions/$divisionId", params: { divisionId: division.id } })}
                       >
                         {/* Row Number */}
                         <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
@@ -543,7 +544,7 @@ export function DivisionsDataTable() {
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="py-3 pr-4">
+                        <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                           <DivisionRowActions
                             division={division}
                             onView={handleViewDivision}

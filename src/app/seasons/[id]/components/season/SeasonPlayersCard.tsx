@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -410,7 +412,11 @@ export default function SeasonPlayersCard({
             <TableHead className="w-[140px] text-right pr-4">Actions</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <motion.tbody
+          initial="hidden"
+          animate="visible"
+          variants={tableContainerVariants}
+        >
           {groupedPlayers.length > 0 ? (
             groupedPlayers.map((group, index) => {
               if (group.type === "partnership" && group.memberships.length === 2) {
@@ -421,9 +427,11 @@ export default function SeasonPlayersCard({
                 const partnership = group.partnership;
 
                 return (
-                  <TableRow
+                  <motion.tr
                     key={`partnership-${partnership.id}`}
-                    className="hover:bg-muted/50"
+                    variants={tableRowVariants}
+                    transition={fastTransition}
+                    className="hover:bg-muted/50 border-b transition-colors"
                   >
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
@@ -546,14 +554,19 @@ export default function SeasonPlayersCard({
                           : "Assign Team"}
                       </Button>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 );
               } else {
                 // Individual player
                 const member = group.memberships[0];
                 const rating = getSportRating(member);
                 return (
-                  <TableRow key={member.id} className="hover:bg-muted/50">
+                  <motion.tr
+                    key={member.id}
+                    variants={tableRowVariants}
+                    transition={fastTransition}
+                    className="hover:bg-muted/50 border-b transition-colors"
+                  >
                     <TableCell className="pl-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9 ring-2 ring-background">
@@ -627,7 +640,7 @@ export default function SeasonPlayersCard({
                           : "Assign to Division"}
                       </Button>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 );
               }
             })
@@ -652,7 +665,7 @@ export default function SeasonPlayersCard({
               </TableCell>
             </TableRow>
           )}
-        </TableBody>
+        </motion.tbody>
       </Table>
     </div>
     );

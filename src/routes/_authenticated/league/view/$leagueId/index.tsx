@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fadeInUp, fastTransition } from "@/lib/animation-variants";
 
 import {
   IconUserCircle,
@@ -326,7 +328,13 @@ function LeagueViewPage() {
                 </div>
 
                 {/* Quick Info Sidebar - spans 1 column */}
-                <div className="space-y-6">
+                <motion.div
+                  className="space-y-6"
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInUp}
+                  transition={fastTransition}
+                >
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
@@ -415,7 +423,7 @@ function LeagueViewPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </motion.div>
               </div>
             </div>
           </TabsContent>

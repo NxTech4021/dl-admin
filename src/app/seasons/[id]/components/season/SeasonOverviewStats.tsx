@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Season } from "@/constants/zod/season-schema";
 import {
@@ -8,6 +9,7 @@ import {
   IconCalendar,
   IconTrendingUp,
 } from "@tabler/icons-react";
+import { statsGridContainer, statsCardVariants, fastTransition } from "@/lib/animation-variants";
 
 interface SeasonOverviewStatsProps {
   season: Season;
@@ -50,68 +52,81 @@ export default function SeasonOverviewStats({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <motion.div
+      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+      initial="hidden"
+      animate="visible"
+      variants={statsGridContainer}
+    >
       {/* Total Players Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Players</CardTitle>
-          <IconUsers className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalRegisteredUsers}</div>
-          <p className="text-xs text-muted-foreground">
-            {activePlayers} active, {waitlistedPlayers} waitlisted
-          </p>
-        </CardContent>
-      </Card>
+      <motion.div variants={statsCardVariants} transition={fastTransition}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Players</CardTitle>
+            <IconUsers className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRegisteredUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              {activePlayers} active, {waitlistedPlayers} waitlisted
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Divisions Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Divisions</CardTitle>
-          <IconTrophy className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalDivisions}</div>
-          <p className="text-xs text-muted-foreground">
-            {totalDivisions === 0 ? "No divisions created" : "Active divisions"}
-          </p>
-        </CardContent>
-      </Card>
+      <motion.div variants={statsCardVariants} transition={fastTransition}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Divisions</CardTitle>
+            <IconTrophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalDivisions}</div>
+            <p className="text-xs text-muted-foreground">
+              {totalDivisions === 0 ? "No divisions created" : "Active divisions"}
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Revenue Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-          <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{calculateRevenue()}</div>
-          <p className="text-xs text-muted-foreground">
-            {season.registeredUserCount > 0
-              ? `${season.registeredUserCount} players × RM ${
-                  typeof season.entryFee === 'number' ? season.entryFee : 0
-                }`
-              : "No revenue yet"}
-          </p>
-        </CardContent>
-      </Card>
+      <motion.div variants={statsCardVariants} transition={fastTransition}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{calculateRevenue()}</div>
+            <p className="text-xs text-muted-foreground">
+              {season.registeredUserCount > 0
+                ? `${season.registeredUserCount} players × RM ${
+                    typeof season.entryFee === 'number' ? season.entryFee : 0
+                  }`
+                : "No revenue yet"}
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Withdrawal Requests Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Withdrawals</CardTitle>
-          <IconCalendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{pendingWithdrawals}</div>
-          <p className="text-xs text-muted-foreground">
-            {pendingWithdrawals === 0
-              ? "No pending requests"
-              : "Pending requests"}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+      <motion.div variants={statsCardVariants} transition={fastTransition}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Withdrawals</CardTitle>
+            <IconCalendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingWithdrawals}</div>
+            <p className="text-xs text-muted-foreground">
+              {pendingWithdrawals === 0
+                ? "No pending requests"
+                : "Pending requests"}
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

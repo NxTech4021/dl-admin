@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -10,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   Select,
   SelectContent,
@@ -973,14 +975,23 @@ export default function SeasonLeaderboardCard({
                           <TableHead className="w-20 text-center">Win %</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <motion.tbody
+                        initial="hidden"
+                        animate="visible"
+                        variants={tableContainerVariants}
+                      >
                         {(standings as StandingsTeam[]).map((team) => {
                           const winRate =
                             team.played > 0
                               ? Math.round((team.wins / team.played) * 100)
                               : 0;
                           return (
-                            <TableRow key={`team-${team.rank}`} className="hover:bg-muted/30">
+                            <motion.tr
+                              key={`team-${team.rank}`}
+                              variants={tableRowVariants}
+                              transition={fastTransition}
+                              className="hover:bg-muted/30 border-b transition-colors"
+                            >
                               <TableCell className="text-center">
                                 <div className="flex justify-center">
                                   <PositionBadge position={team.rank} />
@@ -1017,10 +1028,10 @@ export default function SeasonLeaderboardCard({
                               <TableCell className="text-center">
                                 <span className="text-sm font-medium">{winRate}%</span>
                               </TableCell>
-                            </TableRow>
+                            </motion.tr>
                           );
                         })}
-                      </TableBody>
+                      </motion.tbody>
                     </Table>
                   </div>
                 ) : (
@@ -1038,9 +1049,18 @@ export default function SeasonLeaderboardCard({
                           <TableHead className="w-20 text-center">Win %</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <motion.tbody
+                        initial="hidden"
+                        animate="visible"
+                        variants={tableContainerVariants}
+                      >
                         {(standings as LeaderboardPlayer[]).map((player, index) => (
-                          <TableRow key={player.id} className="hover:bg-muted/30">
+                          <motion.tr
+                            key={player.id}
+                            variants={tableRowVariants}
+                            transition={fastTransition}
+                            className="hover:bg-muted/30 border-b transition-colors"
+                          >
                             <TableCell className="text-center">
                               <div className="flex justify-center">
                                 <PositionBadge position={index + 1} />
@@ -1073,9 +1093,9 @@ export default function SeasonLeaderboardCard({
                             <TableCell className="text-center">
                               <span className="text-sm font-medium">{player.winRate}%</span>
                             </TableCell>
-                          </TableRow>
+                          </motion.tr>
                         ))}
-                      </TableBody>
+                      </motion.tbody>
                     </Table>
                   </div>
                 )}

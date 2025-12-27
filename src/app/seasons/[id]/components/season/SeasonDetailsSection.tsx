@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -19,6 +20,7 @@ import {
   IconCurrencyDollar,
 } from "@tabler/icons-react";
 import SeasonEditModal from "@/components/modal/season-edit-modal";
+import { staggerContainer, fastTransition } from "@/lib/animation-variants";
 
 interface SeasonDetailsSectionProps {
   season: Season;
@@ -42,26 +44,32 @@ export default function SeasonDetailsSection({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2">
-            <IconInfoCircle className="size-4" />
-            Season Information
-          </CardTitle>
-          <CardDescription>
-            Overview of season details and configuration
-          </CardDescription>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsEditModalOpen(true)}
-        >
-          <IconEdit className="mr-2 h-4 w-4" />
-          Edit
-        </Button>
-      </CardHeader>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+      transition={fastTransition}
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              <IconInfoCircle className="size-4" />
+              Season Information
+            </CardTitle>
+            <CardDescription>
+              Overview of season details and configuration
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            <IconEdit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        </CardHeader>
       <CardContent>
         <div className="grid gap-6 md:grid-cols-2">
           {/* Basic Information */}
@@ -114,12 +122,13 @@ export default function SeasonDetailsSection({
         )}
       </CardContent>
 
-      <SeasonEditModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        season={season}
-        onSeasonUpdated={onSeasonUpdated}
-      />
-    </Card>
+        <SeasonEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          season={season}
+          onSeasonUpdated={onSeasonUpdated}
+        />
+      </Card>
+    </motion.div>
   );
 }

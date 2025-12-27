@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -239,7 +241,11 @@ export default function SeasonDivisionsCard({
                     <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <motion.tbody
+                  initial="hidden"
+                  animate="visible"
+                  variants={tableContainerVariants}
+                >
                   {paginatedDivisions.map((division, index) => {
                     const isDoubles = division.gameType?.toLowerCase() === "doubles";
                     const currentCount = isDoubles ? (division.currentDoublesCount || 0) : (division.currentSinglesCount || 0);
@@ -247,7 +253,12 @@ export default function SeasonDivisionsCard({
                     const capacity = getCapacityDisplay(currentCount, maxCount);
 
                     return (
-                      <TableRow key={division.id} className="hover:bg-muted/30">
+                      <motion.tr
+                        key={division.id}
+                        variants={tableRowVariants}
+                        transition={fastTransition}
+                        className="hover:bg-muted/30 border-b transition-colors"
+                      >
                         {/* Row Number */}
                         <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                           {((currentPage - 1) * pageSize) + index + 1}
@@ -349,10 +360,10 @@ export default function SeasonDivisionsCard({
                             onManagePlayers={handleManagePlayers}
                           />
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     );
                   })}
-                </TableBody>
+                </motion.tbody>
               </Table>
           ) : (
             <div className="text-center py-16">

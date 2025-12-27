@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
 import LeagueEditModal from "@/components/modal/league-edit-modal";
 import { getStatusBadgeVariant } from "@/components/data-table/constants";
 import type { League } from "@/constants/types/league";
+import { fadeInUp, fastTransition } from "@/lib/animation-variants";
 
 interface LeagueDetailsSectionProps {
   league: League;
@@ -57,26 +59,32 @@ export function LeagueDetailsSection({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2">
-            <IconInfoCircle className="size-4" />
-            League Information
-          </CardTitle>
-          <CardDescription>
-            Overview of league details and configuration
-          </CardDescription>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsEditModalOpen(true)}
-        >
-          <IconEdit className="mr-2 h-4 w-4" />
-          Edit
-        </Button>
-      </CardHeader>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+      transition={fastTransition}
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              <IconInfoCircle className="size-4" />
+              League Information
+            </CardTitle>
+            <CardDescription>
+              Overview of league details and configuration
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            <IconEdit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        </CardHeader>
       <CardContent>
         <div className="grid gap-6 md:grid-cols-2">
           {/* Basic Information */}
@@ -154,13 +162,14 @@ export function LeagueDetailsSection({
         )}
       </CardContent>
 
-      <LeagueEditModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        league={league}
-        onLeagueUpdated={onLeagueUpdated}
-      />
-    </Card>
+        <LeagueEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          league={league}
+          onLeagueUpdated={onLeagueUpdated}
+        />
+      </Card>
+    </motion.div>
   );
 }
 

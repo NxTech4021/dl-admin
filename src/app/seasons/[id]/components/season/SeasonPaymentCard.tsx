@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   Select,
   SelectContent,
@@ -542,9 +544,18 @@ export default function SeasonPaymentCard({
                         <TableHead className="w-[120px] text-left pr-4">Join Date</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <motion.tbody
+                      initial="hidden"
+                      animate="visible"
+                      variants={tableContainerVariants}
+                    >
                       {filteredMemberships.map((membership) => (
-                        <TableRow key={membership.id} className="hover:bg-muted/30">
+                        <motion.tr
+                          key={membership.id}
+                          variants={tableRowVariants}
+                          transition={fastTransition}
+                          className="hover:bg-muted/30 border-b transition-colors"
+                        >
                           <TableCell className="pl-4">
                             <div className="flex items-center gap-3">
                               <Avatar className="size-9 ring-2 ring-background">
@@ -585,9 +596,9 @@ export default function SeasonPaymentCard({
                                 })
                               : "-"}
                           </TableCell>
-                        </TableRow>
+                        </motion.tr>
                       ))}
-                    </TableBody>
+                    </motion.tbody>
                   </Table>
                 </div>
               </>

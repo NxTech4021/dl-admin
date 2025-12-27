@@ -1,1 +1,0 @@
-import{j as n,d as t}from"./index-BhJxrXm-.js";function a({className:e,...s}){return n.jsxDEV("div",{"data-slot":"skeleton",className:t("bg-accent animate-pulse rounded-md",e),...s},void 0,!1,{fileName:"/Users/willywong/DeuceLeague/DL Admin/dl-admin/src/components/ui/skeleton.tsx",lineNumber:5,columnNumber:5},this)}export{a as S};

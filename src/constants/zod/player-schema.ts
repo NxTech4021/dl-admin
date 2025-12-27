@@ -40,6 +40,11 @@ export const playerSchema = z.object({
       return null;
     }),
   completedOnboarding: z.boolean().default(false),
+  // Aggregation counts
+  leagueCount: z.number().default(0),
+  seasonCount: z.number().default(0),
+  leagueMatchesPlayed: z.number().default(0),
+  friendlyMatchesPlayed: z.number().default(0),
 });
 
 export type Player = z.infer<typeof playerSchema>;

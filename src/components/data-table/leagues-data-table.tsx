@@ -289,7 +289,8 @@ export function LeaguesDataTable({
                       key={league.id}
                       variants={tableRowVariants}
                       transition={fastTransition}
-                      className="hover:bg-muted/30 border-b transition-colors"
+                      className="hover:bg-muted/30 border-b transition-colors cursor-pointer"
+                      onClick={() => navigate({ to: "/league/view/$leagueId", params: { leagueId: league.id } })}
                     >
                       {/* Row Number */}
                       <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
@@ -379,7 +380,7 @@ export function LeaguesDataTable({
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="py-3 pr-4">
+                      <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                         <LeagueRowActions
                           league={league}
                           onView={handleViewLeague}

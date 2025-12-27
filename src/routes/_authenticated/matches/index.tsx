@@ -241,7 +241,8 @@ function MatchesPage() {
                           key={match.id}
                           variants={tableRowVariants}
                           transition={fastTransition}
-                          className="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted"
+                          className="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted cursor-pointer"
+                          onClick={() => handleView(match)}
                         >
                           <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                             {((currentPage - 1) * pageSize) + index + 1}
@@ -275,7 +276,7 @@ function MatchesPage() {
                             />
                           </TableCell>
 
-                          <TableCell className="py-3">
+                          <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
                             {!match.division && !match.leagueId ? (
                               <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400 dark:border-pink-800">
                                 Friendly
@@ -382,7 +383,7 @@ function MatchesPage() {
                             )}
                           </TableCell>
 
-                          <TableCell className="py-3 pr-4">
+                          <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                             <MatchRowActions
                               match={match}
                               onView={handleView}
