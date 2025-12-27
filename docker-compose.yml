@@ -9,8 +9,8 @@ services:
       - "3030:3030"
     environment:
       - NODE_ENV=development
-      - VITE_API_BASE_URL=http://localhost:82
-      - VITE_AUTH_URL=http://localhost:82
+      - VITE_API_BASE_URL=http://localhost:3001
+      - VITE_AUTH_URL=http://localhost:3001
     volumes:
       - .:/app
       - /app/node_modules

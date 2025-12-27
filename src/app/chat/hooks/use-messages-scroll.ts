@@ -1,9 +1,18 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, RefObject } from 'react';
 
 // ----------------------------------------------------------------------
 
-export default function useMessagesScroll(messages) {
-  const messagesEndRef = useRef(null);
+interface Message {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface UseMessagesScrollReturn {
+  messagesEndRef: RefObject<HTMLDivElement | null>;
+}
+
+export default function useMessagesScroll(messages: Message[] | null | undefined): UseMessagesScrollReturn {
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollMessagesToBottom = useCallback(() => {
     if (!messages) {

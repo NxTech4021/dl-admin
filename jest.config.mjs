@@ -1,10 +1,3 @@
-import nextJest from "next/jest.js";
-
-const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files
-  dir: "./",
-});
-
 /** @type {import('jest').Config} */
 const config = {
   // Add more setup options before each test is run
@@ -24,10 +17,21 @@ const config = {
     "**/?(*.)+(spec|test).[jt]s?(x)",
   ],
 
-  // Ignore patterns to fix haste module collision
+  // Ignore patterns
   modulePathIgnorePatterns: [
-    "<rootDir>/.next/",
+    "<rootDir>/dist/",
   ],
+
+  // Transform TypeScript and TSX files
+  transform: {
+    "^.+\\.(ts|tsx)$": ["ts-jest", {
+      tsconfig: "<rootDir>/tsconfig.json",
+      useESM: true,
+    }],
+  },
+
+  // File extensions to consider
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
 
   // Coverage configuration
   collectCoverageFrom: [
@@ -49,4 +53,4 @@ const config = {
   },
 };
 
-export default createJestConfig(config);
+export default config;

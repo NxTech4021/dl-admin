@@ -403,7 +403,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                         <TableCell className="py-3 pl-4">
                           <div className="min-w-0">
                             <Link
-                              to={`/seasons/${season.id}`}
+                              to="/seasons/$seasonId"
+                              params={{ seasonId: season.id }}
                               className="text-sm font-medium hover:text-primary transition-colors line-clamp-1"
                             >
                               {season.name}
@@ -416,7 +417,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                           {leagueInfo ? (
                             <div className="min-w-0">
                               <Link
-                                to={`/league/view/${leagueInfo.id}`}
+                                to="/league/view/$leagueId"
+                                params={{ leagueId: leagueInfo.id }}
                                 className="text-sm hover:text-primary transition-colors line-clamp-1"
                               >
                                 {leagueInfo.name}
@@ -462,7 +464,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                         <TableCell className="py-3">
                           {season.membership.division ? (
                             <Link
-                              to={`/divisions/${season.membership.division.id}`}
+                              to="/divisions/$divisionId"
+                              params={{ divisionId: season.membership.division.id }}
                               className="text-sm hover:text-primary transition-colors"
                             >
                               {season.membership.division.name}
@@ -542,7 +545,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                       {/* Season name */}
                       <div>
                         <Link
-                          to={`/seasons/${season.id}`}
+                          to="/seasons/$seasonId"
+                          params={{ seasonId: season.id }}
                           className="text-sm font-medium hover:text-primary transition-colors"
                         >
                           {season.name}
@@ -550,7 +554,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                         {leagueInfo && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             <Link
-                              to={`/league/view/${leagueInfo.id}`}
+                              to="/league/view/$leagueId"
+                              params={{ leagueId: leagueInfo.id }}
                               className="hover:text-primary transition-colors"
                             >
                               {leagueInfo.name}
@@ -573,7 +578,8 @@ const SeasonHistory: React.FC<SeasonHistoryProps> = ({ seasons, isLoading }) => 
                         </div>
                         {season.membership.division && (
                           <Link
-                            to={`/divisions/${season.membership.division.id}`}
+                            to="/divisions/$divisionId"
+                            params={{ divisionId: season.membership.division.id }}
                             className="hover:text-primary transition-colors"
                           >
                             {season.membership.division.name}

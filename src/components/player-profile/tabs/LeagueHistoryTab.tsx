@@ -55,7 +55,8 @@ export function LeagueHistoryTab({
                     <div>
                       <h4 className="font-semibold flex items-center gap-3">
                         <Link
-                          to={`/league/view/${league.id}`}
+                          to="/league/view/$leagueId"
+                          params={{ leagueId: league.id }}
                           className="hover:underline"
                         >
                           {league.name}

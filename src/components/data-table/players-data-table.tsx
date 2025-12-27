@@ -231,7 +231,7 @@ const columns: ColumnDef<Player>[] = [
               asChild
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
             >
-              <Link to={`/players/${player.id}`}>
+              <Link to="/players/$playerId" params={{ playerId: player.id }}>
                 <IconEye className="mr-2 size-4" />
                 View Profile
               </Link>

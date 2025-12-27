@@ -311,7 +311,8 @@ export function SeasonsDataTable({
                             </div>
                             <div className="min-w-0">
                               <Link
-                                to={`/seasons/${season.id}`}
+                                to="/seasons/$seasonId"
+                                params={{ seasonId: season.id }}
                                 className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
                               >
                                 {season.name}

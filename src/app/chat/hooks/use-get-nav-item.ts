@@ -1,6 +1,38 @@
 // ----------------------------------------------------------------------
 
-export default function useGetNavItem({ currentUserId, conversation }) {
+interface Participant {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+interface Message {
+  senderId: string;
+  contentType?: string;
+  body: string;
+  createdAt: Date | string;
+}
+
+interface Conversation {
+  messages: Message[];
+  participants: Participant[];
+}
+
+interface UseGetNavItemProps {
+  currentUserId: string;
+  conversation: Conversation;
+}
+
+interface UseGetNavItemReturn {
+  group: boolean;
+  displayName: string;
+  displayText: string;
+  participants: Participant[];
+  lastActivity: Date | string | undefined;
+  hasOnlineInGroup: boolean;
+}
+
+export default function useGetNavItem({ currentUserId, conversation }: UseGetNavItemProps): UseGetNavItemReturn {
   const { messages, participants } = conversation;
 
   const participantsInConversation = participants.filter(
@@ -32,7 +64,7 @@ export default function useGetNavItem({ currentUserId, conversation }) {
     displayName,
     displayText,
     participants: participantsInConversation,
-    lastActivity: lastMessage.createdAt,
+    lastActivity: lastMessage?.createdAt,
     hasOnlineInGroup,
   };
 }

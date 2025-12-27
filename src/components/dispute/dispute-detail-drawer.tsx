@@ -189,7 +189,8 @@ export function DisputeDetailDrawer({
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm text-muted-foreground shrink-0">Match ID</span>
                     <Link
-                      to={`/matches?id=${match.id}`}
+                      to="/matches"
+                      search={{ id: match.id }}
                       className="font-mono text-sm text-primary hover:underline truncate"
                     >
                       {match.id.slice(0, 12)}...
