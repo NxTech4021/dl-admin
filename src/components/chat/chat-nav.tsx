@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,7 +14,10 @@ import {
   Users,
   SquarePen,
   MessageSquarePlus,
+  User,
+  UsersRound,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Types
 import type {
@@ -73,6 +76,9 @@ const useBoolean = (initialValue = false): UseBooleanReturn => {
 // --- CONSTANTS ---
 // Width is now controlled by parent container in the main chat page
 
+// Chat filter type
+type ChatFilter = "all" | "personal" | "division";
+
 export default function ChatNav({
   loading,
   user,
@@ -102,23 +108,61 @@ export default function ChatNav({
   } = useBoolean(false);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [chatFilter, setChatFilter] = useState<ChatFilter>("all");
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Use useMemo instead of useState + useEffect to avoid state sync issues
-  // This ensures filteredConversations always reflects current conversations immediately
+  // Reset scroll position when filter changes
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTop = 0;
+      }
+    }
+  }, [chatFilter]);
+
+  // Calculate counts for each filter
+  const filterCounts = useMemo(() => {
+    const personal = conversations.filter((c) => c.type === "direct").length;
+    const division = conversations.filter((c) => c.type === "group").length;
+    return {
+      all: conversations.length,
+      personal,
+      division,
+    };
+  }, [conversations]);
+
+  // Filter conversations by type and search query
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
+    let filtered = conversations;
 
-    return conversations.filter((conversation: Conversation) => {
-      const displayName = conversation.displayName || "";
-      const participantNames =
-        conversation.participants
-          ?.map((p) => p.displayName || p.name || "")
-          .join(" ") || "";
+    // Filter by chat type
+    if (chatFilter === "personal") {
+      filtered = filtered.filter((c) => c.type === "direct");
+    } else if (chatFilter === "division") {
+      filtered = filtered.filter((c) => c.type === "group");
+      // Sort division chats alphabetically by name
+      filtered = [...filtered].sort((a, b) =>
+        (a.displayName || "").localeCompare(b.displayName || "")
+      );
+    }
 
-      const searchText = (displayName + " " + participantNames).toLowerCase();
-      return searchText.includes(searchQuery.toLowerCase());
-    });
-  }, [conversations, searchQuery]);
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((conversation: Conversation) => {
+        const displayName = conversation.displayName || "";
+        const participantNames =
+          conversation.participants
+            ?.map((p) => p.displayName || p.name || "")
+            .join(" ") || "";
+
+        const searchText = (displayName + " " + participantNames).toLowerCase();
+        return searchText.includes(searchQuery.toLowerCase());
+      });
+    }
+
+    return filtered;
+  }, [conversations, chatFilter, searchQuery]);
 
   // Event Handlers
   const handleClickCompose = useCallback(() => {
@@ -172,44 +216,67 @@ export default function ChatNav({
     </>
   );
 
-  const renderEmptyState = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="flex flex-col items-center justify-center py-8 text-center"
-    >
-      <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-        <MessageSquarePlus className="w-6 h-6 text-muted-foreground/60" />
-      </div>
-      <p className="text-sm text-muted-foreground mb-2">
-        {searchQuery ? "No conversations found" : "No conversations yet"}
-      </p>
-      <p className="text-xs text-muted-foreground/70">
-        {searchQuery
-          ? "Try a different search term"
-          : "Start a new conversation"}
-      </p>
-      {!searchQuery && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4"
-          onClick={handleClickCompose}
-        >
-          <MessageSquarePlus className="w-4 h-4 mr-2" />
-          New Message
-        </Button>
-      )}
-    </motion.div>
-  );
+  const renderEmptyState = () => {
+    const getEmptyMessage = () => {
+      if (searchQuery) return "No conversations found";
+      if (chatFilter === "personal") return "No personal chats";
+      if (chatFilter === "division") return "No division chats";
+      return "No conversations yet";
+    };
+
+    const getEmptySubMessage = () => {
+      if (searchQuery) return "Try a different search term";
+      if (chatFilter !== "all") return "Try selecting a different filter";
+      return "Start a new conversation";
+    };
+
+    return (
+      <motion.div
+        key="empty-state"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="flex flex-col items-center justify-center py-8 text-center px-4"
+      >
+        <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+          {chatFilter === "personal" ? (
+            <User className="w-6 h-6 text-muted-foreground/60" />
+          ) : chatFilter === "division" ? (
+            <UsersRound className="w-6 h-6 text-muted-foreground/60" />
+          ) : (
+            <MessageSquarePlus className="w-6 h-6 text-muted-foreground/60" />
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mb-2">
+          {getEmptyMessage()}
+        </p>
+        <p className="text-xs text-muted-foreground/70">
+          {getEmptySubMessage()}
+        </p>
+        {!searchQuery && chatFilter === "all" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={handleClickCompose}
+          >
+            <MessageSquarePlus className="w-4 h-4 mr-2" />
+            New Message
+          </Button>
+        )}
+      </motion.div>
+    );
+  };
 
   const renderConversationsList = () => (
-    <>
+    <AnimatePresence mode="popLayout" initial={false}>
       {filteredConversations.length > 0 ? (
         <motion.div
+          key={`list-${chatFilter}`}
           initial="hidden"
           animate="visible"
+          exit="hidden"
           variants={{
             hidden: {},
             visible: { transition: { staggerChildren: 0.04 } },
@@ -219,10 +286,10 @@ export default function ChatNav({
             <motion.div
               key={conversation.id}
               variants={{
-                hidden: { opacity: 0, x: -8 },
-                visible: { opacity: 1, x: 0 },
+                hidden: { opacity: 0 },
+                visible: { opacity: 1 },
               }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.15 }}
             >
               <ChatNavItem
                 conversation={conversation}
@@ -235,7 +302,7 @@ export default function ChatNav({
       ) : (
         renderEmptyState()
       )}
-    </>
+    </AnimatePresence>
   );
 
   const renderHeader = () => (
@@ -287,6 +354,72 @@ export default function ChatNav({
     </div>
   );
 
+  const renderFilterTabs = () => (
+    <div className="px-3 pb-2">
+      <div className="inline-flex items-center w-full rounded-lg bg-muted/60 p-1">
+        <button
+          onClick={() => setChatFilter("all")}
+          className={cn(
+            "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
+            chatFilter === "all"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          All
+          {filterCounts.all > 0 && (
+            <span className={cn(
+              "text-[10px]",
+              chatFilter === "all" ? "text-muted-foreground" : "text-muted-foreground/60"
+            )}>
+              {filterCounts.all}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setChatFilter("personal")}
+          className={cn(
+            "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
+            chatFilter === "personal"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <User className="h-3 w-3" />
+          Personal
+          {filterCounts.personal > 0 && (
+            <span className={cn(
+              "text-[10px]",
+              chatFilter === "personal" ? "text-muted-foreground" : "text-muted-foreground/60"
+            )}>
+              {filterCounts.personal}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setChatFilter("division")}
+          className={cn(
+            "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
+            chatFilter === "division"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <UsersRound className="h-3 w-3" />
+          Division
+          {filterCounts.division > 0 && (
+            <span className={cn(
+              "text-[10px]",
+              chatFilter === "division" ? "text-muted-foreground" : "text-muted-foreground/60"
+            )}>
+              {filterCounts.division}
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
   const renderContent = () => (
     <div className="h-full flex flex-col">
       {/* Header with compose icon */}
@@ -295,8 +428,11 @@ export default function ChatNav({
       {/* Pill-shaped search */}
       {renderSearch()}
 
+      {/* Filter tabs */}
+      {renderFilterTabs()}
+
       {/* Conversations List */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" ref={scrollAreaRef}>
         <ScrollArea className="h-full">
           {loading ? renderSkeleton() : renderConversationsList()}
         </ScrollArea>

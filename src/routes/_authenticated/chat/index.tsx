@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Loader2, MessageSquare } from "lucide-react";
@@ -69,55 +69,57 @@ function ChatPage() {
     setReplyingTo(null);
   }, [selectedConversationId]);
 
-  const conversations: Conversation[] = threads.map((thread: Thread) => {
-    const displayName = thread.isGroup
-      ? thread.name || "Unnamed Group"
-      : thread.members
-          .filter((m) => m.userId !== user?.id)
-          .map((m) => m.user.name)
-          .join(", ") || "Unknown";
+  const conversations: Conversation[] = useMemo(() => {
+    return threads.map((thread: Thread) => {
+      const displayName = thread.isGroup
+        ? thread.name || "Unnamed Group"
+        : thread.members
+            .filter((m) => m.userId !== user?.id)
+            .map((m) => m.user.name)
+            .join(", ") || "Unknown";
 
-    const photoURL = thread.isGroup
-      ? thread.avatarUrl
-      : thread.members.find((m) => m.userId !== user?.id)?.user.image;
+      const photoURL = thread.isGroup
+        ? thread.avatarUrl
+        : thread.members.find((m) => m.userId !== user?.id)?.user.image;
 
-    const participants: ChatParticipant[] = thread.members.map((member) => ({
-      id: member.userId,
-      name: member.user.name,
-      username: member.user.username,
-      email: member.user.email,
-      phoneNumber: member.user.phoneNumber,
-      image: member.user.image,
-      displayName: member.user.name,
-      photoURL: member.user.image,
-      status: "online" as const,
-      role: member.role,
-      isCurrentUser: member.userId === user?.id,
-    }));
+      const participants: ChatParticipant[] = thread.members.map((member) => ({
+        id: member.userId,
+        name: member.user.name,
+        username: member.user.username,
+        email: member.user.email,
+        phoneNumber: member.user.phoneNumber,
+        image: member.user.image,
+        displayName: member.user.name,
+        photoURL: member.user.image,
+        status: "online" as const,
+        role: member.role,
+        isCurrentUser: member.userId === user?.id,
+      }));
 
-    const lastMessage =
-      thread.messages.length > 0
-        ? {
-            content: thread.messages[0].content,
-            createdAt: thread.messages[0].createdAt,
-            sender: { name: thread.messages[0].sender.name },
-          }
-        : null;
+      const lastMessage =
+        thread.messages.length > 0
+          ? {
+              content: thread.messages[0].content,
+              createdAt: thread.messages[0].createdAt,
+              sender: { name: thread.messages[0].sender.name },
+            }
+          : null;
 
-    return {
-      id: thread.id,
-      type: thread.isGroup ? "group" : "direct",
-      displayName,
-      name: thread.name,
-      photoURL,
-      avatarUrl: thread.avatarUrl,
-      isGroup: thread.isGroup,
-      participants,
-      messages: [],
-      lastMessage,
-      unreadCount: 0,
-    };
-  });
+      return {
+        id: thread.id,
+        type: thread.isGroup ? "group" : "direct",
+        displayName,
+        name: thread.name,
+        photoURL,
+        avatarUrl: thread.avatarUrl,
+        isGroup: thread.isGroup,
+        participants,
+        messages: [],
+        lastMessage,
+        unreadCount: 0,
+      };
+    });
+  }, [threads, user?.id]);
 
   const currentConversation = selectedConversationId
     ? conversations.find((conv) => conv.id === selectedConversationId)
@@ -296,7 +298,7 @@ function ChatPage() {
       <SiteHeader />
       <div className="flex-1 flex min-h-0">
         {/* Desktop: Sidebar always visible */}
-        <div className="hidden md:block md:w-[340px] flex-shrink-0 border-r border-border/40 bg-background overflow-y-auto">
+        <div className="hidden md:block md:w-[360px] flex-shrink-0 border-r border-border/40 bg-background overflow-y-auto">
           <ChatNav
             conversations={conversations}
             loading={threadsLoading}

@@ -1,13 +1,15 @@
 "use client"
 
+import { useNavigate } from "@tanstack/react-router"
 import { useBoolean } from "@/app/chat/hooks/use-boolean"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronDown, ChevronRight, MapPin, Phone, Mail, User } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ChevronDown, ChevronRight, Mail, User, MapPin, Activity, Clock, ExternalLink } from "lucide-react"
 import { ChatRoomSingleProps } from "../../constants/types/chat"
 import { getStatusColor } from "./constants"
+import { usePlayer } from "@/hooks/use-queries"
 
 const getInitials = (name: string) => {
   if (!name) return '?';
@@ -21,14 +23,27 @@ const getInitials = (name: string) => {
 
 export default function ChatRoomSingle({ participant, conversation }: ChatRoomSingleProps) {
   const collapse = useBoolean(true)
-  
+  const navigate = useNavigate()
+
+  // Fetch extended player data
+  const { data: playerData } = usePlayer(participant?.id || "")
+
   const name = participant?.name || participant?.displayName || 'Unknown User'
   const avatarUrl = participant?.photoURL || 'unknown'
   const role = participant?.role || 'User'
-  const phoneNumber = participant?.phoneNumber || 'No phone number'
-  const email = participant?.email || 'No email provided'
+  const email = participant?.email || playerData?.email || 'No email provided'
   const status = participant?.status || 'offline'
 
+  // Extended player info
+  const sports = playerData?.sports || []
+  const area = playerData?.area
+  const lastLogin = playerData?.lastLoginDate
+
+  const handleViewProfile = () => {
+    if (participant?.id) {
+      navigate({ to: "/players/$playerId", params: { playerId: participant.id } })
+    }
+  }
 
   const renderInfo = (
     <div className="flex flex-col items-center py-5 px-3 border-b border-border">
@@ -45,7 +60,7 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
           getStatusColor(status)
         )} />
       </div>
-      
+
       <h3 className="text-lg font-semibold text-center mb-1">{name}</h3>
       <p className="text-sm text-muted-foreground mb-1 capitalize">{status}</p>
       <p className="text-xs text-muted-foreground">{role}</p>
@@ -71,10 +86,11 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
     <div
       className={cn(
         "overflow-hidden transition-all duration-200",
-        collapse.value ? "max-h-40" : "max-h-0"
+        collapse.value ? "max-h-[400px]" : "max-h-0"
       )}
     >
       <div className="flex flex-col px-3 py-2.5 space-y-3 text-sm">
+        {/* Role */}
         <div className="flex items-start gap-3">
           <User className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
           <div className="flex flex-col">
@@ -83,6 +99,35 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
           </div>
         </div>
 
+        {/* Sports */}
+        {sports.length > 0 && (
+          <div className="flex items-start gap-3">
+            <Activity className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground">Sports</span>
+              <div className="flex flex-wrap gap-1">
+                {sports.map((sport) => (
+                  <Badge key={sport} variant="secondary" className="text-xs capitalize">
+                    {sport}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location */}
+        {area && (
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Location</span>
+              <span className="text-sm">{area}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Email */}
         <div className="flex items-start gap-3">
           <Mail className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
           <div className="flex flex-col min-w-0">
@@ -91,13 +136,34 @@ export default function ChatRoomSingle({ participant, conversation }: ChatRoomSi
           </div>
         </div>
 
-        <div className="flex items-start gap-3">
-          <Phone className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Phone</span>
-            <span className="text-sm">{phoneNumber}</span>
+        {/* Last Active */}
+        {lastLogin && (
+          <div className="flex items-start gap-3">
+            <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Last Active</span>
+              <span className="text-sm">
+                {new Date(lastLogin).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* View Profile Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-2"
+          onClick={handleViewProfile}
+          disabled={!participant?.id}
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          View Profile
+        </Button>
       </div>
     </div>
   )

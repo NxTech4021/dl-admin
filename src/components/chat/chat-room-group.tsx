@@ -117,13 +117,13 @@ export default function ChatRoomGroup({
   )
 
   const renderContent = (
-    <ScrollArea className="h-[224px]">
+    <ScrollArea className="max-h-[320px]">
       <ul className="divide-y divide-border">
         {participants.map((participant: any) => (
           <li
             key={participant.id}
             onClick={() => handleOpen(participant)}
-            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/70"
+            className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
           >
             <div className="relative">
               <Avatar className="h-8 w-8">
@@ -177,7 +177,7 @@ export default function ChatRoomGroup({
       <div
         className={cn(
           "transition-all overflow-hidden",
-          collapse.value ? "max-h-[224px]" : "max-h-0"
+          collapse.value ? "max-h-[320px]" : "max-h-0"
         )}
       >
         {collapse.value && renderContent}
@@ -185,13 +185,14 @@ export default function ChatRoomGroup({
 
       {selected && (
         <Dialog open={!!selected} onOpenChange={handleClose}>
-          <DialogContent>
+          <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>{selected.name || selected.displayName}</DialogTitle>
+              <DialogTitle className="sr-only">
+                {selected.name || selected.displayName}
+              </DialogTitle>
             </DialogHeader>
             <ChatRoomParticipantDialog
               participant={selected}
-              open={!!selected}
               onClose={handleClose}
             />
           </DialogContent>

@@ -176,12 +176,10 @@ const ChatNavItem = ({
   );
 
   return (
-    <motion.div
+    <div
       onClick={handleClickConversation}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.1 }}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors",
+        "flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors",
         selected ? "bg-muted" : "hover:bg-muted/50"
       )}
     >
@@ -223,7 +221,7 @@ const ChatNavItem = ({
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
