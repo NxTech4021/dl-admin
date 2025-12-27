@@ -17,10 +17,10 @@ export function useChatData(userId?: string) {
   const [error, setError] = useState<string | null>(null);
   const { socket, isConnected } = useSocket();
 
-  const fetchThreads = useCallback(async () => {
+  const fetchThreads = useCallback(async (): Promise<Thread[]> => {
     if (!userId) {
       setLoading(false);
-      return;
+      return [];
     }
 
     try {
@@ -31,22 +31,23 @@ export function useChatData(userId?: string) {
         endpoints.chat.getThreads(userId)
       );
 
+      let threadsData: Thread[] = [];
+
       if (response.data) {
         if (response.data.success && response.data.data) {
-          setThreads(response.data.data);
+          threadsData = response.data.data;
         } else if (Array.isArray(response.data)) {
-          setThreads(response.data);
+          threadsData = response.data;
         } else if (
           response.data.threads &&
           Array.isArray(response.data.threads)
         ) {
-          setThreads(response.data.threads);
-        } else {
-          setThreads([]);
+          threadsData = response.data.threads;
         }
-      } else {
-        setThreads([]);
       }
+
+      setThreads(threadsData);
+      return threadsData;
     } catch (err: any) {
       console.error("Error fetching threads:", err);
       const errorMessage =
@@ -57,6 +58,7 @@ export function useChatData(userId?: string) {
       setError(errorMessage);
       toast.error("Failed to load chat threads");
       setThreads([]);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -144,12 +146,25 @@ export function useChatData(userId?: string) {
     });
   }, []);
 
+  // Function to add a thread optimistically (used when creating new chats)
+  const addThreadOptimistically = useCallback((newThread: Thread) => {
+    setThreads((prev) => {
+      // Check if thread already exists (avoid duplicates)
+      if (prev.some((t) => t.id === newThread.id)) {
+        return prev;
+      }
+      // Add new thread at the beginning
+      return [newThread, ...prev];
+    });
+  }, []);
+
   return {
     threads,
     loading,
     error,
     refetch: fetchThreads,
     updateThreadLastMessage,
+    addThreadOptimistically,
   };
 }
 

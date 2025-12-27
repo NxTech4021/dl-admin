@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -81,9 +81,11 @@ export default function ChatNav({
   onConversationSelect,
   onThreadCreated,
   forceMobileList = false,
-}: ChatNavProps & { 
+  addThreadOptimistically,
+}: ChatNavProps & {
   onThreadCreated?: () => Promise<void> | void;
   forceMobileList?: boolean;
+  addThreadOptimistically?: (thread: any) => void;
 }) {
   const navigate = useNavigate();
   const mdUp = useResponsive();
@@ -100,33 +102,22 @@ export default function ChatNav({
   } = useBoolean(false);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filteredConversations, setFilteredConversations] =
-    useState<Conversation[]>(conversations);
 
-  // Filter conversations based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredConversations(conversations);
-    } else {
-      const filtered = conversations.filter((conversation: Conversation) => {
-        const displayName = conversation.displayName || "";
-        const participantNames =
-          conversation.participants
-            ?.map((p) => p.displayName || p.name || "")
-            .join(" ") || "";
+  // Use useMemo instead of useState + useEffect to avoid state sync issues
+  // This ensures filteredConversations always reflects current conversations immediately
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
 
-        const searchText = (displayName + " " + participantNames).toLowerCase();
-        return searchText.includes(searchQuery.toLowerCase());
-      });
-      setFilteredConversations(filtered);
-    }
-  }, [searchQuery, conversations]);
+    return conversations.filter((conversation: Conversation) => {
+      const displayName = conversation.displayName || "";
+      const participantNames =
+        conversation.participants
+          ?.map((p) => p.displayName || p.name || "")
+          .join(" ") || "";
 
-  // Update filtered conversations when conversations change
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredConversations(conversations);
-    }
+      const searchText = (displayName + " " + participantNames).toLowerCase();
+      return searchText.includes(searchQuery.toLowerCase());
+    });
   }, [conversations, searchQuery]);
 
   // Event Handlers
@@ -316,6 +307,7 @@ export default function ChatNav({
         onOpenChange={closeNewChatModal}
         currentUserId={user?.id}
         onThreadCreated={handleThreadCreated}
+        addThreadOptimistically={addThreadOptimistically}
       />
     </div>
   );

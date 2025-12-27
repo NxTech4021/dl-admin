@@ -42,10 +42,11 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
     : conversation?.participants?.filter((p: any) => p.id !== currentUserId) ||
       [];
 
-  // Display name logic
+  // Display name logic - use conversation.displayName as primary fallback for direct chats
   const displayName = isGroup
     ? conversation?.displayName || conversation?.name || "Group Chat"
-    : otherParticipants[0]?.name ||
+    : conversation?.displayName ||
+      otherParticipants[0]?.name ||
       otherParticipants[0]?.displayName ||
       DEFAULTS.UNKNOWN_USER;
 

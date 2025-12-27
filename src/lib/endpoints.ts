@@ -248,4 +248,11 @@ export const endpoints = {
     getSettings: (appId: string) => `/api/bug/admin/apps/${appId}/settings`,
     updateSettings: (appId: string) => `/api/bug/admin/apps/${appId}/settings`,
   },
+
+  payments: {
+    getAll: "/api/admin/payments",
+    getStats: "/api/admin/payments/stats",
+    updateStatus: (membershipId: string) => `/api/admin/payments/${membershipId}/status`,
+    bulkUpdateStatus: "/api/admin/payments/bulk-status",
+  },
 };

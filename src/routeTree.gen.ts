@@ -17,6 +17,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSeasonsIndexRouteImport } from './routes/_authenticated/seasons/index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports/index'
 import { Route as AuthenticatedPlayersIndexRouteImport } from './routes/_authenticated/players/index'
+import { Route as AuthenticatedPaymentsIndexRouteImport } from './routes/_authenticated/payments/index'
 import { Route as AuthenticatedMatchesIndexRouteImport } from './routes/_authenticated/matches/index'
 import { Route as AuthenticatedLeagueIndexRouteImport } from './routes/_authenticated/league/index'
 import { Route as AuthenticatedDivisionsIndexRouteImport } from './routes/_authenticated/divisions/index'
@@ -77,6 +78,12 @@ const AuthenticatedPlayersIndexRoute =
   AuthenticatedPlayersIndexRouteImport.update({
     id: '/players/',
     path: '/players/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPaymentsIndexRoute =
+  AuthenticatedPaymentsIndexRouteImport.update({
+    id: '/payments/',
+    path: '/payments/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMatchesIndexRoute =
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/divisions': typeof AuthenticatedDivisionsIndexRoute
   '/league': typeof AuthenticatedLeagueIndexRoute
   '/matches': typeof AuthenticatedMatchesIndexRoute
+  '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/players': typeof AuthenticatedPlayersIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/seasons': typeof AuthenticatedSeasonsIndexRoute
@@ -217,6 +225,7 @@ export interface FileRoutesByTo {
   '/divisions': typeof AuthenticatedDivisionsIndexRoute
   '/league': typeof AuthenticatedLeagueIndexRoute
   '/matches': typeof AuthenticatedMatchesIndexRoute
+  '/payments': typeof AuthenticatedPaymentsIndexRoute
   '/players': typeof AuthenticatedPlayersIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/seasons': typeof AuthenticatedSeasonsIndexRoute
@@ -245,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/divisions/': typeof AuthenticatedDivisionsIndexRoute
   '/_authenticated/league/': typeof AuthenticatedLeagueIndexRoute
   '/_authenticated/matches/': typeof AuthenticatedMatchesIndexRoute
+  '/_authenticated/payments/': typeof AuthenticatedPaymentsIndexRoute
   '/_authenticated/players/': typeof AuthenticatedPlayersIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/seasons/': typeof AuthenticatedSeasonsIndexRoute
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/divisions'
     | '/league'
     | '/matches'
+    | '/payments'
     | '/players'
     | '/reports'
     | '/seasons'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/divisions'
     | '/league'
     | '/matches'
+    | '/payments'
     | '/players'
     | '/reports'
     | '/seasons'
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
     | '/_authenticated/divisions/'
     | '/_authenticated/league/'
     | '/_authenticated/matches/'
+    | '/_authenticated/payments/'
     | '/_authenticated/players/'
     | '/_authenticated/reports/'
     | '/_authenticated/seasons/'
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/players'
       fullPath: '/players'
       preLoaderRoute: typeof AuthenticatedPlayersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payments/': {
+      id: '/_authenticated/payments/'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/matches/': {
@@ -537,6 +557,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDivisionsIndexRoute: typeof AuthenticatedDivisionsIndexRoute
   AuthenticatedLeagueIndexRoute: typeof AuthenticatedLeagueIndexRoute
   AuthenticatedMatchesIndexRoute: typeof AuthenticatedMatchesIndexRoute
+  AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedPlayersIndexRoute: typeof AuthenticatedPlayersIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedSeasonsIndexRoute: typeof AuthenticatedSeasonsIndexRoute
@@ -562,6 +583,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDivisionsIndexRoute: AuthenticatedDivisionsIndexRoute,
   AuthenticatedLeagueIndexRoute: AuthenticatedLeagueIndexRoute,
   AuthenticatedMatchesIndexRoute: AuthenticatedMatchesIndexRoute,
+  AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedPlayersIndexRoute: AuthenticatedPlayersIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedSeasonsIndexRoute: AuthenticatedSeasonsIndexRoute,

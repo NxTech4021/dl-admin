@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { formatDistanceToNow } from 'date-fns';
 import { Search, MessageSquare, Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -23,14 +24,31 @@ interface NewChatModalProps {
   onOpenChange: (open: boolean) => void;
   currentUserId?: string;
   onThreadCreated?: () => Promise<void> | void;
+  addThreadOptimistically?: (thread: any) => void;
 }
 
+// Helper function to format last active time
+const formatLastActive = (lastActiveAt?: string, isOnline?: boolean): string => {
+  if (isOnline) return 'Active now';
+  if (!lastActiveAt) return '';
+
+  try {
+    const date = new Date(lastActiveAt);
+    return `Active ${formatDistanceToNow(date)} ago`;
+  } catch {
+    return '';
+  }
+};
+
 const UserSkeleton = () => (
-  <div className="flex items-center gap-3 p-2">
-    <Skeleton className="h-10 w-10 rounded-full" />
-    <div className="flex-1 space-y-1">
+  <div className="flex items-center gap-3 p-3">
+    <div className="relative">
+      <Skeleton className="h-10 w-10 rounded-full" />
+      <Skeleton className="absolute bottom-0 right-0 h-3 w-3 rounded-full" />
+    </div>
+    <div className="flex-1 space-y-1.5">
       <Skeleton className="h-4 w-32" />
-      <Skeleton className="h-3 w-24" />
+      <Skeleton className="h-3 w-40" />
     </div>
   </div>
 );
@@ -40,6 +58,7 @@ export default function NewChatModal({
   onOpenChange,
   currentUserId,
   onThreadCreated,
+  addThreadOptimistically,
 }: NewChatModalProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,9 +84,9 @@ export default function NewChatModal({
 
     try {
       setCreatingChatWithUser(user.id);
-      
+
       const threadData = {
-        name: undefined, 
+        name: undefined,
         isGroup: false,
         userIds: [currentUserId, user.id],
         createdBy: currentUserId,
@@ -76,18 +95,22 @@ export default function NewChatModal({
       const newThread = await createThread(threadData);
 
       if (newThread) {
-        // Trigger refetch and WAIT for it to complete before navigation
-        await onThreadCreated?.();
+        // Add thread to state optimistically FIRST
+        // This ensures the conversation appears in the list immediately
+        if (addThreadOptimistically) {
+          addThreadOptimistically(newThread);
+        }
 
-        // Reset creating state first so handleClose doesn't return early
+        // Close modal and reset state
         setCreatingChatWithUser(null);
-
-        // Close modal
         onOpenChange(false);
         setSearchQuery('');
 
-        // Navigate to the new thread
+        // Navigate immediately - the thread is now in state
         navigate({ to: '/chat', search: { id: newThread.id } });
+
+        // Background refetch to sync with server (non-blocking)
+        onThreadCreated?.();
 
         toast.success(`Chat with ${user.name} started!`);
       }
@@ -166,7 +189,8 @@ export default function NewChatModal({
                 <div className="space-y-1">
                   {filteredUsers.map((user) => {
                     const isCreating = creatingChatWithUser === user.id;
-                    
+                    const lastActiveText = formatLastActive(user.lastActiveAt, user.isOnline);
+
                     return (
                       <div
                         key={user.id}
@@ -178,22 +202,52 @@ export default function NewChatModal({
                           isCreating && "bg-muted border border-brand-light/20"
                         )}
                       >
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.image} alt={user.name} />
-                          <AvatarFallback>
-                            {user.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        
+                        {/* Avatar with Online Status Indicator */}
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.image} alt={user.name} />
+                            <AvatarFallback>
+                              {user.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          {/* Online Status Dot */}
+                          <div
+                            className={cn(
+                              "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background",
+                              user.isOnline ? "bg-green-500" : "bg-gray-400"
+                            )}
+                            aria-label={user.isOnline ? "Online" : "Offline"}
+                          />
+                        </div>
+
                         <div className="flex-1 min-w-0">
+                          {/* User Name */}
                           <p className="text-sm font-medium truncate">
                             {user.name}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.username ? `@${user.username}` : user.email}
-                          </p>
+
+                          {/* Username/Email and Last Active */}
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="truncate">
+                              {user.username ? `@${user.username}` : user.email}
+                            </span>
+
+                            {/* Show status text if available */}
+                            {lastActiveText && (
+                              <>
+                                <span className="text-muted-foreground/50">•</span>
+                                <span className={cn(
+                                  "flex-shrink-0",
+                                  user.isOnline ? "text-green-600 dark:text-green-500" : "text-muted-foreground/70"
+                                )}>
+                                  {lastActiveText}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        
+
                         {isCreating && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" />

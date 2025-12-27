@@ -27,6 +27,8 @@ export interface AvailableUser {
   username?: string;
   image?: string;
   email?: string;
+  isOnline?: boolean;
+  lastActiveAt?: string;
 }
 
 // Thread Member

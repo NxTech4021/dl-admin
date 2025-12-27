@@ -47,6 +47,7 @@ function ChatViewContent() {
     loading: threadsLoading,
     error: threadsError,
     refetch: refetchThreads,
+    addThreadOptimistically,
   } = useChatData(user?.id);
 
   const {
@@ -77,37 +78,46 @@ function ChatViewContent() {
 
   // Transform threads to conversations for UI
   const conversations: Conversation[] = threads.map((thread: Thread) => {
-    const displayName = thread.isGroup
-      ? thread.name || "Unnamed Group"
-      : thread.members
-          .filter((m) => m.userId !== user?.id)
-          .map((m) => m.user.name)
-          .join(", ") || "Unknown";
+    // Safely handle missing or empty members array
+    const members = thread.members || [];
+    const otherMembers = members.filter((m) => m.userId !== user?.id);
+
+    let displayName: string;
+    if (thread.isGroup) {
+      displayName = thread.name || "Unnamed Group";
+    } else if (otherMembers.length > 0) {
+      const names = otherMembers.map((m) => m.user?.name).filter(Boolean);
+      displayName = names.length > 0 ? names.join(", ") : "Unknown";
+    } else {
+      displayName = "Unknown";
+    }
 
     const photoURL = thread.isGroup
       ? thread.avatarUrl
-      : thread.members.find((m) => m.userId !== user?.id)?.user.image;
+      : otherMembers[0]?.user?.image;
 
-    const participants: ChatParticipant[] = thread.members.map((member) => ({
-      id: member.userId,
-      name: member.user.name,
-      username: member.user.username,
-      email: member.user.email,
-      phoneNumber: member.user.phoneNumber,
-      image: member.user.image,
-      displayName: member.user.name,
-      photoURL: member.user.image,
-      status: "online" as const,
-      role: member.role,
-      isCurrentUser: member.userId === user?.id,
-    }));
+    const participants: ChatParticipant[] = members
+      .filter((member) => member?.user) // Only include members with user data
+      .map((member) => ({
+        id: member.userId,
+        name: member.user.name || "Unknown",
+        username: member.user.username,
+        email: member.user.email,
+        phoneNumber: member.user.phoneNumber,
+        image: member.user.image,
+        displayName: member.user.name || "Unknown",
+        photoURL: member.user.image,
+        status: "online" as const,
+        role: member.role,
+        isCurrentUser: member.userId === user?.id,
+      }));
 
     const lastMessage =
-      thread.messages.length > 0
+      thread.messages && thread.messages.length > 0
         ? {
             content: thread.messages[0].content,
             createdAt: thread.messages[0].createdAt,
-            sender: { name: thread.messages[0].sender.name },
+            sender: { name: thread.messages[0].sender?.name || "Unknown" },
           }
         : null;
 
@@ -324,6 +334,7 @@ function ChatViewContent() {
               user={user}
               onConversationSelect={handleConversationSelect}
               onThreadCreated={refetchThreads}
+              addThreadOptimistically={addThreadOptimistically}
             />
           </div>
 

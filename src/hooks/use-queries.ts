@@ -10,6 +10,17 @@ import { matchSchema, Match, matchStatsSchema, MatchStats, MatchFilters, MatchRe
 import { inactivitySettingsSchema, inactivityStatsSchema, InactivitySettings, InactivityStats, InactivitySettingsInput } from "@/constants/zod/inactivity-settings-schema";
 import { dashboardStatsSchema, dashboardKPISchema, sportMetricsSchema, matchActivitySchema, userGrowthSchema, sportComparisonSchema, DashboardStats, DashboardKPI, SportMetrics, MatchActivity, UserGrowth, SportComparison } from "@/constants/zod/dashboard-schema";
 import { teamChangeRequestSchema, teamChangeRequestsResponseSchema, TeamChangeRequest, TeamChangeRequestStatus } from "@/constants/zod/team-change-request-schema";
+import {
+  paymentRecordSchema,
+  paymentStatsSchema,
+  paginatedPaymentsSchema,
+  PaymentRecord,
+  PaymentStats,
+  PaginatedPayments,
+  PaymentFilters,
+  UpdatePaymentStatusRequest,
+  BulkUpdatePaymentStatusRequest,
+} from "@/constants/zod/payment-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -101,6 +112,13 @@ export const queryKeys = {
     all: ["bug"] as const,
     app: (appId: string) => [...queryKeys.bug.all, "app", appId] as const,
     settings: (appId: string) => [...queryKeys.bug.all, "settings", appId] as const,
+  },
+  payments: {
+    all: ["payments"] as const,
+    lists: () => [...queryKeys.payments.all, "list"] as const,
+    list: (filters: Partial<PaymentFilters>) => [...queryKeys.payments.lists(), filters] as const,
+    stats: (filters?: { seasonId?: string; startDate?: Date; endDate?: Date }) =>
+      [...queryKeys.payments.all, "stats", filters] as const,
   },
 };
 
@@ -1459,6 +1477,8 @@ export function useInvalidateQueries() {
       queryClient.invalidateQueries({ queryKey: queryKeys.sponsors.all }),
     invalidateBugSettings: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.bug.all }),
+    invalidatePayments: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all }),
     invalidateAll: () => queryClient.invalidateQueries(),
   };
 }
@@ -1553,6 +1573,150 @@ export function useUpdateBugReportSettings() {
     },
     onError: (error) => {
       console.error("Failed to update bug report settings:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+// ============================================
+// PAYMENTS
+// ============================================
+
+/**
+ * Get all payments with filters and pagination
+ */
+export function usePayments(filters: Partial<PaymentFilters> = {}) {
+  return useQuery({
+    queryKey: queryKeys.payments.list(filters),
+    queryFn: async (): Promise<PaginatedPayments> => {
+      const params = new URLSearchParams();
+
+      if (filters.search) params.append("search", filters.search);
+      if (filters.seasonId) params.append("seasonId", filters.seasonId);
+      if (filters.status) params.append("status", filters.status);
+      if (filters.startDate) params.append("startDate", filters.startDate.toISOString());
+      if (filters.endDate) params.append("endDate", filters.endDate.toISOString());
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.limit) params.append("limit", String(filters.limit));
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+
+      const response = await axiosInstance.get(
+        `${endpoints.payments.getAll}?${params.toString()}`
+      );
+
+      // Safe parse with error handling
+      const parseResult = paginatedPaymentsSchema.safeParse(response.data);
+      if (!parseResult.success) {
+        console.error("Payments schema validation failed:", parseResult.error.issues);
+        // Return raw data as fallback
+        return {
+          data: response.data.data ?? [],
+          pagination: response.data.pagination ?? {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+
+      return parseResult.data;
+    },
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+/**
+ * Get payment statistics
+ */
+export function usePaymentStats(filters?: {
+  seasonId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  return useQuery({
+    queryKey: queryKeys.payments.stats(filters),
+    queryFn: async (): Promise<PaymentStats> => {
+      const params = new URLSearchParams();
+      if (filters?.seasonId) params.append("seasonId", filters.seasonId);
+      if (filters?.startDate) params.append("startDate", filters.startDate.toISOString());
+      if (filters?.endDate) params.append("endDate", filters.endDate.toISOString());
+
+      const response = await axiosInstance.get(
+        `${endpoints.payments.getStats}?${params.toString()}`
+      );
+
+      // Safe parse with error handling
+      const parseResult = paymentStatsSchema.safeParse(response.data.data || response.data);
+      if (!parseResult.success) {
+        console.error("Payment stats schema validation failed:", parseResult.error.issues);
+        // Return default stats as fallback
+        return {
+          total: 0,
+          completed: 0,
+          pending: 0,
+          failed: 0,
+          totalRevenue: 0,
+          outstandingAmount: 0,
+        };
+      }
+
+      return parseResult.data;
+    },
+    staleTime: 60000, // 1 minute
+  });
+}
+
+/**
+ * Update a single payment status
+ */
+export function useUpdatePaymentStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      membershipId,
+      data,
+    }: {
+      membershipId: string;
+      data: UpdatePaymentStatusRequest;
+    }) => {
+      const response = await axiosInstance.patch(
+        endpoints.payments.updateStatus(membershipId),
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all });
+    },
+    onError: (error) => {
+      console.error("Failed to update payment status:", getErrorMessage(error, "Unknown error"));
+    },
+  });
+}
+
+/**
+ * Bulk update payment statuses
+ */
+export function useBulkUpdatePaymentStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: BulkUpdatePaymentStatusRequest) => {
+      const response = await axiosInstance.patch(
+        endpoints.payments.bulkUpdateStatus,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all });
+    },
+    onError: (error) => {
+      console.error("Failed to bulk update payment statuses:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
