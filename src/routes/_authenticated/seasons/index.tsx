@@ -16,6 +16,11 @@ import {
 } from "@tabler/icons-react";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import {
+  AnimatedStatsGrid,
+  AnimatedStatsCard,
+  AnimatedContainer,
+} from "@/components/ui/animated-container";
 
 const SeasonsDataTable = lazy(() =>
   import("@/components/data-table/seasons-data-table").then((mod) => ({
@@ -127,60 +132,70 @@ function SeasonsPage() {
             </>
           }
         >
-          <StatsGrid>
-            <StatsCard
-              title="Total Seasons"
-              value={totalSeasons}
-              description={`${activeSeasons} currently active`}
-              icon={IconTrophy}
-              iconColor="text-primary"
-              loading={isLoading}
-              error={error}
-              onRetry={fetchSeasons}
-            />
-            <StatsCard
-              title="Total Participants"
-              value={totalParticipants}
-              description="Across all seasons"
-              icon={IconUsers}
-              iconColor="text-blue-500"
-              loading={isLoading}
-              error={error}
-              onRetry={fetchSeasons}
-            />
-            <StatsCard
-              title="Total Revenue"
-              value={`RM ${totalRevenue.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              description="From all season entry fees"
-              icon={IconCurrency}
-              iconColor="text-green-500"
-              loading={isLoading}
-              error={error}
-              onRetry={fetchSeasons}
-            />
-            <StatsCard
-              title="Average per Season"
-              value={averageParticipants}
-              description="Players per season"
-              icon={IconStar}
-              iconColor="text-yellow-500"
-              loading={isLoading}
-              error={error}
-              onRetry={fetchSeasons}
-            />
-          </StatsGrid>
+          <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Seasons"
+                value={totalSeasons}
+                description={`${activeSeasons} currently active`}
+                icon={IconTrophy}
+                iconColor="text-primary"
+                loading={isLoading}
+                error={error}
+                onRetry={fetchSeasons}
+              />
+            </AnimatedStatsCard>
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Participants"
+                value={totalParticipants}
+                description="Across all seasons"
+                icon={IconUsers}
+                iconColor="text-blue-500"
+                loading={isLoading}
+                error={error}
+                onRetry={fetchSeasons}
+              />
+            </AnimatedStatsCard>
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Revenue"
+                value={`RM ${totalRevenue.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                description="From all season entry fees"
+                icon={IconCurrency}
+                iconColor="text-green-500"
+                loading={isLoading}
+                error={error}
+                onRetry={fetchSeasons}
+              />
+            </AnimatedStatsCard>
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Average per Season"
+                value={averageParticipants}
+                description="Players per season"
+                icon={IconStar}
+                iconColor="text-yellow-500"
+                loading={isLoading}
+                error={error}
+                onRetry={fetchSeasons}
+              />
+            </AnimatedStatsCard>
+          </AnimatedStatsGrid>
         </PageHeader>
 
-        <div className="flex-1 px-4 lg:px-6 pb-6">
-          <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-            <SeasonsDataTable
-              data={seasons}
-              isLoading={isLoading}
-              onViewSeason={handleViewSeason}
-              onRefresh={fetchSeasons}
-            />
-          </Suspense>
+        <AnimatedContainer delay={0.2}>
+          <div className="flex-1 px-4 lg:px-6 pb-6">
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+              <SeasonsDataTable
+                data={seasons}
+                isLoading={isLoading}
+                onViewSeason={handleViewSeason}
+                onRefresh={fetchSeasons}
+              />
+            </Suspense>
           </div>
+        </AnimatedContainer>
         </div>
       </div>
     </>

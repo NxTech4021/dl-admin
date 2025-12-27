@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -30,13 +31,18 @@ import {
 } from "@/constants/zod/dispute-schema";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedFilterBar, AnimatedEmptyState } from "@/components/ui/animated-container";
+import {
+  tableContainerVariants,
+  tableRowVariants,
+  fastTransition,
+} from "@/lib/animation-variants";
 
 export const Route = createFileRoute("/_authenticated/disputes/")({
   component: DisputesPage,
@@ -132,17 +138,19 @@ function DisputesPage() {
           >
             <DisputeStatsCards />
 
-            <DisputeFilters
-              selectedStatus={selectedStatus}
-              selectedPriority={selectedPriority}
-              selectedCategory={selectedCategory}
-              searchQuery={searchQuery}
-              onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-              onPriorityChange={(val) => { setSelectedPriority(val); setCurrentPage(1); }}
-              onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
-              onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-              onClearFilters={handleClearFilters}
-            />
+            <AnimatedFilterBar>
+              <DisputeFilters
+                selectedStatus={selectedStatus}
+                selectedPriority={selectedPriority}
+                selectedCategory={selectedCategory}
+                searchQuery={searchQuery}
+                onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                onPriorityChange={(val) => { setSelectedPriority(val); setCurrentPage(1); }}
+                onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
+                onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                onClearFilters={handleClearFilters}
+              />
+            </AnimatedFilterBar>
           </PageHeader>
 
           <div className="flex-1 px-4 lg:px-6 pb-6">
@@ -179,11 +187,17 @@ function DisputesPage() {
                       <TableHead className="w-[50px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <motion.tbody
+                    initial="hidden"
+                    animate="visible"
+                    variants={tableContainerVariants}
+                  >
                     {data.disputes.map((dispute: Dispute, index: number) => (
-                      <TableRow
+                      <motion.tr
                         key={dispute.id}
-                        className="cursor-pointer hover:bg-muted/50"
+                        variants={tableRowVariants}
+                        transition={fastTransition}
+                        className="border-b cursor-pointer transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                         onClick={() => handleView(dispute)}
                       >
                         <TableCell className="text-center text-muted-foreground font-mono text-sm">
@@ -241,20 +255,22 @@ function DisputesPage() {
                             onAddNote={handleAddNote}
                           />
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     ))}
-                  </TableBody>
+                  </motion.tbody>
                 </Table>
               ) : (
-                <div className="text-center py-12">
-                  <IconAlertTriangle className="size-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Disputes Found</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedStatus || selectedPriority || selectedCategory || searchQuery
-                      ? "Try adjusting your filters to see more results."
-                      : "There are no disputes to review at this time."}
-                  </p>
-                </div>
+                <AnimatedEmptyState>
+                  <div className="text-center py-12">
+                    <IconAlertTriangle className="size-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Disputes Found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStatus || selectedPriority || selectedCategory || searchQuery
+                        ? "Try adjusting your filters to see more results."
+                        : "There are no disputes to review at this time."}
+                    </p>
+                  </div>
+                </AnimatedEmptyState>
               )}
 
               {data && data.totalPages > 1 && (

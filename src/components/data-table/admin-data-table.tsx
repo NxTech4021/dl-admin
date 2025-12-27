@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import {
   IconDotsVertical,
@@ -25,12 +26,12 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -157,11 +158,17 @@ export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProp
                 <TableHead className="w-16 py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tableContainerVariants}
+            >
               {paginatedData.map((admin, index) => (
-                <TableRow
+                <motion.tr
                   key={admin.id}
-                  className="hover:bg-muted/30 cursor-pointer"
+                  variants={tableRowVariants}
+                  transition={fastTransition}
+                  className="hover:bg-muted/30 cursor-pointer border-b transition-colors"
                   onClick={() => handleRowClick(admin)}
                 >
                   {/* Row Number */}
@@ -282,9 +289,9 @@ export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProp
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               ))}
-            </TableBody>
+            </motion.tbody>
           </Table>
         </div>
       ) : (

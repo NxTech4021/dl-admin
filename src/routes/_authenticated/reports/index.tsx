@@ -14,6 +14,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { ReportCard } from "@/components/reports";
+import {
+  AnimatedContainer,
+  AnimatedGrid,
+  AnimatedGridItem,
+} from "@/components/ui/animated-container";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   component: ReportsPage,
@@ -133,15 +138,19 @@ function ReportsPage() {
           />
 
           <div className="flex-1 px-4 lg:px-6 pb-6 space-y-8">
-            {reportCategories.map((category) => (
-              <div key={category.title} className="space-y-4">
-                <h2 className="text-xl font-semibold">{category.title}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {category.reports.map((report) => (
-                    <ReportCard key={report.title} {...report} />
-                  ))}
+            {reportCategories.map((category, categoryIndex) => (
+              <AnimatedContainer key={category.title} delay={categoryIndex * 0.1}>
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">{category.title}</h2>
+                  <AnimatedGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {category.reports.map((report) => (
+                      <AnimatedGridItem key={report.title}>
+                        <ReportCard {...report} />
+                      </AnimatedGridItem>
+                    ))}
+                  </AnimatedGrid>
                 </div>
-              </div>
+              </AnimatedContainer>
             ))}
           </div>
         </div>

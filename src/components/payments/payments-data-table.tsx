@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   Table,
   TableBody,
@@ -419,15 +421,21 @@ export function PaymentsDataTable({
               <TableHead className="w-[60px] pr-4"></TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tableContainerVariants}
+            >
             {data.map((payment, index) => {
               const isSelected = selectedIds.includes(payment.id);
               const rowNumber = ((currentPage - 1) * (pagination?.limit ?? 20)) + index + 1;
 
               return (
-                <TableRow
+                <motion.tr
                   key={payment.id}
-                  className={isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}
+                  variants={tableRowVariants}
+                  transition={fastTransition}
+                  className={`border-b transition-colors ${isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}
                 >
                   <TableCell className="pl-4">
                     <Checkbox
@@ -497,10 +505,10 @@ export function PaymentsDataTable({
                       onUpdateStatus={() => onUpdateStatus(payment)}
                     />
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               );
             })}
-          </TableBody>
+          </motion.tbody>
         </Table>
       </div>
 

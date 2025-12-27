@@ -6,6 +6,7 @@ import { IconCategory, IconPlus } from "@tabler/icons-react";
 import { lazy, Suspense, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { DivisionStatsCards } from "@/components/division/division-stats-cards";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const DivisionsDataTable = lazy(() =>
   import("@/components/data-table/divisions-data-table").then((mod) => ({
@@ -63,11 +64,13 @@ function DivisionsPage() {
             <DivisionStatsCards />
           </PageHeader>
 
-          <div className="flex-1 px-4 lg:px-6 pb-6">
-            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-              <DivisionsDataTable key={refreshKey} />
-            </Suspense>
-          </div>
+          <AnimatedContainer delay={0.2}>
+            <div className="flex-1 px-4 lg:px-6 pb-6">
+              <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+                <DivisionsDataTable key={refreshKey} />
+              </Suspense>
+            </div>
+          </AnimatedContainer>
         </div>
       </div>
     </>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -34,7 +35,6 @@ import {
 } from "@/constants/zod/team-change-request-schema";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -54,6 +54,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AnimatedStatsGrid,
+  AnimatedStatsCard,
+  AnimatedFilterBar,
+  AnimatedEmptyState,
+} from "@/components/ui/animated-container";
+import {
+  tableContainerVariants,
+  tableRowVariants,
+  fastTransition,
+} from "@/lib/animation-variants";
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending" },
@@ -145,59 +156,69 @@ function TeamChangeRequestsPage() {
               </>
             }
           >
-            <StatsGrid columns={4}>
-              <StatsCard
-                title="Pending Requests"
-                value={requests?.filter((r) => r.status === "PENDING").length || 0}
-                description="Awaiting review"
-                icon={IconClock}
-                iconColor="text-yellow-500"
-                loading={isLoading}
-              />
-              <StatsCard
-                title="Approved"
-                value={requests?.filter((r) => r.status === "APPROVED").length || 0}
-                description="Transfers completed"
-                icon={IconCircleCheck}
-                iconColor="text-green-500"
-                loading={isLoading}
-              />
-              <StatsCard
-                title="Denied"
-                value={requests?.filter((r) => r.status === "DENIED").length || 0}
-                description="Requests rejected"
-                icon={IconCircleX}
-                iconColor="text-red-500"
-                loading={isLoading}
-              />
-              <StatsCard
-                title="Total Requests"
-                value={requests?.length || 0}
-                description="All time requests"
-                icon={IconList}
-                iconColor="text-slate-500"
-                loading={isLoading}
-              />
-            </StatsGrid>
+            <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+              <AnimatedStatsCard>
+                <StatsCard
+                  title="Pending Requests"
+                  value={requests?.filter((r) => r.status === "PENDING").length || 0}
+                  description="Awaiting review"
+                  icon={IconClock}
+                  iconColor="text-yellow-500"
+                  loading={isLoading}
+                />
+              </AnimatedStatsCard>
+              <AnimatedStatsCard>
+                <StatsCard
+                  title="Approved"
+                  value={requests?.filter((r) => r.status === "APPROVED").length || 0}
+                  description="Transfers completed"
+                  icon={IconCircleCheck}
+                  iconColor="text-green-500"
+                  loading={isLoading}
+                />
+              </AnimatedStatsCard>
+              <AnimatedStatsCard>
+                <StatsCard
+                  title="Denied"
+                  value={requests?.filter((r) => r.status === "DENIED").length || 0}
+                  description="Requests rejected"
+                  icon={IconCircleX}
+                  iconColor="text-red-500"
+                  loading={isLoading}
+                />
+              </AnimatedStatsCard>
+              <AnimatedStatsCard>
+                <StatsCard
+                  title="Total Requests"
+                  value={requests?.length || 0}
+                  description="All time requests"
+                  icon={IconList}
+                  iconColor="text-slate-500"
+                  loading={isLoading}
+                />
+              </AnimatedStatsCard>
+            </AnimatedStatsGrid>
 
-            <FilterBar
-              onClearAll={() => {
-                setSelectedStatus(undefined);
-                setCurrentPage(1);
-              }}
-              showClearButton={!!selectedStatus}
-            >
-              <FilterSelect
-                value={selectedStatus}
-                onChange={(value) => {
-                  setSelectedStatus(value as TeamChangeRequestStatus | undefined);
+            <AnimatedFilterBar>
+              <FilterBar
+                onClearAll={() => {
+                  setSelectedStatus(undefined);
                   setCurrentPage(1);
                 }}
-                options={STATUS_OPTIONS}
-                allLabel="All Statuses"
-                triggerClassName="w-[180px]"
-              />
-            </FilterBar>
+                showClearButton={!!selectedStatus}
+              >
+                <FilterSelect
+                  value={selectedStatus}
+                  onChange={(value) => {
+                    setSelectedStatus(value as TeamChangeRequestStatus | undefined);
+                    setCurrentPage(1);
+                  }}
+                  options={STATUS_OPTIONS}
+                  allLabel="All Statuses"
+                  triggerClassName="w-[180px]"
+                />
+              </FilterBar>
+            </AnimatedFilterBar>
           </PageHeader>
 
           <div className="flex-1 px-4 lg:px-6 pb-6">
@@ -231,9 +252,18 @@ function TeamChangeRequestsPage() {
                       <TableHead className="w-[120px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <motion.tbody
+                    initial="hidden"
+                    animate="visible"
+                    variants={tableContainerVariants}
+                  >
                     {paginatedRequests.map((request, index) => (
-                      <TableRow key={request.id}>
+                      <motion.tr
+                        key={request.id}
+                        variants={tableRowVariants}
+                        transition={fastTransition}
+                        className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                      >
                         <TableCell className="text-center text-muted-foreground font-mono text-sm">
                           {(currentPage - 1) * pageSize + index + 1}
                         </TableCell>
@@ -295,18 +325,20 @@ function TeamChangeRequestsPage() {
                             </div>
                           )}
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     ))}
-                  </TableBody>
+                  </motion.tbody>
                 </Table>
               ) : (
-                <div className="text-center py-12">
-                  <IconArrowsExchange className="size-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Requests Found</h3>
-                  <p className="text-sm text-muted-foreground">
-                    There are no team change requests to review at this time.
-                  </p>
-                </div>
+                <AnimatedEmptyState>
+                  <div className="text-center py-12">
+                    <IconArrowsExchange className="size-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Requests Found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      There are no team change requests to review at this time.
+                    </p>
+                  </div>
+                </AnimatedEmptyState>
               )}
 
               {totalPages > 1 && (

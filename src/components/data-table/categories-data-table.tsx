@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 
 import {
   IconDotsVertical,
@@ -28,6 +29,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -684,12 +686,18 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
               ))}
             </TableHeader>
 
-            <TableBody>
+            <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tableContainerVariants}
+            >
               {table.getRowModel().rows.map((row) => (
-                <TableRow
+                <motion.tr
                   key={row.id}
+                  variants={tableRowVariants}
+                  transition={fastTransition}
                   data-state={row.getIsSelected() && "selected"}
-                  className="cursor-pointer hover:bg-muted/30"
+                  className="cursor-pointer hover:bg-muted/30 border-b transition-colors"
                   onClick={() => handleEditCategory(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -697,9 +705,9 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                </TableRow>
+                </motion.tr>
               ))}
-            </TableBody>
+            </motion.tbody>
           </Table>
         </div>
       ) : (

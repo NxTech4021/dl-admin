@@ -4,7 +4,7 @@ import * as React from "react";
 import { IconUsers, IconUserCheck, IconUserX } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { StatsCard } from "@/components/ui/stats-card";
-import { StatsGrid } from "@/components/ui/stats-grid";
+import { AnimatedStatsGrid, AnimatedStatsCard } from "@/components/ui/animated-container";
 
 /**
  * PlayerStats - Refactored with industry-standard components
@@ -76,37 +76,43 @@ export function PlayerStatsRefactored() {
   }, [fetchStats]);
 
   return (
-    <StatsGrid columns={3}>
-      <StatsCard
-        title="Total Players"
-        value={stats?.total ?? 0}
-        description="All registered users"
-        icon={IconUsers}
-        iconColor="text-primary"
-        loading={isLoading}
-        error={error}
-        onRetry={fetchStats}
-      />
-      <StatsCard
-        title="Verified"
-        value={stats?.verified ?? 0}
-        description="Email confirmed"
-        icon={IconUserCheck}
-        iconColor="text-green-500"
-        loading={isLoading}
-        error={error}
-        onRetry={fetchStats}
-      />
-      <StatsCard
-        title="Inactive"
-        value={stats?.inactive ?? 0}
-        description="Needs attention"
-        icon={IconUserX}
-        iconColor="text-yellow-500"
-        loading={isLoading}
-        error={error}
-        onRetry={fetchStats}
-      />
-    </StatsGrid>
+    <AnimatedStatsGrid className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <AnimatedStatsCard>
+        <StatsCard
+          title="Total Players"
+          value={stats?.total ?? 0}
+          description="All registered users"
+          icon={IconUsers}
+          iconColor="text-primary"
+          loading={isLoading}
+          error={error}
+          onRetry={fetchStats}
+        />
+      </AnimatedStatsCard>
+      <AnimatedStatsCard>
+        <StatsCard
+          title="Verified"
+          value={stats?.verified ?? 0}
+          description="Email confirmed"
+          icon={IconUserCheck}
+          iconColor="text-green-500"
+          loading={isLoading}
+          error={error}
+          onRetry={fetchStats}
+        />
+      </AnimatedStatsCard>
+      <AnimatedStatsCard>
+        <StatsCard
+          title="Inactive"
+          value={stats?.inactive ?? 0}
+          description="Needs attention"
+          icon={IconUserX}
+          iconColor="text-yellow-500"
+          loading={isLoading}
+          error={error}
+          onRetry={fetchStats}
+        />
+      </AnimatedStatsCard>
+    </AnimatedStatsGrid>
   );
 }

@@ -1,6 +1,7 @@
 
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ColumnDef,
@@ -16,6 +17,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from "@tanstack/react-table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -525,7 +527,11 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
             ))}
           </TableHeader>
 
-          <TableBody>
+          <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tableContainerVariants}
+            >
             {isLoading ? (
               <TableRow>
                 <TableCell
@@ -540,17 +546,19 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
+                <motion.tr
                   key={row.id}
+                  variants={tableRowVariants}
+                  transition={fastTransition}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
+                  className="hover:bg-muted/50 border-b transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                </TableRow>
+                </motion.tr>
               ))
             ) : (
               <TableRow>
@@ -562,7 +570,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
                 </TableCell>
               </TableRow>
             )}
-          </TableBody>
+          </motion.tbody>
         </Table>
       </div>
 

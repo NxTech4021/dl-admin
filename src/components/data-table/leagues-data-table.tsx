@@ -1,6 +1,7 @@
 
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import {
   IconTrophy,
   IconDownload,
@@ -12,6 +13,7 @@ import {
   IconMapPin,
 } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { League } from "@/constants/zod/league-schema";
 import { type League as LeagueEditType } from "@/constants/types/league";
 import { toast } from "sonner";
@@ -272,14 +274,23 @@ export function LeaguesDataTable({
                   <TableHead className="w-[80px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <motion.tbody
+                initial="hidden"
+                animate="visible"
+                variants={tableContainerVariants}
+              >
                 {paginatedData.map((league, index) => {
                   const sportIcon = getSportIcon(league.sportType, 16);
                   const sportColor = getSportColor(league.sportType);
                   const sportLabel = getSportLabel(league.sportType);
 
                   return (
-                    <TableRow key={league.id} className="hover:bg-muted/30">
+                    <motion.tr
+                      key={league.id}
+                      variants={tableRowVariants}
+                      transition={fastTransition}
+                      className="hover:bg-muted/30 border-b transition-colors"
+                    >
                       {/* Row Number */}
                       <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                         {((currentPage - 1) * pageSize) + index + 1}
@@ -376,10 +387,10 @@ export function LeaguesDataTable({
                           onDelete={handleDeleteRequest}
                         />
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   );
                 })}
-              </TableBody>
+              </motion.tbody>
             </Table>
           </div>
         ) : (

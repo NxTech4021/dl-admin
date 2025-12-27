@@ -1,6 +1,5 @@
-
-
 import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   MoreVertical,
   Eye,
@@ -27,12 +26,13 @@ import { FilterSelect } from "@/components/ui/filter-select";
 import { IconBug, IconClock, IconAlertTriangle, IconCircleCheck } from "@tabler/icons-react";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AnimatedStatsGrid, AnimatedStatsCard, AnimatedContainer } from "@/components/ui/animated-container";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   Select,
   SelectContent,
@@ -530,44 +530,53 @@ export default function BugDashboard() {
         }
       >
         {/* Stats Cards */}
-        <StatsGrid columns={4}>
-          <StatsCard
-            title="Total Reports"
-            value={stats.total}
-            description={`${stats.recentlyCreated} this week`}
-            icon={IconBug}
-            loading={loading}
-          />
-          <StatsCard
-            title="Open"
-            value={(stats.byStatus.NEW || 0) + (stats.byStatus.TRIAGED || 0) + (stats.byStatus.IN_PROGRESS || 0)}
-            description="Needs attention"
-            icon={IconClock}
-            iconColor="text-yellow-500"
-            loading={loading}
-          />
-          <StatsCard
-            title="Critical"
-            value={stats.bySeverity.CRITICAL || 0}
-            description="High priority issues"
-            icon={IconAlertTriangle}
-            iconColor="text-red-500"
-            loading={loading}
-          />
-          <StatsCard
-            title="Resolved"
-            value={(stats.byStatus.RESOLVED || 0) + (stats.byStatus.CLOSED || 0)}
-            description={`Avg ${Math.round(stats.avgResolutionTimeMinutes / 60)}h to resolve`}
-            icon={IconCircleCheck}
-            iconColor="text-green-500"
-            loading={loading}
-          />
-        </StatsGrid>
+        <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+          <AnimatedStatsCard>
+            <StatsCard
+              title="Total Reports"
+              value={stats.total}
+              description={`${stats.recentlyCreated} this week`}
+              icon={IconBug}
+              loading={loading}
+            />
+          </AnimatedStatsCard>
+          <AnimatedStatsCard>
+            <StatsCard
+              title="Open"
+              value={(stats.byStatus.NEW || 0) + (stats.byStatus.TRIAGED || 0) + (stats.byStatus.IN_PROGRESS || 0)}
+              description="Needs attention"
+              icon={IconClock}
+              iconColor="text-yellow-500"
+              loading={loading}
+            />
+          </AnimatedStatsCard>
+          <AnimatedStatsCard>
+            <StatsCard
+              title="Critical"
+              value={stats.bySeverity.CRITICAL || 0}
+              description="High priority issues"
+              icon={IconAlertTriangle}
+              iconColor="text-red-500"
+              loading={loading}
+            />
+          </AnimatedStatsCard>
+          <AnimatedStatsCard>
+            <StatsCard
+              title="Resolved"
+              value={(stats.byStatus.RESOLVED || 0) + (stats.byStatus.CLOSED || 0)}
+              description={`Avg ${Math.round(stats.avgResolutionTimeMinutes / 60)}h to resolve`}
+              icon={IconCircleCheck}
+              iconColor="text-green-500"
+              loading={loading}
+            />
+          </AnimatedStatsCard>
+        </AnimatedStatsGrid>
       </PageHeader>
 
       {/* Filters */}
       <div className="px-4 lg:px-6 space-y-6">
-      <Card>
+      <AnimatedContainer>
+        <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSearch}>
             <FilterBar
@@ -618,9 +627,11 @@ export default function BugDashboard() {
           </form>
         </CardContent>
       </Card>
+      </AnimatedContainer>
 
       {/* Reports Table */}
-      <Card>
+      <AnimatedContainer delay={0.1}>
+        <Card>
         <CardContent className="p-0">
           {/* Table Header with count */}
           {!loading && totalCount > 0 && (
@@ -692,7 +703,11 @@ export default function BugDashboard() {
                   <TableHead className="text-right pr-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-            <TableBody>
+            <motion.tbody
+              initial="hidden"
+              animate="visible"
+              variants={tableContainerVariants}
+            >
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12">
@@ -737,9 +752,11 @@ export default function BugDashboard() {
                 </TableRow>
               ) : (
                 reports.map((report) => (
-                  <TableRow
+                  <motion.tr
                     key={report.id}
-                    className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+                    variants={tableRowVariants}
+                    transition={fastTransition}
+                    className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none border-b transition-colors"
                     onClick={() => openDetail(report)}
                     onKeyDown={(e) => handleRowKeyDown(e, report)}
                     tabIndex={0}
@@ -821,10 +838,10 @@ export default function BugDashboard() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))
               )}
-            </TableBody>
+            </motion.tbody>
             </Table>
           </div>
         </CardContent>
@@ -856,6 +873,7 @@ export default function BugDashboard() {
           </div>
         )}
       </Card>
+      </AnimatedContainer>
       </div>
 
       {/* Detail Dialog */}

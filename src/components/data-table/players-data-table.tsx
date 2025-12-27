@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import {
   IconDotsVertical,
   IconMail,
@@ -38,12 +39,12 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "@tanstack/react-router";
 import { Player } from "@/constants/zod/player-schema";
@@ -431,7 +432,11 @@ export function PlayersDataTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <motion.tbody
+            initial="hidden"
+            animate="visible"
+            variants={tableContainerVariants}
+          >
             {isLoading ? (
               <TableRow>
                 <TableCell
@@ -446,17 +451,19 @@ export function PlayersDataTable() {
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
+                <motion.tr
                   key={row.id}
+                  variants={tableRowVariants}
+                  transition={fastTransition}
                   data-state={row.getIsSelected() && "selected"}
-                  className={TABLE_ANIMATIONS.ROW_HOVER}
+                  className={`${TABLE_ANIMATIONS.ROW_HOVER} border-b transition-colors`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                </TableRow>
+                </motion.tr>
               ))
             ) : (
               <TableRow>
@@ -468,7 +475,7 @@ export function PlayersDataTable() {
                 </TableCell>
               </TableRow>
             )}
-          </TableBody>
+          </motion.tbody>
         </Table>
 
         {/* Pagination */}

@@ -15,6 +15,11 @@ import {
 } from "@tabler/icons-react";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import {
+  AnimatedStatsGrid,
+  AnimatedStatsCard,
+  AnimatedContainer,
+} from "@/components/ui/animated-container";
 
 const LeaguesDataTable = lazy(() =>
   import("@/components/data-table/leagues-data-table").then((mod) => ({
@@ -123,42 +128,50 @@ function LeaguePage() {
             </>
           }
         >
-          <StatsGrid columns={3}>
-            <StatsCard
-              title="Total Leagues"
-              value={leagues.length}
-              description={`${leagues.filter((l) => l.status === "ACTIVE" || l.status === "ONGOING").length} currently active`}
-              icon={IconTrophy}
-              loading={isLoading}
-            />
-            <StatsCard
-              title="Total Members"
-              value={totalMembers}
-              description="Total players across all seasons"
-              icon={IconUsers}
-              iconColor="text-blue-500"
-              loading={isLoading}
-            />
-            <StatsCard
-              title="Total Seasons"
-              value={leagues.reduce((sum, league) => sum + (league.seasonCount || 0), 0)}
-              description="Across all leagues"
-              icon={IconCalendar}
-              iconColor="text-green-500"
-              loading={isLoading}
-            />
-          </StatsGrid>
+          <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-3">
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Leagues"
+                value={leagues.length}
+                description={`${leagues.filter((l) => l.status === "ACTIVE" || l.status === "ONGOING").length} currently active`}
+                icon={IconTrophy}
+                loading={isLoading}
+              />
+            </AnimatedStatsCard>
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Members"
+                value={totalMembers}
+                description="Total players across all seasons"
+                icon={IconUsers}
+                iconColor="text-blue-500"
+                loading={isLoading}
+              />
+            </AnimatedStatsCard>
+            <AnimatedStatsCard>
+              <StatsCard
+                title="Total Seasons"
+                value={leagues.reduce((sum, league) => sum + (league.seasonCount || 0), 0)}
+                description="Across all leagues"
+                icon={IconCalendar}
+                iconColor="text-green-500"
+                loading={isLoading}
+              />
+            </AnimatedStatsCard>
+          </AnimatedStatsGrid>
         </PageHeader>
 
-        <div className="flex-1 px-4 lg:px-6 pb-6">
-          <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-            <LeaguesDataTable
-              data={leagues}
-              isLoading={isLoading}
-              onDataChange={fetchLeagues}
-            />
-          </Suspense>
+        <AnimatedContainer delay={0.2}>
+          <div className="flex-1 px-4 lg:px-6 pb-6">
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+              <LeaguesDataTable
+                data={leagues}
+                isLoading={isLoading}
+                onDataChange={fetchLeagues}
+              />
+            </Suspense>
           </div>
+        </AnimatedContainer>
         </div>
       </div>
     </>

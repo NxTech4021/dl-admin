@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { IconPlus, IconTags } from "@tabler/icons-react";
 import { CategoriesDataTable } from "@/components/data-table/categories-data-table";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const CategoryCreateModal = lazy(() => import("@/components/modal/category-create-modal"));
 
@@ -33,9 +34,11 @@ export default function Page() {
           />
 
           {/* Data Table */}
-          <div className="flex-1 pb-6">
-            <CategoriesDataTable refreshTrigger={refreshTrigger} />
-          </div>
+          <AnimatedContainer delay={0.1}>
+            <div className="flex-1 pb-6">
+              <CategoriesDataTable refreshTrigger={refreshTrigger} />
+            </div>
+          </AnimatedContainer>
         </div>
       </div>
 

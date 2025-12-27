@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -61,6 +61,8 @@ import { DateRangePicker, ExportButton, type ExportColumn, type DateRange } from
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AnimatedFilterBar, AnimatedEmptyState, AnimatedContainer } from "@/components/ui/animated-container";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 
 interface AdminLogEntry {
   id: string;
@@ -320,49 +322,51 @@ function AdminLogsPage() {
               </>
             }
           >
-            <FilterBar
-              onClearAll={handleClearFilters}
-              showClearButton={!!(searchQuery || selectedActionType || selectedTargetType || dateRange)}
-            >
-              <SearchInput
-                value={searchQuery}
-                onChange={(value) => {
-                  setSearchQuery(value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                placeholder="Search logs..."
-                className="flex-1 min-w-[200px] max-w-sm"
-              />
-              <FilterSelect
-                value={selectedActionType}
-                onChange={(value) => {
-                  setSelectedActionType(value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                options={actionTypes}
-                allLabel="All Actions"
-                triggerClassName="w-[180px]"
-              />
-              <FilterSelect
-                value={selectedTargetType}
-                onChange={(value) => {
-                  setSelectedTargetType(value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                options={targetTypes}
-                allLabel="All Targets"
-                triggerClassName="w-[150px]"
-              />
-              <DateRangePicker
-                value={dateRange}
-                onChange={(range) => {
-                  setDateRange(range);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                placeholder="Date range"
-                className="w-[280px]"
-              />
-            </FilterBar>
+            <AnimatedFilterBar>
+              <FilterBar
+                onClearAll={handleClearFilters}
+                showClearButton={!!(searchQuery || selectedActionType || selectedTargetType || dateRange)}
+              >
+                <SearchInput
+                  value={searchQuery}
+                  onChange={(value) => {
+                    setSearchQuery(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  placeholder="Search logs..."
+                  className="flex-1 min-w-[200px] max-w-sm"
+                />
+                <FilterSelect
+                  value={selectedActionType}
+                  onChange={(value) => {
+                    setSelectedActionType(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  options={actionTypes}
+                  allLabel="All Actions"
+                  triggerClassName="w-[180px]"
+                />
+                <FilterSelect
+                  value={selectedTargetType}
+                  onChange={(value) => {
+                    setSelectedTargetType(value);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  options={targetTypes}
+                  allLabel="All Targets"
+                  triggerClassName="w-[150px]"
+                />
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={(range) => {
+                    setDateRange(range);
+                    setPagination((prev) => ({ ...prev, page: 1 }));
+                  }}
+                  placeholder="Date range"
+                  className="w-[280px]"
+                />
+              </FilterBar>
+            </AnimatedFilterBar>
           </PageHeader>
 
           <div className="flex-1 px-4 lg:px-6 pb-6 space-y-4">
@@ -406,11 +410,17 @@ function AdminLogsPage() {
                         <TableHead className="w-16 py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <motion.tbody
+                      initial="hidden"
+                      animate="visible"
+                      variants={tableContainerVariants}
+                    >
                       {logs.map((log, index) => (
-                        <TableRow
+                        <motion.tr
                           key={log.id}
-                          className="cursor-pointer hover:bg-muted/30"
+                          variants={tableRowVariants}
+                          transition={fastTransition}
+                          className="cursor-pointer hover:bg-muted/30 border-b transition-colors"
                           onClick={() => setSelectedLog(log)}
                         >
                           {/* Row Number */}
@@ -542,22 +552,24 @@ function AdminLogsPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
-                        </TableRow>
+                        </motion.tr>
                       ))}
-                    </TableBody>
+                    </motion.tbody>
                   </Table>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-16 rounded-md border bg-muted/10">
-                <IconHistory className="size-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Logs Found</h3>
-                <p className="text-sm text-muted-foreground">
-                  {searchQuery || selectedActionType || selectedTargetType || dateRange
-                    ? "Try adjusting your filters."
-                    : "No admin activity has been recorded yet."}
-                </p>
-              </div>
+              <AnimatedEmptyState>
+                <div className="text-center py-16 rounded-md border bg-muted/10">
+                  <IconHistory className="size-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Logs Found</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {searchQuery || selectedActionType || selectedTargetType || dateRange
+                      ? "Try adjusting your filters."
+                      : "No admin activity has been recorded yet."}
+                  </p>
+                </div>
+              </AnimatedEmptyState>
             )}
 
             {/* Pagination */}

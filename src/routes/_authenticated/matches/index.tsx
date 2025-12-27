@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -39,13 +40,21 @@ import { Badge } from "@/components/ui/badge";
 import { Match, MatchStatus } from "@/constants/zod/match-schema";
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AnimatedFilterBar,
+  AnimatedEmptyState,
+} from "@/components/ui/animated-container";
+import {
+  tableContainerVariants,
+  tableRowVariants,
+  fastTransition,
+} from "@/lib/animation-variants";
 
 const getSportColor = (sport: string) => {
   switch (sport?.toLowerCase()) {
@@ -164,22 +173,24 @@ function MatchesPage() {
               divisionId={selectedDivision}
             />
 
-            <MatchFilters
-              selectedLeague={selectedLeague}
-              selectedSeason={selectedSeason}
-              selectedDivision={selectedDivision}
-              selectedStatus={selectedStatus}
-              searchQuery={searchQuery}
-              showDisputedOnly={showDisputedOnly}
-              showLateCancellations={showLateCancellations}
-              onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
-              onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
-              onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
-              onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-              onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-              onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
-              onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
-            />
+            <AnimatedFilterBar>
+              <MatchFilters
+                selectedLeague={selectedLeague}
+                selectedSeason={selectedSeason}
+                selectedDivision={selectedDivision}
+                selectedStatus={selectedStatus}
+                searchQuery={searchQuery}
+                showDisputedOnly={showDisputedOnly}
+                showLateCancellations={showLateCancellations}
+                onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
+                onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
+                onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
+                onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
+                onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
+              />
+            </AnimatedFilterBar>
           </PageHeader>
 
           <div className="flex-1 px-4 lg:px-6 pb-6">
@@ -220,9 +231,18 @@ function MatchesPage() {
                         <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <motion.tbody
+                      initial="hidden"
+                      animate="visible"
+                      variants={tableContainerVariants}
+                    >
                       {data.matches.map((match, index) => (
-                        <TableRow key={match.id} className="hover:bg-muted/30">
+                        <motion.tr
+                          key={match.id}
+                          variants={tableRowVariants}
+                          transition={fastTransition}
+                          className="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted"
+                        >
                           <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                             {((currentPage - 1) * pageSize) + index + 1}
                           </TableCell>
@@ -374,16 +394,18 @@ function MatchesPage() {
                               onReviewCancellation={handleReviewCancellation}
                             />
                           </TableCell>
-                        </TableRow>
+                        </motion.tr>
                       ))}
-                    </TableBody>
+                    </motion.tbody>
                   </Table>
                 </div>
               </TooltipProvider>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No matches found
-              </div>
+              <AnimatedEmptyState>
+                <div className="text-center py-8 text-muted-foreground">
+                  No matches found
+                </div>
+              </AnimatedEmptyState>
             )}
 
             {data && data.totalPages > 1 && (

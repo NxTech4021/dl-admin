@@ -1,6 +1,7 @@
 
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import {
   IconTrophy,
   IconDownload,
@@ -11,6 +12,7 @@ import {
   IconClock,
 } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
+import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import { Season } from "@/constants/zod/season-schema";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -287,14 +289,23 @@ export function SeasonsDataTable({
                     <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <motion.tbody
+                  initial="hidden"
+                  animate="visible"
+                  variants={tableContainerVariants}
+                >
                   {paginatedData.map((season, index) => {
                     const leagues = season.leagues || [];
                     const sportType = season.sportType || (leagues[0]?.sportType);
                     const sportIcon = sportType ? getSportIcon(sportType, 16) : <IconTrophy className="size-4" />;
 
                     return (
-                      <TableRow key={season.id} className="hover:bg-muted/30">
+                      <motion.tr
+                        key={season.id}
+                        variants={tableRowVariants}
+                        transition={fastTransition}
+                        className="hover:bg-muted/30 border-b transition-colors"
+                      >
                         {/* Row Number */}
                         <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                           {((currentPage - 1) * pageSize) + index + 1}
@@ -407,10 +418,10 @@ export function SeasonsDataTable({
                             onManagePlayers={handleManagePlayers}
                           />
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     );
                   })}
-                </TableBody>
+                </motion.tbody>
               </Table>
             </div>
           </TooltipProvider>

@@ -1,8 +1,11 @@
 import { useMemo, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { IconDownload, IconUsers, IconRefresh, IconAlertCircle } from "@tabler/icons-react";
 import { useAdmins } from "@/hooks/use-queries";
+import { AnimatedContainer } from "@/components/ui/animated-container";
+import { statsGridContainer, statsCardVariants, defaultTransition } from "@/lib/animation-variants";
 
 // Lazy imports for code splitting
 const AdminInviteModalWrapper = lazy(() => import("@/components/wrappers/adminmodalwrapper"));
@@ -74,8 +77,17 @@ export default function AdminsWrapper() {
                   </div>
 
                   {/* Statistics */}
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <div className="flex items-center gap-3 rounded-lg border p-4">
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={statsGridContainer}
+                    className="grid grid-cols-2 gap-4 md:grid-cols-4"
+                  >
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="flex items-center gap-3 rounded-lg border p-4"
+                    >
                       <div className="rounded-full bg-primary/10 p-2">
                         <IconUsers className="size-4 text-primary" />
                       </div>
@@ -83,8 +95,12 @@ export default function AdminsWrapper() {
                         <p className="text-2xl font-bold">{isLoading ? "-" : stats.total}</p>
                         <p className="text-sm text-muted-foreground">Total Admins</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-lg border p-4">
+                    </motion.div>
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="flex items-center gap-3 rounded-lg border p-4"
+                    >
                       <div className="rounded-full bg-green-500/10 p-2">
                         <div className="size-4 rounded-full bg-green-500"></div>
                       </div>
@@ -92,8 +108,12 @@ export default function AdminsWrapper() {
                         <p className="text-2xl font-bold">{isLoading ? "-" : stats.active}</p>
                         <p className="text-sm text-muted-foreground">Active</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 rounded-lg border p-4">
+                    </motion.div>
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="flex items-center gap-3 rounded-lg border p-4"
+                    >
                       <div className="rounded-full bg-yellow-500/10 p-2">
                         <div className="size-4 rounded-full bg-yellow-500"></div>
                       </div>
@@ -101,17 +121,19 @@ export default function AdminsWrapper() {
                         <p className="text-2xl font-bold">{isLoading ? "-" : stats.pending}</p>
                         <p className="text-sm text-muted-foreground">Pending</p>
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 </div>
               </div>
             </div>
 
             {/* Data Table */}
             <div className="flex-1">
-              <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-                <AdminsDataTable data={admins} />
-              </Suspense>
+              <AnimatedContainer delay={0.1}>
+                <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+                  <AdminsDataTable data={admins} />
+                </Suspense>
+              </AnimatedContainer>
             </div>
           </div>
         </div>

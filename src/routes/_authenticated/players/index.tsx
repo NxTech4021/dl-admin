@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { IconPlus, IconDownload, IconUsers } from "@tabler/icons-react";
 import { lazy, Suspense } from "react";
 import { PlayerStatsRefactored } from "@/components/player-stats-refactored";
+import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const PlayersDataTable = lazy(() =>
   import("@/components/data-table/players-data-table").then((mod) => ({
@@ -43,10 +44,12 @@ function PlayersPage() {
         </PageHeader>
 
         <div className="flex-1 px-4 lg:px-6 pb-6">
-          <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-            <PlayersDataTable />
-          </Suspense>
-          </div>
+          <AnimatedContainer delay={0.1}>
+            <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
+              <PlayersDataTable />
+            </Suspense>
+          </AnimatedContainer>
+        </div>
         </div>
       </div>
     </>

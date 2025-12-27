@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +21,12 @@ import { PaymentDetailModal } from "@/components/payments/payment-detail-modal";
 import { PaymentStatusModal } from "@/components/payments/payment-status-modal";
 import { BulkPaymentModal } from "@/components/payments/bulk-payment-modal";
 import type { PaymentRecord, PaymentFilters } from "@/constants/zod/payment-schema";
+import { AnimatedContainer, AnimatedFilterBar } from "@/components/ui/animated-container";
+import {
+  statsGridContainer,
+  statsCardVariants,
+  defaultTransition,
+} from "@/lib/animation-variants";
 
 export const Route = createFileRoute("/_authenticated/payments/")({
   component: PaymentsPage,
@@ -140,9 +147,18 @@ function PaymentsPage() {
                   </div>
 
                   {/* Statistics Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={statsGridContainer}
+                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4"
+                  >
                     {/* Total Payments */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-muted">
                           <IconUsers className="size-4 sm:size-5 text-muted-foreground" />
@@ -158,10 +174,14 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Total</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Paid */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
                           <IconCircleCheck className="size-4 sm:size-5 text-emerald-600 dark:text-emerald-400" />
@@ -177,10 +197,14 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Paid</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Pending */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 dark:bg-amber-950/50">
                           <IconClock className="size-4 sm:size-5 text-amber-600 dark:text-amber-400" />
@@ -196,10 +220,14 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Pending</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Failed */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-red-50 dark:bg-red-950/50">
                           <IconAlertTriangle className="size-4 sm:size-5 text-red-600 dark:text-red-400" />
@@ -215,10 +243,14 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Failed</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Total Revenue */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
                           <IconCurrencyDollar className="size-4 sm:size-5 text-emerald-600 dark:text-emerald-400" />
@@ -234,10 +266,14 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Revenue</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Outstanding */}
-                    <div className="rounded-lg border bg-card p-3 sm:p-4">
+                    <motion.div
+                      variants={statsCardVariants}
+                      transition={defaultTransition}
+                      className="rounded-lg border bg-card p-3 sm:p-4"
+                    >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 dark:bg-amber-950/50">
                           <IconClock className="size-4 sm:size-5 text-amber-600 dark:text-amber-400" />
@@ -253,8 +289,8 @@ function PaymentsPage() {
                           <p className="text-[10px] sm:text-xs text-muted-foreground">Outstanding</p>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 </div>
               </div>
             </div>
@@ -262,11 +298,13 @@ function PaymentsPage() {
             {/* Content */}
             <div className="flex-1 px-4 lg:px-6 pb-6 space-y-4">
               {/* Filters */}
-              <PaymentsFilters
-                filters={filters}
-                seasons={paymentSeasons}
-                onFilterChange={handleFilterChange}
-              />
+              <AnimatedFilterBar>
+                <PaymentsFilters
+                  filters={filters}
+                  seasons={paymentSeasons}
+                  onFilterChange={handleFilterChange}
+                />
+              </AnimatedFilterBar>
 
               {/* Bulk Action Bar */}
               {selectedIds.length > 0 && (
@@ -290,16 +328,18 @@ function PaymentsPage() {
               )}
 
               {/* Data Table */}
-              <PaymentsDataTable
-                data={paymentsData?.data ?? []}
-                pagination={paymentsData?.pagination}
-                isLoading={isLoadingPayments}
-                selectedIds={selectedIds}
-                onSelectionChange={setSelectedIds}
-                onPageChange={handlePageChange}
-                onViewDetail={handleViewDetail}
-                onUpdateStatus={handleUpdateStatus}
-              />
+              <AnimatedContainer delay={0.1}>
+                <PaymentsDataTable
+                  data={paymentsData?.data ?? []}
+                  pagination={paymentsData?.pagination}
+                  isLoading={isLoadingPayments}
+                  selectedIds={selectedIds}
+                  onSelectionChange={setSelectedIds}
+                  onPageChange={handlePageChange}
+                  onViewDetail={handleViewDetail}
+                  onUpdateStatus={handleUpdateStatus}
+                />
+              </AnimatedContainer>
             </div>
           </div>
         </div>
