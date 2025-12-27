@@ -196,10 +196,35 @@ export const matchDisputeSchema = z.object({
 export const matchWalkoverSchema = z.object({
   id: z.string(),
   matchId: z.string(),
-  reason: walkoverReasonEnum,
+  // Prisma field names
+  walkoverReason: walkoverReasonEnum,
+  walkoverReasonDetail: z.string().nullable().optional(),
   defaultingPlayerId: z.string(),
   winningPlayerId: z.string(),
-  recordedAt: z.coerce.date(),
+  reportedBy: z.string().optional(),
+  createdAt: z.coerce.date().optional(),
+  // Player relations
+  defaultingPlayer: z.object({
+    id: z.string(),
+    name: z.string(),
+    username: z.string().nullable().optional(),
+    image: z.string().nullable().optional(),
+  }).nullable().optional(),
+  winningPlayer: z.object({
+    id: z.string(),
+    name: z.string(),
+    username: z.string().nullable().optional(),
+    image: z.string().nullable().optional(),
+  }).nullable().optional(),
+  reporter: z.object({
+    id: z.string(),
+    name: z.string(),
+    username: z.string().nullable().optional(),
+  }).nullable().optional(),
+  // Legacy field names (for backwards compatibility)
+  reason: walkoverReasonEnum.optional(),
+  reasonDetail: z.string().nullable().optional(),
+  recordedAt: z.coerce.date().optional(),
   recordedById: z.string().nullable().optional(),
 }).passthrough();
 
