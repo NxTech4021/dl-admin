@@ -3,9 +3,11 @@
 import { useTypingIndicator } from '@/app/chat/hooks/chat';
 import { useSession } from '@/lib/auth-client';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { ThreadMember, ChatParticipant } from '@/constants/types/chat';
 
 interface TypingIndicatorProps {
   threadId?: string;
+  members?: ThreadMember[] | ChatParticipant[];
 }
 
 // Elegant wave animation for typing dots
@@ -31,10 +33,10 @@ const dotVariants = {
   }),
 };
 
-export default function TypingIndicator({ threadId }: TypingIndicatorProps) {
+export default function TypingIndicator({ threadId, members }: TypingIndicatorProps) {
   const { data: session } = useSession();
   const user = session?.user;
-  const { typingUsers } = useTypingIndicator(threadId);
+  const { typingUsers } = useTypingIndicator(threadId, members);
 
   const otherTypingUsers = typingUsers.filter(typingUser => typingUser.userId !== user?.id);
 

@@ -36,7 +36,7 @@ export default function ChatMessageInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const previousConversationIdRef = useRef<string | undefined>(undefined);
 
   const { setTyping } = useTypingIndicator(selectedConversationId);

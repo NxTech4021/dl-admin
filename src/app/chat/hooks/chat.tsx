@@ -9,6 +9,7 @@ import type {
   Message,
   Thread,
   AvailableUser,
+  ChatParticipant,
 } from "@/constants/types/chat";
 
 export function useChatData(userId?: string) {
@@ -225,6 +226,22 @@ export function useMessages(threadId?: string) {
     async (content: string, senderId: string, repliesToId?: string) => {
       if (!threadId) return;
 
+      // Create optimistic message
+      const optimisticMessage: Message = {
+        id: `temp-${Date.now()}`,
+        threadId,
+        senderId,
+        content,
+        createdAt: new Date().toISOString(),
+        sender: {
+          id: senderId,
+          name: "You",
+        },
+      };
+
+      // Optimistically add to UI
+      setMessages((prev) => [...prev, optimisticMessage]);
+
       try {
         const payload: any = {
           senderId,
@@ -253,11 +270,17 @@ export function useMessages(threadId?: string) {
         }
 
         if (newMessage) {
-          // Add message to local state immediately for instant UI feedback
-          setMessages((prev) => [...prev, newMessage]);
+          // Don't replace immediately - the socket broadcast will handle it
+          // This prevents race conditions and duplicate messages
+          console.log('✅ Message sent successfully, waiting for socket broadcast');
           return newMessage;
         }
       } catch (err: any) {
+        // Remove optimistic message on error
+        setMessages((prev) =>
+          prev.filter((msg) => msg.id !== optimisticMessage.id)
+        );
+        
         console.error("Error sending message:", err);
         const errorMessage =
           err.response?.data?.message ||
@@ -320,19 +343,45 @@ export function useMessages(threadId?: string) {
     if (!socket || !isConnected) return;
 
     const handleNewMessage = (message: Message) => {
+      console.log('🔔 [Socket] Received new_message event:', {
+        messageId: message.id,
+        threadId: message.threadId,
+        currentThreadId: threadId,
+        senderId: message.senderId,
+        content: message.content?.substring(0, 50)
+      });
+      
       // Only add message if it belongs to current thread
       if (message.threadId === threadId) {
-        // Prevent duplicate if we already added it optimistically
+        // Check if message already exists (avoid duplicates)
         setMessages((prev) => {
-          if (prev.some((m) => m.id === message.id)) {
+          // Check if this exact message already exists
+          const exists = prev.some(m => m.id === message.id);
+          if (exists) {
+            console.log('⚠️ [Socket] Message already exists, skipping duplicate:', message.id);
             return prev;
           }
+          
+          // Check if there's a temp message that should be replaced
+          // This handles the case where we sent the message and got the real one back
+          const hasTempMessage = prev.some(m => m.id.startsWith('temp-'));
+          if (hasTempMessage) {
+            console.log('🔄 [Socket] Found temp message, replacing with real message:', message.id);
+            // Remove all temp messages and add the real one
+            return [...prev.filter(m => !m.id.startsWith('temp-')), message];
+          }
+          
+          console.log('✅ [Socket] Adding new message to state:', message.id);
           return [...prev, message];
         });
+      } else {
+        console.log('⏭️ [Socket] Message not for current thread, ignoring');
       }
     };
 
     const handleMessageDeleted = (data: { messageId: string; threadId: string }) => {
+      console.log('🗑️ [Socket] Received message_deleted event:', data);
+      
       if (data.threadId === threadId) {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -404,9 +453,11 @@ export function useMessages(threadId?: string) {
     if (!threadId || !isConnected) return;
 
     if (currentThreadRef.current && currentThreadRef.current !== threadId) {
+      console.log('👋 [Socket] Leaving previous thread:', currentThreadRef.current);
       leaveThread(currentThreadRef.current);
     }
 
+    console.log('🚪 [Socket] Joining thread room:', threadId);
     joinThread(threadId);
     currentThreadRef.current = threadId;
 
@@ -441,7 +492,7 @@ export function useMessages(threadId?: string) {
   };
 }
 
-export function useTypingIndicator(threadId?: string) {
+export function useTypingIndicator(threadId?: string, members?: ThreadMember[] | ChatParticipant[]) {
   const [typingUsers, setTypingUsers] = useState<
     Array<{ userId: string; userName: string }>
   >([]);
@@ -489,10 +540,21 @@ export function useTypingIndicator(threadId?: string) {
             return prev;
           }
 
-          // TODO: use actual User name from participants
+          // Get actual user name from thread members (supports both ChatParticipant and ThreadMember)
+          const member = members?.find((m) => {
+            // ChatParticipant has 'id', ThreadMember has 'userId'
+            const memberId = 'userId' in m ? m.userId : m.id;
+            return memberId === data.senderId;
+          });
+          
+          // Handle both ChatParticipant (has 'name' directly) and ThreadMember (has 'user.name')
+          const userName = member 
+            ? ('user' in member ? (member.user?.name || member.user?.username) : (member.name || member.username))
+            : "Someone";
+          
           return [
             ...prev,
-            { userId: data.senderId, userName: "Someone" },
+            { userId: data.senderId, userName: userName || "Someone" },
           ];
         } else {
           return prev.filter(
@@ -507,7 +569,7 @@ export function useTypingIndicator(threadId?: string) {
     return () => {
       socket.off("typing_status", handleTypingStatus);
     };
-  }, [socket, isConnected, threadId, user?.id]);
+  }, [socket, isConnected, threadId, user?.id, members]);
 
   const setTyping = useCallback(
     (isTyping: boolean) => {

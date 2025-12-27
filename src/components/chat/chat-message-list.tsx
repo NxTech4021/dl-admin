@@ -188,7 +188,7 @@ export default function ChatMessageList({
           ))}
 
           {/* Typing Indicator */}
-          <TypingIndicator threadId={threadId} />
+          <TypingIndicator threadId={threadId} members={participants} />
 
           {/* Sending indicator */}
           <AnimatePresence>

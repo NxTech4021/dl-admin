@@ -40,7 +40,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const user = session?.user;
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log("⏳ [Socket] Waiting for user session...");
+      return;
+    }
+
+    console.log("🚀 [Socket] Initializing socket connection for user:", user.id);
 
     const socketInstance = io(
       import.meta.env.VITE_API_BASE_URL || "http://localhost:3001",
@@ -52,23 +57,36 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         transports: ["websocket", "polling"],
         withCredentials: true,
         path: "/socket.io/",
+        extraHeaders: {
+          'x-user-id': user.id,
+        },
       }
     );
 
     // Connection events
     socketInstance.on("connect", () => {
       console.log("✅ Socket connected:", socketInstance.id);
+      console.log("🔌 Socket transport:", socketInstance.io.engine.transport.name);
       setIsConnected(true);
     });
 
-    socketInstance.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
+    socketInstance.on("disconnect", (reason) => {
+      console.log("❌ Socket disconnected:", reason);
       setIsConnected(false);
     });
 
     socketInstance.on("connect_error", (error: Error) => {
       console.error("❌ Socket connection error:", error);
       setIsConnected(false);
+    });
+
+    // Listen for thread join confirmations
+    socketInstance.on("thread_joined", (data: { threadId: string; socketId: string }) => {
+      console.log(`✅ Successfully joined thread: ${data.threadId}`);
+    });
+
+    socketInstance.on("thread_join_error", (data: { threadId: string; error: string }) => {
+      console.error(`❌ Failed to join thread ${data.threadId}:`, data.error);
     });
 
     // Join user's personal room for notifications
@@ -78,6 +96,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     return () => {
       console.log("🧹 Cleaning up socket connection");
+      socketInstance.off("thread_joined");
+      socketInstance.off("thread_join_error");
       socketInstance.disconnect();
     };
   }, [user?.id, user?.name]);
