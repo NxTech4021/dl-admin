@@ -152,10 +152,8 @@ function DashboardPage() {
         <motion.div
           variants={settingsCardVariants}
           transition={defaultTransition}
-          className="px-6 md:px-8 py-6"
+          className="px-6 md:px-8 pb-6"
         >
-          <h2 className="text-lg font-medium mb-6">Analytics</h2>
-
           {/* Equal-height 2-column grid */}
           <div className="grid gap-6 lg:grid-cols-2 items-stretch relative">
             <ChartLoadingOverlay isLoading={isChartLoading} />

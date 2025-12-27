@@ -3,7 +3,6 @@
 import { RefreshCw, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterSelect } from "@/components/ui/filter-select";
-import { AnimatedContainer } from "@/components/ui/animated-container";
 
 const CHART_RANGE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
@@ -47,10 +46,12 @@ export function DashboardChartFilters({
   };
 
   return (
-    <AnimatedContainer delay={0.1}>
-      <div className="px-6 md:px-8">
-        {/* Clean inline layout - no bordered container */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+    <div className="px-6 md:px-8">
+      {/* Analytics header with filters and actions */}
+      <div className="flex flex-wrap items-center justify-between gap-4 py-4">
+        {/* Left side: Title and filters */}
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-medium">Analytics</h2>
           <div className="flex items-center gap-2">
             <FilterSelect
               value={chartRange}
@@ -59,7 +60,6 @@ export function DashboardChartFilters({
               placeholder="View"
               triggerClassName="w-[120px] h-9 text-sm border-border/50"
             />
-
             <FilterSelect
               value={historyRange.toString()}
               onChange={(value) => onHistoryRangeChange(Number(value || "3") as 1 | 3 | 6)}
@@ -68,36 +68,35 @@ export function DashboardChartFilters({
               triggerClassName="w-[85px] h-9 text-sm border-border/50"
             />
           </div>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:inline" suppressHydrationWarning>
-              Updated {formatLastUpdated()}
-            </span>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRefresh}
-                className="h-8 w-8 p-0"
-                aria-label="Refresh"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onExport}
-                className="h-8 gap-1.5 text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </div>
+        {/* Right side: Updated text and action buttons */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground hidden sm:inline" suppressHydrationWarning>
+            Updated {formatLastUpdated()}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              className="h-8 gap-1.5"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onExport}
+              className="h-8 gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
           </div>
         </div>
       </div>
-    </AnimatedContainer>
+    </div>
   );
 }
