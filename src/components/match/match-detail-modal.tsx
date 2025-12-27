@@ -7,6 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Match } from "@/constants/zod/match-schema";
 import { MatchStatusBadge } from "./match-status-badge";
@@ -33,11 +39,15 @@ import {
   IconClipboardCheck,
   IconShieldCheck,
   IconCheck,
+  IconLayoutGrid,
+  IconExternalLink,
+  IconChevronDown,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials, getStatusBadgeColor } from "@/components/data-table/constants";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 /** Get display name with fallback for undefined user names */
 const getDisplayName = (user: { name?: string | null; username?: string | null } | null | undefined): string => {
@@ -719,9 +729,46 @@ export function MatchDetailModal({
         </div>
 
         {/* Quick Actions Footer */}
-        {(onMessage || onEdit || onVoid || onEditParticipants) && (
+        {(onMessage || onEdit || onVoid || onEditParticipants || (!isFriendlyMatch && match.division)) && (
           <div className="px-6 pb-6 pt-3 border-t border-border/50">
             <div className="flex items-center justify-end gap-2 flex-wrap">
+              {/* Go to Dropdown - only for league-linked matches */}
+              {!isFriendlyMatch && match.division && (
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <IconExternalLink className="size-4 mr-1.5" />
+                      Go to
+                      <IconChevronDown className="size-3.5 ml-1.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {match.division.league && (
+                      <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                        <Link to="/league/view/$leagueId" params={{ leagueId: match.division.league.id }}>
+                          <IconTrophy className="size-4 mr-2" />
+                          League
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {match.division.season && (
+                      <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                        <Link to="/seasons/$seasonId" params={{ seasonId: match.division.season.id }}>
+                          <IconCalendar className="size-4 mr-2" />
+                          Season
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                      <Link to="/divisions/$divisionId" params={{ divisionId: match.division.id }}>
+                        <IconLayoutGrid className="size-4 mr-2" />
+                        Division
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               {/* Message Participants - always available */}
               {onMessage && (
                 <Button

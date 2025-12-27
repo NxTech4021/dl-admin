@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
@@ -394,7 +394,7 @@ function MatchesPage() {
                             />
                           </TableCell>
 
-                          <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                          <TableCell className="py-3">
                             {!match.division && !match.leagueId ? (
                               <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400 dark:border-pink-800">
                                 Friendly
@@ -402,26 +402,18 @@ function MatchesPage() {
                             ) : match.division ? (
                               <div className="space-y-0.5">
                                 {match.division.league && (
-                                  <Link
-                                    to="/league/view/$leagueId"
-                                    params={{ leagueId: match.division.league.id }}
-                                    className="text-sm font-medium hover:text-primary transition-colors block"
-                                  >
+                                  <span className="text-sm font-medium block">
                                     {match.division.league.name}
-                                  </Link>
+                                  </span>
                                 )}
                                 {match.division.season && (
                                   <span className="text-xs text-muted-foreground block">
                                     {match.division.season.name}
                                   </span>
                                 )}
-                                <Link
-                                  to="/divisions/$divisionId"
-                                  params={{ divisionId: match.division.id }}
-                                  className="text-xs text-muted-foreground/70 hover:text-primary transition-colors block"
-                                >
+                                <span className="text-xs text-muted-foreground/70 block">
                                   {match.division.name}
-                                </Link>
+                                </span>
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-xs">—</span>
