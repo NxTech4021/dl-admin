@@ -1,24 +1,22 @@
 import "@testing-library/jest-dom";
 
-// Mock next/navigation
-jest.mock("next/navigation", () => ({
+// Mock TanStack Router
+jest.mock("@tanstack/react-router", () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
+    navigate: jest.fn(),
     back: jest.fn(),
   }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/",
-}));
-
-// Mock next/image
-jest.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} alt={props.alt || ""} />;
-  },
+  useLocation: () => ({
+    pathname: "/",
+    search: "",
+    hash: "",
+    state: {},
+  }),
+  Link: ({ children, ...props }: { children: React.ReactNode; to?: string }) => (
+    <a href={props.to || "#"} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 // Suppress console errors during tests (optional - remove if you want to see errors)
