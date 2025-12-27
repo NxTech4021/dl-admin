@@ -43,7 +43,8 @@ function ChatPage() {
     error: threadsError,
     refetch: refetchThreads,
     updateThreadLastMessage,
-  } = useChatData(user?.id);
+    markThreadAsRead,
+  } = useChatData(user?.id, selectedConversationId);
 
   const {
     messages,
@@ -68,6 +69,13 @@ function ChatPage() {
   useEffect(() => {
     setReplyingTo(null);
   }, [selectedConversationId]);
+
+  // Mark thread as read when conversation is opened
+  useEffect(() => {
+    if (selectedConversationId && user?.id) {
+      markThreadAsRead(selectedConversationId);
+    }
+  }, [selectedConversationId, user?.id, markThreadAsRead]);
 
   const conversations: Conversation[] = useMemo(() => {
     return threads.map((thread: Thread) => {
@@ -101,9 +109,33 @@ function ChatPage() {
           ? {
               content: thread.messages[0].content,
               createdAt: thread.messages[0].createdAt,
-              sender: { name: thread.messages[0].sender.name },
+              senderId: thread.messages[0].senderId,
+              sender: {
+                id: thread.messages[0].sender?.id,
+                name: thread.messages[0].sender.name,
+                image: thread.messages[0].sender?.image,
+              },
+              // Include match message info for smart preview
+              messageType: thread.messages[0].messageType,
+              matchData: thread.messages[0].matchData,
             }
           : null;
+
+      // Map division data for context badges
+      const division = thread.division
+        ? {
+            name: thread.division.name,
+            season: thread.division.season
+              ? { name: thread.division.season.name }
+              : undefined,
+            league: thread.division.league
+              ? {
+                  name: thread.division.league.name,
+                  sportType: thread.division.league.sportType,
+                }
+              : undefined,
+          }
+        : undefined;
 
       return {
         id: thread.id,
@@ -116,7 +148,9 @@ function ChatPage() {
         participants,
         messages: [],
         lastMessage,
-        unreadCount: 0,
+        unreadCount: thread.unreadCount ?? 0,
+        divisionId: thread.divisionId,
+        division,
       };
     });
   }, [threads, user?.id]);

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "@tanstack/react-router";
+import { useNavigate, Link, useSearch } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
@@ -37,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/use-queries";
+import { useChatUnreadCount } from "@/hooks/use-chat-unread-count";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
@@ -51,10 +52,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
   }, []);
 
-  // Calculate unread chat messages (filter by CHAT category)
-  const unreadChatCount = React.useMemo(() => {
-    return notifications.filter((n) => n.category === "CHAT" && !n.read).length;
-  }, [notifications]);
+  // Get active chat thread ID from URL to exclude from unread count
+  const search = useSearch({ strict: false }) as { id?: string } | undefined;
+  const activeThreadId = search?.id;
+
+  // Real-time chat unread count - excludes currently viewed thread
+  const { totalUnread: unreadChatCount } = useChatUnreadCount(activeThreadId);
 
   // Redirect to login if no session
   useEffect(() => {
@@ -172,7 +175,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon: MessageCircle,
             badge: unreadChatCount > 0 ? {
               count: unreadChatCount,
-              variant: "default" as const,
+              variant: "destructive" as const,
             } : undefined,
           },
           {

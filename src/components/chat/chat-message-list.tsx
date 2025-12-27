@@ -162,27 +162,33 @@ export default function ChatMessageList({
             <div key={date}>
               <DateDivider date={dateMessages[0].createdAt} />
               <AnimatePresence mode="popLayout">
-                {dateMessages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{
-                      duration: 0.25,
-                      delay: index < 3 ? index * 0.05 : 0,
-                      ease: [0.4, 0, 0.2, 1],
-                    }}
-                    layout
-                  >
-                    <ChatMessageItem
-                      message={message}
-                      participants={participants}
-                      onReply={onReply}
-                      onDelete={onDelete}
-                    />
-                  </motion.div>
-                ))}
+                {dateMessages.map((message, index) => {
+                  const prevMessage = index > 0 ? dateMessages[index - 1] : null;
+                  const showAvatar = !prevMessage || prevMessage.senderId !== message.senderId;
+
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: index < 3 ? index * 0.05 : 0,
+                        ease: [0.4, 0, 0.2, 1],
+                      }}
+                      layout
+                    >
+                      <ChatMessageItem
+                        message={message}
+                        participants={participants}
+                        showAvatar={showAvatar}
+                        onReply={onReply}
+                        onDelete={onDelete}
+                      />
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           ))}

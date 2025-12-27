@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   IconChevronLeft,
   IconChevronRight,
   IconCircleCheck,
@@ -214,13 +219,20 @@ function MobilePaymentCard({
 
       {/* Season Info */}
       <div className="pt-2 border-t">
-        <Link
-          to="/seasons/$id"
-          params={{ id: payment.seasonId }}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          {payment.season?.name || "Unknown Season"}
-        </Link>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              to="/seasons/$seasonId"
+              params={{ seasonId: payment.seasonId }}
+              className="text-sm font-medium text-primary underline decoration-dotted underline-offset-4 decoration-primary/50 hover:decoration-primary transition-colors"
+            >
+              {payment.season?.name || "Unknown Season"}
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Go to {payment.season?.name || "season"}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Details Row */}
@@ -316,7 +328,7 @@ export function PaymentsDataTable({
                   <TableHead className="w-[250px]">Player</TableHead>
                   <TableHead className="w-[180px]">Season</TableHead>
                   <TableHead className="w-[100px]">Entry Fee</TableHead>
-                  <TableHead className="w-[120px]">Payment</TableHead>
+                  <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="w-[100px]">Membership</TableHead>
                   <TableHead className="w-[100px]">Joined</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
@@ -415,7 +427,7 @@ export function PaymentsDataTable({
               <TableHead className="w-[250px]">Player</TableHead>
               <TableHead className="w-[180px]">Season</TableHead>
               <TableHead className="w-[100px]">Entry Fee</TableHead>
-              <TableHead className="w-[120px]">Payment</TableHead>
+              <TableHead className="w-[120px]">Status</TableHead>
               <TableHead className="w-[100px]">Membership</TableHead>
               <TableHead className="w-[100px]">Joined</TableHead>
               <TableHead className="w-[60px] pr-4"></TableHead>
@@ -463,8 +475,8 @@ export function PaymentsDataTable({
                       </Avatar>
                       <div className="min-w-0">
                         <Link
-                          to="/players/$id"
-                          params={{ id: payment.userId }}
+                          to="/players/$playerId"
+                          params={{ playerId: payment.userId }}
                           className="font-medium text-sm hover:text-primary transition-colors truncate block"
                         >
                           {payment.user?.name || "Unknown"}
@@ -476,13 +488,20 @@ export function PaymentsDataTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Link
-                      to="/seasons/$id"
-                      params={{ id: payment.seasonId }}
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      {payment.season?.name || "Unknown"}
-                    </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          to="/seasons/$seasonId"
+                          params={{ seasonId: payment.seasonId }}
+                          className="text-sm font-medium underline decoration-dotted underline-offset-4 decoration-muted-foreground/50 hover:text-primary hover:decoration-primary transition-colors"
+                        >
+                          {payment.season?.name || "Unknown"}
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Go to {payment.season?.name || "season"}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell className="font-medium tabular-nums">
                     {formatCurrency(payment.season?.entryFee)}

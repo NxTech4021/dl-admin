@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +11,9 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -21,44 +24,63 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { IconLoader2, IconX } from "@tabler/icons-react";
-import { Trophy } from "lucide-react";
+import {
+  IconCategory,
+  IconLoader2,
+  IconX,
+  IconCheck,
+  IconPlus,
+  IconArrowLeft,
+  IconArrowRight,
+  IconSettings,
+  IconUsers,
+  IconUser,
+} from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 type GameType = "SINGLES" | "DOUBLES";
 type GenderType = "MALE" | "FEMALE" | "MIXED";
 type GenderRestriction = "MALE" | "FEMALE" | "MIXED" | "OPEN";
 
-const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
-  { value: "SINGLES", label: "Singles" },
-  { value: "DOUBLES", label: "Doubles" },
+const GAME_TYPE_OPTIONS: { value: GameType; label: string; icon: React.ReactNode }[] = [
+  { value: "SINGLES", label: "Singles", icon: <IconUser className="size-4" /> },
+  { value: "DOUBLES", label: "Doubles", icon: <IconUsers className="size-4" /> },
 ];
 
 const GENDER_TYPE_OPTIONS: { value: GenderType; label: string }[] = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
+  { value: "MALE", label: "Men's" },
+  { value: "FEMALE", label: "Women's" },
   { value: "MIXED", label: "Mixed" },
 ];
 
-const GENDER_RESTRICTION_OPTIONS: { value: GenderRestriction; label: string }[] = [
-  { value: "OPEN", label: "Open" },
-  { value: "MALE", label: "Male Only" },
-  { value: "FEMALE", label: "Female Only" },
-  { value: "MIXED", label: "Mixed" },
-];
+// Zod schema for form validation
+const categoryCreateSchema = z
+  .object({
+    gender_category: z.enum(["MALE", "FEMALE", "MIXED"], {
+      message: "Gender is required",
+    }),
+    game_type: z.enum(["SINGLES", "DOUBLES"], {
+      message: "Game type is required",
+    }),
+    matchFormat: z.string().min(1, "Match format is required"),
+    isActive: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    // Prevent Mixed Singles
+    if (data.gender_category === "MIXED" && data.game_type === "SINGLES") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["game_type"],
+        message: "Mixed Singles category is not allowed",
+      });
+    }
+  });
 
-
-interface CategoryFormData {
-  name: string;
-  matchFormat: string;
-  game_type: GameType | "";
-  gender_category: GenderType | "";
-  genderRestriction: GenderRestriction | "";
-  maxPlayers: number | null;
-  maxTeams: number | null;
-  isActive: boolean;
-  categoryOrder: number;
-}
+// Use z.input for form field values (what the form handles)
+// Use z.output for the validated/transformed output
+type CategoryFormInput = z.input<typeof categoryCreateSchema>;
+type CategoryFormOutput = z.output<typeof categoryCreateSchema>;
 
 interface CategoryCreateModalProps {
   open: boolean;
@@ -71,27 +93,74 @@ export default function CategoryCreateModal({
   onOpenChange,
   onCategoryCreated,
 }: CategoryCreateModalProps) {
-  const [formData, setFormData] = useState<CategoryFormData>({
-    name: "",
-    matchFormat: "",
-    game_type: "",
-    gender_category: "",
-    genderRestriction: "",
-    maxPlayers: null,
-    maxTeams: null,
-    isActive: true,
-    categoryOrder: 0,
-  });
+  const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
-  
-  // Existing categories for duplicate checking (globally, not per league)
-  const [existingCategories, setExistingCategories] = useState<Array<{
-    id: string;
-    name: string | null;
-    gender_category: GenderType | null;
-    game_type: GameType | null;
-  }>>([]);
+  const [error, setError] = useState("");
+
+  // Existing categories for duplicate checking
+  const [existingCategories, setExistingCategories] = useState<
+    Array<{
+      id: string;
+      name: string | null;
+      gender_category: GenderType | null;
+      game_type: GameType | null;
+    }>
+  >([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    reset,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm<CategoryFormInput, unknown, CategoryFormOutput>({
+    resolver: zodResolver(categoryCreateSchema),
+    mode: "onChange",
+    defaultValues: {
+      gender_category: undefined as unknown as GenderType,
+      game_type: undefined as unknown as GameType,
+      matchFormat: "",
+      isActive: true,
+    },
+  });
+
+  const formValues = watch();
+  const genderCategory = watch("gender_category");
+  const gameType = watch("game_type");
+
+  // Generate category name from gender and game type
+  const generateCategoryName = useCallback(
+    (gender: GenderType | undefined, gameType: GameType | undefined): string => {
+      if (!gender || !gameType) return "";
+
+      let genderPrefix: string;
+      if (gender === "MIXED") {
+        genderPrefix = "Mixed";
+      } else if (gender === "MALE") {
+        genderPrefix = "Men's";
+      } else {
+        genderPrefix = "Women's";
+      }
+      const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";
+      return `${genderPrefix} ${gameTypeSuffix}`;
+    },
+    []
+  );
+
+  // Auto-calculate gender restriction from gender category
+  const getGenderRestriction = (
+    genderCategory: GenderType | undefined
+  ): GenderRestriction | undefined => {
+    if (!genderCategory) return undefined;
+    if (genderCategory === "MIXED") {
+      return "MIXED";
+    }
+    return genderCategory as GenderRestriction;
+  };
 
   // Fetch all existing categories globally (for duplicate checking)
   useEffect(() => {
@@ -104,8 +173,8 @@ export default function CategoryCreateModal({
           const categoriesData = result?.data || result || [];
           setExistingCategories(Array.isArray(categoriesData) ? categoriesData : []);
         })
-        .catch((error) => {
-          console.error("Error fetching categories:", error);
+        .catch((err) => {
+          console.error("Error fetching categories:", err);
           setExistingCategories([]);
         })
         .finally(() => setCategoriesLoading(false));
@@ -115,80 +184,31 @@ export default function CategoryCreateModal({
   }, [open]);
 
   // Reset form when modal closes
+  const resetModal = useCallback(() => {
+    setCurrentStep("form");
+    reset({
+      gender_category: undefined as unknown as GenderType,
+      game_type: undefined as unknown as GameType,
+      matchFormat: "",
+      isActive: true,
+    });
+    setError("");
+  }, [reset]);
+
   useEffect(() => {
     if (!open) {
-      setFormData({
-        name: "",
-        matchFormat: "",
-        game_type: "",
-        gender_category: "",
-        genderRestriction: "",
-        maxPlayers: null,
-        maxTeams: null,
-        isActive: true,
-        categoryOrder: 0,
-      });
+      resetModal();
     }
-  }, [open]);
-
-  const generateCategoryName = useCallback(
-    (gender: GenderType | "", gameType: GameType | ""): string => {
-      if (!gender || !gameType) return "";
-      
-      let genderPrefix: string;
-      if (gender === "MIXED") {
-        genderPrefix = "Mixed";
-      } else if (gender === "MALE") {
-        genderPrefix = "Men's";
-      } else {
-        // gender === "FEMALE"
-        genderPrefix = "Women's";
-      }
-      // Game type should be plural: Singles, Doubles
-      const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";
-      return `${genderPrefix} ${gameTypeSuffix}`;
-    },
-    []
-  );
-
-  // Auto-calculate gender restriction from gender category
-  const getGenderRestriction = (genderCategory: GenderType | ""): GenderRestriction | "" => {
-    if (!genderCategory) return "";
-    if (genderCategory === "MIXED") {
-      return "MIXED";
-    }
-    return genderCategory as GenderRestriction;
-  };
+  }, [open, resetModal]);
 
   // Check if combination already exists globally
   const isDuplicateCombination = useCallback(
-    (gender: GenderType | "", gameType: GameType | ""): boolean => {
+    (gender: GenderType | undefined, gameType: GameType | undefined): boolean => {
       if (!gender || !gameType) return false;
-      
+
       return existingCategories.some(
         (category) =>
-          category.gender_category === gender &&
-          category.game_type === gameType
-      );
-    },
-    [existingCategories]
-  );
-
-  // Check if a specific gender option is already used with any game type
-  const isGenderUsed = useCallback(
-    (gender: GenderType): boolean => {
-      return existingCategories.some(
-        (category) => category.gender_category === gender
-      );
-    },
-    [existingCategories]
-  );
-
-  // Check if a specific game type option is already used with any gender
-  const isGameTypeUsed = useCallback(
-    (gameType: GameType): boolean => {
-      return existingCategories.some(
-        (category) => category.game_type === gameType
+          category.gender_category === gender && category.game_type === gameType
       );
     },
     [existingCategories]
@@ -199,45 +219,42 @@ export default function CategoryCreateModal({
     (gender: GenderType, gameType: GameType): boolean => {
       return existingCategories.some(
         (category) =>
-          category.gender_category === gender &&
-          category.game_type === gameType
+          category.gender_category === gender && category.game_type === gameType
       );
     },
     [existingCategories]
   );
 
   // Check if Mixed Singles combination
-  const isMixedSingles = (gender: GenderType | "", gameType: GameType | ""): boolean => {
+  const isMixedSingles = (
+    gender: GenderType | undefined,
+    gameType: GameType | undefined
+  ): boolean => {
     return gender === "MIXED" && gameType === "SINGLES";
   };
 
   const handleGameTypeChange = (value: GameType) => {
     // Prevent Mixed Singles
-    if (formData.gender_category && isMixedSingles(formData.gender_category, value)) {
+    if (genderCategory && isMixedSingles(genderCategory, value)) {
       toast.error("Mixed Singles category is not allowed");
       return;
     }
 
     // Check for duplicate combination if gender is selected
-    if (formData.gender_category && isCombinationUsed(formData.gender_category, value)) {
+    if (genderCategory && isCombinationUsed(genderCategory, value)) {
       toast.error(
-        `A ${generateCategoryName(formData.gender_category, value)} category already exists`
+        `A ${generateCategoryName(genderCategory, value)} category already exists`
       );
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      game_type: value,
-      name: prev.gender_category ? generateCategoryName(prev.gender_category, value) : "",
-    }));
+    setValue("game_type", value, { shouldValidate: true });
   };
 
   const handleGenderChange = (value: GenderType) => {
-    // If switching to MIXED and SINGLES is selected, reset to empty
-    const newGameType = value === "MIXED" && formData.game_type === "SINGLES" 
-      ? "" 
-      : formData.game_type;
+    // If switching to MIXED and SINGLES is selected, reset game type
+    const newGameType =
+      value === "MIXED" && gameType === "SINGLES" ? undefined : gameType;
 
     // Prevent Mixed Singles
     if (newGameType && isMixedSingles(value, newGameType)) {
@@ -253,47 +270,46 @@ export default function CategoryCreateModal({
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      gender_category: value,
-      genderRestriction: getGenderRestriction(value),
-      game_type: newGameType,
-      name: newGameType ? generateCategoryName(value, newGameType) : "",
-    }));
+    setValue("gender_category", value, { shouldValidate: true });
+    if (newGameType !== gameType) {
+      setValue("game_type", newGameType as GameType, { shouldValidate: true });
+    }
   };
 
-  const handleSubmit = async () => {
-    if (!formData.gender_category || !formData.game_type || !formData.matchFormat) {
-      toast.error("Please fill in all required fields");
-      return;
+  const handleNextToPreview = () => {
+    if (isValid && !isDuplicateCombination(genderCategory, gameType)) {
+      setCurrentStep("preview");
     }
+  };
 
-    // Validate Mixed Singles
-    if (isMixedSingles(formData.gender_category, formData.game_type)) {
+  const handleBackToForm = () => setCurrentStep("form");
+
+  const onSubmit = async (data: CategoryFormOutput) => {
+    // Final validation
+    if (isMixedSingles(data.gender_category, data.game_type)) {
       toast.error("Mixed Singles category is not allowed");
       return;
     }
 
-    // Validate duplicate combination
-    if (isDuplicateCombination(formData.gender_category, formData.game_type)) {
+    if (isDuplicateCombination(data.gender_category, data.game_type)) {
       toast.error(
-        `A ${formData.name} category already exists. Please choose a different combination.`
+        `A ${generateCategoryName(data.gender_category, data.game_type)} category already exists`
       );
       return;
     }
 
     setLoading(true);
+    setError("");
+
     try {
       await axiosInstance.post(endpoints.categories.create, {
-        name: formData.name,
-        genderRestriction: formData.genderRestriction,
-        matchFormat: formData.matchFormat,
-        game_type: formData.game_type,
-        gender_category: formData.gender_category,
-        maxPlayers: formData.maxPlayers,
-        maxTeams: formData.maxTeams,
-        isActive: formData.isActive,
-        categoryOrder: formData.categoryOrder,
+        name: generateCategoryName(data.gender_category, data.game_type),
+        genderRestriction: getGenderRestriction(data.gender_category),
+        matchFormat: data.matchFormat,
+        game_type: data.game_type,
+        gender_category: data.gender_category,
+        isActive: data.isActive,
+        categoryOrder: 0,
       });
 
       toast.success("Category created successfully!");
@@ -301,270 +317,495 @@ export default function CategoryCreateModal({
       if (onCategoryCreated) {
         await onCategoryCreated();
       }
-      
-      // Reset form
-      setFormData({
-        name: "",
-        matchFormat: "",
-        game_type: "",
-        gender_category: "",
-        genderRestriction: "",
-        maxPlayers: null,
-        maxTeams: null,
-        isActive: true,
-        categoryOrder: 0,
-      });
-    } catch (err: any) {
-      console.error("Error creating category:", err);
-      toast.error(err.response?.data?.message || "Failed to create category");
+      resetModal();
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Failed to create category";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const categoryName = generateCategoryName(genderCategory, gameType);
+  const hasDuplicate = isDuplicateCombination(genderCategory, gameType);
+  const hasMixedSingles = isMixedSingles(genderCategory, gameType);
+  const canProceed =
+    isValid && !hasDuplicate && !hasMixedSingles && !categoriesLoading;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-3 pr-12">
-          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
-            <Trophy className="h-4 w-4 text-primary" />
-            Create Category
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto px-6 pb-4">
-          <div className="space-y-3">
-            {/* Minimal Preview */}
-            <div className="border rounded-lg p-3 bg-muted/30">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm mb-1.5 truncate">
-                    {formData.name || "Category name"}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    {formData.gender_category && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                        {GENDER_TYPE_OPTIONS.find(opt => opt.value === formData.gender_category)?.label}
-                      </Badge>
-                    )}
-                    {formData.game_type && (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                        {GAME_TYPE_OPTIONS.find(opt => opt.value === formData.game_type)?.label}
-                      </Badge>
-                    )}
-                    {formData.matchFormat && (
-                      <span className="text-muted-foreground">· {formData.matchFormat}</span>
-                    )}
-                  </div>
-                </div>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetModal();
+        onOpenChange(isOpen);
+      }}
+    >
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border/50">
+          <DialogHeader className="px-6 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 rounded-xl bg-primary/10">
+                <IconCategory className="size-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-semibold">
+                  New Category
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Create a new category for your league
+                </DialogDescription>
               </div>
             </div>
+          </DialogHeader>
 
-            {/* Category Settings */}
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="genderCategory" className="text-xs">Gender *</Label>
-                <Select
-                  value={formData.gender_category || undefined}
-                  onValueChange={handleGenderChange}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GENDER_TYPE_OPTIONS.map((option) => {
-                      // Disable Mixed if Singles is selected
-                      const isMixedSinglesDisabled = option.value === "MIXED" && formData.game_type === "SINGLES";
-                      // Disable if this gender is already used with the selected game type
-                      const isCombinationDisabled = formData.game_type 
-                        ? isCombinationUsed(option.value, formData.game_type)
-                        : false;
-                      const isDisabled = isMixedSinglesDisabled || isCombinationDisabled;
-                      return (
-                        <SelectItem 
-                          key={option.value} 
-                          value={option.value}
-                          disabled={isDisabled}
-                          className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-                        >
-                          {option.label}
-                          {isCombinationDisabled && formData.game_type && (
-                            <span className="ml-2 text-xs text-muted-foreground">(already exists)</span>
-                          )}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                {formData.gender_category && formData.game_type && isMixedSingles(formData.gender_category, formData.game_type) && (
-                  <p className="text-xs text-destructive mt-1">
-                    Mixed Singles category is not allowed
-                  </p>
+          {/* Stepper */}
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-3">
+              {/* Step 1 */}
+              <button
+                type="button"
+                onClick={() => currentStep === "preview" && setCurrentStep("form")}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                  currentStep === "form"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
                 )}
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="gameType" className="text-xs">Game Type *</Label>
-                <Select
-                  value={formData.game_type || undefined}
-                  onValueChange={handleGameTypeChange}
+              >
+                <span
+                  className={cn(
+                    "flex items-center justify-center size-5 rounded-full text-xs font-semibold",
+                    currentStep === "form"
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
+                  )}
                 >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select game type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GAME_TYPE_OPTIONS.map((option) => {
-                      // Hide Singles if Mixed is selected
-                      if (option.value === "SINGLES" && formData.gender_category === "MIXED") {
-                        return null;
-                      }
-                      // Disable if this game type is already used with the selected gender
-                      const isCombinationDisabled = formData.gender_category 
-                        ? isCombinationUsed(formData.gender_category, option.value)
-                        : false;
-                      return (
-                        <SelectItem 
-                          key={option.value} 
-                          value={option.value}
-                          disabled={isCombinationDisabled}
-                          className={isCombinationDisabled ? "opacity-50 cursor-not-allowed" : ""}
-                        >
-                          {option.label}
-                          {isCombinationDisabled && formData.gender_category && (
-                            <span className="ml-2 text-xs text-muted-foreground">(already exists)</span>
-                          )}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                {formData.gender_category && formData.game_type && isMixedSingles(formData.gender_category, formData.game_type) && (
-                  <p className="text-xs text-destructive mt-1">
-                    Mixed Singles category is not allowed
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Duplicate Warning */}
-            {formData.gender_category && formData.game_type && isDuplicateCombination(formData.gender_category, formData.game_type) && (
-              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
-                <IconX className="h-3.5 w-3.5 shrink-0" />
-                <span>
-                  A {formData.name || generateCategoryName(formData.gender_category, formData.game_type)} category already exists. Please choose a different combination.
+                  {currentStep === "preview" ? (
+                    <IconCheck className="size-3" />
+                  ) : (
+                    "1"
+                  )}
                 </span>
-              </div>
-            )}
+                Details
+              </button>
 
-            <div className="space-y-1">
-              <Label htmlFor="matchFormat" className="text-xs">Match Format *</Label>
-              <Input
-                id="matchFormat"
-                value={formData.matchFormat}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    matchFormat: e.target.value,
-                  }))
-                }
-                placeholder="e.g., Best of 3"
-                className="h-9"
+              {/* Connector */}
+              <div
+                className={cn(
+                  "flex-1 h-px max-w-[60px]",
+                  currentStep === "preview" ? "bg-primary" : "bg-border"
+                )}
               />
-            </div>
 
-            {/* Max Players and Max Teams */}
-            {/* <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="maxPlayers" className="text-xs">Max Players</Label>
-                <Input
-                  id="maxPlayers"
-                  type="number"
-                  value={formData.maxPlayers || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      maxPlayers: e.target.value ? parseInt(e.target.value) : null,
-                    }))
-                  }
-                  placeholder="Unlimited"
-                  className="h-9"
-                />
+              {/* Step 2 */}
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium",
+                  currentStep === "preview"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground"
+                )}
+              >
+                <span className="size-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs">
+                  2
+                </span>
+                Review
               </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="maxTeams" className="text-xs">Max Teams</Label>
-                <Input
-                  id="maxTeams"
-                  type="number"
-                  value={formData.maxTeams || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      maxTeams: e.target.value ? parseInt(e.target.value) : null,
-                    }))
-                  }
-                  placeholder="Unlimited"
-                  className="h-9"
-                />
-              </div>
-            </div> */}
-
-            {/* Status */}
-            <div className="flex items-center justify-between p-2 border rounded-md">
-              <Label htmlFor="isActive" className="text-xs font-medium cursor-pointer">
-                Active
-              </Label>
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    isActive: checked,
-                  }))
-                }
-                className="scale-75"
-              />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2 px-6 pt-4 pb-6 border-t">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-            size="sm"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              loading ||
-              !formData.gender_category ||
-              !formData.game_type ||
-              !formData.matchFormat ||
-              isMixedSingles(formData.gender_category, formData.game_type) ||
-              isDuplicateCombination(formData.gender_category, formData.game_type)
-            }
-            size="sm"
-          >
-            {loading ? (
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {/* Form Step */}
+          {currentStep === "form" && (
+            <form className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              {/* Category Type Section */}
+              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+                  <IconCategory className="size-4 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Category Type
+                  </span>
+                </div>
+                <div className="p-3 space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {/* Gender */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        Gender
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="gender_category"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={handleGenderChange}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-9",
+                                errors.gender_category && "border-destructive"
+                              )}
+                            >
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {GENDER_TYPE_OPTIONS.map((option) => {
+                                const isMixedSinglesDisabled =
+                                  option.value === "MIXED" && gameType === "SINGLES";
+                                const isCombinationDisabled = gameType
+                                  ? isCombinationUsed(option.value, gameType)
+                                  : false;
+                                const isDisabled =
+                                  isMixedSinglesDisabled || isCombinationDisabled;
+                                return (
+                                  <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    disabled={isDisabled}
+                                    className={
+                                      isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {option.label}
+                                      {isCombinationDisabled && gameType && (
+                                        <span className="text-xs text-muted-foreground">
+                                          (exists)
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.gender_category && (
+                        <p className="text-xs text-destructive">
+                          {errors.gender_category.message}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Game Type */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        Game Type
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="game_type"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={handleGameTypeChange}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-9",
+                                errors.game_type && "border-destructive"
+                              )}
+                            >
+                              <SelectValue placeholder="Select game type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {GAME_TYPE_OPTIONS.map((option) => {
+                                // Hide Singles if Mixed is selected
+                                if (
+                                  option.value === "SINGLES" &&
+                                  genderCategory === "MIXED"
+                                ) {
+                                  return null;
+                                }
+                                const isCombinationDisabled = genderCategory
+                                  ? isCombinationUsed(genderCategory, option.value)
+                                  : false;
+                                return (
+                                  <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    disabled={isCombinationDisabled}
+                                    className={
+                                      isCombinationDisabled
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {option.icon}
+                                      {option.label}
+                                      {isCombinationDisabled && genderCategory && (
+                                        <span className="text-xs text-muted-foreground">
+                                          (exists)
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.game_type && (
+                        <p className="text-xs text-destructive">
+                          {errors.game_type.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Auto-generated Name Preview */}
+                  {categoryName && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                      <span className="text-xs text-muted-foreground">
+                        Category name:
+                      </span>
+                      <span className="text-sm font-medium">{categoryName}</span>
+                    </div>
+                  )}
+
+                  {/* Duplicate Warning */}
+                  {hasDuplicate && (
+                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2.5 rounded-lg border border-destructive/20">
+                      <IconX className="h-4 w-4 shrink-0" />
+                      <span>
+                        A {categoryName} category already exists. Please choose a
+                        different combination.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Mixed Singles Warning */}
+                  {hasMixedSingles && (
+                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2.5 rounded-lg border border-destructive/20">
+                      <IconX className="h-4 w-4 shrink-0" />
+                      <span>Mixed Singles category is not allowed.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Match Format Section */}
+              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+                  <IconSettings className="size-4 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Match Settings
+                  </span>
+                </div>
+                <div className="p-3 space-y-3">
+                  {/* Match Format */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium flex items-center gap-1">
+                      Match Format
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      {...register("matchFormat")}
+                      placeholder="e.g., Best of 3 sets"
+                      className={cn(
+                        "h-9",
+                        errors.matchFormat && "border-destructive"
+                      )}
+                    />
+                    {errors.matchFormat && (
+                      <p className="text-xs text-destructive">
+                        {errors.matchFormat.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Active Status */}
+                  <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "size-2 rounded-full transition-colors",
+                          formValues.isActive
+                            ? "bg-emerald-500"
+                            : "bg-slate-300 dark:bg-slate-600"
+                        )}
+                      />
+                      <Label
+                        className="text-sm font-medium cursor-pointer"
+                        htmlFor="isActive"
+                      >
+                        Active
+                      </Label>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="isActive"
+                      render={({ field: { value, onChange } }) => (
+                        <Switch
+                          id="isActive"
+                          checked={value}
+                          onCheckedChange={onChange}
+                          className="scale-90"
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                  <IconX className="h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+            </form>
+          )}
+
+          {/* Preview Step */}
+          {currentStep === "preview" && (
+            <div className="space-y-4 animate-in slide-in-from-left-4 duration-300">
+              {/* Header Section */}
+              <div className="rounded-xl p-5 border border-border/50 bg-gradient-to-br from-primary/5 to-primary/10">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shadow-sm border border-border/50">
+                    <IconCategory className="size-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-semibold tracking-tight">
+                      {categoryName || "Category"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      New category for your league
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details */}
+              <div className="rounded-xl border border-border/50 divide-y divide-border/50 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
+                  <span className="text-sm text-muted-foreground">Gender</span>
+                  <Badge variant="secondary">
+                    {GENDER_TYPE_OPTIONS.find(
+                      (opt) => opt.value === genderCategory
+                    )?.label || "—"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm text-muted-foreground">Game Type</span>
+                  <Badge variant="secondary" className="flex items-center gap-1.5">
+                    {gameType === "SINGLES" ? (
+                      <IconUser className="size-3" />
+                    ) : (
+                      <IconUsers className="size-3" />
+                    )}
+                    {GAME_TYPE_OPTIONS.find((opt) => opt.value === gameType)
+                      ?.label || "—"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
+                  <span className="text-sm text-muted-foreground">Match Format</span>
+                  <span className="text-sm font-medium">
+                    {formValues.matchFormat || "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      className={cn(
+                        "size-2 rounded-full",
+                        formValues.isActive
+                          ? "bg-emerald-500"
+                          : "bg-slate-300 dark:bg-slate-600"
+                      )}
+                    />
+                    <span className="text-sm font-medium">
+                      {formValues.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                  <IconX className="h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 bg-background border-t border-border/50 px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            {currentStep === "form" ? (
               <>
-                <IconLoader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Creating...
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onOpenChange(false)}
+                  disabled={loading}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleNextToPreview}
+                  disabled={!canProceed || loading}
+                  className="gap-2"
+                >
+                  Continue
+                  <IconArrowRight className="size-4" />
+                </Button>
               </>
             ) : (
               <>
-                <Trophy className="mr-1.5 h-3.5 w-3.5" />
-                Create
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleBackToForm}
+                  disabled={loading}
+                  className="gap-2 text-muted-foreground"
+                >
+                  <IconArrowLeft className="size-4" />
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={loading}
+                  className="gap-2 min-w-[140px]"
+                >
+                  {loading ? (
+                    <>
+                      <IconLoader2 className="animate-spin size-4" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <IconPlus className="size-4" />
+                      Create Category
+                    </>
+                  )}
+                </Button>
               </>
             )}
-          </Button>
-        </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
-

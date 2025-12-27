@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   IconTrophy,
@@ -8,6 +9,7 @@ import {
   IconBan,
   IconUsers,
   IconRefresh,
+  IconHeartHandshake,
 } from "@tabler/icons-react";
 import { useMatchStats } from "@/hooks/use-queries";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,12 +25,16 @@ interface MatchStatsCardsProps {
   leagueId?: string;
   seasonId?: string;
   divisionId?: string;
+  leagueMatchCount?: number;
+  friendlyMatchCount?: number;
 }
 
 export function MatchStatsCards({
   leagueId,
   seasonId,
   divisionId,
+  leagueMatchCount,
+  friendlyMatchCount,
 }: MatchStatsCardsProps) {
   const { data: stats, isLoading, error, refetch } = useMatchStats({
     leagueId,
@@ -36,7 +42,14 @@ export function MatchStatsCards({
     divisionId,
   });
 
-  if (isLoading) {
+  // Track if we've ever had data - used to skip skeleton and animation on subsequent fetches
+  const hasHadData = useRef(false);
+  if (stats) {
+    hasHadData.current = true;
+  }
+
+  // Only show skeleton on the very first load (no previous data)
+  if (isLoading && !hasHadData.current) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {[...Array(5)].map((_, i) => (
@@ -89,6 +102,9 @@ export function MatchStatsCards({
       description: "All matches",
       icon: IconTrophy,
       iconColor: "text-blue-500",
+      breakdown: leagueMatchCount !== undefined && friendlyMatchCount !== undefined
+        ? { league: leagueMatchCount, friendly: friendlyMatchCount }
+        : undefined,
     },
     {
       title: "Scheduled",
@@ -122,7 +138,7 @@ export function MatchStatsCards({
 
   return (
     <motion.div
-      initial="hidden"
+      initial={hasHadData.current ? false : "hidden"}
       animate="visible"
       variants={statsGridContainer}
       className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
@@ -132,7 +148,7 @@ export function MatchStatsCards({
         return (
           <motion.div
             key={card.title}
-            variants={statsCardVariants}
+            variants={hasHadData.current ? undefined : statsCardVariants}
             transition={defaultTransition}
           >
             <Card>
@@ -143,10 +159,33 @@ export function MatchStatsCards({
                 <Icon className={`size-4 ${card.iconColor}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
-                <p className="text-xs text-muted-foreground">
-                  {card.description}
-                </p>
+                {card.breakdown ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="text-2xl font-bold">{card.value}</div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                          <IconTrophy className="size-3.5" />
+                          <span className="font-medium tabular-nums">{card.breakdown.league}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-pink-600 dark:text-pink-400">
+                          <IconHeartHandshake className="size-3.5" />
+                          <span className="font-medium tabular-nums">{card.breakdown.friendly}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {card.description}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{card.value}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {card.description}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </motion.div>

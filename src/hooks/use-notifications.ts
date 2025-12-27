@@ -64,7 +64,7 @@ export function getNotificationUrl(notification: Notification): string | null {
       if (metadata?.userId) return `/players/${metadata.userId}`;
       break;
     case "CHAT":
-      if (metadata?.threadId) return `/chat/${metadata.threadId}`;
+      if (metadata?.threadId) return `/chat?id=${metadata.threadId}`;
       break;
     case "ADMIN":
       // Admin notifications might link to specific resources
@@ -96,7 +96,7 @@ export const useNotifications = () => {
     totalPages: 0,
     hasMore: false,
   });
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const { data: session } = useSession();
 
   // Fetch notifications from API
@@ -336,22 +336,20 @@ export const useNotifications = () => {
 
   // Socket listeners for real-time updates
   useEffect(() => {
-    if (!socket || !session?.user?.id) return;
+    if (!socket || !isConnected || !session?.user?.id) return;
+
+    console.log("🔔 [Notifications] Setting up socket listeners for user:", session.user.id);
 
     const handleNewNotification = (notification: Notification) => {
+      console.log("🔔 [Notifications] Received new_notification:", notification);
       setNotifications((prev) => [notification, ...prev]);
       if (!notification.read) {
         setUnreadCount((prev) => prev + 1);
       }
-
-      // Show toast for new notification
-      toast(notification.title || "New Notification", {
-        description: notification.message,
-        duration: 5000,
-      });
     };
 
     const handleNotificationRead = (data: { notificationId: string }) => {
+      console.log("🔔 [Notifications] Received notification_read:", data);
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === data.notificationId
@@ -362,14 +360,24 @@ export const useNotifications = () => {
       setUnreadCount((prev) => Math.max(0, prev - 1));
     };
 
-    socket.on("notification:new", handleNewNotification);
-    socket.on("notification:read", handleNotificationRead);
+    const handleAllNotificationsRead = () => {
+      console.log("🔔 [Notifications] Received all_notifications_read");
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read: true, readAt: new Date().toISOString() }))
+      );
+      setUnreadCount(0);
+    };
+
+    socket.on("new_notification", handleNewNotification);
+    socket.on("notification_read", handleNotificationRead);
+    socket.on("all_notifications_read", handleAllNotificationsRead);
 
     return () => {
-      socket.off("notification:new", handleNewNotification);
-      socket.off("notification:read", handleNotificationRead);
+      socket.off("new_notification", handleNewNotification);
+      socket.off("notification_read", handleNotificationRead);
+      socket.off("all_notifications_read", handleAllNotificationsRead);
     };
-  }, [socket, session?.user?.id, fetchUnreadCount]);
+  }, [socket, isConnected, session?.user?.id]);
 
   return {
     notifications,

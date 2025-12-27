@@ -60,11 +60,13 @@ export default function ChatMessageInput({
       const savedDraft = draftsMap.get(selectedConversationId) || "";
       setMessage(savedDraft);
 
-      // Adjust textarea height after setting draft
+      // Adjust textarea height after setting draft and auto-focus
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.style.height = "auto";
           textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+          // Auto-focus the input when opening a thread
+          textareaRef.current.focus();
         }
       }, 0);
     }

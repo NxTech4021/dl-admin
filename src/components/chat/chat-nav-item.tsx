@@ -15,6 +15,10 @@ import {
   CHAT_UI,
 } from "./constants";
 
+// Import badge components
+import ChatMatchBadge from "./chat-match-badge";
+import ChatContextBadge from "./chat-context-badge";
+
 const useResponsive = (query: any, start: any) => {
   const [isMatch, setIsMatch] = useState(false);
   useEffect(() => {
@@ -58,6 +62,31 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
     isGroup &&
     conversation?.participants?.some((p: any) => p.status === "online");
 
+  // Extract division/season context for group chats
+  const seasonName = conversation?.division?.season?.name;
+  const sportType = conversation?.division?.league?.sportType;
+  const hasDivisionContext = isGroup && (seasonName || sportType);
+
+  // Extract match message info for smart preview
+  const lastMessage = conversation?.lastMessage;
+  const isScheduledMatch =
+    lastMessage?.messageType === "MATCH" &&
+    lastMessage?.matchData?.status === "SCHEDULED";
+  const matchData = isScheduledMatch ? lastMessage?.matchData : null;
+
+  // Get sender info for group chats - use senderId for reliable matching
+  const senderId = lastMessage?.senderId || lastMessage?.sender?.id;
+
+  // Find sender from participants using ID (more reliable than name matching)
+  const senderParticipant = senderId
+    ? conversation?.participants?.find((p: any) => p.id === senderId)
+    : null;
+
+  // Fallback to message sender data if participant not found
+  const senderName = senderParticipant?.name || lastMessage?.sender?.name || "";
+  const senderFirstName = senderName.split(" ")[0] || "";
+  const senderAvatar = senderParticipant?.image || senderParticipant?.photoURL || lastMessage?.sender?.image;
+
   return {
     group: isGroup,
     displayName,
@@ -65,6 +94,15 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
     participants: otherParticipants,
     lastActivity,
     hasOnlineInGroup,
+    // New fields for badges
+    seasonName,
+    sportType,
+    hasDivisionContext,
+    isScheduledMatch,
+    matchData,
+    // Sender info for group chats
+    senderFirstName,
+    senderAvatar,
   };
 };
 
@@ -124,6 +162,15 @@ const ChatNavItem = ({
     participants,
     lastActivity,
     hasOnlineInGroup,
+    // Badge data
+    seasonName,
+    sportType,
+    hasDivisionContext,
+    isScheduledMatch,
+    matchData,
+    // Sender info
+    senderFirstName,
+    senderAvatar,
   } = useGetNavItem({
     conversation,
     currentUserId: user?.id,
@@ -188,11 +235,17 @@ const ChatNavItem = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold text-[15px] truncate">
-            {displayName || DEFAULTS.UNKNOWN_USER}
-          </span>
-          <span className="text-xs text-muted-foreground/70 flex-shrink-0 ml-2">
+        {/* Header row: Name + Season Badge + Time */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-[15px] truncate">
+              {displayName || DEFAULTS.UNKNOWN_USER}
+            </span>
+            {hasDivisionContext && (
+              <ChatContextBadge seasonName={seasonName} sportType={sportType} />
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground/70 flex-shrink-0">
             {lastActivity
               ? formatDistanceToNowStrict(new Date(lastActivity), {
                   addSuffix: false,
@@ -200,18 +253,50 @@ const ChatNavItem = ({
               : ""}
           </span>
         </div>
+
+        {/* Message preview row: Smart preview + Unread count */}
         <div className="flex items-center justify-between mt-0.5">
-          <span className="text-sm text-muted-foreground truncate">
-            {displayText || DEFAULTS.EMPTY_MESSAGES}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            {/* Sender avatar for group chats - always show with fallback */}
+            {group && senderFirstName && (
+              <Avatar className="h-4 w-4 flex-shrink-0">
+                <AvatarImage src={senderAvatar} alt={senderFirstName} />
+                <AvatarFallback className="text-[8px] bg-muted">
+                  {senderFirstName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            {isScheduledMatch && matchData ? (
+              <div className="flex items-center gap-1.5 min-w-0">
+                {group && senderFirstName && (
+                  <span className="text-sm text-foreground font-medium flex-shrink-0">
+                    {senderFirstName}:
+                  </span>
+                )}
+                <ChatMatchBadge matchData={matchData} />
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground truncate">
+                {group && senderFirstName ? (
+                  <>
+                    <span className="font-medium text-foreground">{senderFirstName}:</span>
+                    {" "}
+                    {displayText || DEFAULTS.EMPTY_MESSAGES}
+                  </>
+                ) : (
+                  displayText || DEFAULTS.EMPTY_MESSAGES
+                )}
+              </span>
+            )}
+          </div>
           <AnimatePresence>
-            {conversation.unreadCount > 0 && (
+            {conversation.unreadCount > 0 && !selected && (
               <motion.span
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.5, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="h-5 min-w-5 px-1.5 rounded-full bg-brand-light text-white text-xs font-medium flex items-center justify-center flex-shrink-0 ml-2"
+                className="h-5 min-w-5 px-1.5 rounded-full bg-destructive text-white text-xs font-medium flex items-center justify-center flex-shrink-0 ml-2"
               >
                 {conversation.unreadCount > 99
                   ? "99+"

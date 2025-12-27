@@ -410,6 +410,8 @@ export interface MatchFilters {
   search?: string;
   isDisputed?: boolean;
   hasLateCancellation?: boolean;
+  isWalkover?: boolean;
+  requiresAdminReview?: boolean;
   matchContext?: MatchContext;
   showHidden?: boolean;
   showReported?: boolean;

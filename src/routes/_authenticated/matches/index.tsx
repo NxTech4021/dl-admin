@@ -15,6 +15,7 @@ import {
   IconWalk,
   IconEye,
   IconClock,
+  IconHeartHandshake,
 } from "@tabler/icons-react";
 import {
   Tooltip,
@@ -22,9 +23,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
-import { MatchFilters } from "@/components/match/match-filters";
+import { MatchFilters, type MatchTab } from "@/components/match/match-filters";
 import { MatchRowActions } from "@/components/match/match-row-actions";
 import { MatchDetailModal } from "@/components/match/match-detail-modal";
 import { VoidMatchModal } from "@/components/match/void-match-modal";
@@ -38,6 +39,7 @@ import { MatchStatusBadge } from "@/components/match/match-status-badge";
 import { MatchParticipantsDisplay } from "@/components/match/match-participants-display";
 import { Badge } from "@/components/ui/badge";
 import { Match, MatchStatus } from "@/constants/zod/match-schema";
+import { type MatchFlag } from "@/components/ui/filter-flags-select";
 import {
   Table,
   TableCell,
@@ -55,6 +57,7 @@ import {
   tableRowVariants,
   fastTransition,
 } from "@/lib/animation-variants";
+import { cn } from "@/lib/utils";
 
 const getSportColor = (sport: string) => {
   switch (sport?.toLowerCase()) {
@@ -81,15 +84,20 @@ export const Route = createFileRoute("/_authenticated/matches/")({
 });
 
 function MatchesPage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<MatchTab>("league");
+
+  // Filter states
   const [selectedLeague, setSelectedLeague] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<string>();
   const [selectedDivision, setSelectedDivision] = useState<string>();
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus>();
+  const [selectedSport, setSelectedSport] = useState<string>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDisputedOnly, setShowDisputedOnly] = useState(false);
-  const [showLateCancellations, setShowLateCancellations] = useState(false);
+  const [selectedFlag, setSelectedFlag] = useState<MatchFlag>();
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Modal states
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -100,17 +108,73 @@ function MatchesPage() {
   const [cancellationReviewModalOpen, setCancellationReviewModalOpen] = useState(false);
 
   const pageSize = 20;
+
+  // Build filter params from selectedFlag
+  const flagFilters = useMemo(() => ({
+    isDisputed: selectedFlag === "disputed" || undefined,
+    hasLateCancellation: selectedFlag === "lateCancellation" || undefined,
+    isWalkover: selectedFlag === "walkover" || undefined,
+    requiresAdminReview: selectedFlag === "requiresReview" || undefined,
+  }), [selectedFlag]);
+
+  // Main query - use matchContext for server-side filtering
   const { data, isLoading, error, refetch } = useMatches({
-    leagueId: selectedLeague,
-    seasonId: selectedSeason,
-    divisionId: selectedDivision,
+    leagueId: activeTab === "league" ? selectedLeague : undefined,
+    seasonId: activeTab === "league" ? selectedSeason : undefined,
+    divisionId: activeTab === "league" ? selectedDivision : undefined,
+    matchContext: activeTab,
     status: selectedStatus,
     search: searchQuery || undefined,
-    isDisputed: showDisputedOnly || undefined,
-    hasLateCancellation: showLateCancellations || undefined,
+    ...flagFilters,
     page: currentPage,
     limit: pageSize,
   });
+
+  // Separate count queries for tab badges (lightweight - just need totals)
+  const { data: leagueCountData } = useMatches({
+    matchContext: "league",
+    page: 1,
+    limit: 1,
+  });
+
+  const { data: friendlyCountData } = useMatches({
+    matchContext: "friendly",
+    page: 1,
+    limit: 1,
+  });
+
+  // Get matches directly from API response (already filtered server-side)
+  const filteredMatches = useMemo(() => {
+    if (!data?.matches) return [];
+
+    let matches = data.matches;
+
+    // Additional client-side filter for sport (friendly tab only)
+    if (activeTab === "friendly" && selectedSport) {
+      matches = matches.filter((m) => m.sport?.toUpperCase() === selectedSport);
+    }
+
+    return matches;
+  }, [data?.matches, activeTab, selectedSport]);
+
+  // Tab counts from separate queries
+  const tabCounts = useMemo(() => ({
+    league: leagueCountData?.total ?? 0,
+    friendly: friendlyCountData?.total ?? 0,
+  }), [leagueCountData?.total, friendlyCountData?.total]);
+
+  const handleTabChange = (tab: MatchTab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    // Reset tab-specific filters
+    if (tab === "friendly") {
+      setSelectedLeague(undefined);
+      setSelectedSeason(undefined);
+      setSelectedDivision(undefined);
+    } else {
+      setSelectedSport(undefined);
+    }
+  };
 
   const handleView = (match: Match) => {
     setSelectedMatch(match);
@@ -171,25 +235,78 @@ function MatchesPage() {
               leagueId={selectedLeague}
               seasonId={selectedSeason}
               divisionId={selectedDivision}
+              leagueMatchCount={tabCounts.league}
+              friendlyMatchCount={tabCounts.friendly}
             />
 
+            {/* Tab Switcher + Filters */}
             <AnimatedFilterBar>
-              <MatchFilters
-                selectedLeague={selectedLeague}
-                selectedSeason={selectedSeason}
-                selectedDivision={selectedDivision}
-                selectedStatus={selectedStatus}
-                searchQuery={searchQuery}
-                showDisputedOnly={showDisputedOnly}
-                showLateCancellations={showLateCancellations}
-                onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
-                onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
-                onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
-                onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-                onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
-                onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
-              />
+              <div className="flex items-center gap-3 w-full">
+                {/* Tab Switcher - Notification Style */}
+                <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 border border-border/50">
+                  <button
+                    onClick={() => handleTabChange("league")}
+                    className={cn(
+                      "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer gap-1.5",
+                      activeTab === "league"
+                        ? "bg-background text-foreground shadow-sm border border-border/50"
+                        : "text-foreground/70 hover:text-foreground"
+                    )}
+                  >
+                    <IconTrophy className="size-3.5" />
+                    League
+                    <span className={cn(
+                      "text-[10px] font-medium tabular-nums",
+                      activeTab === "league" ? "text-foreground/70" : "text-foreground/50"
+                    )}>
+                      {tabCounts.league}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleTabChange("friendly")}
+                    className={cn(
+                      "inline-flex items-center justify-center rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer gap-1.5",
+                      activeTab === "friendly"
+                        ? "bg-background text-foreground shadow-sm border border-border/50"
+                        : "text-foreground/70 hover:text-foreground"
+                    )}
+                  >
+                    <IconHeartHandshake className="size-3.5" />
+                    Friendly
+                    {tabCounts.friendly > 0 && (
+                      <span className={cn(
+                        "inline-flex items-center justify-center h-4 min-w-4 px-1 text-[10px] font-semibold rounded-full tabular-nums",
+                        activeTab === "friendly"
+                          ? "bg-pink-500/15 text-pink-600 dark:text-pink-400"
+                          : "bg-pink-500/10 text-pink-600/70 dark:text-pink-400/70"
+                      )}>
+                        {tabCounts.friendly}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Filters */}
+                <div className="flex-1">
+                  <MatchFilters
+                    activeTab={activeTab}
+                    selectedLeague={selectedLeague}
+                    selectedSeason={selectedSeason}
+                    selectedDivision={selectedDivision}
+                    selectedStatus={selectedStatus}
+                    selectedSport={selectedSport}
+                    searchQuery={searchQuery}
+                    selectedFlag={selectedFlag}
+                    onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
+                    onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
+                    onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
+                    onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                    onSportChange={(val) => { setSelectedSport(val); setCurrentPage(1); }}
+                    onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    onFlagChange={(val) => { setSelectedFlag(val); setCurrentPage(1); }}
+                  />
+                </div>
+              </div>
             </AnimatedFilterBar>
           </PageHeader>
 
@@ -212,19 +329,19 @@ function MatchesPage() {
                   Retry
                 </Button>
               </div>
-            ) : data && data.matches.length > 0 ? (
+            ) : filteredMatches.length > 0 ? (
               <TooltipProvider>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
-                        <TableHead className="w-[100px] py-2.5 font-medium text-xs">Sport</TableHead>
-                        <TableHead className="w-[90px] py-2.5 font-medium text-xs">Type</TableHead>
-                        <TableHead className="py-2.5 font-medium text-xs">Participants</TableHead>
-                        <TableHead className="w-[180px] py-2.5 font-medium text-xs">League / Season</TableHead>
-                        <TableHead className="w-[100px] py-2.5 font-medium text-xs">Date</TableHead>
-                        <TableHead className="w-[120px] py-2.5 font-medium text-xs">Venue</TableHead>
+                        <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                        <TableHead className="w-[95px] py-2.5 font-medium text-xs">Sport</TableHead>
+                        <TableHead className="w-[85px] py-2.5 font-medium text-xs">Type</TableHead>
+                        <TableHead className="w-[180px] py-2.5 font-medium text-xs">Participants</TableHead>
+                        <TableHead className="w-[240px] py-2.5 font-medium text-xs">League / Season</TableHead>
+                        <TableHead className="w-[85px] py-2.5 font-medium text-xs">Date</TableHead>
+                        <TableHead className="w-[110px] py-2.5 font-medium text-xs">Venue</TableHead>
                         <TableHead className="w-[70px] py-2.5 font-medium text-xs text-center">Flags</TableHead>
                         <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
                         <TableHead className="w-[80px] py-2.5 font-medium text-xs">Score</TableHead>
@@ -232,11 +349,12 @@ function MatchesPage() {
                       </TableRow>
                     </TableHeader>
                     <motion.tbody
+                      key={`${activeTab}-${selectedStatus}-${selectedSport}-${selectedFlag || ''}-${selectedLeague}-${selectedSeason}-${selectedDivision}-${searchQuery}`}
                       initial="hidden"
                       animate="visible"
                       variants={tableContainerVariants}
                     >
-                      {data.matches.map((match, index) => (
+                      {filteredMatches.map((match, index) => (
                         <motion.tr
                           key={match.id}
                           variants={tableRowVariants}
@@ -287,20 +405,20 @@ function MatchesPage() {
                                   <Link
                                     to="/league/view/$leagueId"
                                     params={{ leagueId: match.division.league.id }}
-                                    className="text-sm font-medium hover:text-primary transition-colors block truncate max-w-[160px]"
+                                    className="text-sm font-medium hover:text-primary transition-colors block"
                                   >
                                     {match.division.league.name}
                                   </Link>
                                 )}
                                 {match.division.season && (
-                                  <span className="text-xs text-muted-foreground block truncate max-w-[160px]">
+                                  <span className="text-xs text-muted-foreground block">
                                     {match.division.season.name}
                                   </span>
                                 )}
                                 <Link
                                   to="/divisions/$divisionId"
                                   params={{ divisionId: match.division.id }}
-                                  className="text-xs text-muted-foreground/70 hover:text-primary transition-colors block truncate max-w-[160px]"
+                                  className="text-xs text-muted-foreground/70 hover:text-primary transition-colors block"
                                 >
                                   {match.division.name}
                                 </Link>
@@ -404,7 +522,9 @@ function MatchesPage() {
             ) : (
               <AnimatedEmptyState>
                 <div className="text-center py-8 text-muted-foreground">
-                  No matches found
+                  {activeTab === "friendly"
+                    ? "No friendly matches found"
+                    : "No league matches found"}
                 </div>
               </AnimatedEmptyState>
             )}

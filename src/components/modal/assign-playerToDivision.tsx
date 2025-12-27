@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,12 +17,23 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { IconLoader2 } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  IconLoader2,
+  IconUsers,
+  IconUser,
+  IconTarget,
+  IconChartBar,
+  IconArrowRight,
+  IconAlertTriangle,
+} from "@tabler/icons-react";
 import { Membership } from "@/constants/zod/season-schema";
 import { Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
+import { cn } from "@/lib/utils";
 
 interface AssignDivisionModalProps {
   isOpen: boolean;
@@ -42,6 +52,43 @@ interface AssignDivisionModalProps {
   gameType?: "SINGLES" | "DOUBLES" | null;
 }
 
+/** Get rating badge styling based on value */
+const getRatingBadgeClass = (rating: number) => {
+  if (rating >= 4500) return "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800";
+  if (rating >= 4000) return "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800";
+  if (rating >= 3500) return "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+  if (rating >= 3000) return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+  return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
+};
+
+/** Get initials from name */
+const getInitials = (name: string | null | undefined): string => {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+/** Get consistent avatar background color */
+const getAvatarColor = (name: string | null | undefined): string => {
+  const colors = [
+    "bg-slate-600",
+    "bg-emerald-600",
+    "bg-sky-600",
+    "bg-violet-600",
+    "bg-amber-600",
+    "bg-rose-600",
+    "bg-teal-600",
+    "bg-indigo-600",
+  ];
+  if (!name) return colors[0];
+  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+};
+
 export default function AssignDivisionModal({
   isOpen,
   onOpenChange,
@@ -55,14 +102,18 @@ export default function AssignDivisionModal({
   gameType,
 }: AssignDivisionModalProps) {
   const isTeam = teamMembers && teamMembers.length > 0;
-  const [selectedDivisionId, setSelectedDivisionId] = useState(
-    member?.divisionId || teamMembers?.[0]?.divisionId || ""
-  );
+  const [selectedDivisionId, setSelectedDivisionId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [showThresholdConfirm, setShowThresholdConfirm] = useState(false);
-  const [pendingAssignment, setPendingAssignment] = useState<
-    (() => void) | null
-  >(null);
+  const [pendingAssignment, setPendingAssignment] = useState<(() => void) | null>(null);
+
+  // Reset selected division when modal opens with new member
+  useEffect(() => {
+    if (isOpen) {
+      const currentDivision = member?.divisionId || teamMembers?.[0]?.divisionId || "";
+      setSelectedDivisionId(currentDivision);
+    }
+  }, [isOpen, member, teamMembers]);
 
   const getDivisionName = (divisionId: string | null) => {
     if (!divisionId) return "Unassigned";
@@ -74,23 +125,24 @@ export default function AssignDivisionModal({
     return divisions.find((d) => d.id === selectedDivisionId);
   };
 
+  const currentDivisionId = member?.divisionId || teamMembers?.[0]?.divisionId || teamMembers?.[1]?.divisionId || null;
+  const isReassignment = Boolean(currentDivisionId);
+
   // Check if any player's rating exceeds the division threshold
   const checkRatingThreshold = () => {
     const selectedDivision = getSelectedDivision();
     if (!selectedDivision?.threshold || !getSportRating) {
-      return false; // No threshold or no rating function, proceed normally
+      return false;
     }
 
     const threshold = selectedDivision.threshold;
 
     if (isTeam && teamMembers) {
-      // Check if any team member exceeds threshold
       return teamMembers.some((teamMember) => {
         const rating = getSportRating(teamMember);
         return rating.value > threshold;
       });
     } else if (member) {
-      // Check if single member exceeds threshold
       const rating = getSportRating(member);
       return rating.value > threshold;
     }
@@ -107,8 +159,7 @@ export default function AssignDivisionModal({
     setIsAssigning(true);
     try {
       if (isTeam && teamMembers) {
-        // Assign both players to the same division
-        const assignments = await Promise.all(
+        await Promise.all(
           teamMembers.map((teamMember) =>
             axiosInstance.post(endpoints.division.assignPlayer, {
               userId: teamMember.userId,
@@ -120,11 +171,8 @@ export default function AssignDivisionModal({
           )
         );
 
-        toast.success(
-          `Team assigned to division successfully! Both players have been assigned.`
-        );
+        toast.success("Team assigned to division successfully!");
       } else {
-        // Individual assignment
         await axiosInstance.post(endpoints.division.assignPlayer, {
           userId: member.userId,
           divisionId: selectedDivisionId,
@@ -158,35 +206,12 @@ export default function AssignDivisionModal({
       return;
     }
 
-    // Check if rating exceeds threshold
     if (checkRatingThreshold()) {
-      const selectedDivision = getSelectedDivision();
-      const threshold = selectedDivision?.threshold || 0;
-
-      // Get player ratings for display
-      const playerRatings: string[] = [];
-      if (isTeam && teamMembers) {
-        teamMembers.forEach((teamMember) => {
-          if (getSportRating) {
-            const rating = getSportRating(teamMember);
-            playerRatings.push(
-              `${teamMember.user?.name || "Unknown"}: ${rating.display}`
-            );
-          }
-        });
-      } else if (member && getSportRating) {
-        const rating = getSportRating(member);
-        playerRatings.push(
-          `${member.user?.name || "Unknown"}: ${rating.display}`
-        );
-      }
-
       setPendingAssignment(() => () => performAssignment(true));
       setShowThresholdConfirm(true);
       return;
     }
 
-    // No threshold exceeded, proceed with assignment (no override needed)
     await performAssignment(false);
   };
 
@@ -197,108 +222,199 @@ export default function AssignDivisionModal({
     }
   };
 
+  // Get player(s) to display
+  const displayMembers = isTeam && teamMembers ? teamMembers : member ? [member] : [];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
-            {isTeam ? "Assign Team to Division" : "Assign Player to Division"}
-          </DialogTitle>
-          <DialogDescription>
-            {isTeam && teamMembers ? (
-              <>
-                Select a division for{" "}
-                {teamMembers.map((m) => m.user?.name || "Unknown").join(" & ")}.
-              </>
-            ) : (
-              <>Select a division for {member?.user?.name || "this player"}.</>
-            )}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="bg-muted/30 border-b border-border/50">
+          <DialogHeader className="px-5 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex items-center justify-center size-10 rounded-xl",
+                isReassignment
+                  ? "bg-amber-100 dark:bg-amber-900/30"
+                  : "bg-primary/10"
+              )}>
+                {isTeam ? (
+                  <IconUsers className={cn(
+                    "size-5",
+                    isReassignment ? "text-amber-600 dark:text-amber-400" : "text-primary"
+                  )} />
+                ) : (
+                  <IconUser className={cn(
+                    "size-5",
+                    isReassignment ? "text-amber-600 dark:text-amber-400" : "text-primary"
+                  )} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-base font-semibold">
+                  {isReassignment
+                    ? isTeam ? "Reassign Team" : "Reassign Player"
+                    : isTeam ? "Assign Team to Division" : "Assign to Division"}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  {isReassignment
+                    ? "Select a new division for this assignment"
+                    : "Select a division to assign"}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+        </div>
 
-        <div className="grid gap-4 py-4">
-          {isTeam && teamMembers && (
-            <div className="space-y-2">
-              <Label>Team Members</Label>
-              <div className="space-y-1">
-                {teamMembers.map((teamMember) => (
+        <div className="px-5 py-4 space-y-4">
+          {/* Player(s) Card */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              {isTeam ? (
+                <IconUsers className="size-3.5 text-muted-foreground" />
+              ) : (
+                <IconUser className="size-3.5 text-muted-foreground" />
+              )}
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {isTeam ? "Team Members" : "Player"}
+              </span>
+            </div>
+            <div className="p-3 space-y-2">
+              {displayMembers.map((teamMember) => {
+                const rating = getSportRating ? getSportRating(teamMember) : null;
+                return (
                   <div
                     key={teamMember.id}
-                    className="text-sm p-2 bg-muted rounded-md"
+                    className="flex items-center justify-between gap-3"
                   >
-                    <div className="font-medium">
-                      {teamMember.user?.name || "Unknown"}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="size-9 ring-2 ring-background">
+                        <AvatarImage src={teamMember.user?.image || undefined} />
+                        <AvatarFallback className={`text-white font-semibold text-xs ${getAvatarColor(teamMember.user?.name)}`}>
+                          {getInitials(teamMember.user?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {teamMember.user?.name || "Unknown"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          @{teamMember.user?.username || teamMember.user?.email?.split("@")[0] || "unknown"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      @{teamMember.user?.email?.split("@")[0] || "unknown"}
-                    </div>
+                    {rating && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs font-mono border shrink-0",
+                          rating.value > 0 ? getRatingBadgeClass(rating.value) : "text-muted-foreground"
+                        )}
+                      >
+                        <IconChartBar className="size-3 mr-1" />
+                        {rating.display}
+                      </Badge>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Current Division (if reassigning) */}
+          {isReassignment && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-muted/30 border border-border/50">
+              <IconTarget className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">Current:</span>
+              <Badge variant="outline" className="text-xs font-normal">
+                {getDivisionName(currentDivisionId)}
+              </Badge>
             </div>
           )}
 
+          {/* Division Select */}
           <div className="space-y-2">
-            <Label htmlFor="division">Division</Label>
+            <Label className="text-sm font-medium flex items-center gap-1.5">
+              <IconTarget className="size-3.5" />
+              {isReassignment ? "New Division" : "Division"}
+              <span className="text-destructive">*</span>
+            </Label>
             <Select
               value={selectedDivisionId}
               onValueChange={setSelectedDivisionId}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select a division" />
               </SelectTrigger>
               <SelectContent>
-                {divisions.map((division) => (
-                  <SelectItem key={division.id} value={division.id}>
-                    {division.threshold !== null &&
-                    division.threshold !== undefined
-                      ? `${division.name} (Threshold: ${division.threshold})`
-                      : division.name}
-                  </SelectItem>
-                ))}
+                {divisions.map((division) => {
+                  const hasThreshold = division.threshold !== null && division.threshold !== undefined;
+                  return (
+                    <SelectItem key={division.id} value={division.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{division.name}</span>
+                        {hasThreshold && (
+                          <span className="text-xs text-muted-foreground">
+                            (max: {division.threshold})
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
 
-          {(member?.divisionId ||
-            teamMembers?.[0]?.divisionId ||
-            teamMembers?.[1]?.divisionId) && (
-            <div className="text-sm text-muted-foreground">
-              Current division:{" "}
-              {getDivisionName(
-                member?.divisionId ||
-                  teamMembers?.[0]?.divisionId ||
-                  teamMembers?.[1]?.divisionId ||
-                  null
-              )}
+          {/* Threshold Warning */}
+          {selectedDivisionId && checkRatingThreshold() && (
+            <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Rating exceeds threshold
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  {isTeam ? "One or more team members have" : "This player has"} a rating above the division threshold of {getSelectedDivision()?.threshold}. You can still proceed.
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isAssigning}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAssignSubmit}
-            disabled={isAssigning || !selectedDivisionId}
-          >
-            {isAssigning ? (
-              <>
-                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                Assigning...
-              </>
-            ) : isTeam ? (
-              "Assign Team"
-            ) : (
-              "Assign Player"
-            )}
-          </Button>
-        </DialogFooter>
+        {/* Footer */}
+        <div className="bg-muted/20 border-t border-border/50 px-5 py-4">
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={isAssigning}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignSubmit}
+              disabled={isAssigning || !selectedDivisionId}
+              className={cn(
+                "gap-2 min-w-[120px]",
+                isReassignment && "bg-amber-600 hover:bg-amber-700 text-white"
+              )}
+            >
+              {isAssigning ? (
+                <>
+                  <IconLoader2 className="size-4 animate-spin" />
+                  {isReassignment ? "Reassigning..." : "Assigning..."}
+                </>
+              ) : (
+                <>
+                  {isReassignment ? "Reassign" : "Assign"}
+                  <IconArrowRight className="size-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
 
       {/* Rating Threshold Confirmation Modal */}
@@ -307,7 +423,7 @@ export default function AssignDivisionModal({
         onOpenChange={setShowThresholdConfirm}
         title="Rating Exceeds Division Threshold"
         description={
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p>
               {isTeam
                 ? `One or more team members have ratings that exceed the division threshold of ${
@@ -318,29 +434,37 @@ export default function AssignDivisionModal({
                   } points.`}
             </p>
             {getSportRating && (
-              <div className="mt-3 space-y-1">
-                <p className="font-medium text-sm">Current Ratings:</p>
-                {isTeam && teamMembers ? (
-                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                    {teamMembers.map((teamMember) => {
-                      const rating = getSportRating(teamMember);
-                      return (
-                        <li key={teamMember.id}>
-                          {teamMember.user?.name || "Unknown"}: {rating.display}{" "}
-                          points
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : member ? (
-                  <p className="text-sm text-muted-foreground">
-                    {member.user?.name || "Unknown"}:{" "}
-                    {getSportRating(member).display} points
-                  </p>
-                ) : null}
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Current Ratings
+                </p>
+                {displayMembers.map((teamMember) => {
+                  const rating = getSportRating(teamMember);
+                  const exceedsThreshold = rating.value > (getSelectedDivision()?.threshold || 0);
+                  return (
+                    <div key={teamMember.id} className="flex items-center justify-between text-sm">
+                      <span>{teamMember.user?.name || "Unknown"}</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs font-mono",
+                          exceedsThreshold
+                            ? "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                            : ""
+                        )}
+                      >
+                        {rating.display}
+                      </Badge>
+                    </div>
+                  );
+                })}
+                <div className="pt-2 mt-2 border-t border-border/50 flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Division Threshold</span>
+                  <span className="font-medium">{getSelectedDivision()?.threshold || 0}</span>
+                </div>
               </div>
             )}
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground">
               Do you want to proceed with this assignment?
             </p>
           </div>

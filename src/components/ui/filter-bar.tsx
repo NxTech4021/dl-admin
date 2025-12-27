@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { IconX } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface FilterBarProps {
@@ -22,15 +21,13 @@ export function FilterBar({
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
       {children}
       {showClearButton && onClearAll && (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={onClearAll}
-          className="text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md border border-transparent hover:border-border transition-all cursor-pointer"
         >
-          <IconX className="mr-2 size-4" />
-          Clear filters
-        </Button>
+          <IconX className="size-3.5" />
+          <span>Clear</span>
+        </button>
       )}
     </div>
   );

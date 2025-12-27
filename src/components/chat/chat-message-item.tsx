@@ -1,6 +1,6 @@
 
 
-import { formatDistanceToNowStrict } from "date-fns";
+import { format } from "date-fns";
 import { Reply, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ interface Reaction {
 interface ChatMessageItemProps {
   message: any;
   participants: any[];
+  showAvatar?: boolean;
   onOpenLightbox?: (url: string) => void;
   onReply?: (message: any) => void;
   onDelete?: (messageId: string) => void;
@@ -41,6 +42,7 @@ interface ChatMessageItemProps {
 function ChatMessageItem({
   message,
   participants,
+  showAvatar = true,
   onOpenLightbox,
   onReply,
   onDelete,
@@ -86,6 +88,17 @@ function ChatMessageItem({
   }, [message.messageType, message.matchData]);
 
   const isMatchMessage = matchData !== null;
+
+  // Determine if message is short (inline timestamp) or long (timestamp below)
+  const isShortMessage = useMemo(() => {
+    const content = messageContent || '';
+    return content.length <= 20 && !content.includes('\n');
+  }, [messageContent]);
+
+  // Format timestamp as HH:mm
+  const formattedTime = useMemo(() => {
+    return format(new Date(createdAt), 'HH:mm');
+  }, [createdAt]);
 
   // Render match message card if this is a match message
   if (isMatchMessage && !isDeleted) {
@@ -180,7 +193,7 @@ function ChatMessageItem({
     </div>
   );
 
-  const renderSenderName = !me && (
+  const renderSenderName = !me && showAvatar && (
     <div className="mb-1">
       <p className="text-xs font-medium" style={{ color: senderColor }}>{firstName}</p>
     </div>
@@ -233,11 +246,39 @@ function ChatMessageItem({
             className="min-h-[220px] w-full object-cover rounded-2xl cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => onOpenLightbox?.(messageContent)}
           />
+          <span className={cn(
+            "text-[10px] block text-right mt-1.5 px-2",
+            me ? "text-white/60" : "text-muted-foreground/60"
+          )}>
+            {formattedTime}
+          </span>
         </motion.div>
+      ) : isShortMessage ? (
+        // Short message: inline timestamp
+        <div className="flex items-end gap-2">
+          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+            {messageContent}
+          </p>
+          <span className={cn(
+            "text-[10px] whitespace-nowrap flex-shrink-0 -mb-0.5",
+            me ? "text-white/60" : "text-muted-foreground/60"
+          )}>
+            {formattedTime}
+          </span>
+        </div>
       ) : (
-        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-          {messageContent}
-        </p>
+        // Long message: timestamp below
+        <div>
+          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+            {messageContent}
+          </p>
+          <span className={cn(
+            "text-[10px] block text-right mt-1",
+            me ? "text-white/60" : "text-muted-foreground/60"
+          )}>
+            {formattedTime}
+          </span>
+        </div>
       )}
 
       {/* Reactions display - inline with bubble */}
@@ -273,19 +314,6 @@ function ChatMessageItem({
     </div>
   );
 
-
-  const renderTimestamp = (
-    <div
-      className={cn(
-        "flex items-center mt-1",
-        me ? "justify-end" : "justify-start"
-      )}
-    >
-      <span className="text-[10px] text-muted-foreground/60 px-1">
-        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
-      </span>
-    </div>
-  );
 
   const renderFloatingActions = (
     <AnimatePresence>
@@ -338,7 +366,7 @@ function ChatMessageItem({
         onMouseLeave={() => setShowActions(false)}
       >
         {/* Avatar only for received messages, positioned at bottom */}
-        {!me && (
+        {!me && showAvatar && (
           <Avatar className="h-8 w-8 flex-shrink-0 mt-auto mb-1">
             <AvatarImage src={avatarUrl} alt={firstName} />
             <AvatarFallback
@@ -349,6 +377,9 @@ function ChatMessageItem({
             </AvatarFallback>
           </Avatar>
         )}
+        {!me && !showAvatar && (
+          <div className="w-8 flex-shrink-0" />
+        )}
 
         {/* Message content column */}
         <div
@@ -358,12 +389,10 @@ function ChatMessageItem({
           )}
         >
           {renderSenderName}
-          {/* Wrapper for bubble and floating actions */}
           <div className="relative">
             {renderFloatingActions}
             {renderBody}
           </div>
-          {renderTimestamp}
         </div>
       </div>
 

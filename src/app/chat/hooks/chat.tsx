@@ -12,11 +12,18 @@ import type {
   ChatParticipant,
 } from "@/constants/types/chat";
 
-export function useChatData(userId?: string) {
+export function useChatData(userId?: string, selectedThreadId?: string) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { socket, isConnected } = useSocket();
+
+  // Use ref to access selectedThreadId in callbacks without adding it as dependency
+  const selectedThreadIdRef = useRef<string | undefined>(selectedThreadId);
+  selectedThreadIdRef.current = selectedThreadId;
+
+  // Debounce ref for marking thread as read when messages arrive
+  const markReadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchThreads = useCallback(async (): Promise<Thread[]> => {
     if (!userId) {
@@ -45,6 +52,17 @@ export function useChatData(userId?: string) {
         ) {
           threadsData = response.data.threads;
         }
+      }
+
+      // If we have a selected thread, reset its unread count to 0
+      // (the user is viewing it, so any messages are considered read)
+      const currentSelectedId = selectedThreadIdRef.current;
+      if (currentSelectedId) {
+        threadsData = threadsData.map(thread =>
+          thread.id === currentSelectedId
+            ? { ...thread, unreadCount: 0 }
+            : thread
+        );
       }
 
       setThreads(threadsData);
@@ -93,45 +111,123 @@ export function useChatData(userId?: string) {
 
     // Listen for new messages to update thread's last message in the list
     const handleNewMessage = (message: Message) => {
+      // If message is for the selected thread and from another user,
+      // mark it as read in the database (debounced to avoid spam)
+      if (
+        message.threadId === selectedThreadId &&
+        message.senderId !== userId
+      ) {
+        if (markReadTimeoutRef.current) {
+          clearTimeout(markReadTimeoutRef.current);
+        }
+        markReadTimeoutRef.current = setTimeout(() => {
+          axiosInstance.post(endpoints.chat.markThreadAsRead(message.threadId))
+            .catch(() => {}); // Silently fail
+        }, 500);
+      }
+
       setThreads((prev) => {
         const threadIndex = prev.findIndex((t) => t.id === message.threadId);
         if (threadIndex === -1) return prev;
 
-        const updatedThreads = [...prev];
-        const thread = updatedThreads[threadIndex];
+        const thread = prev[threadIndex];
 
         // Update the thread's messages array (used for lastMessage display)
-        updatedThreads[threadIndex] = {
+        // Only increment unread count if:
+        // 1. Message is from another user
+        // 2. Thread is NOT currently being viewed
+        const shouldIncrementUnread =
+          message.senderId !== userId &&
+          message.threadId !== selectedThreadId;
+        const updatedThread = {
           ...thread,
           messages: [message],
           updatedAt: new Date().toISOString(),
+          unreadCount: shouldIncrementUnread
+            ? (thread.unreadCount || 0) + 1
+            : thread.unreadCount,
         };
 
         // Move the updated thread to the top of the list
-        updatedThreads.splice(threadIndex, 1);
-        updatedThreads.unshift(updatedThreads[threadIndex] ? thread : updatedThreads[threadIndex]);
-
         return [
-          { ...thread, messages: [message], updatedAt: new Date().toISOString() },
+          updatedThread,
           ...prev.filter((t) => t.id !== message.threadId),
         ];
       });
     };
 
+    // Handle unread count updates from server
+    const handleUnreadCountUpdate = (data: {
+      threadId: string;
+      unreadCount: number;
+    }) => {
+      // Skip updates for the thread we're currently viewing
+      if (data.threadId === selectedThreadId) return;
+
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id === data.threadId
+            ? { ...thread, unreadCount: data.unreadCount }
+            : thread
+        )
+      );
+    };
+
+    // Handle thread marked as read
+    const handleThreadMarkedRead = (data: { threadId: string }) => {
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id === data.threadId
+            ? { ...thread, unreadCount: 0 }
+            : thread
+        )
+      );
+    };
+
     socket.on("new_thread", handleNewThread);
     socket.on("thread_updated", handleThreadUpdate);
     socket.on("new_message", handleNewMessage);
+    socket.on("unread_count_update", handleUnreadCountUpdate);
+    socket.on("thread_marked_read", handleThreadMarkedRead);
 
     return () => {
       socket.off("new_thread", handleNewThread);
       socket.off("thread_updated", handleThreadUpdate);
       socket.off("new_message", handleNewMessage);
+      socket.off("unread_count_update", handleUnreadCountUpdate);
+      socket.off("thread_marked_read", handleThreadMarkedRead);
+      // Clear any pending markAsRead timeout
+      if (markReadTimeoutRef.current) {
+        clearTimeout(markReadTimeoutRef.current);
+      }
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, userId, selectedThreadId]);
 
   useEffect(() => {
     fetchThreads();
   }, [fetchThreads]);
+
+  // Join all thread rooms to receive real-time updates for all conversations
+  useEffect(() => {
+    if (!socket || !isConnected || threads.length === 0) return;
+
+    // Get thread IDs to join
+    const threadIds = threads.map((t) => t.id);
+
+    // Join all thread rooms
+    threadIds.forEach((threadId) => {
+      socket.emit("join_thread", threadId);
+    });
+
+    console.log(`📥 [Socket] Joined ${threadIds.length} thread rooms for real-time updates`);
+
+    return () => {
+      threadIds.forEach((threadId) => {
+        socket.emit("leave_thread", threadId);
+      });
+      console.log(`📤 [Socket] Left ${threadIds.length} thread rooms`);
+    };
+  }, [socket, isConnected, threads.length]); // Use threads.length to avoid re-running on every thread update
 
   // Function to update a thread's last message (for optimistic updates when sending)
   const updateThreadLastMessage = useCallback((threadId: string, message: Message) => {
@@ -159,6 +255,24 @@ export function useChatData(userId?: string) {
     });
   }, []);
 
+  // Function to mark a thread as read
+  const markThreadAsRead = useCallback(async (threadId: string) => {
+    try {
+      await axiosInstance.post(endpoints.chat.markThreadAsRead(threadId));
+      // Optimistically update local state
+      setThreads((prev) =>
+        prev.map((thread) =>
+          thread.id === threadId
+            ? { ...thread, unreadCount: 0 }
+            : thread
+        )
+      );
+    } catch (error) {
+      console.error("Failed to mark thread as read:", error);
+      // Silently fail - don't disrupt user experience
+    }
+  }, []);
+
   return {
     threads,
     loading,
@@ -166,6 +280,7 @@ export function useChatData(userId?: string) {
     refetch: fetchThreads,
     updateThreadLastMessage,
     addThreadOptimistically,
+    markThreadAsRead,
   };
 }
 
