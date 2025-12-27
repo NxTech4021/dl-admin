@@ -287,7 +287,7 @@ export default function ChatMessageInput({
       {renderReplyPreview()}
 
       {/* Message Input - pill style */}
-      <div className="border-t bg-background px-4 py-3">
+      <div className="border-t bg-background px-3 md:px-4 py-2 md:py-3">
         <div className="flex items-end gap-2">
           {/* Input container - pill shaped */}
           <div className="flex-1 relative">
@@ -306,10 +306,11 @@ export default function ChatMessageInput({
                   : "Select a conversation"
               }
               className={cn(
-                "min-h-[44px] max-h-[120px] py-3 px-4 pr-12",
+                "min-h-[44px] max-h-[120px] py-2.5 md:py-3 px-3 md:px-4 pr-10 md:pr-12",
                 "resize-none rounded-[22px]",
                 "bg-muted/50 border-0 focus:bg-muted",
-                "transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
+                "transition-colors focus-visible:ring-0 focus-visible:ring-offset-0",
+                "text-sm md:text-base"
               )}
               disabled={isDisabled}
               rows={1}
