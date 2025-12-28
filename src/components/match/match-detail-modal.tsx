@@ -629,7 +629,7 @@ export function MatchDetailModal({
                     {/* Header: User + Badges */}
                     <div className="flex items-center gap-2.5 px-3 py-2 bg-white/60 dark:bg-white/5 border-b border-orange-100 dark:border-orange-900/30">
                       <Avatar className="size-7 ring-1 ring-orange-200 dark:ring-orange-800">
-                        <AvatarImage src={filedByImage || undefined} alt={filedByName} />
+                        <AvatarImage src={filedByImage as string | undefined} alt={filedByName} />
                         <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 font-medium text-[10px]">
                           {getInitials(filedByName)}
                         </AvatarFallback>
