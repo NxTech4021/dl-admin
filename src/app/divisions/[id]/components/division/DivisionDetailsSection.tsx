@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Division } from "@/constants/zod/division-schema";
 import { DetailField } from "@/components/ui/detail-field";
+import { formatDivisionLevel } from "@/lib/utils";
 import {
   IconEdit,
   IconInfoCircle,
@@ -78,8 +79,8 @@ export default function DivisionDetailsSection({
               label="Level"
               icon={<IconTrophy className="size-3" />}
               value={
-                <Badge variant="outline" className="capitalize">
-                  {division.divisionLevel}
+                <Badge variant="outline">
+                  {formatDivisionLevel(division.divisionLevel)}
                 </Badge>
               }
             />
