@@ -603,25 +603,34 @@ export function DisputeDetailModal({
                             key={note.id}
                             className="p-3 bg-background rounded-lg border border-border/50"
                           >
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <span className="text-sm font-medium">
-                                {note.admin?.user?.name || "Admin"}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                {note.isInternalOnly && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px] h-5 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
-                                  >
-                                    Internal
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDateTime(note.createdAt)}
-                                </span>
+                            {/* Compact header with avatar */}
+                            <div className="flex items-start gap-2.5 mb-2">
+                              <Avatar className="size-7 shrink-0 ring-1 ring-border">
+                                <AvatarImage src={note.admin?.user?.image || undefined} />
+                                <AvatarFallback className="text-[10px] bg-muted">
+                                  {getInitials(note.admin?.user?.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-medium truncate">
+                                    {note.admin?.user?.name || "Admin"}
+                                  </span>
+                                  {note.isInternalOnly && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] h-5 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                                    >
+                                      Internal
+                                    </Badge>
+                                  )}
+                                  <span className="text-xs text-muted-foreground ml-auto shrink-0">
+                                    {formatDateTime(note.createdAt)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                            <p className="text-sm text-foreground/80 leading-relaxed">
+                            <p className="text-sm text-foreground/80 leading-relaxed pl-9">
                               {note.note}
                             </p>
                           </div>
@@ -642,48 +651,76 @@ export function DisputeDetailModal({
                       <div className="relative space-y-4">
                         <div className="absolute left-[7px] top-3 bottom-3 w-px bg-border" />
 
+                        {/* Dispute Created */}
                         <div className="flex items-start gap-3 relative">
                           <div className="size-4 rounded-full bg-amber-500 border-2 border-background shadow-sm shrink-0 z-10" />
                           <div className="flex-1 min-w-0 -mt-0.5">
-                            <p className="text-sm font-medium">
-                              Dispute Created
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">Dispute Created</p>
+                              {dispute.raisedByUser && (
+                                <Avatar className="size-5 ring-1 ring-amber-200 dark:ring-amber-800">
+                                  <AvatarImage src={dispute.raisedByUser.image || undefined} />
+                                  <AvatarFallback className="text-[8px] bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                                    {getInitials(dispute.raisedByUser.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               {formatDateTime(dispute.submittedAt)}
+                              {dispute.raisedByUser?.name && (
+                                <span className="text-foreground/70"> by {dispute.raisedByUser.name}</span>
+                              )}
                             </p>
                           </div>
                         </div>
 
+                        {/* Under Review */}
                         {dispute.reviewedAt && (
                           <div className="flex items-start gap-3 relative">
                             <div className="size-4 rounded-full bg-blue-500 border-2 border-background shadow-sm shrink-0 z-10" />
                             <div className="flex-1 min-w-0 -mt-0.5">
-                              <p className="text-sm font-medium">Under Review</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">Under Review</p>
+                                {dispute.reviewedByAdmin?.user && (
+                                  <Avatar className="size-5 ring-1 ring-blue-200 dark:ring-blue-800">
+                                    <AvatarImage src={dispute.reviewedByAdmin.user.image || undefined} />
+                                    <AvatarFallback className="text-[8px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                      {getInitials(dispute.reviewedByAdmin.user.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
                                 {formatDateTime(dispute.reviewedAt)}
-                                {dispute.reviewedByAdmin && (
-                                  <span>
-                                    {" "}
-                                    by {dispute.reviewedByAdmin.user?.name}
-                                  </span>
+                                {dispute.reviewedByAdmin?.user?.name && (
+                                  <span className="text-foreground/70"> by {dispute.reviewedByAdmin.user.name}</span>
                                 )}
                               </p>
                             </div>
                           </div>
                         )}
 
+                        {/* Resolved */}
                         {dispute.resolvedAt && (
                           <div className="flex items-start gap-3 relative">
                             <div className="size-4 rounded-full bg-emerald-500 border-2 border-background shadow-sm shrink-0 z-10" />
                             <div className="flex-1 min-w-0 -mt-0.5">
-                              <p className="text-sm font-medium">Resolved</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">Resolved</p>
+                                {dispute.resolvedByAdmin?.user && (
+                                  <Avatar className="size-5 ring-1 ring-emerald-200 dark:ring-emerald-800">
+                                    <AvatarImage src={dispute.resolvedByAdmin.user.image || undefined} />
+                                    <AvatarFallback className="text-[8px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                                      {getInitials(dispute.resolvedByAdmin.user.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
                                 {formatDateTime(dispute.resolvedAt)}
-                                {dispute.resolvedByAdmin && (
-                                  <span>
-                                    {" "}
-                                    by {dispute.resolvedByAdmin.user?.name}
-                                  </span>
+                                {dispute.resolvedByAdmin?.user?.name && (
+                                  <span className="text-foreground/70"> by {dispute.resolvedByAdmin.user.name}</span>
                                 )}
                               </p>
                             </div>
@@ -702,39 +739,69 @@ export function DisputeDetailModal({
                           Resolution
                         </span>
                       </div>
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm text-muted-foreground">
+                      <div className="p-3">
+                        {/* Two-column grid: Left info, Right action */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Left: Resolved By */}
+                          <div className="space-y-1">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                              Resolved By
+                            </p>
+                            <div className="flex items-center gap-2">
+                              {dispute.resolvedByAdmin?.user ? (
+                                <Avatar className="size-6 ring-1 ring-emerald-200 dark:ring-emerald-700 shrink-0">
+                                  <AvatarImage src={dispute.resolvedByAdmin.user.image || undefined} />
+                                  <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 font-medium text-[9px]">
+                                    {getInitials(dispute.resolvedByAdmin.user.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : (
+                                <div className="size-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center shrink-0">
+                                  <IconUser className="size-3 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                              )}
+                              <span className="text-sm font-medium truncate">
+                                {dispute.resolvedByAdmin?.user?.name || "Admin"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Right: Resolved Date */}
+                          <div className="space-y-1">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                              Resolved On
+                            </p>
+                            <p className="text-sm">
+                              {dispute.resolvedAt && formatDateTime(dispute.resolvedAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 my-3" />
+
+                        {/* Action Taken */}
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                             Action Taken
-                          </span>
+                          </p>
                           <Badge
                             variant="outline"
-                            className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
+                            className="bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700 text-[10px]"
                           >
                             {getResolutionActionLabel(dispute.resolutionAction)}
                           </Badge>
                         </div>
 
-                        {dispute.resolvedByAdmin && (
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm text-muted-foreground">
-                              Resolved By
-                            </span>
-                            <span className="text-sm font-medium">
-                              {dispute.resolvedByAdmin.user?.name ||
-                                "Unknown Admin"}
-                            </span>
-                          </div>
-                        )}
-
+                        {/* Reason (if exists) */}
                         {dispute.adminResolution && (
                           <>
-                            <Separator />
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1.5">
-                                Resolution Notes
+                            <div className="border-t border-emerald-200/50 dark:border-emerald-800/50 my-3" />
+                            <div className="space-y-1">
+                              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                                Reason
                               </p>
-                              <p className="text-sm leading-relaxed">
+                              <p className="text-sm leading-relaxed text-foreground/85">
                                 {dispute.adminResolution}
                               </p>
                             </div>
