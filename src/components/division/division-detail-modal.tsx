@@ -27,7 +27,7 @@ import {
   IconCrown,
   IconSparkles,
 } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDivisionLevel } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 
 /** Get level-specific styling */
@@ -41,6 +41,7 @@ const getLevelStyles = (level: string | null | undefined) => {
         ring: "ring-sky-400",
       };
     case "intermediate":
+    case "upper_intermediate":
       return {
         badge: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
         accent: "bg-amber-500",
@@ -72,12 +73,6 @@ const getCapacityStatus = (current: number, max: number | null | undefined) => {
   if (percentage >= 90) return { percentage, color: "bg-red-500", textColor: "text-red-600 dark:text-red-400", label: "Almost full" };
   if (percentage >= 70) return { percentage, color: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400", label: "Filling up" };
   return { percentage, color: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", label: "Available" };
-};
-
-/** Format level label */
-const formatLevel = (level: string | null | undefined): string => {
-  if (!level) return "Unknown";
-  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
 };
 
 /** Format game type label */
@@ -133,7 +128,7 @@ export function DivisionDetailModal({
           {/* Badges Row */}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className={cn("text-xs font-medium border", levelStyles.badge)}>
-              {formatLevel(division.divisionLevel)}
+              {formatDivisionLevel(division.divisionLevel)}
             </Badge>
             <Badge variant="outline" className="text-xs font-medium bg-muted/50">
               {isDoubles ? <IconUsers className="size-3 mr-1" /> : <IconUser className="size-3 mr-1" />}
