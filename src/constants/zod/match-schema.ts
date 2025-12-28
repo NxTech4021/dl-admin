@@ -173,23 +173,49 @@ export const matchScoreSchema = z.object({
   createdAt: z.coerce.date().optional(),
 }).passthrough();
 
+// Dispute resolution action enum
+export const disputeResolutionActionEnum = z.enum([
+  "UPHOLD_ORIGINAL",
+  "UPHOLD_DISPUTER",
+  "CUSTOM_SCORE",
+  "VOID_MATCH",
+  "AWARD_WALKOVER",
+  "REQUEST_MORE_INFO",
+  "REJECT",
+]);
+
 // Dispute schema
 export const matchDisputeSchema = z.object({
   id: z.string(),
   matchId: z.string().optional(),
   disputeCategory: z.enum(["WRONG_SCORE", "NO_SHOW", "BEHAVIOR", "OTHER"]).optional(),
+  disputeComment: z.string().nullable().optional(),
+  disputerScore: z.unknown().nullable().optional(),
+  evidenceUrl: z.string().nullable().optional(),
   status: disputeStatusEnum,
   priority: disputePriorityEnum.optional(),
-  disputedById: z.string().optional(),
-  notes: z.string().nullable().optional(),
-  evidenceUrl: z.string().nullable().optional(),
-  createdAt: z.coerce.date().optional(),
+  submittedAt: z.coerce.date().optional(),
   resolvedAt: z.coerce.date().nullable().optional(),
+  adminResolution: z.string().nullable().optional(),
+  resolutionAction: disputeResolutionActionEnum.nullable().optional(),
+  finalScore: z.unknown().nullable().optional(),
+  // User relations - support both naming conventions from backend
+  raisedByUserId: z.string().optional(),
+  raisedByUser: z.object({
+    id: z.string(),
+    name: z.string().nullable().optional(),
+    username: z.string().nullable().optional(),
+    image: z.string().nullable().optional(),
+  }).passthrough().optional(),
+  // Legacy fields for backwards compatibility
+  disputedById: z.string().optional(),
   disputedBy: z.object({
     id: z.string(),
     name: z.string(),
     username: z.string().nullable().optional(),
   }).passthrough().optional(),
+  notes: z.string().nullable().optional(),
+  createdAt: z.coerce.date().optional(),
 }).passthrough();
 
 // Walkover schema
@@ -370,6 +396,7 @@ export type CancellationReason = z.infer<typeof cancellationReasonEnum>;
 export type WalkoverReason = z.infer<typeof walkoverReasonEnum>;
 export type DisputeStatus = z.infer<typeof disputeStatusEnum>;
 export type DisputePriority = z.infer<typeof disputePriorityEnum>;
+export type DisputeResolutionAction = z.infer<typeof disputeResolutionActionEnum>;
 export type MatchReportCategory = z.infer<typeof matchReportCategoryEnum>;
 export type MatchContext = z.infer<typeof matchContextEnum>;
 
