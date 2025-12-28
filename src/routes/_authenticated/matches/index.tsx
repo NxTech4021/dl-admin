@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
 import { MatchFilters, type MatchTab } from "@/components/match/match-filters";
 import { MatchRowActions } from "@/components/match/match-row-actions";
@@ -34,7 +34,7 @@ import { MessageParticipantsModal } from "@/components/match/message-participant
 import { EditResultModal } from "@/components/match/edit-result-modal";
 import { EditParticipantsModal } from "@/components/match/edit-participants-modal";
 import { CancellationReviewModal } from "@/components/match/cancellation-review-modal";
-import { useMatches } from "@/hooks/use-queries";
+import { useMatches, useMatch } from "@/hooks/use-queries";
 import { MatchStatusBadge } from "@/components/match/match-status-badge";
 import { MatchParticipantsDisplay } from "@/components/match/match-participants-display";
 import { Badge } from "@/components/ui/badge";
@@ -81,9 +81,21 @@ const formatSport = (sport: string | null | undefined): string => {
 
 export const Route = createFileRoute("/_authenticated/matches/")({
   component: MatchesPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      id: (search.id as string) || undefined,
+    };
+  },
 });
 
 function MatchesPage() {
+  // URL search params for deep linking - use Route.useSearch() for reliability
+  const { id: matchIdFromUrl } = Route.useSearch();
+  const navigate = useNavigate();
+
+  // Track which match ID we've already opened the modal for (prevents re-opening)
+  const openedForMatchIdRef = useRef<string | null>(null);
+
   // Tab state
   const [activeTab, setActiveTab] = useState<MatchTab>("league");
 
@@ -106,6 +118,42 @@ function MatchesPage() {
   const [walkoverModalOpen, setWalkoverModalOpen] = useState(false);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [cancellationReviewModalOpen, setCancellationReviewModalOpen] = useState(false);
+
+  // Fetch match by ID from URL param (for deep linking)
+  const {
+    data: matchFromUrl,
+    isSuccess: matchFromUrlLoaded,
+    isFetching: matchFromUrlFetching,
+  } = useMatch(matchIdFromUrl ?? "");
+
+  // Auto-open modal when match is loaded from URL
+  useEffect(() => {
+    // Only open if:
+    // 1. We have a matchId from URL
+    // 2. Query succeeded and we have data
+    // 3. We haven't already opened the modal for this matchId
+    if (
+      matchIdFromUrl &&
+      matchFromUrlLoaded &&
+      matchFromUrl &&
+      !matchFromUrlFetching &&
+      openedForMatchIdRef.current !== matchIdFromUrl
+    ) {
+      openedForMatchIdRef.current = matchIdFromUrl;
+      setSelectedMatch(matchFromUrl);
+      setViewModalOpen(true);
+    }
+  }, [matchIdFromUrl, matchFromUrlLoaded, matchFromUrl, matchFromUrlFetching]);
+
+  // Clear URL param when modal is closed
+  const handleViewModalClose = (open: boolean) => {
+    setViewModalOpen(open);
+    if (!open && matchIdFromUrl) {
+      // Reset the ref so we can re-open for the same match if navigated back
+      openedForMatchIdRef.current = null;
+      navigate({ to: "/matches", search: { id: undefined } });
+    }
+  };
 
   const pageSize = 20;
 
@@ -581,7 +629,7 @@ function MatchesPage() {
       <MatchDetailModal
         match={selectedMatch}
         open={viewModalOpen}
-        onOpenChange={setViewModalOpen}
+        onOpenChange={handleViewModalClose}
         onEdit={handleEdit}
         onVoid={handleVoid}
         onMessage={handleMessage}

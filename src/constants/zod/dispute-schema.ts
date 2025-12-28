@@ -176,8 +176,9 @@ export const disputeSchema = z.object({
   finalScore: z.any().nullable().optional(), // JSON field
 
   // Timestamps
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  submittedAt: z.coerce.date(),
+  createdAt: z.coerce.date().optional(), // Alias for submittedAt (backwards compat)
+  updatedAt: z.coerce.date().optional(),
 
   // Relations
   match: matchContextSchema,

@@ -319,14 +319,35 @@ export const getGenderCategoryLabel = (category: string | null | undefined): str
 
 export const formatTableDate = (date: Date | string | null | undefined): string => {
   if (!date) return 'Not set';
-  
+
   try {
     const dateObj = date instanceof Date ? date : new Date(date);
     if (isNaN(dateObj.getTime())) return 'Invalid date';
-    
+
     return dateObj.toLocaleDateString(DATE_FORMATS.LOCALE, DATE_FORMATS.TABLE_DISPLAY);
   } catch (error) {
     console.error('Error formatting date:', error, 'Input:', date);
+    return 'Invalid date';
+  }
+};
+
+export const formatDateTime = (date: Date | string | null | undefined): string => {
+  if (!date) return 'Not set';
+
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return 'Invalid date';
+
+    return dateObj.toLocaleString(DATE_FORMATS.LOCALE, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch (error) {
+    console.error('Error formatting datetime:', error, 'Input:', date);
     return 'Invalid date';
   }
 };

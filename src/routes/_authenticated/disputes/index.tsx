@@ -256,7 +256,7 @@ function DisputesPage() {
                               <span className="text-xs text-muted-foreground">—</span>
                             )}
                             <span className="font-mono text-[10px] text-muted-foreground/60">
-                              ID: {dispute.matchId.slice(0, 8)}
+                              ID: {dispute.matchId}
                             </span>
                           </div>
                         </TableCell>
@@ -267,7 +267,7 @@ function DisputesPage() {
                           <DisputeStatusBadge status={dispute.status} />
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatTableDate(dispute.createdAt)}
+                          {formatTableDate(dispute.submittedAt)}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <DisputeRowActions

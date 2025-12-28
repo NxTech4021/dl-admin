@@ -38,6 +38,7 @@ import {
   IconBan,
   IconQuestionMark,
   IconSettings,
+  IconCopy,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
@@ -48,8 +49,8 @@ import {
 import { DisputeStatusBadge } from "./dispute-status-badge";
 import { DisputePriorityBadge } from "./dispute-priority-badge";
 import { DisputeCategoryBadge } from "./dispute-category-badge";
-import { formatTableDate } from "@/components/data-table/constants";
-import { Link } from "@tanstack/react-router";
+import { formatTableDate, formatDateTime } from "@/components/data-table/constants";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useResolveDispute } from "@/hooks/use-queries";
 
@@ -132,6 +133,8 @@ export function DisputeDetailModal({
   onSuccess,
   initialResolveMode = false,
 }: DisputeDetailModalProps) {
+  const navigate = useNavigate();
+
   // Resolve mode state
   const [isResolveMode, setIsResolveMode] = useState(initialResolveMode);
   const [selectedAction, setSelectedAction] =
@@ -253,9 +256,9 @@ export function DisputeDetailModal({
   const displayTeam2 = hasTeamAssignments ? team2 : fallbackTeam2;
 
   const team1Name =
-    displayTeam1.map((p) => p.user?.name?.split(" ")[0]).join(" & ") || "Team 1";
+    displayTeam1.map((p) => p.user?.name).join(" & ") || "Team 1";
   const team2Name =
-    displayTeam2.map((p) => p.user?.name?.split(" ")[0]).join(" & ") || "Team 2";
+    displayTeam2.map((p) => p.user?.name).join(" & ") || "Team 2";
 
   const selectedActionConfig = RESOLUTION_ACTIONS.find(
     (a) => a.value === selectedAction
@@ -299,11 +302,21 @@ export function DisputeDetailModal({
                     <DialogTitle className="text-xl font-semibold tracking-tight">
                       Dispute Details
                     </DialogTitle>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 group/id">
                       <IconHash className="size-3" />
                       <code className="font-mono text-[11px] select-all bg-muted/50 px-1.5 py-0.5 rounded">
-                        {dispute.id.slice(0, 12)}...
+                        {dispute.id}
                       </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(dispute.id);
+                          toast.success("ID copied to clipboard");
+                        }}
+                        className="opacity-0 group-hover/id:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded"
+                      >
+                        <IconCopy className="size-3.5 text-muted-foreground hover:text-foreground" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -365,7 +378,7 @@ export function DisputeDetailModal({
                             Filed on
                           </p>
                           <p className="text-sm font-medium">
-                            {formatTableDate(dispute.createdAt)}
+                            {formatDateTime(dispute.submittedAt)}
                           </p>
                         </div>
                       </div>
@@ -388,14 +401,23 @@ export function DisputeDetailModal({
                         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                           Match Details
                         </span>
-                        <Link
-                          to="/matches"
-                          search={{ id: match.id }}
+                        <button
+                          type="button"
                           className="ml-auto text-xs text-primary hover:underline flex items-center gap-1"
+                          onClick={() => {
+                            onOpenChange(false);
+                            // Use setTimeout to ensure modal closes before navigation
+                            setTimeout(() => {
+                              navigate({
+                                to: "/matches",
+                                search: { id: match.id },
+                              });
+                            }, 100);
+                          }}
                         >
                           View Match
                           <IconExternalLink className="size-3" />
-                        </Link>
+                        </button>
                       </div>
                       <div className="p-4 space-y-4">
                         {/* Participants Display */}
@@ -595,7 +617,7 @@ export function DisputeDetailModal({
                                   </Badge>
                                 )}
                                 <span className="text-xs text-muted-foreground">
-                                  {formatTableDate(note.createdAt)}
+                                  {formatDateTime(note.createdAt)}
                                 </span>
                               </div>
                             </div>
@@ -627,7 +649,7 @@ export function DisputeDetailModal({
                               Dispute Created
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {formatTableDate(dispute.createdAt)}
+                              {formatDateTime(dispute.submittedAt)}
                             </p>
                           </div>
                         </div>
@@ -638,7 +660,7 @@ export function DisputeDetailModal({
                             <div className="flex-1 min-w-0 -mt-0.5">
                               <p className="text-sm font-medium">Under Review</p>
                               <p className="text-xs text-muted-foreground">
-                                {formatTableDate(dispute.reviewedAt)}
+                                {formatDateTime(dispute.reviewedAt)}
                                 {dispute.reviewedByAdmin && (
                                   <span>
                                     {" "}
@@ -656,7 +678,7 @@ export function DisputeDetailModal({
                             <div className="flex-1 min-w-0 -mt-0.5">
                               <p className="text-sm font-medium">Resolved</p>
                               <p className="text-xs text-muted-foreground">
-                                {formatTableDate(dispute.resolvedAt)}
+                                {formatDateTime(dispute.resolvedAt)}
                                 {dispute.resolvedByAdmin && (
                                   <span>
                                     {" "}
