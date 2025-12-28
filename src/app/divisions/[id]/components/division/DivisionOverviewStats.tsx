@@ -3,6 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Division } from "@/constants/zod/division-schema";
+import { formatDivisionLevel } from "@/lib/utils";
 import {
   IconUsers,
   IconTrophy,
@@ -50,7 +51,7 @@ export default function DivisionOverviewStats({
     },
     {
       label: "Level",
-      value: division.divisionLevel?.charAt(0).toUpperCase() + division.divisionLevel?.slice(1) || "N/A",
+      value: formatDivisionLevel(division.divisionLevel) || "N/A",
       description: `${division.gameType} division`,
       icon: IconTarget,
       iconColor: "text-purple-500",
