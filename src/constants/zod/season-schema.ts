@@ -61,6 +61,7 @@ export const withdrawalRequestSchema = z.object({
       id: z.string().optional(),
       name: z.string().nullable().optional(),
       email: z.string().email().optional(),
+      image: z.string().nullable().optional(),
     })
     .nullable()
     .optional(),

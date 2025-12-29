@@ -382,7 +382,10 @@ function SeasonDetailPage() {
 
           {/* Withdrawal Requests Tab */}
           <TabsContent value="withdrawal_requests">
-            <WithdrawalRequestsCard requests={season.withdrawalRequests} />
+            <WithdrawalRequestsCard
+              requests={season.withdrawalRequests}
+              onRequestProcessed={fetchSeasonData}
+            />
           </TabsContent>
 
           {/* Settings Tab */}

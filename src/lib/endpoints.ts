@@ -256,4 +256,8 @@ export const endpoints = {
     updateStatus: (membershipId: string) => `/api/admin/payments/${membershipId}/status`,
     bulkUpdateStatus: "/api/admin/payments/bulk-status",
   },
+
+  withdrawal: {
+    process: (id: string) => `/api/season/withdrawals/${id}/process`,
+  },
 };
