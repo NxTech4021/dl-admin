@@ -142,8 +142,8 @@ function PartnershipAvatars({
   partner,
   size = "sm",
 }: {
-  captain: { name: string | null; image: string | null | undefined } | null;
-  partner: { name: string | null; image: string | null | undefined } | null;
+  captain: { name: string | null; image?: string | null } | null;
+  partner: { name: string | null; image?: string | null } | null;
   size?: "sm" | "md";
 }) {
   const sizeClass = size === "sm" ? "size-7" : "size-9";
