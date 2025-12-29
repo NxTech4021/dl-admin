@@ -121,6 +121,28 @@ export const endpoints = {
       revenue: "/api/admin/reports/revenue",
       membership: "/api/admin/reports/membership",
     },
+
+    // System controls
+    systemControls: {
+      maintenance: {
+        create: "/api/admin/system/maintenance",
+        update: (id: string) => `/api/admin/system/maintenance/${id}`,
+        getUpcoming: "/api/admin/system/maintenance/upcoming",
+        complete: (id: string) => `/api/admin/system/maintenance/${id}/complete`,
+      },
+      announcements: {
+        create: "/api/admin/system/announcements",
+        update: (id: string) => `/api/admin/system/announcements/${id}`,
+        publish: (id: string) => `/api/admin/system/announcements/${id}/publish`,
+        archive: (id: string) => `/api/admin/system/announcements/${id}/archive`,
+        getPublished: "/api/admin/system/announcements/published",
+        appUpdate: "/api/admin/system/announcements/app-update",
+      },
+      termsOfService: {
+        get: "/api/admin/system/tos",
+        update: "/api/admin/system/tos",
+      },
+    },
   },
 
   player: {
