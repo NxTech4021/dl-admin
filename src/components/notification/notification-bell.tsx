@@ -37,16 +37,14 @@ export default function NotificationBell({ onClick, className, isOpen = false }:
         onClick={onClick}
         className={cn(
           "h-9 w-9 rounded-md transition-all border cursor-pointer",
-          isOpen 
-            ? "bg-primary text-primary-foreground border-primary/80 shadow-sm" 
-            : "border-border/60 hover:border-border bg-background hover:bg-muted/60 text-foreground/80 hover:text-foreground",
-          hasNotifications && !isOpen && "ring-2 ring-red-500/20"
+          isOpen
+            ? "bg-primary text-primary-foreground border-primary/80 shadow-sm"
+            : "border-border/60 hover:border-border bg-background hover:bg-muted/60 text-foreground/80 hover:text-foreground"
         )}
       >
         <IconBell className={cn(
           "h-4 w-4",
-          isOpen ? "text-primary-foreground" : "text-foreground",
-          hasNotifications && !isOpen && "text-red-600 dark:text-red-400"
+          isOpen ? "text-primary-foreground" : "text-foreground"
         )} />
         {hasNotifications && (
           <Badge

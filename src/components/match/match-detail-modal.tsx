@@ -7,6 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Match } from "@/constants/zod/match-schema";
 import { MatchStatusBadge } from "./match-status-badge";
@@ -33,11 +39,17 @@ import {
   IconClipboardCheck,
   IconShieldCheck,
   IconCheck,
+  IconLayoutGrid,
+  IconExternalLink,
+  IconChevronDown,
+  IconTargetArrow,
+  IconPhoto,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials, getStatusBadgeColor } from "@/components/data-table/constants";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 /** Get display name with fallback for undefined user names */
 const getDisplayName = (user: { name?: string | null; username?: string | null } | null | undefined): string => {
@@ -78,6 +90,35 @@ const calculateMatchDuration = (match: Match): number | null => {
 const formatCancellationReason = (reason: string | null | undefined): string => {
   if (!reason) return "Not specified";
   return reason.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+};
+
+/** Format dispute category to readable text */
+const formatDisputeCategory = (category: string | undefined): string => {
+  if (!category) return "Dispute";
+  return category.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+};
+
+/** Format disputer score for display */
+const formatDisputerScore = (score: unknown): string => {
+  if (!score) return "N/A";
+  try {
+    const parsed = typeof score === 'string' ? JSON.parse(score) : score;
+    if (typeof parsed === 'object' && parsed !== null) {
+      if ('team1Score' in parsed && 'team2Score' in parsed) {
+        return `${(parsed as {team1Score: number}).team1Score} - ${(parsed as {team2Score: number}).team2Score}`;
+      }
+      if (Array.isArray(parsed)) {
+        return parsed.map((set: Record<string, number>) => {
+          const s1 = set.team1Games ?? set.player1 ?? 0;
+          const s2 = set.team2Games ?? set.player2 ?? 0;
+          return `${s1}-${s2}`;
+        }).join(', ');
+      }
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return String(score);
+  }
 };
 
 /** Format date with time for timeline display */
@@ -250,18 +291,23 @@ const buildTimelineEvents = (match: Match): TimelineEvent[] => {
 
   // Disputes
   match.disputes?.forEach((dispute, idx) => {
-    if (dispute.createdAt) {
+    // Use submittedAt with fallback to createdAt
+    const filedAt = dispute.submittedAt || dispute.createdAt;
+    // Use raisedByUser with fallback to disputedBy
+    const filedByUser = dispute.raisedByUser || dispute.disputedBy;
+
+    if (filedAt) {
       events.push({
         id: `dispute-${idx}`,
-        timestamp: new Date(dispute.createdAt),
+        timestamp: new Date(filedAt),
         icon: <IconAlertTriangle className="size-3.5" />,
         iconColor: 'text-red-600 bg-red-100 dark:bg-red-900/30',
-        title: dispute.disputedBy ? 'filed a dispute' : 'Dispute filed',
-        user: dispute.disputedBy ? {
-          name: dispute.disputedBy.name || dispute.disputedBy.username || 'Unknown',
+        title: filedByUser ? 'filed a dispute' : 'Dispute filed',
+        user: filedByUser ? {
+          name: filedByUser.name || filedByUser.username || 'Unknown',
         } : undefined,
         details: dispute.disputeCategory
-          ? formatCancellationReason(dispute.disputeCategory)
+          ? formatDisputeCategory(dispute.disputeCategory)
           : undefined,
       });
     }
@@ -567,43 +613,192 @@ export function MatchDetailModal({
                 <IconAlertTriangle className="size-3.5" />
                 Disputes
               </h4>
-              {match.disputes.map((dispute) => (
-                <div
-                  key={dispute.id}
-                  className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-sm"
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <span className="font-medium">{dispute.disputeCategory}</span>
-                    <Badge variant="outline" className="text-[10px]">{dispute.status}</Badge>
+              {match.disputes.map((dispute) => {
+                const filedByUser = dispute.raisedByUser || dispute.disputedBy;
+                const filedByName = filedByUser?.name || filedByUser?.username || "Unknown";
+                const filedByUsername = filedByUser?.username;
+                const filedByImage = filedByUser?.image;
+                const disputeReason = dispute.disputeComment ?? dispute.notes ?? "";
+                const filedAt = dispute.submittedAt || dispute.createdAt;
+
+                return (
+                  <div
+                    key={dispute.id}
+                    className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900/50 dark:bg-orange-950/20 overflow-hidden"
+                  >
+                    {/* Header: User + Badges */}
+                    <div className="flex items-center gap-2.5 px-3 py-2 bg-white/60 dark:bg-white/5 border-b border-orange-100 dark:border-orange-900/30">
+                      <Avatar className="size-7 ring-1 ring-orange-200 dark:ring-orange-800">
+                        <AvatarImage src={filedByImage as string | undefined} alt={filedByName} />
+                        <AvatarFallback className="bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 font-medium text-[10px]">
+                          {getInitials(filedByName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-xs truncate text-orange-900 dark:text-orange-100">{filedByName}</span>
+                          {filedByUsername && (
+                            <span className="text-[10px] text-orange-600 dark:text-orange-400">@{filedByUsername}</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-orange-600 dark:text-orange-400">{formatTableDate(filedAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {dispute.priority && ["HIGH", "URGENT"].includes(dispute.priority) && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] px-1.5 py-0 h-4 font-semibold",
+                              dispute.priority === "URGENT"
+                                ? "border-rose-300 bg-rose-50 text-rose-600 dark:border-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
+                                : "border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
+                            )}
+                          >
+                            {dispute.priority}
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[9px] px-1.5 py-0 h-4 font-medium",
+                            dispute.status === "RESOLVED" && "border-emerald-300 bg-emerald-50 text-emerald-600 dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+                            dispute.status === "REJECTED" && "border-slate-300 bg-slate-50 text-slate-500 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-400",
+                            dispute.status === "UNDER_REVIEW" && "border-sky-300 bg-sky-50 text-sky-600 dark:border-sky-600 dark:bg-sky-950/40 dark:text-sky-400",
+                            dispute.status === "OPEN" && "border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-600 dark:bg-orange-950/40 dark:text-orange-400"
+                          )}
+                        >
+                          {dispute.status?.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="px-3 py-2.5 space-y-2">
+                      {/* Category */}
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-800 dark:text-orange-200">
+                        <IconAlertTriangle className="size-3.5" />
+                        {formatDisputeCategory(dispute.disputeCategory)}
+                      </div>
+
+                      {/* Description */}
+                      {disputeReason && (
+                        <p className="text-xs text-orange-700 dark:text-orange-300 leading-relaxed">
+                          {disputeReason}
+                        </p>
+                      )}
+
+                      {/* Claimed Score & Evidence Row */}
+                      {(dispute.disputerScore != null || dispute.evidenceUrl) && (
+                        <div className="flex items-center gap-3 pt-1">
+                          {dispute.disputerScore != null && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <IconTargetArrow className="size-3.5 text-orange-500 dark:text-orange-400" />
+                              <span className="text-orange-600 dark:text-orange-400">Claimed:</span>
+                              <span className="font-mono font-semibold text-orange-900 dark:text-orange-100">
+                                {formatDisputerScore(dispute.disputerScore)}
+                              </span>
+                            </div>
+                          )}
+                          {dispute.evidenceUrl && (
+                            <a
+                              href={dispute.evidenceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-orange-700 hover:text-orange-900 dark:text-orange-300 dark:hover:text-orange-100 hover:underline"
+                            >
+                              <IconPhoto className="size-3.5" />
+                              Evidence
+                              <IconExternalLink className="size-3" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {dispute.notes && (
-                    <p className="mt-1.5 text-muted-foreground text-xs">{dispute.notes}</p>
-                  )}
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">
-                    Filed by {dispute.disputedBy?.name ?? "Unknown"} • {formatTableDate(dispute.createdAt)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
           {/* Walkover Info */}
-          {match.isWalkover && match.walkover && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <IconWalk className="size-3.5" />
-                Walkover
-              </h4>
-              <div className="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
-                <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                  {match.walkover.reason}
-                </p>
-                <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
-                  Recorded {formatTableDate(match.walkover.recordedAt)}
-                </p>
+          {match.isWalkover && match.walkover && (() => {
+            // Get player names from walkover relation or fall back to participants
+            const defaultingPlayer = match.walkover.defaultingPlayer
+              || match.participants?.find(p => p.userId === match.walkover?.defaultingPlayerId)?.user;
+            const winningPlayer = match.walkover.winningPlayer
+              || match.participants?.find(p => p.userId === match.walkover?.winningPlayerId)?.user;
+
+            return (
+              <div className="-mx-6 -mb-6 mt-4 pt-4 px-6 pb-4 bg-muted border-t border-border">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <IconWalk className="size-3.5" />
+                    Walkover
+                  </h4>
+                  <div className="rounded-lg border border-border bg-background divide-y divide-border/50">
+                    {/* Reason row */}
+                    <div className="px-3 py-2.5 flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Reason</span>
+                      <Badge variant="outline" className="font-medium">
+                        {formatCancellationReason(match.walkover.walkoverReason || match.walkover.reason)}
+                      </Badge>
+                    </div>
+
+                    {/* Players row */}
+                    <div className="px-3 py-2.5 flex items-center justify-between gap-4">
+                      {/* Forfeited */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Avatar className="size-6 border border-border">
+                          <AvatarImage src={defaultingPlayer?.image || undefined} />
+                          <AvatarFallback className="text-[10px] bg-muted">
+                            {getInitials(defaultingPlayer?.name || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-red-500 font-medium">Forfeited</p>
+                          <p className="text-sm font-medium truncate">
+                            {getDisplayName(defaultingPlayer)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] text-muted-foreground font-medium shrink-0">VS</span>
+
+                      {/* Awarded win */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                        <div className="min-w-0 text-right">
+                          <p className="text-[10px] text-green-600 font-medium">Awarded Win</p>
+                          <p className="text-sm font-medium truncate">
+                            {getDisplayName(winningPlayer)}
+                          </p>
+                        </div>
+                        <Avatar className="size-6 border border-border">
+                          <AvatarImage src={winningPlayer?.image || undefined} />
+                          <AvatarFallback className="text-[10px] bg-muted">
+                            {getInitials(winningPlayer?.name || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </div>
+
+                    {/* Details row (if exists) */}
+                    {(match.walkover.walkoverReasonDetail || match.walkover.reasonDetail) && (
+                      <div className="px-3 py-2.5">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Details</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          &ldquo;{match.walkover.walkoverReasonDetail || match.walkover.reasonDetail}&rdquo;
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Footer row */}
+                    <div className="px-3 py-2 flex items-center justify-between text-[11px] text-muted-foreground bg-muted/30">
+                      <span>Recorded {formatTableDate(match.walkover.createdAt || match.walkover.recordedAt)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Cancellation Details */}
           {match.status === "CANCELLED" && (
@@ -656,9 +851,46 @@ export function MatchDetailModal({
         </div>
 
         {/* Quick Actions Footer */}
-        {(onMessage || onEdit || onVoid || onEditParticipants) && (
+        {(onMessage || onEdit || onVoid || onEditParticipants || (!isFriendlyMatch && match.division)) && (
           <div className="px-6 pb-6 pt-3 border-t border-border/50">
             <div className="flex items-center justify-end gap-2 flex-wrap">
+              {/* Go to Dropdown - only for league-linked matches */}
+              {!isFriendlyMatch && match.division && (
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <IconExternalLink className="size-4 mr-1.5" />
+                      Go to
+                      <IconChevronDown className="size-3.5 ml-1.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {match.division.league && (
+                      <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                        <Link to="/league/view/$leagueId" params={{ leagueId: match.division.league.id }}>
+                          <IconTrophy className="size-4 mr-2" />
+                          League
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {match.division.season && (
+                      <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                        <Link to="/seasons/$seasonId" params={{ seasonId: match.division.season.id }}>
+                          <IconCalendar className="size-4 mr-2" />
+                          Season
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild onClick={() => onOpenChange(false)}>
+                      <Link to="/divisions/$divisionId" params={{ divisionId: match.division.id }}>
+                        <IconLayoutGrid className="size-4 mr-2" />
+                        Division
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               {/* Message Participants - always available */}
               {onMessage && (
                 <Button

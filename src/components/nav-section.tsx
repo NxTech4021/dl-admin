@@ -125,7 +125,7 @@ export function NavSection({
                         className={cn(
                           "ml-auto animate-in fade-in-0 zoom-in-95 duration-200",
                           item.badge.variant === "destructive" &&
-                            "bg-destructive text-destructive-foreground",
+                            "bg-destructive text-white",
                           item.badge.variant === "warning" &&
                             "bg-orange-500 text-white animate-pulse"
                         )}

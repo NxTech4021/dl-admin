@@ -467,6 +467,7 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                 onDivisionCreated={handleDivisionCreated}
                 onDivisionUpdated={handleDivisionUpdated}
                 onDivisionDeleted={handleDivisionDeleted}
+                season={season}
               />
             </TabsContent>
 

@@ -168,7 +168,9 @@ export function useLeagues() {
     queryFn: async (): Promise<League[]> => {
       const response = await axiosInstance.get("/api/league/");
       const result = response.data;
-      return z.array(leagueSchema).parse(result.data);
+      // API returns { data: { leagues: [...] } } structure
+      const leaguesData = result.data?.leagues || result.data || [];
+      return z.array(leagueSchema).parse(leaguesData);
     },
   });
 }
@@ -461,6 +463,10 @@ export function useMatches(filters: MatchFilters = {}) {
         params.append("isDisputed", String(filters.isDisputed));
       if (filters.hasLateCancellation !== undefined)
         params.append("hasLateCancellation", String(filters.hasLateCancellation));
+      if (filters.isWalkover !== undefined)
+        params.append("isWalkover", String(filters.isWalkover));
+      if (filters.requiresAdminReview !== undefined)
+        params.append("requiresAdminReview", String(filters.requiresAdminReview));
       if (filters.matchContext && filters.matchContext !== "all")
         params.append("matchContext", filters.matchContext);
       if (filters.showHidden !== undefined)

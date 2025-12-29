@@ -158,12 +158,12 @@ export function PaymentDetailModal({
 
   const handleViewPlayer = () => {
     onOpenChange(false);
-    navigate({ to: "/players/$id", params: { id: payment.userId } });
+    navigate({ to: "/players/$playerId", params: { playerId: payment.userId } });
   };
 
   const handleViewSeason = () => {
     onOpenChange(false);
-    navigate({ to: "/seasons/$id", params: { id: payment.seasonId } });
+    navigate({ to: "/seasons/$seasonId", params: { seasonId: payment.seasonId } });
   };
 
   return (

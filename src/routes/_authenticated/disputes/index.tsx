@@ -9,6 +9,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
+  IconPoint,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { DisputeStatsCards } from "@/components/dispute/dispute-stats-cards";
@@ -17,8 +18,7 @@ import { DisputeRowActions } from "@/components/dispute/dispute-row-actions";
 import { DisputeStatusBadge } from "@/components/dispute/dispute-status-badge";
 import { DisputePriorityBadge } from "@/components/dispute/dispute-priority-badge";
 import { DisputeCategoryBadge } from "@/components/dispute/dispute-category-badge";
-import { DisputeDetailDrawer } from "@/components/dispute/dispute-detail-drawer";
-import { DisputeResolveModal } from "@/components/dispute/dispute-resolve-modal";
+import { DisputeDetailModal } from "@/components/dispute/dispute-detail-modal";
 import { DisputeAddNoteModal } from "@/components/dispute/dispute-add-note-modal";
 import { useDisputes, useStartDisputeReview } from "@/hooks/use-queries";
 import { formatTableDate } from "@/components/data-table/constants";
@@ -56,8 +56,8 @@ function DisputesPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
-  const [resolveModalOpen, setResolveModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [initialResolveMode, setInitialResolveMode] = useState(false);
   const [addNoteModalOpen, setAddNoteModalOpen] = useState(false);
 
   const pageSize = 20;
@@ -72,7 +72,8 @@ function DisputesPage() {
 
   const handleView = (dispute: Dispute) => {
     setSelectedDispute(dispute);
-    setDetailDrawerOpen(true);
+    setInitialResolveMode(false);
+    setDetailModalOpen(true);
 
     if (dispute.status === "OPEN") {
       startReviewMutation.mutate(dispute.id, {
@@ -85,7 +86,16 @@ function DisputesPage() {
 
   const handleResolve = (dispute: Dispute) => {
     setSelectedDispute(dispute);
-    setResolveModalOpen(true);
+    setInitialResolveMode(true);
+    setDetailModalOpen(true);
+
+    if (dispute.status === "OPEN") {
+      startReviewMutation.mutate(dispute.id, {
+        onSuccess: () => {
+          refetch();
+        },
+      });
+    }
   };
 
   const handleAddNote = (dispute: Dispute) => {
@@ -177,14 +187,14 @@ function DisputesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-[50px] text-center">#</TableHead>
-                      <TableHead>Raised By</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Match</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="w-[50px]">Actions</TableHead>
+                      <TableHead className="w-[60px] text-center">#</TableHead>
+                      <TableHead className="w-[200px]">Raised By</TableHead>
+                      <TableHead className="w-[130px]">Category</TableHead>
+                      <TableHead className="w-[240px]">Match</TableHead>
+                      <TableHead className="w-[100px]">Priority</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="w-[140px]">Created</TableHead>
+                      <TableHead className="w-[70px] text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <motion.tbody
@@ -227,15 +237,27 @@ function DisputesPage() {
                           <DisputeCategoryBadge category={dispute.disputeCategory} />
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-mono text-xs">
-                              {dispute.matchId.slice(0, 8)}...
-                            </span>
-                            {dispute.match?.division && (
-                              <span className="text-xs text-muted-foreground">
-                                {dispute.match.division.name}
-                              </span>
+                          <div className="flex flex-col gap-0.5">
+                            {dispute.match?.division ? (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                {dispute.match.division.season?.name && (
+                                  <>
+                                    <span className="font-medium text-foreground truncate max-w-[90px]">
+                                      {dispute.match.division.season.name}
+                                    </span>
+                                    <IconPoint className="size-2 text-muted-foreground/40 shrink-0" />
+                                  </>
+                                )}
+                                <span className="text-muted-foreground truncate max-w-[90px]">
+                                  {dispute.match.division.name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
                             )}
+                            <span className="font-mono text-[10px] text-muted-foreground/60">
+                              ID: {dispute.matchId}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -245,7 +267,7 @@ function DisputesPage() {
                           <DisputeStatusBadge status={dispute.status} />
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatTableDate(dispute.createdAt)}
+                          {formatTableDate(dispute.submittedAt)}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <DisputeRowActions
@@ -331,25 +353,19 @@ function DisputesPage() {
         </div>
       </div>
 
-      <DisputeDetailDrawer
+      <DisputeDetailModal
         dispute={selectedDispute}
-        open={detailDrawerOpen}
-        onOpenChange={setDetailDrawerOpen}
-        onResolve={() => {
-          setDetailDrawerOpen(false);
-          setResolveModalOpen(true);
+        open={detailModalOpen}
+        onOpenChange={(open) => {
+          setDetailModalOpen(open);
+          if (!open) setInitialResolveMode(false);
         }}
         onAddNote={() => {
-          setDetailDrawerOpen(false);
+          setDetailModalOpen(false);
           setAddNoteModalOpen(true);
         }}
-      />
-
-      <DisputeResolveModal
-        dispute={selectedDispute}
-        open={resolveModalOpen}
-        onOpenChange={setResolveModalOpen}
         onSuccess={handleActionSuccess}
+        initialResolveMode={initialResolveMode}
       />
 
       <DisputeAddNoteModal

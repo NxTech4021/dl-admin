@@ -108,6 +108,23 @@ export interface MessageRead {
   };
 }
 
+// Division info for threads
+export interface ThreadDivision {
+  id: string;
+  name: string;
+  seasonId: string;
+  leagueId: string;
+  season?: {
+    id: string;
+    name: string;
+  };
+  league?: {
+    id: string;
+    name: string;
+    sportType: 'TENNIS' | 'PICKLEBALL' | 'PADEL';
+  };
+}
+
 // Thread/Conversation Interface
 export interface Thread {
   id: string;
@@ -118,9 +135,20 @@ export interface Thread {
   updatedAt: string;
   members: ThreadMember[];
   messages: Message[];
+  unreadCount?: number;
   _count: {
     messages: number;
   };
+  // Division context for group chats
+  divisionId?: string;
+  division?: ThreadDivision;
+}
+
+// Simplified division info for conversation display
+export interface ConversationDivision {
+  name: string;
+  season?: { name: string };
+  league?: { name: string; sportType: 'TENNIS' | 'PICKLEBALL' | 'PADEL' };
 }
 
 export interface Conversation {
@@ -136,9 +164,20 @@ export interface Conversation {
   lastMessage?: {
     content: string;
     createdAt: string;
-    sender: { name: string };
+    senderId?: string;
+    sender: {
+      id?: string;
+      name: string;
+      image?: string;
+    };
+    // Match message fields for smart preview
+    messageType?: 'TEXT' | 'MATCH' | 'SYSTEM';
+    matchData?: MatchData;
   } | null;
   unreadCount: number;
+  // Division context for group chats
+  divisionId?: string;
+  division?: ConversationDivision;
 }
 
 // Attachment Interface

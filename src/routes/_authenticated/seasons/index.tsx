@@ -4,11 +4,9 @@ import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
 import { StatsGrid } from "@/components/ui/stats-grid";
-import { Button } from "@/components/ui/button";
 import { Season, seasonSchema } from "@/constants/zod/season-schema";
 import {
   IconCalendar,
-  IconDownload,
   IconStar,
   IconCurrency,
   IconUsers,
@@ -123,14 +121,6 @@ function SeasonsPage() {
             icon={IconCalendar}
             title="Seasons Management"
           description="Manage league seasons and tournaments"
-          actions={
-            <>
-              <Button variant="outline" size="sm">
-                <IconDownload className="mr-2 size-4" />
-                Export
-              </Button>
-            </>
-          }
         >
           <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
             <AnimatedStatsCard>

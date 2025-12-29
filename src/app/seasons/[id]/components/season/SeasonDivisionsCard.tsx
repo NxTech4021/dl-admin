@@ -41,7 +41,20 @@ import { DivisionDetailModal } from "@/components/division/division-detail-modal
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
+import { cn, formatDivisionLevel } from "@/lib/utils";
+
+type SeasonWithCategory = {
+  id: string;
+  name: string;
+  category?: {
+    id: string;
+    name: string | null;
+    game_type?: "SINGLES" | "DOUBLES" | string | null;
+    gender_category?: "MALE" | "FEMALE" | "MIXED" | string | null;
+    genderCategory?: string | null;
+    gameType?: string | null;
+  } | null;
+};
 
 interface SeasonDivisionsCardProps {
   seasonId: string;
@@ -51,6 +64,8 @@ interface SeasonDivisionsCardProps {
   onDivisionCreated?: () => Promise<void>;
   onDivisionUpdated?: () => Promise<void>;
   onDivisionDeleted?: () => Promise<void>;
+  /** Pass the season object to auto-populate and lock fields when creating divisions */
+  season?: SeasonWithCategory | null;
 }
 
 /** Get level badge styling */
@@ -59,18 +74,13 @@ const getLevelBadgeClass = (level: string | null | undefined) => {
     case "beginner":
       return "text-sky-700 bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800";
     case "intermediate":
+    case "upper_intermediate":
       return "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
     case "advanced":
       return "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800";
     default:
       return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
   }
-};
-
-/** Format level label */
-const formatLevel = (level: string | null | undefined): string => {
-  if (!level) return "Unknown";
-  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
 };
 
 /** Get capacity status and color */
@@ -93,6 +103,7 @@ export default function SeasonDivisionsCard({
   onDivisionCreated,
   onDivisionUpdated,
   onDivisionDeleted,
+  season,
 }: SeasonDivisionsCardProps) {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -214,6 +225,7 @@ export default function SeasonDivisionsCard({
             onOpenChange={setIsCreateModalOpen}
             onDivisionCreated={handleDivisionCreated}
             seasonId={seasonId}
+            season={season}
           >
             <Button
               className="flex items-center gap-2"
@@ -293,7 +305,7 @@ export default function SeasonDivisionsCard({
                             variant="outline"
                             className={cn("text-xs font-medium border", getLevelBadgeClass(division.divisionLevel))}
                           >
-                            {formatLevel(division.divisionLevel)}
+                            {formatDivisionLevel(division.divisionLevel)}
                           </Badge>
                         </TableCell>
 

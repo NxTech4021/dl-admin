@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,11 +27,22 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   IconCategory,
-  IconEye,
   IconArrowLeft,
   IconArrowRight,
   IconLoader2,
   IconX,
+  IconUsers,
+  IconUser,
+  IconTrophy,
+  IconChartBar,
+  IconSparkles,
+  IconSettings,
+  IconCalendarEvent,
+  IconForms,
+  IconLayersSubtract,
+  IconCheck,
+  IconPlus,
+  IconPencil,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -43,7 +53,7 @@ type DivisionBase = {
   name: string;
   description?: string | null;
   threshold?: number | null;
-  divisionLevel: "beginner" | "intermediate" | "advanced";
+  divisionLevel: "beginner" | "improver" | "intermediate" | "upper_intermediate" | "expert" | "advanced";
   gameType: "singles" | "doubles";
   genderCategory?: "male" | "female" | "mixed" | null;
   maxSingles?: number | null;
@@ -52,6 +62,19 @@ type DivisionBase = {
   isActive?: boolean;
   prizePoolTotal?: number | null;
   sponsoredDivisionName?: string | null;
+};
+
+type SeasonWithCategory = {
+  id: string;
+  name: string;
+  category?: {
+    id: string;
+    name: string | null;
+    game_type?: "SINGLES" | "DOUBLES" | string | null;
+    gender_category?: "MALE" | "FEMALE" | "MIXED" | string | null;
+    genderCategory?: string | null;
+    gameType?: string | null;
+  } | null;
 };
 
 type DivisionCreateModalProps = {
@@ -63,13 +86,15 @@ type DivisionCreateModalProps = {
   division?: DivisionBase | null;
   seasonId?: string;
   adminId?: string;
+  /** Pass the season object to auto-populate and lock fields when creating from Season Detail page */
+  season?: SeasonWithCategory | null;
 };
 
 const divisionSchema = z
   .object({
     name: z.string().min(2, "Name is required"),
     seasonId: z.string().min(1, "Select a season"),
-    divisionLevel: z.enum(["beginner", "intermediate", "advanced"]),
+    divisionLevel: z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
     genderCategory: z.enum(["male", "female", "mixed"]),
     maxSinglesPlayers: z.preprocess((val) => {
@@ -148,6 +173,99 @@ const divisionSchema = z
 
 type DivisionFormValues = z.infer<typeof divisionSchema>;
 
+/** Get level-specific styling */
+const getLevelStyles = (level: string | null | undefined) => {
+  switch (level?.toLowerCase()) {
+    case "beginner":
+      return {
+        badge: "text-sky-700 bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800",
+        accent: "bg-sky-500",
+        bg: "bg-gradient-to-br from-sky-50 to-sky-100/50 dark:from-sky-950/30 dark:to-sky-900/20",
+        iconBg: "bg-sky-100 dark:bg-sky-900/50",
+        iconColor: "text-sky-600 dark:text-sky-400",
+      };
+    case "improver":
+      return {
+        badge: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+        accent: "bg-teal-500",
+        bg: "bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/20",
+        iconBg: "bg-teal-100 dark:bg-teal-900/50",
+        iconColor: "text-teal-600 dark:text-teal-400",
+      };
+    case "intermediate":
+      return {
+        badge: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+        accent: "bg-amber-500",
+        bg: "bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20",
+        iconBg: "bg-amber-100 dark:bg-amber-900/50",
+        iconColor: "text-amber-600 dark:text-amber-400",
+      };
+    case "upper_intermediate":
+      return {
+        badge: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
+        accent: "bg-orange-500",
+        bg: "bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20",
+        iconBg: "bg-orange-100 dark:bg-orange-900/50",
+        iconColor: "text-orange-600 dark:text-orange-400",
+      };
+    case "expert":
+      return {
+        badge: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
+        accent: "bg-rose-500",
+        bg: "bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-900/20",
+        iconBg: "bg-rose-100 dark:bg-rose-900/50",
+        iconColor: "text-rose-600 dark:text-rose-400",
+      };
+    case "advanced":
+      return {
+        badge: "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800",
+        accent: "bg-violet-500",
+        bg: "bg-gradient-to-br from-violet-50 to-violet-100/50 dark:from-violet-950/30 dark:to-violet-900/20",
+        iconBg: "bg-violet-100 dark:bg-violet-900/50",
+        iconColor: "text-violet-600 dark:text-violet-400",
+      };
+    default:
+      return {
+        badge: "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700",
+        accent: "bg-slate-500",
+        bg: "bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-900/30 dark:to-slate-800/20",
+        iconBg: "bg-slate-100 dark:bg-slate-800",
+        iconColor: "text-slate-600 dark:text-slate-400",
+      };
+  }
+};
+
+/** Format level label */
+const formatLevel = (level: string | null | undefined): string => {
+  if (!level) return "Unknown";
+  const labels: Record<string, string> = {
+    beginner: "Beginner",
+    improver: "Improver",
+    intermediate: "Intermediate",
+    upper_intermediate: "Upper Intermediate",
+    expert: "Expert",
+    advanced: "Advanced",
+  };
+  return labels[level.toLowerCase()] || level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+};
+
+/** Format game type label */
+const formatGameType = (gameType: string | null | undefined): string => {
+  if (!gameType) return "Unknown";
+  return gameType.charAt(0).toUpperCase() + gameType.slice(1).toLowerCase();
+};
+
+/** Format gender category */
+const formatGender = (gender: string | null | undefined): string => {
+  if (!gender) return "Open";
+  switch (gender.toLowerCase()) {
+    case "male": return "Men's";
+    case "female": return "Women's";
+    case "mixed": return "Mixed";
+    default: return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  }
+};
+
 export default function DivisionCreateModal({
   open,
   onOpenChange,
@@ -157,6 +275,7 @@ export default function DivisionCreateModal({
   division,
   seasonId,
   adminId,
+  season: passedSeason,
 }: DivisionCreateModalProps) {
   const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
@@ -170,12 +289,16 @@ export default function DivisionCreateModal({
         name: string | null;
         game_type?: "SINGLES" | "DOUBLES" | null;
         gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+        gameType?: string | null;
+        genderCategory?: string | null;
       } | null;
       categories?: Array<{
         id: string;
         name: string | null;
         game_type?: "SINGLES" | "DOUBLES" | null;
         gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+        gameType?: string | null;
+        genderCategory?: string | null;
       }>;
     }>
   >([]);
@@ -214,14 +337,23 @@ export default function DivisionCreateModal({
   const isEditMode = mode === "edit";
   const selectedSeasonId = watch("seasonId");
   const selectedSeason = seasons.find((s) => s.id === selectedSeasonId);
+
+  // Determine if season dropdown should be locked (when creating from Season Detail page)
+  const isSeasonLocked = Boolean(seasonId && !isEditMode);
+
+  // Use passed season data if available, otherwise use fetched season data
+  const effectiveSeason = passedSeason || selectedSeason;
+
   // Get category from either category (singular) or first item in categories array
   const seasonCategory =
-    selectedSeason?.category ||
+    effectiveSeason?.category ||
     (selectedSeason?.categories && selectedSeason.categories.length > 0
       ? selectedSeason.categories[0]
       : null);
   const hasCategory = Boolean(
-    seasonCategory?.game_type && seasonCategory?.gender_category
+    seasonCategory?.game_type || seasonCategory?.gameType
+  ) && Boolean(
+    seasonCategory?.gender_category || seasonCategory?.genderCategory
   );
 
   useEffect(() => {
@@ -274,23 +406,29 @@ export default function DivisionCreateModal({
     setError("");
   }, [reset, seasonId]);
 
-  // Auto-fill gameType and genderCategory when season is selected
+  // Auto-fill gameType and genderCategory when season is selected or passed
   useEffect(() => {
-    if (!selectedSeasonId || !selectedSeason) return;
-    
+    // Use passed season if available, otherwise use selected season from dropdown
+    const seasonToUse = passedSeason || selectedSeason;
+    if (!selectedSeasonId || !seasonToUse) return;
+
     // Get category from either category (singular) or first item in categories array
     const category =
-      selectedSeason?.category ||
+      seasonToUse?.category ||
       (selectedSeason?.categories && selectedSeason.categories.length > 0
         ? selectedSeason.categories[0]
         : null);
-    
-    if (category?.game_type && category?.gender_category) {
-      const gameTypeLower = category.game_type.toLowerCase() as
+
+    // Handle both snake_case (game_type, gender_category) and camelCase (gameType, genderCategory) field names
+    const gameTypeValue = category?.game_type || category?.gameType;
+    const genderCategoryValue = category?.gender_category || category?.genderCategory;
+
+    if (gameTypeValue && genderCategoryValue) {
+      const gameTypeLower = gameTypeValue.toLowerCase() as
         | "singles"
         | "doubles";
       const genderCategoryLower =
-        category.gender_category.toLowerCase() as
+        genderCategoryValue.toLowerCase() as
           | "male"
           | "female"
           | "mixed";
@@ -299,7 +437,7 @@ export default function DivisionCreateModal({
       setValue("genderCategory", genderCategoryLower);
       trigger(["gameType", "genderCategory"]);
     }
-  }, [selectedSeasonId, selectedSeason, setValue, trigger]);
+  }, [selectedSeasonId, selectedSeason, passedSeason, setValue, trigger]);
 
   useEffect(() => {
     if (open && isEditMode && division) {
@@ -438,601 +576,768 @@ export default function DivisionCreateModal({
       }}
     >
       {children}
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              {currentStep === "form" ? (
-                <IconCategory className="h-5 w-5 text-primary" />
-              ) : (
-                <IconEye className="h-5 w-5 text-primary" />
-              )}
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border/50">
+          <DialogHeader className="px-6 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex items-center justify-center size-10 rounded-xl",
+                isEditMode
+                  ? "bg-amber-100 dark:bg-amber-900/30"
+                  : "bg-primary/10"
+              )}>
+                {isEditMode ? (
+                  <IconPencil className="size-5 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <IconPlus className="size-5 text-primary" />
+                )}
+              </div>
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-semibold">
+                  {isEditMode ? "Edit Division" : "New Division"}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  {isEditMode
+                    ? "Update division settings and configuration"
+                    : "Create a new division for your season"}
+                </DialogDescription>
+              </div>
             </div>
-            {currentStep === "form"
-              ? isEditMode
-                ? "Edit Division"
-                : "Create New Division"
-              : isEditMode
-              ? "Confirm Updates"
-              : "Confirm Division"}
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            {currentStep === "form"
-              ? isEditMode
-                ? "Update division settings and linked season."
-                : "Set up a new division and link it to a season."
-              : isEditMode
-              ? "Review the changes before updating this division."
-              : "Review division details before creating."}
-          </DialogDescription>
-        </DialogHeader>
+          </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center space-x-4">
-            <div
-              className={cn(
-                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                currentStep === "form"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              <div
+          {/* Stepper */}
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-3">
+              {/* Step 1 */}
+              <button
+                type="button"
+                onClick={() => currentStep === "preview" && setCurrentStep("form")}
                 className={cn(
-                  "w-2 h-2 rounded-full",
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                   currentStep === "form"
-                    ? "bg-primary-foreground"
-                    : "bg-muted-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
                 )}
-              />
-              <span>1. Details</span>
-            </div>
-            <div className="w-8 h-px bg-border" />
-            <div
-              className={cn(
-                "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                currentStep === "preview"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
+              >
+                <span className={cn(
+                  "flex items-center justify-center size-5 rounded-full text-xs font-semibold",
+                  currentStep === "form"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : currentStep === "preview"
+                    ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
+                    : "bg-muted-foreground/20 text-muted-foreground"
+                )}>
+                  {currentStep === "preview" ? (
+                    <IconCheck className="size-3" />
+                  ) : (
+                    "1"
+                  )}
+                </span>
+                Details
+              </button>
+
+              {/* Connector */}
+              <div className={cn(
+                "flex-1 h-px max-w-[60px]",
+                currentStep === "preview" ? "bg-primary" : "bg-border"
+              )} />
+
+              {/* Step 2 */}
               <div
                 className={cn(
-                  "w-2 h-2 rounded-full",
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                   currentStep === "preview"
-                    ? "bg-primary-foreground"
-                    : "bg-muted-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground"
                 )}
-              />
-              <span>2. Confirm</span>
+              >
+                <span className={cn(
+                  "flex items-center justify-center size-5 rounded-full text-xs font-semibold",
+                  currentStep === "preview"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted-foreground/20 text-muted-foreground"
+                )}>
+                  2
+                </span>
+                Review
+              </div>
             </div>
           </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
 
           {/* Form */}
           {currentStep === "form" && (
-            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              {/* Basic */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">
+            <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              {/* Basic Information Section */}
+              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+                  <IconForms className="size-4 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Basic Information
                   </span>
-                  <div className="h-px bg-border flex-1" />
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Division Name
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      {...register("name")}
-                      className="h-11"
-                      placeholder="e.g., Division A"
-                    />
-                    {errors.name && (
-                      <p className="text-xs text-destructive mt-1">
-                        {errors.name.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Season
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="seasonId"
-                      render={({
-                        field,
-                      }: {
-                        field: {
-                          value: string;
-                          onChange: (value: string) => void;
-                        };
-                      }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={(val) => field.onChange(val)}
-                        >
-                          <SelectTrigger className="h-11 w-full">
-                            <SelectValue placeholder="Select season" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {seasons.length > 0 ? (
-                              seasons.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {s.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="no-season" disabled>
-                                No seasons available
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
+                <div className="p-3 space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-sm font-medium flex items-center gap-1">
+                        Division Name
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        {...register("name")}
+                        className={cn(
+                          "h-9",
+                          errors.name && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        placeholder="e.g., Division A"
+                      />
+                      {errors.name && (
+                        <p className="text-xs text-destructive">
+                          {errors.name.message}
+                        </p>
                       )}
-                    />
-                    {errors.seasonId && (
-                      <p className="text-xs text-destructive mt-1">
-                        {errors.seasonId.message}
-                      </p>
-                    )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <IconCalendarEvent className="size-3.5" />
+                        Season
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="seasonId"
+                        render={({
+                          field,
+                        }: {
+                          field: {
+                            value: string;
+                            onChange: (value: string) => void;
+                          };
+                        }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={(val) => field.onChange(val)}
+                            disabled={isSeasonLocked}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-9 w-full",
+                                isSeasonLocked && "opacity-60 cursor-not-allowed bg-muted/50"
+                              )}
+                            >
+                              <SelectValue placeholder="Select season">
+                                {isSeasonLocked && passedSeason
+                                  ? passedSeason.name
+                                  : undefined}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {seasons.length > 0 ? (
+                                seasons.map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-season" disabled>
+                                  No seasons available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.seasonId && (
+                        <p className="text-xs text-destructive">
+                          {errors.seasonId.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">
+              {/* Division Type Section */}
+              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+                  <IconLayersSubtract className="size-4 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Division Type
                   </span>
-                  <div className="h-px bg-border flex-1" />
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Division Level
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="divisionLevel"
-                      render={({
-                        field,
-                      }: {
-                        field: {
-                          value: string;
-                          onChange: (value: string) => void;
-                        };
-                      }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="h-11 w-full">
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="beginner">Beginner</SelectItem>
-                            <SelectItem value="intermediate">
-                              Intermediate
-                            </SelectItem>
-                            <SelectItem value="advanced">Advanced</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Game Type
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="gameType"
-                      render={({
-                        field,
-                      }: {
-                        field: {
-                          value: string;
-                          onChange: (value: string) => void;
-                        };
-                      }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={hasCategory}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              "h-11 w-full",
-                              hasCategory && "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            <SelectValue placeholder="Select game type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="singles">Singles</SelectItem>
-                            <SelectItem value="doubles">Doubles</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Gender
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="genderCategory"
-                      render={({
-                        field,
-                      }: {
-                        field: {
-                          value: string;
-                          onChange: (value: string) => void;
-                        };
-                      }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={hasCategory}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              "h-11 w-full",
-                              hasCategory && "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="mixed">Mixed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2 mt-4">
-                  {watch("gameType") === "singles" && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        Max Singles Players
+                <div className="p-3 space-y-3">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        Level
+                        <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        {...register("maxSinglesPlayers", {
-                          valueAsNumber: true,
-                        })}
-                        className={`h-11 ${
-                          errors.maxSinglesPlayers
-                            ? "border-destructive focus:border-destructive focus:ring-destructive"
-                            : ""
-                        }`}
-                        placeholder="e.g 12"
+                      <Controller
+                        control={control}
+                        name="divisionLevel"
+                        render={({
+                          field,
+                        }: {
+                          field: {
+                            value: string;
+                            onChange: (value: string) => void;
+                          };
+                        }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="h-9 w-full">
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beginner">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-sky-500" />
+                                  Beginner
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="improver">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-teal-500" />
+                                  Improver
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="intermediate">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-amber-500" />
+                                  Intermediate
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="upper_intermediate">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-orange-500" />
+                                  Upper Intermediate
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="expert">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-rose-500" />
+                                  Expert
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="advanced">
+                                <div className="flex items-center gap-2">
+                                  <div className="size-2 rounded-full bg-violet-500" />
+                                  Advanced
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       />
-                      {errors.maxSinglesPlayers && (
-                        <p className="text-xs text-destructive mt-1">
-                          {errors.maxSinglesPlayers.message}
-                        </p>
-                      )}
                     </div>
-                  )}
 
-                  {watch("gameType") === "doubles" && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        Max Doubles Teams
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        {watch("gameType") === "doubles" ? (
+                          <IconUsers className="size-3.5" />
+                        ) : (
+                          <IconUser className="size-3.5" />
+                        )}
+                        Game Type
+                        <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        {...register("maxDoublesTeams", {
-                          valueAsNumber: true,
-                        })}
-                        className={`h-11 ${
-                          errors.maxDoublesTeams
-                            ? "border-destructive focus:border-destructive focus:ring-destructive"
-                            : ""
-                        }`}
-                        placeholder="e.g 10"
+                      <Controller
+                        control={control}
+                        name="gameType"
+                        render={({
+                          field,
+                        }: {
+                          field: {
+                            value: string;
+                            onChange: (value: string) => void;
+                          };
+                        }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={hasCategory}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-9 w-full",
+                                hasCategory && "opacity-60 cursor-not-allowed bg-muted/50"
+                              )}
+                            >
+                              <SelectValue placeholder="Select game type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="singles">
+                                <div className="flex items-center gap-2">
+                                  <IconUser className="size-3.5 text-muted-foreground" />
+                                  Singles
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="doubles">
+                                <div className="flex items-center gap-2">
+                                  <IconUsers className="size-3.5 text-muted-foreground" />
+                                  Doubles
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       />
-                      {errors.maxDoublesTeams && (
-                        <p className="text-xs text-destructive mt-1">
-                          {errors.maxDoublesTeams.message}
-                        </p>
-                      )}
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Optional & Extra */}
-              <div className="space-y-2">
-                {/* <div className="flex items-center gap-2">
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-sm font-medium text-muted-foreground px-2">
-                    Optional
-                  </span>
-                  <div className="h-px bg-border flex-1" />
-                </div> */}
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Prize Pool</Label>
-                    <Input
-                      type="number"
-                      {...register("prizePoolTotal", { valueAsNumber: true })}
-                      className="h-11"
-                      placeholder="e.g., 1000"
-                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        Gender
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="genderCategory"
+                        render={({
+                          field,
+                        }: {
+                          field: {
+                            value: string;
+                            onChange: (value: string) => void;
+                          };
+                        }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={hasCategory}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-9 w-full",
+                                hasCategory && "opacity-60 cursor-not-allowed bg-muted/50"
+                              )}
+                            >
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Men's</SelectItem>
+                              <SelectItem value="female">Women's</SelectItem>
+                              <SelectItem value="mixed">Mixed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
                   </div>
 
-                  {/* <div className="space-y-2">
-                    <Label className="text-sm font-medium">Sponsor Name</Label>
-                    <Input
-                      {...register("sponsorName")}
-                      className="h-11"
-                      placeholder="Optional sponsor display name"
-                    />
-                  </div> */}
+                  {/* Capacity Field - conditionally shown */}
+                  <div className="pt-2 border-t border-border/50">
+                    {watch("gameType") === "singles" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          <IconUser className="size-3.5" />
+                          Max Players
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          {...register("maxSinglesPlayers", {
+                            valueAsNumber: true,
+                          })}
+                          className={cn(
+                            "h-9 max-w-[180px]",
+                            errors.maxSinglesPlayers && "border-destructive focus-visible:ring-destructive"
+                          )}
+                          placeholder="e.g., 12"
+                        />
+                        {errors.maxSinglesPlayers && (
+                          <p className="text-xs text-destructive">
+                            {errors.maxSinglesPlayers.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Rating Threshold
-                    </Label>
-                    <Input
-                      type="number"
-                      {...register("threshold", { valueAsNumber: true })}
-                      className="h-11"
-                      placeholder="e.g 100"
-                    />
-                    {errors.threshold && (
-                      <p className="text-xs text-destructive mt-1">
-                        {errors.threshold.message}
-                      </p>
+                    {watch("gameType") === "doubles" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          <IconUsers className="size-3.5" />
+                          Max Teams
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          {...register("maxDoublesTeams", {
+                            valueAsNumber: true,
+                          })}
+                          className={cn(
+                            "h-9 max-w-[180px]",
+                            errors.maxDoublesTeams && "border-destructive focus-visible:ring-destructive"
+                          )}
+                          placeholder="e.g., 10"
+                        />
+                        {errors.maxDoublesTeams && (
+                          <p className="text-xs text-destructive">
+                            {errors.maxDoublesTeams.message}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Description</Label>
-                  <Input
-                    {...register("description")}
-                    className="h-11"
-                    placeholder="Short description (optional)"
-                  />
+              {/* Optional Settings Section */}
+              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+                  <IconSettings className="size-4 text-muted-foreground" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Additional Settings
+                  </span>
+                  <Badge variant="outline" className="text-[10px] ml-auto bg-background">
+                    Optional
+                  </Badge>
                 </div>
+                <div className="p-3 space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <IconTrophy className="size-3.5 text-amber-500" />
+                        Prize Pool
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                          RM
+                        </span>
+                        <Input
+                          type="number"
+                          {...register("prizePoolTotal", { valueAsNumber: true })}
+                          className="h-9 pl-10"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium flex items-center gap-1">
+                        <IconChartBar className="size-3.5" />
+                        Rating Threshold
+                      </Label>
+                      <Input
+                        type="number"
+                        {...register("threshold", { valueAsNumber: true })}
+                        className={cn(
+                          "h-9",
+                          errors.threshold && "border-destructive focus-visible:ring-destructive"
+                        )}
+                        placeholder="e.g., 100"
+                      />
+                      {errors.threshold && (
+                        <p className="text-xs text-destructive">
+                          {errors.threshold.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Description</Label>
+                    <Input
+                      {...register("description")}
+                      className="h-9"
+                      placeholder="Short description (optional)"
+                    />
+                  </div>
+
+                  {/* Active Toggle */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "size-2 rounded-full",
+                        formValues.isActive ? "bg-emerald-500" : "bg-slate-400"
+                      )} />
+                      <Label className="text-sm font-medium">Active</Label>
+                    </div>
                     <Switch
                       checked={formValues.isActive}
                       onCheckedChange={(val) =>
                         setValue("isActive", Boolean(val))
                       }
                     />
-                    <Label className="text-sm">Active</Label>
                   </div>
                 </div>
               </div>
 
-              {/* Validation Errors Summary */}
-              {Object.keys(errors).length > 0 && (
-                <div className="flex flex-col gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
-                      <IconX className="h-2.5 w-2.5" />
-                    </div>
-                    <span className="font-medium">
-                      Please fix the following errors:
-                    </span>
-                  </div>
-                  <ul className="list-disc list-inside ml-6 space-y-1">
-                    {Object.entries(errors).map(
-                      ([key, error]: [string, any]) => (
-                        <li key={key}>
-                          {error?.message || `${key} is invalid`}
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </div>
-              )}
-
               {error && (
-                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-                  <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
-                    <IconX className="h-2.5 w-2.5" />
+                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center size-8 rounded-lg bg-destructive/10">
+                      <IconX className="size-4 text-destructive" />
+                    </div>
+                    <p className="text-sm text-destructive">{error}</p>
                   </div>
-                  {error}
                 </div>
               )}
             </div>
           )}
 
           {/* Preview */}
-          {currentStep === "preview" && (
-            <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-              <div className="space-y-4 text-center">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto">
-                  <IconCategory className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold">{formValues.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {seasons.find((s) => s.id === formValues.seasonId)?.name ||
-                    "—"}
-                </p>
-              </div>
+          {currentStep === "preview" && (() => {
+            const levelStyles = getLevelStyles(formValues.divisionLevel);
+            const isDoubles = formValues.gameType === "doubles";
+            const seasonName = passedSeason?.name || seasons.find((s) => s.id === formValues.seasonId)?.name || "—";
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Level
-                  </span>
-                  <span className="text-sm font-medium capitalize">
-                    {formValues.divisionLevel}
-                  </span>
-                </div>
+            return (
+              <div className="space-y-5 animate-in slide-in-from-left-4 duration-300">
+                {/* Header Section with Division Name */}
+                <div className={cn(
+                  "rounded-xl p-5 border border-border/50",
+                  levelStyles.bg
+                )}>
+                  {/* Badges Row */}
+                  <div className="flex items-center gap-2 flex-wrap mb-4">
+                    <Badge variant="outline" className={cn("text-xs font-medium border", levelStyles.badge)}>
+                      {formatLevel(formValues.divisionLevel)}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs font-medium bg-background/80">
+                      {isDoubles ? <IconUsers className="size-3 mr-1" /> : <IconUser className="size-3 mr-1" />}
+                      {formatGameType(formValues.gameType)}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs font-medium bg-background/80">
+                      {formatGender(formValues.genderCategory)}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs",
+                        formValues.isActive
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                          : "bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                      )}
+                    >
+                      {formValues.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Game Type
-                  </span>
-                  <span className="text-sm font-medium capitalize">
-                    {formValues.gameType}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Gender
-                  </span>
-                  <span className="text-sm font-medium capitalize">
-                    {formValues.genderCategory}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Capacity
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formValues.gameType === "singles"
-                      ? `${formValues.maxSinglesPlayers ?? "—"} players`
-                      : `${formValues.maxDoublesTeams ?? "—"} teams`}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Prize Pool
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formValues.prizePoolTotal
-                      ? new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                          maximumFractionDigits: 0,
-                        }).format(Number(formValues.prizePoolTotal))
-                      : "—"}
-                  </span>
+                  {/* Division Name & Icon */}
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "flex h-12 w-12 items-center justify-center rounded-xl shadow-sm border border-border/50",
+                      levelStyles.iconBg
+                    )}>
+                      <IconCategory className={cn("size-6", levelStyles.iconColor)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-semibold tracking-tight truncate">
+                        {formValues.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <IconCalendarEvent className="size-3.5" />
+                        <span>{seasonName}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Sponsor
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formValues.sponsorName ?? "—"}
-                  </span>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Capacity Card */}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      {isDoubles ? (
+                        <IconUsers className="size-4 text-muted-foreground" />
+                      ) : (
+                        <IconUser className="size-4 text-muted-foreground" />
+                      )}
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Capacity
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold">
+                          {isDoubles
+                            ? formValues.maxDoublesTeams ?? "—"
+                            : formValues.maxSinglesPlayers ?? "—"}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {isDoubles ? "teams" : "players"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">maximum allowed</p>
+                    </div>
+                  </div>
+
+                  {/* Rating Threshold Card */}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <IconChartBar className="size-4 text-muted-foreground" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Rating
+                      </span>
+                    </div>
+                    {formValues.threshold ? (
+                      <div className="space-y-1">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold">{formValues.threshold}</span>
+                          <span className="text-sm text-muted-foreground">pts</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">minimum threshold</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-lg font-medium text-muted-foreground">No limit</span>
+                        <p className="text-xs text-muted-foreground">Open to all ratings</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Auto Assignment
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formValues.autoAssignmentEnabled ? "Yes" : "No"}
-                  </span>
+                {/* Prize Pool Section */}
+                {formValues.prizePoolTotal && (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <IconTrophy className="size-5 text-amber-600 dark:text-amber-400" />
+                        <span className="text-sm font-medium text-amber-900 dark:text-amber-100">Prize Pool</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                        <IconSparkles className="size-4" />
+                        <span className="text-lg font-bold">
+                          RM {new Intl.NumberFormat("en-MY", {
+                            maximumFractionDigits: 0,
+                          }).format(Number(formValues.prizePoolTotal))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Configuration Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <IconSettings className="size-4 text-muted-foreground" />
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Configuration
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-border/50 divide-y divide-border/50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
+                      <span className="text-sm text-muted-foreground">Auto Assignment</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs",
+                          formValues.autoAssignmentEnabled
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                            : "bg-slate-50 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400"
+                        )}
+                      >
+                        {formValues.autoAssignmentEnabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs",
+                          formValues.isActive
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                            : "bg-slate-50 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400"
+                        )}
+                      >
+                        {formValues.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Active
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formValues.isActive ? "Yes" : "No"}
-                  </span>
-                </div>
-
+                {/* Description Section */}
                 {formValues.description && (
-                  <div>
-                    <span className="text-sm font-medium text-muted-foreground">
+                  <div className="space-y-2">
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Description
                     </span>
-                    <p className="text-sm mt-1">{formValues.description}</p>
+                    <p className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg border border-border/50">
+                      {formValues.description}
+                    </p>
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
-        <DialogFooter className="flex gap-3 pt-4">
-          {currentStep === "form" ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleNextToPreview}
-                disabled={loading}
-                className="flex-1 sm:flex-none min-w-[140px]"
-              >
-                <IconArrowRight className="mr-2 h-4 w-4" />
-                {isEditMode ? "Review Changes" : "Review Details"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBackToForm}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                <IconArrowLeft className="mr-2 h-4 w-4" />
-                Back to Edit
-              </Button>
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-background border-t border-border/50 px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            {currentStep === "form" ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onOpenChange(false)}
+                  disabled={loading}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleNextToPreview}
+                  disabled={loading}
+                  className="gap-2"
+                >
+                  Continue
+                  <IconArrowRight className="size-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleBackToForm}
+                  disabled={loading}
+                  className="gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <IconArrowLeft className="size-4" />
+                  Back
+                </Button>
 
-              <Button
-                type="button"
-                onClick={handleSubmit(onSubmit)}
-                disabled={loading}
-                className="flex-1 sm:flex-none min-w-[160px]"
-              >
-                {loading ? (
-                  <>
-                    <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
-                    {isEditMode ? "Saving..." : "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    <IconCategory className="mr-2 h-4 w-4" />
-                    {isEditMode ? "Save Changes" : "Create Division"}
-                  </>
-                )}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
+                <Button
+                  type="button"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={loading}
+                  className={cn(
+                    "gap-2 min-w-[140px]",
+                    isEditMode
+                      ? "bg-amber-600 hover:bg-amber-700 text-white"
+                      : ""
+                  )}
+                >
+                  {loading ? (
+                    <>
+                      <IconLoader2 className="animate-spin size-4" />
+                      {isEditMode ? "Saving..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>
+                      {isEditMode ? (
+                        <IconCheck className="size-4" />
+                      ) : (
+                        <IconPlus className="size-4" />
+                      )}
+                      {isEditMode ? "Save Changes" : "Create Division"}
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,6 @@
 import { GameType } from './league';
 
-export type DivisionLevel = "beginner" | "intermediate" | "advanced";
+export type DivisionLevel = "beginner" | "improver" | "intermediate" | "upper_intermediate" | "expert" | "advanced";
 
 export type GenderCategory = "male" | "female" | "mixed";
 

@@ -98,24 +98,6 @@ const getSportBgClass = (sportType: string | null | undefined): string => {
   }
 };
 
-/** Format category display */
-const formatCategory = (category: Season["category"]): string => {
-  if (!category) return "Open";
-  const gender = category.genderRestriction || category.genderCategory || category.gender_category;
-  const format = category.matchFormat || category.gameType || category.game_type;
-
-  const genderLabel = gender?.toLowerCase() === "male" ? "Men's"
-    : gender?.toLowerCase() === "female" ? "Women's"
-    : gender?.toLowerCase() === "mixed" ? "Mixed"
-    : "";
-
-  const formatLabel = format?.toLowerCase() === "singles" ? "Singles"
-    : format?.toLowerCase() === "doubles" ? "Doubles"
-    : format || "";
-
-  return [genderLabel, formatLabel].filter(Boolean).join(" ") || "Open";
-};
-
 export type SeasonsDataTableProps = {
   data: Season[];
   isLoading: boolean;
@@ -199,7 +181,7 @@ export function SeasonsDataTable({
       s.name,
       s.status || "",
       s.sportType || "",
-      formatCategory(s.category),
+      s.category?.name || "No category",
       s.entryFee || 0,
       s.registeredUserCount || 0,
       s.divisions?.length || 0,
@@ -232,7 +214,7 @@ export function SeasonsDataTable({
       s.name.toLowerCase().includes(search) ||
       s.status?.toLowerCase().includes(search) ||
       s.sportType?.toLowerCase().includes(search) ||
-      formatCategory(s.category).toLowerCase().includes(search)
+      s.category?.name?.toLowerCase().includes(search)
     );
   }, [data, globalFilter]);
 
@@ -365,7 +347,13 @@ export function SeasonsDataTable({
 
                         {/* Category */}
                         <TableCell className="py-3">
-                          <span className="text-sm">{formatCategory(season.category)}</span>
+                          {season.category?.name ? (
+                            <Badge variant="outline" className="text-xs">
+                              {season.category.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">No category</span>
+                          )}
                         </TableCell>
 
                         {/* Status */}

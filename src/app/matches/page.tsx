@@ -12,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
 import { MatchFilters } from "@/components/match/match-filters";
@@ -284,24 +283,18 @@ export default function MatchesPage() {
                                     ) : match.division ? (
                                       <div className="space-y-0.5">
                                         {match.division.league && (
-                                          <Link
-                                            to={`/league/view/${match.division.league.id}`}
-                                            className="text-sm font-medium hover:text-primary transition-colors block truncate max-w-[160px]"
-                                          >
+                                          <span className="text-sm font-medium block truncate max-w-[160px]">
                                             {match.division.league.name}
-                                          </Link>
+                                          </span>
                                         )}
                                         {match.division.season && (
                                           <span className="text-xs text-muted-foreground block truncate max-w-[160px]">
                                             {match.division.season.name}
                                           </span>
                                         )}
-                                        <Link
-                                          to={`/divisions/${match.division.id}`}
-                                          className="text-xs text-muted-foreground/70 hover:text-primary transition-colors block truncate max-w-[160px]"
-                                        >
+                                        <span className="text-xs text-muted-foreground/70 block truncate max-w-[160px]">
                                           {match.division.name}
-                                        </Link>
+                                        </span>
                                       </div>
                                     ) : (
                                       <span className="text-muted-foreground text-xs">—</span>
