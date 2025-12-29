@@ -117,7 +117,7 @@ export default function ChatRoomGroup({
   )
 
   const renderContent = (
-    <ScrollArea className="max-h-[320px]">
+    <ScrollArea className="h-[500px]">
       <ul className="divide-y divide-border">
         {participants.map((participant: any) => (
           <li
@@ -177,7 +177,7 @@ export default function ChatRoomGroup({
       <div
         className={cn(
           "transition-all overflow-hidden",
-          collapse.value ? "max-h-[320px]" : "max-h-0"
+          collapse.value ? "max-h-[500px]" : "max-h-0"
         )}
       >
         {collapse.value && renderContent}
