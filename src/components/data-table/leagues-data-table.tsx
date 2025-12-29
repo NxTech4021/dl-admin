@@ -4,8 +4,6 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import {
   IconTrophy,
-  IconDownload,
-  IconRefresh,
   IconUsers,
   IconChevronLeft,
   IconChevronRight,
@@ -31,7 +29,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -116,19 +113,29 @@ export type LeaguesDataTableProps = {
   data: League[];
   isLoading: boolean;
   onDataChange?: () => void;
+  searchQuery?: string;
+  sportFilter?: string;
+  locationFilter?: string;
 };
 
 export function LeaguesDataTable({
   data,
   isLoading,
   onDataChange,
+  searchQuery = "",
+  sportFilter,
+  locationFilter,
 }: LeaguesDataTableProps) {
   const navigate = useNavigate();
-  const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = React.useState(1);
   const pageSize = 20;
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sportFilter, locationFilter]);
 
   // Modal states
   const [viewLeague, setViewLeague] = React.useState<League | null>(null);
@@ -177,50 +184,33 @@ export function LeaguesDataTable({
     setIsEditOpen(false);
   }, [onDataChange]);
 
-  const exportToCSV = React.useCallback(() => {
-    if (data.length === 0) {
-      toast.error("No data to export");
-      return;
+  // Filter data by search, sport, and location
+  const filteredData = React.useMemo(() => {
+    let filtered = data;
+
+    // Apply search filter
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filtered = filtered.filter(l =>
+        l.name.toLowerCase().includes(search) ||
+        l.status?.toLowerCase().includes(search) ||
+        l.sportType?.toLowerCase().includes(search) ||
+        l.location?.toLowerCase().includes(search)
+      );
     }
 
-    const headers = ["Name", "Sport", "Location", "Status", "Game Type", "Players", "Seasons", "Created At"];
+    // Apply sport filter
+    if (sportFilter) {
+      filtered = filtered.filter(l => l.sportType?.toUpperCase() === sportFilter.toUpperCase());
+    }
 
-    const rows = data.map(l => [
-      l.name,
-      l.sportType || "",
-      l.location || "",
-      l.status || "",
-      l.gameType || "",
-      l.memberCount || 0,
-      l.seasonCount || 0,
-      l.createdAt
-    ]);
+    // Apply location filter
+    if (locationFilter) {
+      filtered = filtered.filter(l => l.location === locationFilter);
+    }
 
-    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `leagues-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("Leagues exported successfully");
-  }, [data]);
-
-  // Filter data by search
-  const filteredData = React.useMemo(() => {
-    if (!globalFilter) return data;
-    const search = globalFilter.toLowerCase();
-    return data.filter(l =>
-      l.name.toLowerCase().includes(search) ||
-      l.status?.toLowerCase().includes(search) ||
-      l.sportType?.toLowerCase().includes(search) ||
-      l.location?.toLowerCase().includes(search)
-    );
-  }, [data, globalFilter]);
+    return filtered;
+  }, [data, searchQuery, sportFilter, locationFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -229,28 +219,6 @@ export function LeaguesDataTable({
   return (
     <>
       <div className="space-y-4">
-        {/* Search and Actions */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <Input
-            placeholder="Search leagues..."
-            value={globalFilter}
-            onChange={(e) => { setGlobalFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full sm:w-80"
-          />
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <IconDownload className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            {onDataChange && (
-              <Button variant="outline" size="sm" onClick={onDataChange}>
-                <IconRefresh className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-            )}
-          </div>
-        </div>
-
         {/* Table */}
         {isLoading ? (
           <div className="space-y-4">
@@ -275,6 +243,7 @@ export function LeaguesDataTable({
                 </TableRow>
               </TableHeader>
               <motion.tbody
+                key={`${searchQuery}-${sportFilter}-${locationFilter}-${currentPage}`}
                 initial="hidden"
                 animate="visible"
                 variants={tableContainerVariants}

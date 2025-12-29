@@ -34,9 +34,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
 import {
   Table,
   TableCell,
@@ -339,54 +336,34 @@ const columns: ColumnDef<Player>[] = [
   },
 ];
 
-export function PlayersDataTable() {
+interface PlayersDataTableProps {
+  searchQuery?: string;
+  sportFilter?: string;
+  locationFilter?: string;
+}
+
+export function PlayersDataTable({
+  searchQuery = "",
+  sportFilter: externalSportFilter,
+  locationFilter: externalLocationFilter,
+}: PlayersDataTableProps) {
   const navigate = useNavigate();
   // React Query for data fetching
   const { data: queryData, isLoading, isError, error, refetch } = usePlayers();
-  
+
   // Memoize data to ensure stable reference
   const data = React.useMemo(() => queryData ?? [], [queryData]);
 
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState("");
 
-  // Filter states
-  const [sportFilter, setSportFilter] = React.useState<string | undefined>(undefined);
-  const [locationFilter, setLocationFilter] = React.useState<string | undefined>(undefined);
+  // Use external filters if provided, otherwise use internal state
+  const [internalSportFilter, setInternalSportFilter] = React.useState<string | undefined>(undefined);
+  const [internalLocationFilter, setInternalLocationFilter] = React.useState<string | undefined>(undefined);
 
-  // Get unique sports and locations for filter options
-  const uniqueSports = React.useMemo(() => {
-    const sportsSet = new Set<string>();
-    data.forEach((player) => {
-      if (player.sports && player.sports.length > 0) {
-        player.sports.forEach((sport) => sportsSet.add(sport));
-      }
-    });
-    return Array.from(sportsSet).sort();
-  }, [data]);
-
-  const uniqueLocations = React.useMemo(() => {
-    const locationsSet = new Set<string>();
-    data.forEach((player) => {
-      if (player.area) {
-        locationsSet.add(player.area);
-      }
-    });
-    return Array.from(locationsSet).sort();
-  }, [data]);
-
-  // Transform to FilterOption format
-  const sportOptions: FilterOption[] = React.useMemo(() =>
-    uniqueSports.map((sport) => ({ value: sport, label: sport.charAt(0).toUpperCase() + sport.slice(1) })),
-    [uniqueSports]
-  );
-
-  const locationOptions: FilterOption[] = React.useMemo(() =>
-    uniqueLocations.map((location) => ({ value: location, label: location })),
-    [uniqueLocations]
-  );
+  const sportFilter = externalSportFilter !== undefined ? externalSportFilter : internalSportFilter;
+  const locationFilter = externalLocationFilter !== undefined ? externalLocationFilter : internalLocationFilter;
 
   // Filter data based on selected filters
   const filteredData = React.useMemo(() => {
@@ -402,16 +379,6 @@ export function PlayersDataTable() {
     return filtered;
   }, [data, sportFilter, locationFilter]);
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSportFilter(undefined);
-    setLocationFilter(undefined);
-    setGlobalFilter("");
-  };
-
-  // Check if any filters are active
-  const hasActiveFilters = sportFilter || locationFilter || globalFilter !== "";
-
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -419,12 +386,11 @@ export function PlayersDataTable() {
       sorting,
       columnVisibility,
       columnFilters,
-      globalFilter,
+      globalFilter: searchQuery,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -459,35 +425,6 @@ export function PlayersDataTable() {
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
-      <FilterBar onClearAll={clearFilters} showClearButton={!!hasActiveFilters}>
-        {/* Search Input */}
-        <SearchInput
-          value={globalFilter}
-          onChange={setGlobalFilter}
-          placeholder="Search players..."
-          className="w-[200px]"
-        />
-
-        {/* Sport Filter */}
-        <FilterSelect
-          value={sportFilter}
-          onChange={setSportFilter}
-          options={sportOptions}
-          allLabel="All Sports"
-          triggerClassName="w-[140px]"
-        />
-
-        {/* Location Filter */}
-        <FilterSelect
-          value={locationFilter}
-          onChange={setLocationFilter}
-          options={locationOptions}
-          allLabel="All Locations"
-          triggerClassName="w-[160px]"
-        />
-      </FilterBar>
-
       {/* Table Container */}
       <div className="rounded-lg border bg-card">
         <Table>

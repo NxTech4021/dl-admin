@@ -411,6 +411,7 @@ function AdminLogsPage() {
                       </TableRow>
                     </TableHeader>
                     <motion.tbody
+                      key={`${searchQuery}-${selectedActionType || ''}-${selectedTargetType || ''}-${pagination.page}`}
                       initial="hidden"
                       animate="visible"
                       variants={tableContainerVariants}

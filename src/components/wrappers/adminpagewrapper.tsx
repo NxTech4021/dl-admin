@@ -1,18 +1,28 @@
-import { useMemo, lazy, Suspense } from "react";
+import { useMemo, lazy, Suspense, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { IconDownload, IconUsers, IconRefresh, IconAlertCircle } from "@tabler/icons-react";
 import { useAdmins } from "@/hooks/use-queries";
-import { AnimatedContainer } from "@/components/ui/animated-container";
+import { AnimatedContainer, AnimatedFilterBar } from "@/components/ui/animated-container";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { statsGridContainer, statsCardVariants, defaultTransition } from "@/lib/animation-variants";
 
 // Lazy imports for code splitting
 const AdminInviteModalWrapper = lazy(() => import("@/components/wrappers/adminmodalwrapper"));
 const AdminsDataTable = lazy(() => import("@/components/data-table/admin-data-table").then(mod => ({ default: mod.AdminsDataTable })));
 
+const STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "PENDING", label: "Pending" },
+  { value: "INACTIVE", label: "Inactive" },
+];
+
 export default function AdminsWrapper() {
   const { data: admins = [], isLoading, isError, error, refetch } = useAdmins();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
   // Memoize computed stats
   const stats = useMemo(() => ({
@@ -20,6 +30,30 @@ export default function AdminsWrapper() {
     active: admins.filter((a) => a.status === "ACTIVE").length,
     pending: admins.filter((a) => a.status === "PENDING").length,
   }), [admins]);
+
+  // Filter admins
+  const filteredAdmins = useMemo(() => {
+    let filtered = admins;
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filtered = filtered.filter(a =>
+        a.name?.toLowerCase().includes(search) ||
+        a.email?.toLowerCase().includes(search) ||
+        a.role?.toLowerCase().includes(search)
+      );
+    }
+    if (statusFilter) {
+      filtered = filtered.filter(a => a.status === statusFilter);
+    }
+    return filtered;
+  }, [admins, searchQuery, statusFilter]);
+
+  const hasActiveFilters = searchQuery || statusFilter;
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setStatusFilter(undefined);
+  }, []);
 
   // Error state
   if (isError) {
@@ -123,15 +157,50 @@ export default function AdminsWrapper() {
                       </div>
                     </motion.div>
                   </motion.div>
+
+                  {/* Filter Bar */}
+                  <AnimatedFilterBar>
+                    <div className="flex items-center gap-2 w-full">
+                      <SearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder="Search admins..."
+                        className="w-[220px]"
+                      />
+                      <FilterSelect
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                        options={STATUS_OPTIONS}
+                        allLabel="All Statuses"
+                        triggerClassName="w-[150px]"
+                      />
+                      {hasActiveFilters && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearFilters}
+                          className="text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          Clear all
+                        </Button>
+                      )}
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Button variant="outline" size="sm" onClick={() => refetch()} className="cursor-pointer">
+                          <IconRefresh className="mr-2 size-4" />
+                          Refresh
+                        </Button>
+                      </div>
+                    </div>
+                  </AnimatedFilterBar>
                 </div>
               </div>
             </div>
 
             {/* Data Table */}
-            <div className="flex-1">
+            <div className="flex-1 px-4 lg:px-6 pb-6">
               <AnimatedContainer delay={0.1}>
                 <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-                  <AdminsDataTable data={admins} />
+                  <AdminsDataTable data={filteredAdmins} />
                 </Suspense>
               </AnimatedContainer>
             </div>

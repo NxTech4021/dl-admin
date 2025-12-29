@@ -40,8 +40,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterSelect } from "@/components/ui/filter-select";
+import { SearchInput } from "@/components/ui/search-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -79,6 +79,7 @@ export const Route = createFileRoute("/_authenticated/team-change-requests/")({
 
 function TeamChangeRequestsPage() {
   const [selectedStatus, setSelectedStatus] = useState<TeamChangeRequestStatus | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<TeamChangeRequest | null>(null);
   const [processDialogOpen, setProcessDialogOpen] = useState(false);
@@ -128,7 +129,17 @@ function TeamChangeRequestsPage() {
     }
   };
 
-  const filteredRequests = requests || [];
+  // Filter requests by search
+  const filteredRequests = (requests || []).filter((request) => {
+    if (!searchQuery) return true;
+    const search = searchQuery.toLowerCase();
+    return (
+      request.user?.name?.toLowerCase().includes(search) ||
+      request.currentDivision?.name?.toLowerCase().includes(search) ||
+      request.requestedDivision?.name?.toLowerCase().includes(search) ||
+      request.season?.name?.toLowerCase().includes(search)
+    );
+  });
   const totalPages = Math.ceil(filteredRequests.length / pageSize);
   const paginatedRequests = filteredRequests.slice(
     (currentPage - 1) * pageSize,
@@ -145,15 +156,9 @@ function TeamChangeRequestsPage() {
             title="Team Change Requests"
             description="Review and process player division transfer requests"
             actions={
-              <>
-                {pendingCount !== undefined && pendingCount > 0 && (
-                  <Badge variant="destructive">{pendingCount} pending</Badge>
-                )}
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <IconRefresh className="mr-2 size-4" />
-                  Refresh
-                </Button>
-              </>
+              pendingCount !== undefined && pendingCount > 0 ? (
+                <Badge variant="destructive">{pendingCount} pending</Badge>
+              ) : undefined
             }
           >
             <AnimatedStatsGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -200,13 +205,13 @@ function TeamChangeRequestsPage() {
             </AnimatedStatsGrid>
 
             <AnimatedFilterBar>
-              <FilterBar
-                onClearAll={() => {
-                  setSelectedStatus(undefined);
-                  setCurrentPage(1);
-                }}
-                showClearButton={!!selectedStatus}
-              >
+              <div className="flex items-center gap-2 w-full">
+                <SearchInput
+                  value={searchQuery}
+                  onChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                  placeholder="Search requests..."
+                  className="w-[220px]"
+                />
                 <FilterSelect
                   value={selectedStatus}
                   onChange={(value) => {
@@ -217,7 +222,27 @@ function TeamChangeRequestsPage() {
                   allLabel="All Statuses"
                   triggerClassName="w-[180px]"
                 />
-              </FilterBar>
+                {(selectedStatus || searchQuery) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedStatus(undefined);
+                      setSearchQuery("");
+                      setCurrentPage(1);
+                    }}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    Clear all
+                  </Button>
+                )}
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button variant="outline" size="sm" onClick={() => refetch()} className="cursor-pointer">
+                    <IconRefresh className="mr-2 size-4" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
             </AnimatedFilterBar>
           </PageHeader>
 
@@ -253,6 +278,7 @@ function TeamChangeRequestsPage() {
                     </TableRow>
                   </TableHeader>
                   <motion.tbody
+                    key={`${searchQuery}-${selectedStatus || ''}-${currentPage}`}
                     initial="hidden"
                     animate="visible"
                     variants={tableContainerVariants}

@@ -349,6 +349,12 @@ function MatchesPage() {
                     onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
                   />
                 </div>
+
+                {/* Refresh Button */}
+                <Button variant="outline" size="sm" onClick={() => refetch()} className="cursor-pointer shrink-0">
+                  <IconRefresh className="mr-2 size-4" />
+                  Refresh
+                </Button>
               </div>
             </AnimatedFilterBar>
           </PageHeader>

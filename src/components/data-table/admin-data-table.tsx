@@ -23,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SearchInput } from "@/components/ui/search-input";
 import {
   Table,
   TableCell,
@@ -87,7 +86,6 @@ const handleResendInvite = async (adminId: string) => {
 };
 
 export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProps) {
-  const [globalFilter, setGlobalFilter] = React.useState("");
   const [selectedAdmin, setSelectedAdmin] = React.useState<Admin | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
@@ -100,45 +98,15 @@ export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProp
     setIsModalOpen(true);
   };
 
-  // Filter data by search
-  const filteredData = React.useMemo(() => {
-    if (!globalFilter) return data;
-    const search = globalFilter.toLowerCase();
-    return data.filter(
-      (admin) =>
-        admin.name.toLowerCase().includes(search) ||
-        admin.email.toLowerCase().includes(search)
-    );
-  }, [data, globalFilter]);
-
   // Pagination
-  const totalPages = Math.ceil(filteredData.length / pageSize);
-  const paginatedData = filteredData.slice(
+  const totalPages = Math.ceil(data.length / pageSize);
+  const paginatedData = data.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
   return (
-    <div className="space-y-4 px-4 lg:px-6">
-      {/* Search and count */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <SearchInput
-          value={globalFilter}
-          onChange={(value) => {
-            setGlobalFilter(value);
-            setCurrentPage(1);
-          }}
-          placeholder="Search admins..."
-          className="w-full sm:w-80"
-        />
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{filteredData.length}</span>
-          <span className="text-sm text-muted-foreground">
-            {filteredData.length === 1 ? "admin" : "admins"}
-          </span>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* Table */}
       {isLoading ? (
         <div className="space-y-3">
@@ -159,6 +127,7 @@ export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProp
               </TableRow>
             </TableHeader>
             <motion.tbody
+              key={`tbody-${currentPage}`}
               initial="hidden"
               animate="visible"
               variants={tableContainerVariants}
@@ -299,9 +268,7 @@ export function AdminsDataTable({ data, isLoading = false }: AdminsDataTableProp
           <IconShield className="size-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Admins Found</h3>
           <p className="text-sm text-muted-foreground">
-            {globalFilter
-              ? "Try adjusting your search."
-              : "No admins have been added yet."}
+            No admins match your current filters.
           </p>
         </div>
       )}

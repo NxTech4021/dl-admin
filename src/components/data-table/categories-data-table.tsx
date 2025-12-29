@@ -687,6 +687,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
             </TableHeader>
 
             <motion.tbody
+              key={`${globalFilter}-${gameTypeFilter}-${genderRestrictionFilter}-${statusFilter}-${currentPage}`}
               initial="hidden"
               animate="visible"
               variants={tableContainerVariants}

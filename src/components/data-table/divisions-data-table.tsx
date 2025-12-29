@@ -5,8 +5,6 @@ import { motion } from "framer-motion";
 import {
   IconCategory,
   IconTrophy,
-  IconDownload,
-  IconRefresh,
   IconAlertTriangle,
   IconUsers,
   IconUser,
@@ -34,14 +32,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -66,11 +56,6 @@ import { DivisionDetailModal } from "@/components/division/division-detail-modal
 import {
   ACTION_MESSAGES,
 } from "./constants";
-
-interface Season {
-  id: string;
-  name: string;
-}
 
 /** Get level badge styling */
 const getLevelBadgeClass = (level: string | null | undefined) => {
@@ -99,20 +84,28 @@ const getCapacityDisplay = (current: number, max: number | null | undefined) => 
   return { percentage, colorClass: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", label: "" };
 };
 
-export function DivisionsDataTable() {
+interface DivisionsDataTableProps {
+  searchQuery?: string;
+  selectedSeasonId?: string;
+}
+
+export function DivisionsDataTable({
+  searchQuery = "",
+  selectedSeasonId = "all",
+}: DivisionsDataTableProps) {
   const navigate = useNavigate();
   const [data, setData] = React.useState<Division[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [globalFilter, setGlobalFilter] = React.useState("");
-
-  // Season filter
-  const [seasons, setSeasons] = React.useState<Season[]>([]);
-  const [selectedSeasonId, setSelectedSeasonId] = React.useState<string>("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = React.useState(1);
   const pageSize = 20;
+
+  // Reset page when search or season changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedSeasonId]);
 
   // Modal states
   const [viewDivision, setViewDivision] = React.useState<Division | null>(null);
@@ -166,16 +159,6 @@ export function DivisionsDataTable() {
     }
   }, []);
 
-  const fetchSeasons = React.useCallback(async () => {
-    try {
-      const response = await axiosInstance.get(endpoints.season.getAll);
-      const seasonsData = response.data?.data || response.data || [];
-      setSeasons(Array.isArray(seasonsData) ? seasonsData : []);
-    } catch (error) {
-      console.error("Failed to fetch seasons:", error);
-    }
-  }, []);
-
   const fetchDivisionsBySeason = React.useCallback(async (seasonId: string) => {
     setIsLoading(true);
     setError(null);
@@ -199,52 +182,6 @@ export function DivisionsDataTable() {
       setIsLoading(false);
     }
   }, []);
-
-  const exportToCSV = React.useCallback(() => {
-    if (data.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-
-    const headers = ["Name", "Season", "Level", "Game Type", "Gender", "Max Singles", "Max Doubles Teams", "Current Singles", "Current Doubles", "Threshold", "Prize Pool", "Sponsor", "Status", "Auto Assignment", "Created At", "Updated At"];
-
-    const rows = data.map(d => [
-      d.name,
-      (d as any).season?.name || "",
-      d.divisionLevel || "",
-      d.gameType || "",
-      d.genderCategory || "",
-      d.maxSingles || "",
-      d.maxDoublesTeams || "",
-      d.currentSinglesCount || 0,
-      d.currentDoublesCount || 0,
-      d.threshold || "",
-      d.prizePoolTotal || "",
-      d.sponsoredDivisionName || "",
-      d.isActive ? "Active" : "Inactive",
-      d.autoAssignmentEnabled ? "Yes" : "No",
-      d.createdAt,
-      d.updatedAt
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `divisions-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("Divisions exported successfully");
-  }, [data]);
-
-  React.useEffect(() => {
-    fetchDivisions();
-    fetchSeasons();
-  }, [fetchDivisions, fetchSeasons]);
 
   React.useEffect(() => {
     fetchDivisionsBySeason(selectedSeasonId);
@@ -314,15 +251,15 @@ export function DivisionsDataTable() {
 
   // Filter data by search
   const filteredData = React.useMemo(() => {
-    if (!globalFilter) return data;
-    const search = globalFilter.toLowerCase();
+    if (!searchQuery) return data;
+    const search = searchQuery.toLowerCase();
     return data.filter(d =>
       d.name.toLowerCase().includes(search) ||
       (d as any).season?.name?.toLowerCase().includes(search) ||
       d.divisionLevel?.toLowerCase().includes(search) ||
       d.gameType?.toLowerCase().includes(search)
     );
-  }, [data, globalFilter]);
+  }, [data, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -346,41 +283,6 @@ export function DivisionsDataTable() {
             </div>
           </div>
         )}
-
-        {/* Search, Season Filter, and Actions */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
-            <Input
-              placeholder="Search divisions..."
-              value={globalFilter}
-              onChange={(e) => { setGlobalFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-80"
-            />
-            <Select value={selectedSeasonId} onValueChange={(val) => { setSelectedSeasonId(val); setCurrentPage(1); }}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by season" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Seasons</SelectItem>
-                {seasons.map((season) => (
-                  <SelectItem key={season.id} value={season.id}>
-                    {season.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <IconDownload className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => fetchDivisionsBySeason(selectedSeasonId)}>
-              <IconRefresh className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </div>
 
         {/* Table */}
         {isLoading ? (
@@ -407,6 +309,7 @@ export function DivisionsDataTable() {
                   </TableRow>
                 </TableHeader>
                 <motion.tbody
+                  key={`${searchQuery}-${selectedSeasonId}-${currentPage}`}
                   initial="hidden"
                   animate="visible"
                   variants={tableContainerVariants}
