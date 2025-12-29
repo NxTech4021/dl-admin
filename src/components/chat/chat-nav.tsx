@@ -10,6 +10,13 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Search,
   Users,
   SquarePen,
@@ -109,7 +116,15 @@ export default function ChatNav({
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [chatFilter, setChatFilter] = useState<ChatFilter>("all");
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Reset season filter when switching away from division tab
+  useEffect(() => {
+    if (chatFilter !== "division") {
+      setSelectedSeasonId(null);
+    }
+  }, [chatFilter]);
 
   // Reset scroll position when filter changes
   useEffect(() => {
@@ -119,7 +134,7 @@ export default function ChatNav({
         viewport.scrollTop = 0;
       }
     }
-  }, [chatFilter]);
+  }, [chatFilter, selectedSeasonId]);
 
   // Calculate counts for each filter
   const filterCounts = useMemo(() => {
@@ -132,6 +147,27 @@ export default function ChatNav({
     };
   }, [conversations]);
 
+  // Extract unique seasons from division conversations for the dropdown
+  const availableSeasons = useMemo(() => {
+    const divisionConversations = conversations.filter((c) => c.type === "group");
+    const seasonMap = new Map<string, { id: string; name: string; count: number }>();
+
+    divisionConversations.forEach((conv) => {
+      const seasonId = conv.division?.season?.id;
+      const seasonName = conv.division?.season?.name;
+      if (seasonId && seasonName) {
+        const existing = seasonMap.get(seasonId);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          seasonMap.set(seasonId, { id: seasonId, name: seasonName, count: 1 });
+        }
+      }
+    });
+
+    return Array.from(seasonMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [conversations]);
+
   // Filter conversations by type and search query
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -141,6 +177,12 @@ export default function ChatNav({
       filtered = filtered.filter((c) => c.type === "direct");
     } else if (chatFilter === "division") {
       filtered = filtered.filter((c) => c.type === "group");
+
+      // Filter by selected season
+      if (selectedSeasonId) {
+        filtered = filtered.filter((c) => c.division?.season?.id === selectedSeasonId);
+      }
+
       // Sort division chats alphabetically by name
       filtered = [...filtered].sort((a, b) =>
         (a.displayName || "").localeCompare(b.displayName || "")
@@ -162,7 +204,7 @@ export default function ChatNav({
     }
 
     return filtered;
-  }, [conversations, chatFilter, searchQuery]);
+  }, [conversations, chatFilter, searchQuery, selectedSeasonId]);
 
   // Event Handlers
   const handleClickCompose = useCallback(() => {
@@ -209,23 +251,32 @@ export default function ChatNav({
   );
 
   const renderSkeleton = () => (
-    <>
+    <div className="space-y-0">
       {Array.from({ length: 8 }, (_, index) => (
-        <ChatNavItemSkeleton key={`skeleton-${index}`} />
+        <ChatNavItemSkeleton key={`skeleton-${index}`} index={index} />
       ))}
-    </>
+    </div>
   );
 
   const renderEmptyState = () => {
     const getEmptyMessage = () => {
       if (searchQuery) return "No conversations found";
       if (chatFilter === "personal") return "No personal chats";
-      if (chatFilter === "division") return "No division chats";
+      if (chatFilter === "division") {
+        if (selectedSeasonId) {
+          const seasonName = availableSeasons.find(s => s.id === selectedSeasonId)?.name;
+          return `No chats in ${seasonName || "this season"}`;
+        }
+        return "No division chats";
+      }
       return "No conversations yet";
     };
 
     const getEmptySubMessage = () => {
       if (searchQuery) return "Try a different search term";
+      if (chatFilter === "division" && selectedSeasonId) {
+        return "Try selecting a different season or 'All Seasons'";
+      }
       if (chatFilter !== "all") return "Try selecting a different filter";
       return "Start a new conversation";
     };
@@ -269,11 +320,62 @@ export default function ChatNav({
     );
   };
 
+  // Group conversations by season for division tab when "All Seasons" is selected
+  const groupedConversations = useMemo(() => {
+    // Only group when in division tab with "All Seasons" selected
+    if (chatFilter !== "division" || selectedSeasonId) {
+      return null;
+    }
+
+    const groups = new Map<string, { seasonName: string; conversations: Conversation[] }>();
+    const noSeasonGroup: Conversation[] = [];
+
+    filteredConversations.forEach((conv) => {
+      const seasonId = conv.division?.season?.id;
+      const seasonName = conv.division?.season?.name;
+
+      if (seasonId && seasonName) {
+        const existing = groups.get(seasonId);
+        if (existing) {
+          existing.conversations.push(conv);
+        } else {
+          groups.set(seasonId, { seasonName, conversations: [conv] });
+        }
+      } else {
+        noSeasonGroup.push(conv);
+      }
+    });
+
+    // Sort groups by season name, then sort conversations within each group
+    const sortedGroups = Array.from(groups.entries())
+      .sort(([, a], [, b]) => a.seasonName.localeCompare(b.seasonName))
+      .map(([id, group]) => ({
+        id,
+        seasonName: group.seasonName,
+        conversations: group.conversations.sort((a, b) =>
+          (a.displayName || "").localeCompare(b.displayName || "")
+        ),
+      }));
+
+    // Add "Other" group at the end if there are chats without seasons
+    if (noSeasonGroup.length > 0) {
+      sortedGroups.push({
+        id: "no-season",
+        seasonName: "Other",
+        conversations: noSeasonGroup.sort((a, b) =>
+          (a.displayName || "").localeCompare(b.displayName || "")
+        ),
+      });
+    }
+
+    return sortedGroups;
+  }, [chatFilter, selectedSeasonId, filteredConversations]);
+
   const renderConversationsList = () => (
     <AnimatePresence mode="popLayout" initial={false}>
       {filteredConversations.length > 0 ? (
         <motion.div
-          key={`list-${chatFilter}`}
+          key={`list-${chatFilter}-${selectedSeasonId || "all"}`}
           initial="hidden"
           animate="visible"
           exit="hidden"
@@ -282,22 +384,67 @@ export default function ChatNav({
             visible: { transition: { staggerChildren: 0.04 } },
           }}
         >
-          {filteredConversations.map((conversation: Conversation) => (
-            <motion.div
-              key={conversation.id}
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { opacity: 1 },
-              }}
-              transition={{ duration: 0.15 }}
-            >
-              <ChatNavItem
-                conversation={conversation}
-                selected={conversation.id === selectedConversationId}
-                onCloseMobile={forceMobileList ? undefined : onCloseMobile}
-              />
-            </motion.div>
-          ))}
+          {/* Grouped view for Division tab with "All Seasons" */}
+          {groupedConversations ? (
+            groupedConversations.map((group) => (
+              <div key={group.id}>
+                {/* Season header */}
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 },
+                  }}
+                  className="sticky top-0 z-10 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                      {group.seasonName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      ({group.conversations.length})
+                    </span>
+                  </div>
+                </motion.div>
+                {/* Conversations in this season */}
+                {group.conversations.map((conversation: Conversation) => (
+                  <motion.div
+                    key={conversation.id}
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: { opacity: 1 },
+                    }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <ChatNavItem
+                      conversation={conversation}
+                      selected={conversation.id === selectedConversationId}
+                      onCloseMobile={forceMobileList ? undefined : onCloseMobile}
+                      hideContextBadge
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            ))
+          ) : (
+            /* Flat list for other tabs or when a specific season is selected */
+            filteredConversations.map((conversation: Conversation) => (
+              <motion.div
+                key={conversation.id}
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: { opacity: 1 },
+                }}
+                transition={{ duration: 0.15 }}
+              >
+                <ChatNavItem
+                  conversation={conversation}
+                  selected={conversation.id === selectedConversationId}
+                  onCloseMobile={forceMobileList ? undefined : onCloseMobile}
+                  hideContextBadge={chatFilter === "division"}
+                />
+              </motion.div>
+            ))
+          )}
         </motion.div>
       ) : (
         renderEmptyState()
@@ -420,6 +567,60 @@ export default function ChatNav({
     </div>
   );
 
+  const renderSeasonFilter = () => {
+    if (chatFilter !== "division" || availableSeasons.length === 0) return null;
+
+    const selectedSeason = selectedSeasonId
+      ? availableSeasons.find(s => s.id === selectedSeasonId)
+      : null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.2 }}
+        className="px-3 pb-2"
+      >
+        <Select
+          value={selectedSeasonId || "all"}
+          onValueChange={(value) => setSelectedSeasonId(value === "all" ? null : value)}
+        >
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/40 border-muted-foreground/20 hover:bg-muted/60 transition-colors">
+            <div className="flex items-center gap-2 w-full">
+              <span className="truncate font-medium">
+                {selectedSeason ? selectedSeason.name : "All Seasons"}
+              </span>
+              <span className="ml-auto shrink-0 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">
+                {selectedSeason ? selectedSeason.count : filterCounts.division}
+              </span>
+            </div>
+          </SelectTrigger>
+          <SelectContent align="start" className="w-[var(--radix-select-trigger-width)]">
+            <SelectItem value="all" className="cursor-pointer">
+              <div className="flex items-center justify-between w-full gap-3">
+                <span className="font-medium">All Seasons</span>
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {filterCounts.division}
+                </span>
+              </div>
+            </SelectItem>
+            {availableSeasons.map((season) => (
+              <SelectItem key={season.id} value={season.id} className="cursor-pointer">
+                <div className="flex items-center justify-between w-full gap-3">
+                  <span className="truncate">{season.name}</span>
+                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {season.count}
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </motion.div>
+    );
+  };
+
   const renderContent = () => (
     <div className="h-full flex flex-col">
       {/* Header with compose icon */}
@@ -430,6 +631,11 @@ export default function ChatNav({
 
       {/* Filter tabs */}
       {renderFilterTabs()}
+
+      {/* Season filter dropdown - only shows for Division tab */}
+      <AnimatePresence>
+        {renderSeasonFilter()}
+      </AnimatePresence>
 
       {/* Conversations List */}
       <div className="flex-1 overflow-hidden" ref={scrollAreaRef}>

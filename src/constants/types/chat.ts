@@ -147,7 +147,7 @@ export interface Thread {
 // Simplified division info for conversation display
 export interface ConversationDivision {
   name: string;
-  season?: { name: string };
+  season?: { id: string; name: string };
   league?: { name: string; sportType: 'TENNIS' | 'PICKLEBALL' | 'PADEL' };
 }
 
