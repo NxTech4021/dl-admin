@@ -427,7 +427,10 @@ export const matchStatsSchema = z.object({
 export type MatchStats = z.infer<typeof matchStatsSchema>;
 
 // ===== FILTER TYPES =====
+export type SportType = "TENNIS" | "PICKLEBALL" | "PADEL";
+
 export interface MatchFilters {
+  sport?: SportType;
   leagueId?: string;
   seasonId?: string;
   divisionId?: string;

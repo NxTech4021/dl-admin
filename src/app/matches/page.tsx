@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
-import { MatchFilters } from "@/components/match/match-filters";
+import { MatchFilters, type Sport, type MatchFlagType } from "@/components/match/match-filters";
 import { MatchRowActions } from "@/components/match/match-row-actions";
 import { MatchDetailModal } from "@/components/match/match-detail-modal";
 import { VoidMatchModal } from "@/components/match/void-match-modal";
@@ -62,13 +62,13 @@ const formatSport = (sport: string | null | undefined): string => {
 };
 
 export default function MatchesPage() {
+  const [selectedSport, setSelectedSport] = useState<Sport>();
   const [selectedLeague, setSelectedLeague] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<string>();
   const [selectedDivision, setSelectedDivision] = useState<string>();
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus>();
+  const [selectedFlag, setSelectedFlag] = useState<MatchFlagType>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDisputedOnly, setShowDisputedOnly] = useState(false);
-  const [showLateCancellations, setShowLateCancellations] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal states
@@ -83,13 +83,16 @@ export default function MatchesPage() {
 
   const pageSize = 20;
   const { data, isLoading, error, refetch } = useMatches({
+    sport: selectedSport,
     leagueId: selectedLeague,
     seasonId: selectedSeason,
     divisionId: selectedDivision,
     status: selectedStatus,
     search: searchQuery || undefined,
-    isDisputed: showDisputedOnly || undefined,
-    hasLateCancellation: showLateCancellations || undefined,
+    isDisputed: selectedFlag === "disputed" || undefined,
+    hasLateCancellation: selectedFlag === "lateCancellation" || undefined,
+    isWalkover: selectedFlag === "walkover" || undefined,
+    requiresAdminReview: selectedFlag === "requiresReview" || undefined,
     page: currentPage,
     limit: pageSize,
   });
@@ -166,20 +169,20 @@ export default function MatchesPage() {
 
               {/* Filters */}
               <MatchFilters
+                selectedSport={selectedSport}
                 selectedLeague={selectedLeague}
                 selectedSeason={selectedSeason}
                 selectedDivision={selectedDivision}
                 selectedStatus={selectedStatus}
+                selectedFlag={selectedFlag}
                 searchQuery={searchQuery}
-                showDisputedOnly={showDisputedOnly}
-                showLateCancellations={showLateCancellations}
+                onSportChange={(val) => { setSelectedSport(val); setCurrentPage(1); }}
                 onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
                 onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
                 onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
                 onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                onFlagChange={(val) => { setSelectedFlag(val); setCurrentPage(1); }}
                 onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                onDisputedChange={(val) => { setShowDisputedOnly(val); setCurrentPage(1); }}
-                onLateCancellationChange={(val) => { setShowLateCancellations(val); setCurrentPage(1); }}
               />
             </PageHeader>
 

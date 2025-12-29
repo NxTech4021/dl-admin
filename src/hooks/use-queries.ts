@@ -445,6 +445,7 @@ export function useMatches(filters: MatchFilters = {}) {
     queryFn: async (): Promise<MatchesResponse> => {
       const params = new URLSearchParams();
 
+      if (filters.sport) params.append("sport", filters.sport);
       if (filters.leagueId) params.append("leagueId", filters.leagueId);
       if (filters.seasonId) params.append("seasonId", filters.seasonId);
       if (filters.divisionId) params.append("divisionId", filters.divisionId);

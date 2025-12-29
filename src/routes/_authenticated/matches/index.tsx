@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { MatchStatsCards } from "@/components/match/match-stats-cards";
-import { MatchFilters, type MatchTab } from "@/components/match/match-filters";
+import { MatchFilters, type Sport, type MatchFlagType } from "@/components/match/match-filters";
 import { MatchRowActions } from "@/components/match/match-row-actions";
 import { MatchDetailModal } from "@/components/match/match-detail-modal";
 import { VoidMatchModal } from "@/components/match/void-match-modal";
@@ -39,7 +39,6 @@ import { MatchStatusBadge } from "@/components/match/match-status-badge";
 import { MatchParticipantsDisplay } from "@/components/match/match-participants-display";
 import { Badge } from "@/components/ui/badge";
 import { Match, MatchStatus } from "@/constants/zod/match-schema";
-import { type MatchFlag } from "@/components/ui/filter-flags-select";
 import {
   Table,
   TableCell,
@@ -97,16 +96,17 @@ function MatchesPage() {
   const openedForMatchIdRef = useRef<string | null>(null);
 
   // Tab state
+  type MatchTab = "league" | "friendly";
   const [activeTab, setActiveTab] = useState<MatchTab>("league");
 
   // Filter states
+  const [selectedSport, setSelectedSport] = useState<Sport>();
   const [selectedLeague, setSelectedLeague] = useState<string>();
   const [selectedSeason, setSelectedSeason] = useState<string>();
   const [selectedDivision, setSelectedDivision] = useState<string>();
   const [selectedStatus, setSelectedStatus] = useState<MatchStatus>();
-  const [selectedSport, setSelectedSport] = useState<string>();
+  const [selectedFlag, setSelectedFlag] = useState<MatchFlagType>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFlag, setSelectedFlag] = useState<MatchFlag>();
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal states
@@ -157,23 +157,19 @@ function MatchesPage() {
 
   const pageSize = 20;
 
-  // Build filter params from selectedFlag
-  const flagFilters = useMemo(() => ({
-    isDisputed: selectedFlag === "disputed" || undefined,
-    hasLateCancellation: selectedFlag === "lateCancellation" || undefined,
-    isWalkover: selectedFlag === "walkover" || undefined,
-    requiresAdminReview: selectedFlag === "requiresReview" || undefined,
-  }), [selectedFlag]);
-
   // Main query - use matchContext for server-side filtering
   const { data, isLoading, error, refetch } = useMatches({
+    sport: selectedSport,
     leagueId: activeTab === "league" ? selectedLeague : undefined,
     seasonId: activeTab === "league" ? selectedSeason : undefined,
     divisionId: activeTab === "league" ? selectedDivision : undefined,
     matchContext: activeTab,
     status: selectedStatus,
     search: searchQuery || undefined,
-    ...flagFilters,
+    isDisputed: selectedFlag === "disputed" || undefined,
+    hasLateCancellation: selectedFlag === "lateCancellation" || undefined,
+    isWalkover: selectedFlag === "walkover" || undefined,
+    requiresAdminReview: selectedFlag === "requiresReview" || undefined,
     page: currentPage,
     limit: pageSize,
   });
@@ -191,19 +187,19 @@ function MatchesPage() {
     limit: 1,
   });
 
-  // Get matches directly from API response (already filtered server-side)
+  // Get matches with client-side sport filtering (backend may not support sport filter)
   const filteredMatches = useMemo(() => {
-    if (!data?.matches) return [];
+    let matches = data?.matches ?? [];
 
-    let matches = data.matches;
-
-    // Additional client-side filter for sport (friendly tab only)
-    if (activeTab === "friendly" && selectedSport) {
-      matches = matches.filter((m) => m.sport?.toUpperCase() === selectedSport);
+    // Client-side sport filtering as fallback
+    if (selectedSport) {
+      matches = matches.filter((m) =>
+        m.sport?.toUpperCase() === selectedSport.toUpperCase()
+      );
     }
 
     return matches;
-  }, [data?.matches, activeTab, selectedSport]);
+  }, [data?.matches, selectedSport]);
 
   // Tab counts from separate queries
   const tabCounts = useMemo(() => ({
@@ -219,8 +215,6 @@ function MatchesPage() {
       setSelectedLeague(undefined);
       setSelectedSeason(undefined);
       setSelectedDivision(undefined);
-    } else {
-      setSelectedSport(undefined);
     }
   };
 
@@ -278,6 +272,8 @@ function MatchesPage() {
                 Export
               </Button>
             }
+            containerClassName="pb-4 sm:pb-5 md:pb-5"
+            childrenContainerClassName="gap-3 sm:gap-4 md:gap-4"
           >
             <MatchStatsCards
               leagueId={selectedLeague}
@@ -289,9 +285,9 @@ function MatchesPage() {
 
             {/* Tab Switcher + Filters */}
             <AnimatedFilterBar>
-              <div className="flex items-center gap-3 w-full">
+              <div className="flex items-center gap-2 w-full">
                 {/* Tab Switcher - Notification Style */}
-                <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 border border-border/50">
+                <div className="inline-flex items-center rounded-md bg-muted/60 p-0.5 border border-border/50 shrink-0">
                   <button
                     onClick={() => handleTabChange("league")}
                     className={cn(
@@ -337,21 +333,20 @@ function MatchesPage() {
                 {/* Filters */}
                 <div className="flex-1">
                   <MatchFilters
-                    activeTab={activeTab}
-                    selectedLeague={selectedLeague}
-                    selectedSeason={selectedSeason}
-                    selectedDivision={selectedDivision}
-                    selectedStatus={selectedStatus}
                     selectedSport={selectedSport}
-                    searchQuery={searchQuery}
+                    selectedLeague={activeTab === "league" ? selectedLeague : undefined}
+                    selectedSeason={activeTab === "league" ? selectedSeason : undefined}
+                    selectedDivision={activeTab === "league" ? selectedDivision : undefined}
+                    selectedStatus={selectedStatus}
                     selectedFlag={selectedFlag}
+                    searchQuery={searchQuery}
+                    onSportChange={(val) => { setSelectedSport(val); setCurrentPage(1); }}
                     onLeagueChange={(val) => { setSelectedLeague(val); setCurrentPage(1); }}
                     onSeasonChange={(val) => { setSelectedSeason(val); setCurrentPage(1); }}
                     onDivisionChange={(val) => { setSelectedDivision(val); setCurrentPage(1); }}
                     onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-                    onSportChange={(val) => { setSelectedSport(val); setCurrentPage(1); }}
-                    onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
                     onFlagChange={(val) => { setSelectedFlag(val); setCurrentPage(1); }}
+                    onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
                   />
                 </div>
               </div>
@@ -397,7 +392,7 @@ function MatchesPage() {
                       </TableRow>
                     </TableHeader>
                     <motion.tbody
-                      key={`${activeTab}-${selectedStatus}-${selectedSport}-${selectedFlag || ''}-${selectedLeague}-${selectedSeason}-${selectedDivision}-${searchQuery}`}
+                      key={`${activeTab}-${selectedSport || ''}-${selectedStatus || ''}-${selectedFlag || ''}-${selectedLeague || ''}-${selectedSeason || ''}-${selectedDivision || ''}-${searchQuery}`}
                       initial="hidden"
                       animate="visible"
                       variants={tableContainerVariants}
