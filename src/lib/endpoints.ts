@@ -260,4 +260,11 @@ export const endpoints = {
   withdrawal: {
     process: (id: string) => `/api/season/withdrawals/${id}/process`,
   },
+
+  partnershipAdmin: {
+    getWithdrawalRequests: "/api/admin/partnerships/withdrawal-requests",
+    getWithdrawalRequestStats: "/api/admin/partnerships/withdrawal-requests/stats",
+    getDissolvedPartnerships: "/api/admin/partnerships/dissolved",
+    getDissolvedPartnershipById: (id: string) => `/api/admin/partnerships/dissolved/${id}`,
+  },
 };
