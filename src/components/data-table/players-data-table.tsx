@@ -172,12 +172,23 @@ const columns: ColumnDef<Player>[] = [
   {
     accessorKey: "area",
     header: "Area",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <IconMapPin className="size-4 text-muted-foreground" />
-        <span>{renderValue(row.original.area)}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const area = renderValue(row.original.area);
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 min-w-[200px] max-w-[300px]">
+              <IconMapPin className="size-4 text-muted-foreground shrink-0" />
+              <span className="truncate">{area}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[350px]">
+            <p className="break-words">{area}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    },
+    size: 320,
   },
   {
     accessorKey: "sports",
