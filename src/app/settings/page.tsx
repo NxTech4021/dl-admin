@@ -8,6 +8,8 @@ import { IconSettings, IconClock, IconBug } from "@tabler/icons-react";
 import { InactivitySettingsCard } from "@/components/settings/inactivity-settings-card";
 import { BugReportSettingsCard } from "@/components/settings/bug-report-settings-card";
 
+import { AppControlsCard } from "@/components/settings/app-controls-card";
+
 export default function SettingsPage() {
   return (
     <SidebarProvider
@@ -46,6 +48,15 @@ export default function SettingsPage() {
                     <h2 className="text-lg font-semibold">Bug Reports</h2>
                   </div>
                   <BugReportSettingsCard />
+                </section>
+
+                {/* App Controls Section */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <IconBug className="size-5 text-muted-foreground" />
+                    <h2 className="text-lg font-semibold">App Controls</h2>
+                  </div>
+                  <AppControlsCard />
                 </section>
               </div>
             </div>
