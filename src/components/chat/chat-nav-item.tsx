@@ -143,12 +143,14 @@ interface ChatNavItemProps {
   selected?: boolean;
   conversation: any;
   onCloseMobile?: () => void;
+  hideContextBadge?: boolean;
 }
 
 const ChatNavItem = ({
   selected,
   conversation,
   onCloseMobile,
+  hideContextBadge = false,
 }: ChatNavItemProps) => {
   const { data: session } = useSession();
   const user = session?.user;
@@ -241,7 +243,7 @@ const ChatNavItem = ({
             <span className="font-semibold text-[15px] truncate">
               {displayName || DEFAULTS.UNKNOWN_USER}
             </span>
-            {hasDivisionContext && (
+            {hasDivisionContext && !hideContextBadge && (
               <ChatContextBadge seasonName={seasonName} sportType={sportType} />
             )}
           </div>

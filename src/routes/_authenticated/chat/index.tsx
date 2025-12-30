@@ -130,7 +130,7 @@ function ChatPage() {
         ? {
             name: thread.division.name,
             season: thread.division.season
-              ? { name: thread.division.season.name }
+              ? { id: thread.division.season.id, name: thread.division.season.name }
               : undefined,
             league: thread.division.league
               ? {
@@ -233,25 +233,75 @@ function ChatPage() {
     return (
       <div className="absolute inset-0 flex flex-col">
         <SiteHeader />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="flex flex-col items-center gap-5"
           >
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark flex items-center justify-center">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
+            {/* Animated chat bubbles */}
+            <div className="relative w-20 h-20">
+              {/* Main icon container */}
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark flex items-center justify-center shadow-lg shadow-brand-light/20"
+              >
+                <MessageSquare className="w-9 h-9 text-white" />
+              </motion.div>
+
+              {/* Animated ring */}
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-2 border-2 border-brand-light/30 border-t-brand-light rounded-full"
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-3 rounded-full border-2 border-dashed border-brand-light/20"
+              />
+
+              {/* Pulsing dots */}
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-light/80"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                className="absolute -bottom-1 -left-1 w-3 h-3 rounded-full bg-brand-dark/60"
               />
             </div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Loading conversations...
-            </p>
+
+            {/* Text with subtle animation */}
+            <div className="text-center space-y-1">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-sm font-medium text-foreground"
+              >
+                Loading conversations
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center justify-center gap-1"
+              >
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                    className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
+                  />
+                ))}
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </div>

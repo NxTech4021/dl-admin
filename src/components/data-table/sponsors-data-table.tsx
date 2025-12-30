@@ -270,16 +270,16 @@ const createColumns = (
 
 interface SponsorsDataTableProps {
   refreshTrigger?: number;
+  searchQuery?: string;
 }
 
-export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
+export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: SponsorsDataTableProps) {
   const [data, setData] = React.useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState("");
   
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false);
@@ -315,13 +315,12 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
   // Clear all filters
   const clearFilters = () => {
     setPackageTierFilter("all");
-    setGlobalFilter("");
   };
 
   // Check if any filters are active
   const hasActiveFilters =
     packageTierFilter !== "all" ||
-    globalFilter !== "";
+    searchQuery !== "";
 
   React.useEffect(() => {
     const fetchSponsors = async () => {
@@ -397,14 +396,13 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
       columnVisibility,
       rowSelection,
       columnFilters,
-      globalFilter,
+      globalFilter: searchQuery,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -416,100 +414,8 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="px-4 lg:px-6 space-y-4">
-        {/* Search Bar and Filter Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Search sponsors by name..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="w-80"
-            />
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`${hasActiveFilters ? "border-primary bg-primary/10" : ""}`}
-            >
-              <IconFilter className="size-4 mr-2" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {packageTierFilter !== "all" ? 1 : 0}
-                </Badge>
-              )}
-              {showFilters ? (
-                <IconChevronUp className="size-4 ml-2" />
-              ) : (
-                <IconChevronDown className="size-4 ml-2" />
-              )}
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <div className="text-sm text-muted-foreground">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} sponsor(s) selected
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Controls - Collapsible */}
-        {showFilters && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-muted/30 rounded-lg border animate-in slide-in-from-top-2 duration-200">
-            {/* Package Tier Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Package Tier:</span>
-              <Select value={packageTierFilter} onValueChange={setPackageTierFilter}>
-                <SelectTrigger
-                  className={`w-[140px] ${packageTierFilter !== "all" ? "border-primary" : ""}`}
-                >
-                  <SelectValue placeholder="All Tiers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tiers</SelectItem>
-                  {uniquePackageTiers.map((tier) => (
-                    <SelectItem key={tier} value={tier} className="capitalize">
-                      {tier.toLowerCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {packageTierFilter !== "all" && (
-                <Badge variant="secondary" className="text-xs capitalize">
-                  {packageTierFilter.toLowerCase()}
-                </Badge>
-              )}
-            </div>
-
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-2 lg:px-3"
-              >
-                <IconX className="size-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
-
-            {/* Active Filters Count */}
-            {hasActiveFilters && (
-              <div className="text-sm text-muted-foreground">
-                Showing {filteredData.length} of {data.length} sponsors
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Table Container */}
-      <div className="rounded-md border mx-4 lg:mx-6 bg-background">
+      <div className="rounded-md border bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -528,6 +434,7 @@ export function SponsorsDataTable({ refreshTrigger }: SponsorsDataTableProps) {
           </TableHeader>
 
           <motion.tbody
+              key={`${searchQuery}-${packageTierFilter}-${table.getState().pagination.pageIndex}`}
               initial="hidden"
               animate="visible"
               variants={tableContainerVariants}

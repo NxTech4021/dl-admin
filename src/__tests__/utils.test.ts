@@ -13,7 +13,8 @@ describe("cn utility function", () => {
   });
 
   it("should handle falsy values", () => {
-    const result = cn("base-class", false && "hidden", null, undefined);
+    const isFalsy = false;
+    const result = cn("base-class", isFalsy && "hidden", null, undefined);
     expect(result).toBe("base-class");
   });
 

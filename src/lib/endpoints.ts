@@ -278,4 +278,15 @@ export const endpoints = {
     updateStatus: (membershipId: string) => `/api/admin/payments/${membershipId}/status`,
     bulkUpdateStatus: "/api/admin/payments/bulk-status",
   },
+
+  withdrawal: {
+    process: (id: string) => `/api/season/withdrawals/${id}/process`,
+  },
+
+  partnershipAdmin: {
+    getWithdrawalRequests: "/api/admin/partnerships/withdrawal-requests",
+    getWithdrawalRequestStats: "/api/admin/partnerships/withdrawal-requests/stats",
+    getDissolvedPartnerships: "/api/admin/partnerships/dissolved",
+    getDissolvedPartnershipById: (id: string) => `/api/admin/partnerships/dissolved/${id}`,
+  },
 };

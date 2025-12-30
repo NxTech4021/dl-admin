@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ExportButton, type ExportColumn } from "@/components/shared";
 import {
   IconCreditCard,
-  IconRefresh,
   IconUsers,
   IconCircleCheck,
   IconClock,
@@ -132,10 +131,6 @@ function PaymentsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={handleRefresh}>
-                        <IconRefresh className="mr-2 size-4" />
-                        Refresh
-                      </Button>
                       <ExportButton
                         data={paymentsData?.data ?? []}
                         columns={exportColumns}
@@ -303,6 +298,7 @@ function PaymentsPage() {
                   filters={filters}
                   seasons={paymentSeasons}
                   onFilterChange={handleFilterChange}
+                  onRefresh={handleRefresh}
                 />
               </AnimatedFilterBar>
 

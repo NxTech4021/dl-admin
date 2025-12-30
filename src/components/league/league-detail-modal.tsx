@@ -20,10 +20,6 @@ import {
   IconEdit,
   IconExternalLink,
   IconCategory,
-  IconUserPlus,
-  IconLock,
-  IconWorld,
-  IconMail,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
@@ -88,34 +84,6 @@ const getSportBgClass = (sportType: string | null | undefined): string => {
   }
 };
 
-/** Format game type display */
-const formatGameType = (gameType: string | undefined): string => {
-  switch (gameType?.toUpperCase()) {
-    case "SINGLES":
-      return "Singles";
-    case "DOUBLES":
-      return "Doubles";
-    case "MIXED":
-      return "Mixed";
-    default:
-      return gameType || "—";
-  }
-};
-
-/** Format join type display */
-const formatJoinType = (joinType: string | null | undefined): { label: string; icon: React.ReactNode } => {
-  switch (joinType?.toUpperCase()) {
-    case "OPEN":
-      return { label: "Open", icon: <IconWorld className="size-4" /> };
-    case "INVITE_ONLY":
-      return { label: "Invite Only", icon: <IconMail className="size-4" /> };
-    case "MANUAL":
-      return { label: "Manual", icon: <IconLock className="size-4" /> };
-    default:
-      return { label: "Open", icon: <IconWorld className="size-4" /> };
-  }
-};
-
 interface LeagueDetailModalProps {
   league: League | null;
   open: boolean;
@@ -137,7 +105,6 @@ export function LeagueDetailModal({
   const sportColor = getSportColor(league.sportType);
   const sportLabel = getSportLabel(league.sportType);
   const sportIcon = getSportIcon(league.sportType, 20);
-  const joinTypeInfo = formatJoinType(league.joinType);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,9 +125,6 @@ export function LeagueDetailModal({
               }}
             >
               {sportLabel}
-            </Badge>
-            <Badge variant="outline" className="text-xs font-medium bg-muted/50">
-              {formatGameType(league.gameType)}
             </Badge>
           </div>
 
@@ -241,16 +205,6 @@ export function LeagueDetailModal({
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Details</span>
             </div>
             <div className="rounded-xl border border-border/50 divide-y divide-border/50">
-              <DetailRow
-                label="Join Type"
-                value={joinTypeInfo.label}
-                icon={joinTypeInfo.icon}
-              />
-              <DetailRow
-                label="Game Type"
-                value={formatGameType(league.gameType)}
-                icon={<IconUsers className="size-4" />}
-              />
               <DetailRow
                 label="Created"
                 value={league.createdAt ? formatTableDate(league.createdAt) : "—"}

@@ -2,117 +2,120 @@
 
 import React from "react";
 import { SearchInput } from "@/components/ui/search-input";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
-import { FilterFlagsSelect, type MatchFlag } from "@/components/ui/filter-flags-select";
-import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
+import { Button } from "@/components/ui/button";
+import { IconFilter } from "@tabler/icons-react";
 import { MatchStatus } from "@/constants/zod/match-schema";
-import { Skeleton } from "@/components/ui/skeleton";
-
-export type MatchTab = "league" | "friendly";
+import { MatchFilterDrawer, type Sport, type MatchFlagType } from "./match-filter-drawer";
+import { ActiveFilterChips } from "./active-filter-chips";
+import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface MatchFiltersProps {
-  activeTab: MatchTab;
+  // Sport filter
+  selectedSport?: Sport;
+  onSportChange: (value: Sport | undefined) => void;
+  // Location filters
   selectedLeague?: string;
   selectedSeason?: string;
   selectedDivision?: string;
-  selectedStatus?: MatchStatus;
-  selectedSport?: string;
-  searchQuery?: string;
-  selectedFlag?: MatchFlag;
   onLeagueChange: (value: string | undefined) => void;
   onSeasonChange: (value: string | undefined) => void;
   onDivisionChange: (value: string | undefined) => void;
+  // Match filters
+  selectedStatus?: MatchStatus;
   onStatusChange: (value: MatchStatus | undefined) => void;
-  onSportChange?: (value: string | undefined) => void;
+  // Flag filter (simplified from showDisputedOnly/showLateCancellations)
+  selectedFlag?: MatchFlagType;
+  onFlagChange: (value: MatchFlagType | undefined) => void;
+  // Search
+  searchQuery?: string;
   onSearchChange: (value: string) => void;
-  onFlagChange: (value: MatchFlag | undefined) => void;
+  // Legacy support - will be deprecated
+  showDisputedOnly?: boolean;
+  onDisputedChange?: (value: boolean) => void;
+  showLateCancellations?: boolean;
+  onLateCancellationChange?: (value: boolean) => void;
   className?: string;
 }
 
-const MATCH_STATUSES: FilterOption[] = [
-  { value: "DRAFT", label: "Draft" },
-  { value: "SCHEDULED", label: "Scheduled" },
-  { value: "ONGOING", label: "Ongoing" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "UNFINISHED", label: "Unfinished" },
-  { value: "CANCELLED", label: "Cancelled" },
-  { value: "VOID", label: "Void" },
-];
-
-const SPORT_OPTIONS: FilterOption[] = [
-  { value: "PICKLEBALL", label: "Pickleball" },
-  { value: "TENNIS", label: "Tennis" },
-  { value: "PADEL", label: "Padel" },
-];
-
 export function MatchFilters({
-  activeTab,
+  selectedSport,
+  onSportChange,
   selectedLeague,
   selectedSeason,
   selectedDivision,
-  selectedStatus,
-  selectedSport,
-  searchQuery = "",
-  selectedFlag,
   onLeagueChange,
   onSeasonChange,
   onDivisionChange,
+  selectedStatus,
   onStatusChange,
-  onSportChange,
-  onSearchChange,
+  selectedFlag,
   onFlagChange,
+  searchQuery = "",
+  onSearchChange,
+  // Legacy props - map them to new flag system
+  showDisputedOnly,
+  onDisputedChange,
+  showLateCancellations,
+  onLateCancellationChange,
   className = "",
 }: MatchFiltersProps) {
-  const { data: leagues, isLoading: leaguesLoading } = useLeagues();
-  const { data: seasons, isLoading: seasonsLoading } = useSeasons();
-  const { data: divisions, isLoading: divisionsLoading } = useDivisions();
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  // Filter seasons by selected league
-  const filteredSeasons = React.useMemo(() => {
-    if (!seasons) return [];
-    if (!selectedLeague) return seasons;
-    return seasons.filter((season) =>
-      season.leagues?.some((league) => league.id === selectedLeague)
-    );
-  }, [seasons, selectedLeague]);
+  // Fetch data for display names
+  const { data: leagues } = useLeagues();
+  const { data: seasons } = useSeasons();
+  const { data: divisions } = useDivisions();
 
-  // Filter divisions by selected season
-  const filteredDivisions = React.useMemo(() => {
-    if (!divisions) return [];
-    if (!selectedSeason) return divisions;
-    return divisions.filter((division) => division.seasonId === selectedSeason);
-  }, [divisions, selectedSeason]);
-
-  // Transform data to FilterOption format
-  const leagueOptions: FilterOption[] = React.useMemo(() =>
-    leagues?.map((l) => ({ value: l.id, label: l.name })) || [],
-    [leagues]
+  // Get display names for filter chips
+  const leagueName = React.useMemo(() =>
+    leagues?.find((l) => l.id === selectedLeague)?.name,
+    [leagues, selectedLeague]
   );
 
-  const seasonOptions: FilterOption[] = React.useMemo(() =>
-    filteredSeasons.map((s) => ({ value: s.id, label: s.name })),
-    [filteredSeasons]
+  const seasonName = React.useMemo(() =>
+    seasons?.find((s) => s.id === selectedSeason)?.name,
+    [seasons, selectedSeason]
   );
 
-  const divisionOptions: FilterOption[] = React.useMemo(() =>
-    filteredDivisions.map((d) => ({ value: d.id, label: d.name })),
-    [filteredDivisions]
+  const divisionName = React.useMemo(() =>
+    divisions?.find((d) => d.id === selectedDivision)?.name,
+    [divisions, selectedDivision]
   );
 
-  const handleClear = () => {
+  // Derive selectedFlag from legacy props if needed
+  const effectiveFlag = React.useMemo(() => {
+    if (selectedFlag) return selectedFlag;
+    if (showDisputedOnly) return "disputed" as MatchFlagType;
+    if (showLateCancellations) return "lateCancellation" as MatchFlagType;
+    return undefined;
+  }, [selectedFlag, showDisputedOnly, showLateCancellations]);
+
+  // Handle flag change with legacy support
+  const handleFlagChange = (value: MatchFlagType | undefined) => {
+    if (onFlagChange) {
+      onFlagChange(value);
+    }
+    // Legacy support
+    if (onDisputedChange) {
+      onDisputedChange(value === "disputed");
+    }
+    if (onLateCancellationChange) {
+      onLateCancellationChange(value === "lateCancellation");
+    }
+  };
+
+  // Handle clear all with legacy support
+  const handleClearAll = () => {
+    onSportChange(undefined);
     onLeagueChange(undefined);
     onSeasonChange(undefined);
     onDivisionChange(undefined);
     onStatusChange(undefined);
-    onSportChange?.(undefined);
+    handleFlagChange(undefined);
     onSearchChange("");
-    onFlagChange(undefined);
   };
-
-  const hasActiveFilters =
-    selectedLeague || selectedSeason || selectedDivision || selectedStatus ||
-    selectedSport || searchQuery || selectedFlag;
 
   // Handle league change - reset dependent filters
   const handleLeagueChange = (value: string | undefined) => {
@@ -127,90 +130,91 @@ export function MatchFilters({
     onDivisionChange(undefined);
   };
 
-  const isLeagueTab = activeTab === "league";
+  // Count active filters (excluding search)
+  const activeFilterCount = [
+    selectedSport,
+    selectedLeague,
+    selectedSeason,
+    selectedDivision,
+    selectedStatus,
+    effectiveFlag,
+  ].filter(Boolean).length;
 
   return (
-    <div className={className}>
-      <FilterBar onClearAll={handleClear} showClearButton={!!hasActiveFilters}>
+    <div className={cn("", className)}>
+      {/* Main Filter Bar */}
+      <div className="flex items-center gap-2">
         {/* Search Input */}
         <SearchInput
           value={searchQuery}
           onChange={onSearchChange}
           placeholder="Search matches..."
-          className="w-[200px]"
+          className="w-[220px]"
         />
 
-        {/* League Tab Filters */}
-        {isLeagueTab && (
-          <>
-            {/* League Filter */}
-            {leaguesLoading ? (
-              <Skeleton className="h-9 w-[160px]" />
-            ) : (
-              <FilterSelect
-                value={selectedLeague}
-                onChange={handleLeagueChange}
-                options={leagueOptions}
-                allLabel="All Leagues"
-                triggerClassName="w-[160px]"
-              />
-            )}
+        {/* Filters Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setDrawerOpen(true)}
+          className="gap-1.5 shrink-0 h-9 cursor-pointer"
+        >
+          <IconFilter className="size-4" />
+          <span>Filters</span>
+          {activeFilterCount > 0 && (
+            <Badge
+              variant="secondary"
+              className="h-5 min-w-5 px-1.5 rounded-full text-xs font-medium"
+            >
+              {activeFilterCount}
+            </Badge>
+          )}
+        </Button>
 
-            {/* Season Filter */}
-            {seasonsLoading ? (
-              <Skeleton className="h-9 w-[160px]" />
-            ) : (
-              <FilterSelect
-                value={selectedSeason}
-                onChange={handleSeasonChange}
-                options={seasonOptions}
-                allLabel="All Seasons"
-                triggerClassName="w-[160px]"
-              />
-            )}
-
-            {/* Division Filter */}
-            {divisionsLoading ? (
-              <Skeleton className="h-9 w-[160px]" />
-            ) : (
-              <FilterSelect
-                value={selectedDivision}
-                onChange={onDivisionChange}
-                options={divisionOptions}
-                allLabel="All Divisions"
-                triggerClassName="w-[160px]"
-              />
-            )}
-          </>
-        )}
-
-        {/* Friendly Tab Filters - Sport */}
-        {!isLeagueTab && onSportChange && (
-          <FilterSelect
-            value={selectedSport}
-            onChange={onSportChange}
-            options={SPORT_OPTIONS}
-            allLabel="All Sports"
-            triggerClassName="w-[140px]"
+        {/* Active Filter Chips */}
+        <div className="flex-1 min-w-0 overflow-x-auto">
+          <ActiveFilterChips
+            selectedSport={selectedSport}
+            selectedLeague={selectedLeague}
+            selectedSeason={selectedSeason}
+            selectedDivision={selectedDivision}
+            selectedStatus={selectedStatus}
+            selectedFlag={effectiveFlag}
+            leagueName={leagueName}
+            seasonName={seasonName}
+            divisionName={divisionName}
+            onRemoveSport={() => onSportChange(undefined)}
+            onRemoveLeague={() => handleLeagueChange(undefined)}
+            onRemoveSeason={() => handleSeasonChange(undefined)}
+            onRemoveDivision={() => onDivisionChange(undefined)}
+            onRemoveStatus={() => onStatusChange(undefined)}
+            onRemoveFlag={() => handleFlagChange(undefined)}
+            onClearAll={handleClearAll}
           />
-        )}
+        </div>
+      </div>
 
-        {/* Status Filter - Both Tabs */}
-        <FilterSelect
-          value={selectedStatus}
-          onChange={(val) => onStatusChange(val as MatchStatus | undefined)}
-          options={MATCH_STATUSES}
-          allLabel="All Statuses"
-          triggerClassName="w-[160px]"
-        />
-
-        {/* Flags Filter */}
-        <FilterFlagsSelect
-          value={selectedFlag}
-          onChange={onFlagChange}
-          triggerClassName="w-[130px]"
-        />
-      </FilterBar>
+      {/* Filter Drawer */}
+      <MatchFilterDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        selectedSport={selectedSport}
+        onSportChange={onSportChange}
+        selectedLeague={selectedLeague}
+        selectedSeason={selectedSeason}
+        selectedDivision={selectedDivision}
+        onLeagueChange={handleLeagueChange}
+        onSeasonChange={handleSeasonChange}
+        onDivisionChange={onDivisionChange}
+        selectedStatus={selectedStatus}
+        onStatusChange={onStatusChange}
+        selectedFlag={effectiveFlag}
+        onFlagChange={handleFlagChange}
+        onClearAll={handleClearAll}
+      />
     </div>
   );
 }
+
+// Re-export types for convenience
+export type { Sport, MatchFlagType } from "./match-filter-drawer";

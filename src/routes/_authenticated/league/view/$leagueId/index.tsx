@@ -329,7 +329,6 @@ function LeagueViewPage() {
 
                 {/* Quick Info Sidebar - spans 1 column */}
                 <motion.div
-                  className="space-y-6"
                   initial="hidden"
                   animate="visible"
                   variants={fadeInUp}
@@ -337,90 +336,46 @@ function LeagueViewPage() {
                 >
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                         <IconSettings className="size-4" />
                         Quick Info
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Season Status */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-foreground">
-                          Season Status
-                        </h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Active Seasons
-                            </span>
-                            <Badge variant="outline">{activeSeasonCount}</Badge>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Total Seasons
-                            </span>
-                            <span className="font-medium text-sm">
-                              {seasons.length}
-                            </span>
-                          </div>
-                        </div>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Active Seasons</span>
+                        <Badge variant="outline">{activeSeasonCount}</Badge>
                       </div>
-
-                      {/* Participation */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-foreground">
-                          Participation
-                        </h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Unique Players
-                            </span>
-                            <span className="font-medium text-sm">
-                              {uniqueMemberCount}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Total Divisions
-                            </span>
-                            <span className="font-medium text-sm">
-                              {totalDivisions}
-                            </span>
-                          </div>
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total Seasons</span>
+                        <Badge variant="outline">{seasons.length}</Badge>
                       </div>
-
-                      {/* Sponsors */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-foreground">
-                          Sponsors
-                        </h4>
-                        <div className="text-sm font-medium">
-                          {sponsorships.length > 0 ? (
-                            <div className="space-y-1">
-                              {sponsorships.slice(0, 3).map((sponsor) => (
-                                <Badge
-                                  key={sponsor.id}
-                                  variant="outline"
-                                  className="text-xs mr-1"
-                                >
-                                  {sponsor.sponsoredName || "Sponsor"}
-                                </Badge>
-                              ))}
-                              {sponsorships.length > 3 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{sponsorships.length - 3} more
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              No sponsors linked
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Unique Players</span>
+                        <Badge variant="outline">{uniqueMemberCount}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total Divisions</span>
+                        <Badge variant="outline">{totalDivisions}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Sponsors</span>
+                        <Badge variant="outline">{sponsorships.length}</Badge>
+                      </div>
+                      {sponsorships.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {sponsorships.slice(0, 3).map((sponsor) => (
+                            <Badge key={sponsor.id} variant="secondary" className="text-xs">
+                              {sponsor.sponsoredName || "Sponsor"}
+                            </Badge>
+                          ))}
+                          {sponsorships.length > 3 && (
+                            <span className="text-xs text-muted-foreground self-center">
+                              +{sponsorships.length - 3} more
                             </span>
                           )}
                         </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>

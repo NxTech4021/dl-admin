@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
+import { tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   Table,
   TableBody,
@@ -433,11 +433,8 @@ export function PaymentsDataTable({
               <TableHead className="w-[60px] pr-4"></TableHead>
             </TableRow>
           </TableHeader>
-          <motion.tbody
-              initial="hidden"
-              animate="visible"
-              variants={tableContainerVariants}
-            >
+          <TableBody>
+            <AnimatePresence mode="popLayout">
             {data.map((payment, index) => {
               const isSelected = selectedIds.includes(payment.id);
               const rowNumber = ((currentPage - 1) * (pagination?.limit ?? 20)) + index + 1;
@@ -445,8 +442,11 @@ export function PaymentsDataTable({
               return (
                 <motion.tr
                   key={payment.id}
-                  variants={tableRowVariants}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
                   transition={fastTransition}
+                  layout
                   className={`border-b transition-colors ${isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}
                 >
                   <TableCell className="pl-4">
@@ -527,7 +527,8 @@ export function PaymentsDataTable({
                 </motion.tr>
               );
             })}
-          </motion.tbody>
+            </AnimatePresence>
+          </TableBody>
         </Table>
       </div>
 

@@ -19,6 +19,7 @@ import {
   IconCircleCheck,
   IconClock,
   IconAlertTriangle,
+  IconRefresh,
 } from "@tabler/icons-react";
 import type { PaymentFilters, PaymentStatus } from "@/constants/zod/payment-schema";
 import type { Season } from "@/constants/zod/season-schema";
@@ -27,6 +28,7 @@ interface PaymentsFiltersProps {
   filters: Partial<PaymentFilters>;
   seasons: Season[];
   onFilterChange: (filters: Partial<PaymentFilters>) => void;
+  onRefresh?: () => void;
 }
 
 type StatusFilter = PaymentStatus | "all";
@@ -42,6 +44,7 @@ export function PaymentsFilters({
   filters,
   seasons,
   onFilterChange,
+  onRefresh,
 }: PaymentsFiltersProps) {
   const [searchValue, setSearchValue] = React.useState(filters.search ?? "");
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(
@@ -161,6 +164,14 @@ export function PaymentsFilters({
             onChange={handleDateRangeChange}
             placeholder="Date range"
           />
+
+          {/* Refresh Button */}
+          {onRefresh && (
+            <Button variant="outline" size="sm" onClick={onRefresh} className="cursor-pointer shrink-0">
+              <IconRefresh className="mr-2 size-4" />
+              Refresh
+            </Button>
+          )}
 
           {/* Clear Filters */}
           {hasActiveFilters && (

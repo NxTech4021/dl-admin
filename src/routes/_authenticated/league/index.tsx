@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import React, { useState, useCallback, lazy, Suspense } from "react";
+import React, { useState, useCallback, lazy, Suspense, useMemo } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -12,6 +12,8 @@ import {
   IconPlus,
   IconUsers,
   IconCalendar,
+  IconDownload,
+  IconRefresh,
 } from "@tabler/icons-react";
 import z from "zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
@@ -19,7 +21,17 @@ import {
   AnimatedStatsGrid,
   AnimatedStatsCard,
   AnimatedContainer,
+  AnimatedFilterBar,
 } from "@/components/ui/animated-container";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { toast } from "sonner";
+
+const SPORT_OPTIONS = [
+  { value: "TENNIS", label: "Tennis" },
+  { value: "PICKLEBALL", label: "Pickleball" },
+  { value: "PADEL", label: "Padel" },
+];
 
 const LeaguesDataTable = lazy(() =>
   import("@/components/data-table/leagues-data-table").then((mod) => ({
@@ -42,6 +54,23 @@ function LeaguePage() {
   const [data, setData] = React.useState<League[]>([]);
   const [totalMembers, setTotalMembers] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sportFilter, setSportFilter] = useState<string | undefined>(undefined);
+  const [locationFilter, setLocationFilter] = useState<string | undefined>(undefined);
+
+  // Get unique locations from data for the filter dropdown
+  const locationOptions = useMemo(() => {
+    const locations = [...new Set(data.map(l => l.location).filter(Boolean))] as string[];
+    return locations.sort().map(loc => ({ value: loc, label: loc }));
+  }, [data]);
+
+  const hasActiveFilters = searchQuery || sportFilter || locationFilter;
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setSportFilter(undefined);
+    setLocationFilter(undefined);
+  }, []);
 
   const fetchLeagues = React.useCallback(async () => {
     setIsLoading(true);
@@ -101,6 +130,39 @@ function LeaguePage() {
     await fetchLeagues();
   };
 
+  const exportToCSV = useCallback(() => {
+    if (data.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = ["Name", "Sport", "Location", "Status", "Game Type", "Players", "Seasons", "Created At"];
+
+    const rows = data.map(l => [
+      l.name,
+      l.sportType || "",
+      l.location || "",
+      l.status || "",
+      l.gameType || "",
+      l.memberCount || 0,
+      l.seasonCount || 0,
+      l.createdAt
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `leagues-export-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Leagues exported successfully");
+  }, [data]);
+
   const leagues = data;
 
   return (
@@ -159,6 +221,54 @@ function LeaguePage() {
               />
             </AnimatedStatsCard>
           </AnimatedStatsGrid>
+
+          {/* Filter Bar */}
+          <AnimatedFilterBar>
+            <div className="flex items-center gap-2 w-full">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search leagues..."
+                className="w-[220px]"
+              />
+              <FilterSelect
+                value={sportFilter}
+                onChange={setSportFilter}
+                options={SPORT_OPTIONS}
+                allLabel="All Sports"
+                triggerClassName="w-[140px]"
+              />
+              {locationOptions.length > 0 && (
+                <FilterSelect
+                  value={locationFilter}
+                  onChange={setLocationFilter}
+                  options={locationOptions}
+                  allLabel="All Locations"
+                  triggerClassName="w-[160px]"
+                />
+              )}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Clear all
+                </Button>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <Button variant="outline" size="sm" onClick={exportToCSV} className="cursor-pointer">
+                  <IconDownload className="mr-2 size-4" />
+                  Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={fetchLeagues} className="cursor-pointer">
+                  <IconRefresh className="mr-2 size-4" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </AnimatedFilterBar>
         </PageHeader>
 
         <AnimatedContainer delay={0.2}>
@@ -168,6 +278,9 @@ function LeaguePage() {
                 data={leagues}
                 isLoading={isLoading}
                 onDataChange={fetchLeagues}
+                searchQuery={searchQuery}
+                sportFilter={sportFilter}
+                locationFilter={locationFilter}
               />
             </Suspense>
           </div>

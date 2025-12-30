@@ -4,8 +4,6 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import {
   IconTrophy,
-  IconDownload,
-  IconRefresh,
   IconUsers,
   IconChevronLeft,
   IconChevronRight,
@@ -29,7 +27,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -103,6 +100,9 @@ export type SeasonsDataTableProps = {
   isLoading: boolean;
   onViewSeason?: (seasonId: string) => void;
   onRefresh?: () => void;
+  searchQuery?: string;
+  sportFilter?: string;
+  leagueFilter?: string;
 };
 
 export function SeasonsDataTable({
@@ -110,13 +110,20 @@ export function SeasonsDataTable({
   isLoading,
   onViewSeason,
   onRefresh,
+  searchQuery = "",
+  sportFilter,
+  leagueFilter,
 }: SeasonsDataTableProps) {
   const navigate = useNavigate();
-  const [globalFilter, setGlobalFilter] = React.useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = React.useState(1);
   const pageSize = 20;
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sportFilter, leagueFilter]);
 
   // Modal states
   const [viewSeason, setViewSeason] = React.useState<Season | null>(null);
@@ -169,54 +176,40 @@ export function SeasonsDataTable({
     navigate({ to: `/seasons/${season.id}?tab=players` });
   }, [navigate]);
 
-  const exportToCSV = React.useCallback(() => {
-    if (data.length === 0) {
-      toast.error("No data to export");
-      return;
+  // Filter data by search, sport, and league
+  const filteredData = React.useMemo(() => {
+    let filtered = data;
+
+    // Apply search filter
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(search) ||
+        s.status?.toLowerCase().includes(search) ||
+        s.sportType?.toLowerCase().includes(search) ||
+        s.category?.name?.toLowerCase().includes(search) ||
+        s.leagues?.some(l => l.sportType?.toLowerCase().includes(search))
+      );
     }
 
-    const headers = ["Name", "Status", "Sport Type", "Category", "Entry Fee", "Players", "Divisions", "Start Date", "End Date", "Deadline", "Payment Required", "Created At"];
+    // Apply sport filter - check both season's sportType and leagues' sportType
+    if (sportFilter) {
+      const filterUpper = sportFilter.toUpperCase();
+      filtered = filtered.filter(s => {
+        // Check season's own sportType first
+        if (s.sportType?.toUpperCase() === filterUpper) return true;
+        // Also check if any of the season's leagues match the sport filter
+        return s.leagues?.some(l => l.sportType?.toUpperCase() === filterUpper);
+      });
+    }
 
-    const rows = data.map(s => [
-      s.name,
-      s.status || "",
-      s.sportType || "",
-      s.category?.name || "No category",
-      s.entryFee || 0,
-      s.registeredUserCount || 0,
-      s.divisions?.length || 0,
-      s.startDate ? new Date(s.startDate).toLocaleDateString() : "",
-      s.endDate ? new Date(s.endDate).toLocaleDateString() : "",
-      s.regiDeadline ? new Date(s.regiDeadline).toLocaleDateString() : "",
-      s.paymentRequired ? "Yes" : "No",
-      s.createdAt
-    ]);
+    // Apply league filter
+    if (leagueFilter) {
+      filtered = filtered.filter(s => s.leagues?.some(l => l.id === leagueFilter));
+    }
 
-    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `seasons-export-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("Seasons exported successfully");
-  }, [data]);
-
-  // Filter data by search
-  const filteredData = React.useMemo(() => {
-    if (!globalFilter) return data;
-    const search = globalFilter.toLowerCase();
-    return data.filter(s =>
-      s.name.toLowerCase().includes(search) ||
-      s.status?.toLowerCase().includes(search) ||
-      s.sportType?.toLowerCase().includes(search) ||
-      s.category?.name?.toLowerCase().includes(search)
-    );
-  }, [data, globalFilter]);
+    return filtered;
+  }, [data, searchQuery, sportFilter, leagueFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -225,28 +218,6 @@ export function SeasonsDataTable({
   return (
     <>
       <div className="space-y-4">
-        {/* Search and Actions */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <Input
-            placeholder="Search seasons..."
-            value={globalFilter}
-            onChange={(e) => { setGlobalFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full sm:w-80"
-          />
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <IconDownload className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh}>
-                <IconRefresh className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-            )}
-          </div>
-        </div>
-
         {/* Table */}
         {isLoading ? (
           <div className="space-y-4">
@@ -272,6 +243,7 @@ export function SeasonsDataTable({
                   </TableRow>
                 </TableHeader>
                 <motion.tbody
+                  key={`${searchQuery}-${sportFilter}-${leagueFilter}-${currentPage}`}
                   initial="hidden"
                   animate="visible"
                   variants={tableContainerVariants}

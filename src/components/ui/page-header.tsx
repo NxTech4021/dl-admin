@@ -39,6 +39,8 @@ export interface PageHeaderProps {
   className?: string;
   /** Container className for inner padding control */
   containerClassName?: string;
+  /** Children container className for gap control */
+  childrenContainerClassName?: string;
 }
 
 export function PageHeader({
@@ -49,6 +51,7 @@ export function PageHeader({
   children,
   className,
   containerClassName,
+  childrenContainerClassName,
 }: PageHeaderProps) {
   return (
     <header
@@ -58,7 +61,7 @@ export function PageHeader({
       )}
     >
       <div className={cn("px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6", containerClassName)}>
-        <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
+        <div className={cn("flex flex-col gap-4 sm:gap-5 md:gap-6", childrenContainerClassName)}>
           {/* Title and Actions Row */}
           <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:justify-between">
             {/* Title Section */}

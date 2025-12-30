@@ -134,32 +134,34 @@ function DisputesPage() {
             title="Dispute Resolution"
             description="Review and resolve match disputes raised by players"
             actions={
-              <>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <IconRefresh className="mr-2 size-4" />
-                  Refresh
-                </Button>
-                <Button variant="outline" size="sm">
-                  <IconDownload className="mr-2 size-4" />
-                  Export
-                </Button>
-              </>
+              <Button variant="outline" size="sm">
+                <IconDownload className="mr-2 size-4" />
+                Export
+              </Button>
             }
           >
             <DisputeStatsCards />
 
             <AnimatedFilterBar>
-              <DisputeFilters
-                selectedStatus={selectedStatus}
-                selectedPriority={selectedPriority}
-                selectedCategory={selectedCategory}
-                searchQuery={searchQuery}
-                onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
-                onPriorityChange={(val) => { setSelectedPriority(val); setCurrentPage(1); }}
-                onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
-                onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                onClearFilters={handleClearFilters}
-              />
+              <div className="flex items-center gap-2 w-full">
+                <div className="flex-1">
+                  <DisputeFilters
+                    selectedStatus={selectedStatus}
+                    selectedPriority={selectedPriority}
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    onStatusChange={(val) => { setSelectedStatus(val); setCurrentPage(1); }}
+                    onPriorityChange={(val) => { setSelectedPriority(val); setCurrentPage(1); }}
+                    onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
+                    onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                    onClearFilters={handleClearFilters}
+                  />
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetch()} className="cursor-pointer shrink-0">
+                  <IconRefresh className="mr-2 size-4" />
+                  Refresh
+                </Button>
+              </div>
             </AnimatedFilterBar>
           </PageHeader>
 
@@ -198,6 +200,7 @@ function DisputesPage() {
                     </TableRow>
                   </TableHeader>
                   <motion.tbody
+                    key={`${searchQuery}-${selectedStatus || ''}-${selectedPriority || ''}-${selectedCategory || ''}-${currentPage}`}
                     initial="hidden"
                     animate="visible"
                     variants={tableContainerVariants}

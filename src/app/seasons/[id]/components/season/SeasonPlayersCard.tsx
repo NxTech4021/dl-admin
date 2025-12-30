@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -119,6 +119,7 @@ export default function SeasonPlayersCard({
   const [searchQuery, setSearchQuery] = useState("");
   const [divisionFilter, setDivisionFilter] = useState<string | undefined>(undefined);
   const [ratingThreshold, setRatingThreshold] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("active");
 
   // Helper function to get initials from name
   const getInitials = (name: string | null | undefined): string => {
@@ -428,6 +429,17 @@ export default function SeasonPlayersCard({
     setIsAssignModalOpen(true);
   };
 
+  // Track animation state to prevent replay on modal open/close
+  const hasAnimatedRef = useRef(false);
+  const animationKey = `${activeTab}-${searchQuery}-${divisionFilter}-${ratingThreshold}`;
+  const prevAnimationKeyRef = useRef(animationKey);
+
+  // Only animate when key actually changes (filter changes), not on modal interactions
+  if (animationKey !== prevAnimationKeyRef.current) {
+    hasAnimatedRef.current = false;
+    prevAnimationKeyRef.current = animationKey;
+  }
+
   const PlayerTable = ({ players, isWaitlistTab = false }: { players: Membership[]; isWaitlistTab?: boolean }) => {
     const groupedPlayers = groupMembershipsByPartnerships(players);
     const gameType = getGameType();
@@ -448,9 +460,11 @@ export default function SeasonPlayersCard({
             </TableRow>
           </TableHeader>
           <motion.tbody
-            initial="hidden"
+            key={animationKey}
+            initial={hasAnimatedRef.current ? false : "hidden"}
             animate="visible"
             variants={tableContainerVariants}
+            onAnimationComplete={() => { hasAnimatedRef.current = true; }}
           >
             {groupedPlayers.length > 0 ? (
               groupedPlayers.map((group, index) => {
@@ -783,7 +797,7 @@ export default function SeasonPlayersCard({
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="active" className="text-sm">
               In Division ({activePlayers.length})

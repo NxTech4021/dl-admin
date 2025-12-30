@@ -45,6 +45,7 @@ const adminMinimalSchema = z.object({
   id: z.string(),
   user: z.object({
     name: z.string(),
+    image: z.string().nullable().optional(),
   }),
 });
 

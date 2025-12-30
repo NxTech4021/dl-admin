@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -22,7 +22,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,21 +33,19 @@ import {
   IconAlertCircle,
   IconChevronDown,
   IconList,
-  IconCalendar,
-  IconMapPin,
-  IconMessage,
+  IconEye,
   IconCrown,
   IconMedal,
   IconAward,
 } from "@tabler/icons-react";
+import MatchResultsDrawer from "./MatchResultsDrawer";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { z } from "zod";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 // schemas & types
 
-export const divisionLevelEnum = z.enum(["beginner", "intermediate", "advanced"]);
+export const divisionLevelEnum = z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]);
 export const gameTypeEnum = z.enum(["singles", "doubles"]);
 export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
 
@@ -354,271 +351,6 @@ const TeamAvatars = ({
   );
 };
 
-const MatchResultCard = ({
-  match,
-  expandedComments,
-  onToggleComments,
-}: {
-  match: MatchResult;
-  expandedComments: Set<string>;
-  onToggleComments: (matchId: string) => void;
-}) => {
-  const isTeam1Winner = match.outcome === "team1";
-  const isTeam2Winner = match.outcome === "team2";
-  const isPickleball = match.matchType?.toLowerCase().includes("pickleball");
-  const scores = isPickleball ? match.gameScores : match.setScores;
-  const commentsExpanded = expandedComments.has(match.id);
-  const visibleComments = commentsExpanded
-    ? match.comments
-    : match.comments?.slice(0, 2);
-
-  return (
-    <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-      {/* Header with venue and date */}
-      <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <IconMapPin className="size-3.5" />
-          <span className="font-medium">{match.venue || "Venue TBD"}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <IconCalendar className="size-3.5" />
-          <span>{format(new Date(match.matchDate), "d MMM yyyy")}</span>
-        </div>
-      </div>
-
-      {/* Teams and Score */}
-      <div className="p-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Team 1 */}
-          <div className="flex-1 text-center space-y-2">
-            <div className="flex justify-center">
-              <TeamAvatars players={match.team1Players} size="md" />
-            </div>
-            <div
-              className={cn(
-                "text-sm font-medium leading-tight",
-                isTeam1Winner && "text-emerald-600"
-              )}
-            >
-              {match.team1Players.map((p) => formatPlayerName(p.name, true)).join(" & ")}
-            </div>
-          </div>
-
-          {/* Score */}
-          <div className="flex flex-col items-center gap-1 px-4">
-            <div className="flex items-baseline gap-2">
-              <span
-                className={cn(
-                  "text-3xl font-bold tabular-nums",
-                  isTeam1Winner ? "text-emerald-600" : "text-foreground"
-                )}
-              >
-                {match.team1Score}
-              </span>
-              <span className="text-xl text-muted-foreground font-light">-</span>
-              <span
-                className={cn(
-                  "text-3xl font-bold tabular-nums",
-                  isTeam2Winner ? "text-emerald-600" : "text-foreground"
-                )}
-              >
-                {match.team2Score}
-              </span>
-            </div>
-            {match.isWalkover && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                Walkover
-              </Badge>
-            )}
-          </div>
-
-          {/* Team 2 */}
-          <div className="flex-1 text-center space-y-2">
-            <div className="flex justify-center">
-              <TeamAvatars players={match.team2Players} size="md" />
-            </div>
-            <div
-              className={cn(
-                "text-sm font-medium leading-tight",
-                isTeam2Winner && "text-emerald-600"
-              )}
-            >
-              {match.team2Players.map((p) => formatPlayerName(p.name, true)).join(" & ")}
-            </div>
-          </div>
-        </div>
-
-        {/* Set/Game Scores */}
-        {scores && scores.length > 0 && (
-          <div className="mt-4 rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="text-xs font-semibold py-2 w-[120px]">
-                    Player
-                  </TableHead>
-                  {scores.map((_, idx) => (
-                    <TableHead
-                      key={idx}
-                      className="text-xs font-semibold text-center py-2 w-12"
-                    >
-                      {isPickleball ? `G${idx + 1}` : `S${idx + 1}`}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="hover:bg-transparent">
-                  <TableCell className="py-2 text-xs font-medium">
-                    {formatPlayerName(match.team1Players[0]?.name || "", true)}
-                  </TableCell>
-                  {isPickleball
-                    ? (match.gameScores || []).map((game, idx) => {
-                        const isWinning = game.team1Points > game.team2Points;
-                        return (
-                          <TableCell
-                            key={idx}
-                            className={cn(
-                              "py-2 text-center text-sm tabular-nums",
-                              isWinning
-                                ? "text-emerald-600 font-bold"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {game.team1Points}
-                          </TableCell>
-                        );
-                      })
-                    : match.setScores.map((set, idx) => {
-                        const isWinning = set.team1Games > set.team2Games;
-                        return (
-                          <TableCell
-                            key={idx}
-                            className={cn(
-                              "py-2 text-center text-sm tabular-nums",
-                              isWinning
-                                ? "text-emerald-600 font-bold"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {set.team1Games}
-                            {set.hasTiebreak && set.team1Tiebreak != null && (
-                              <sup className="text-[10px] ml-0.5">
-                                ({set.team1Tiebreak})
-                              </sup>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                </TableRow>
-                <TableRow className="hover:bg-transparent">
-                  <TableCell className="py-2 text-xs font-medium">
-                    {formatPlayerName(match.team2Players[0]?.name || "", true)}
-                  </TableCell>
-                  {isPickleball
-                    ? (match.gameScores || []).map((game, idx) => {
-                        const isWinning = game.team2Points > game.team1Points;
-                        return (
-                          <TableCell
-                            key={idx}
-                            className={cn(
-                              "py-2 text-center text-sm tabular-nums",
-                              isWinning
-                                ? "text-emerald-600 font-bold"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {game.team2Points}
-                          </TableCell>
-                        );
-                      })
-                    : match.setScores.map((set, idx) => {
-                        const isWinning = set.team2Games > set.team1Games;
-                        return (
-                          <TableCell
-                            key={idx}
-                            className={cn(
-                              "py-2 text-center text-sm tabular-nums",
-                              isWinning
-                                ? "text-emerald-600 font-bold"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {set.team2Games}
-                            {set.hasTiebreak && set.team2Tiebreak != null && (
-                              <sup className="text-[10px] ml-0.5">
-                                ({set.team2Tiebreak})
-                              </sup>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Comments */}
-        {match.comments && match.comments.length > 0 && (
-          <div className="mt-4 pt-3 border-t space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <IconMessage className="size-3.5" />
-              <span className="font-medium">
-                {match.comments.length} Comment{match.comments.length > 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {visibleComments?.map((comment) => (
-                <div key={comment.id} className="flex items-start gap-2">
-                  <Avatar className="size-6 ring-1 ring-border">
-                    <AvatarImage src={comment.user.image || undefined} />
-                    <AvatarFallback
-                      className={cn(
-                        "text-[10px] text-white font-semibold",
-                        getAvatarColor(comment.user.name)
-                      )}
-                    >
-                      {getInitials(comment.user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs">
-                      <span className="font-semibold text-foreground">
-                        {comment.user.name.split(" ")[0]}:
-                      </span>{" "}
-                      <span className="text-muted-foreground">{comment.comment}</span>
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {match.comments.length > 2 && (
-                <button
-                  onClick={() => onToggleComments(match.id)}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  {commentsExpanded
-                    ? "Show less"
-                    : `View ${match.comments.length - 2} more`}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Legacy result comment fallback */}
-        {(!match.comments || match.comments.length === 0) && match.resultComment && (
-          <div className="mt-4 pt-3 border-t">
-            <p className="text-xs text-muted-foreground italic">
-              {match.resultComment}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // main component
 
 export default function SeasonLeaderboardCard({
@@ -631,7 +363,10 @@ export default function SeasonLeaderboardCard({
   const [isLoadingDivisions, setIsLoadingDivisions] = useState(true);
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>("all");
   const [expandedDivisions, setExpandedDivisions] = useState<Set<string>>(new Set());
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [drawerDivisionId, setDrawerDivisionId] = useState<string | null>(null);
+
+  // Track which divisions are currently being fetched (to prevent duplicate requests)
+  const fetchingResultsRef = useRef<Set<string>>(new Set());
 
   // Fetch divisions on mount
   useEffect(() => {
@@ -772,17 +507,27 @@ export default function SeasonLeaderboardCard({
   // Fetch results for a division
   const fetchResults = useCallback(
     async (divisionId: string) => {
-      const existing = divisionDataMap.get(divisionId);
-      if (!existing || existing.results.length > 0 || existing.isLoadingResults) {
+      // Check ref to prevent duplicate requests
+      if (fetchingResultsRef.current.has(divisionId)) {
         return;
       }
 
+      // Mark as fetching immediately (synchronous)
+      fetchingResultsRef.current.add(divisionId);
+
+      // Set loading state
       setDivisionDataMap((prev) => {
         const data = prev.get(divisionId);
-        if (data) {
-          return new Map(prev).set(divisionId, { ...data, isLoadingResults: true });
+        if (!data) {
+          fetchingResultsRef.current.delete(divisionId);
+          return prev;
         }
-        return prev;
+        // Skip if already has results
+        if (data.results.length > 0) {
+          fetchingResultsRef.current.delete(divisionId);
+          return prev;
+        }
+        return new Map(prev).set(divisionId, { ...data, isLoadingResults: true });
       });
 
       try {
@@ -817,9 +562,11 @@ export default function SeasonLeaderboardCard({
           }
           return prev;
         });
+      } finally {
+        fetchingResultsRef.current.delete(divisionId);
       }
     },
-    [divisionDataMap]
+    []
   );
 
   // Handle division expansion
@@ -839,36 +586,15 @@ export default function SeasonLeaderboardCard({
     [fetchStandings]
   );
 
-  // Handle results toggle
-  const handleResultsToggle = useCallback(
+  // Handle opening results drawer
+  const handleOpenResultsDrawer = useCallback(
     (divisionId: string) => {
-      setDivisionDataMap((prev) => {
-        const data = prev.get(divisionId);
-        if (data) {
-          const newShowResults = !data.showResults;
-          if (newShowResults && data.results.length === 0 && !data.isLoadingResults) {
-            fetchResults(divisionId);
-          }
-          return new Map(prev).set(divisionId, { ...data, showResults: newShowResults });
-        }
-        return prev;
-      });
+      // Always try to fetch - the fetchResults function handles deduplication
+      fetchResults(divisionId);
+      setDrawerDivisionId(divisionId);
     },
     [fetchResults]
   );
-
-  // Handle comment expansion toggle
-  const handleToggleComments = useCallback((matchId: string) => {
-    setExpandedComments((prev) => {
-      const next = new Set(prev);
-      if (next.has(matchId)) {
-        next.delete(matchId);
-      } else {
-        next.add(matchId);
-      }
-      return next;
-    });
-  }, []);
 
   // Handle division selection change
   const handleDivisionChange = useCallback(
@@ -1148,60 +874,21 @@ export default function SeasonLeaderboardCard({
                 )}
               </div>
 
-              {/* Results Section */}
-              <Collapsible
-                open={data?.showResults}
-                onOpenChange={() => handleResultsToggle(division.id)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <span className="text-sm font-medium text-primary">View Match Results</span>
-                    <IconChevronDown
-                      className={cn(
-                        "size-4 text-primary transition-transform duration-200",
-                        data?.showResults && "rotate-180"
-                      )}
-                    />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="p-4 border-t bg-muted/20">
-                    {data?.isLoadingResults ? (
-                      <div className="space-y-3">
-                        {[...Array(3)].map((_, i) => (
-                          <Skeleton key={i} className="h-32 w-full rounded-xl" />
-                        ))}
-                      </div>
-                    ) : results.length === 0 ? (
-                      <div className="text-center py-8">
-                        <IconTrophy className="size-8 mx-auto text-muted-foreground/50 mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          No completed matches yet
-                        </p>
-                      </div>
-                    ) : (
-                      <ScrollArea className="h-[500px] pr-3">
-                        <div className="space-y-3">
-                          {results
-                            .sort(
-                              (a, b) =>
-                                new Date(b.matchDate).getTime() -
-                                new Date(a.matchDate).getTime()
-                            )
-                            .map((match) => (
-                              <MatchResultCard
-                                key={match.id}
-                                match={match}
-                                expandedComments={expandedComments}
-                                onToggleComments={handleToggleComments}
-                              />
-                            ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              {/* Results Section - Button to open drawer */}
+              <div className="border-t px-4 py-3">
+                <button
+                  onClick={() => handleOpenResultsDrawer(division.id)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-colors cursor-pointer"
+                >
+                  <IconEye className="size-4" />
+                  View Match Results
+                  {results.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
+                      {results.length}
+                    </Badge>
+                  )}
+                </button>
+              </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -1337,6 +1024,19 @@ export default function SeasonLeaderboardCard({
           )}
         </div>
       </CardContent>
+
+      {/* Match Results Drawer */}
+      {drawerDivisionId && (
+        <MatchResultsDrawer
+          open={!!drawerDivisionId}
+          onOpenChange={(open) => !open && setDrawerDivisionId(null)}
+          divisionName={
+            divisions.find((d) => d.id === drawerDivisionId)?.name || "Division"
+          }
+          results={divisionDataMap.get(drawerDivisionId)?.results || []}
+          isLoading={divisionDataMap.get(drawerDivisionId)?.isLoadingResults || false}
+        />
+      )}
     </Card>
   );
 }

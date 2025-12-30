@@ -19,6 +19,8 @@ import {
   IconTrophy,
   IconCalendar,
   IconUser,
+  IconClock,
+  IconRefresh,
 } from "@tabler/icons-react";
 import LeagueEditModal from "@/components/modal/league-edit-modal";
 import { getStatusBadgeVariant } from "@/components/data-table/constants";
@@ -58,6 +60,40 @@ export function LeagueDetailsSection({
       .join(" ");
   };
 
+  // Calculate league age
+  const getLeagueAge = (createdAt: string | null | undefined) => {
+    if (!createdAt) return "N/A";
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 1) return "Today";
+    if (diffDays === 1) return "1 day";
+    if (diffDays < 30) return `${diffDays} days`;
+    if (diffDays < 60) return "1 month";
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months`;
+    if (diffDays < 730) return "1 year";
+    return `${Math.floor(diffDays / 365)} years`;
+  };
+
+  // Format relative time for last updated
+  const getLastUpdated = (updatedAt: string | null | undefined) => {
+    if (!updatedAt) return "N/A";
+    const updated = new Date(updatedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - updated.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return formatDate(updatedAt);
+  };
+
   return (
     <motion.div
       initial="hidden"
@@ -85,82 +121,76 @@ export function LeagueDetailsSection({
             Edit
           </Button>
         </CardHeader>
-      <CardContent>
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <DetailField label="League Name" value={league.name} />
-            <DetailField
-              label="Sport"
-              icon={<IconTrophy className="size-3" />}
-              value={
-                <Badge variant="outline" className="capitalize">
-                  {getSportLabel(league.sportType)}
-                </Badge>
-              }
-            />
-            <DetailField
-              label="Location"
-              icon={<IconMapPin className="size-3" />}
-              value={formatLocation(league.location || "")}
-            />
-            <DetailField
-              label="Status"
-              value={
-                <Badge variant={getStatusBadgeVariant("LEAGUE", league.status)}>
-                  {formatEnumLabel(league.status)}
-                </Badge>
-              }
-            />
-          </div>
-
-          {/* Configuration */}
-          <div className="space-y-4">
-            <DetailField
-              label="Game Type"
-              value={
-                <Badge variant="outline" className="capitalize">
-                  {formatEnumLabel(league.gameType)}
-                </Badge>
-              }
-            />
-            <DetailField
-              label="Join Type"
-              value={
-                <Badge variant="secondary" className="capitalize">
-                  {formatEnumLabel(league.joinType)}
-                </Badge>
-              }
-            />
-            <DetailField
-              label="Created"
-              icon={<IconCalendar className="size-3" />}
-              value={formatDate(league.createdAt)}
-            />
-            {league.createdBy && (
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left Column - Core Information */}
+            <div className="space-y-4">
+              <DetailField label="League Name" value={league.name} />
               <DetailField
-                label="Created By"
-                icon={<IconUser className="size-3" />}
-                value={league.createdBy.user?.name || "Unknown"}
+                label="Sport"
+                icon={<IconTrophy className="size-3" />}
+                value={
+                  <Badge variant="outline" className="capitalize">
+                    {getSportLabel(league.sportType)}
+                  </Badge>
+                }
               />
-            )}
-          </div>
-        </div>
+              <DetailField
+                label="Location"
+                icon={<IconMapPin className="size-3" />}
+                value={formatLocation(league.location || "")}
+              />
+              <DetailField
+                label="Status"
+                value={
+                  <Badge variant={getStatusBadgeVariant("LEAGUE", league.status)}>
+                    {formatEnumLabel(league.status)}
+                  </Badge>
+                }
+              />
+            </div>
 
-        {/* Description */}
-        {league.description && (
-          <div className="mt-6 pt-6 border-t">
-            <DetailField
-              label="Description"
-              value={
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {league.description}
-                </p>
-              }
-            />
+            {/* Right Column - Metadata & Stats */}
+            <div className="space-y-4">
+              <DetailField
+                label="Created"
+                icon={<IconCalendar className="size-3" />}
+                value={formatDate(league.createdAt)}
+              />
+              <DetailField
+                label="League Age"
+                icon={<IconClock className="size-3" />}
+                value={getLeagueAge(league.createdAt)}
+              />
+              <DetailField
+                label="Last Updated"
+                icon={<IconRefresh className="size-3" />}
+                value={getLastUpdated(league.updatedAt)}
+              />
+              {league.createdBy && (
+                <DetailField
+                  label="Created By"
+                  icon={<IconUser className="size-3" />}
+                  value={league.createdBy.user?.name || "Unknown"}
+                />
+              )}
+            </div>
           </div>
-        )}
-      </CardContent>
+
+          {/* Description */}
+          {league.description && (
+            <div className="mt-6 pt-6 border-t">
+              <DetailField
+                label="Description"
+                value={
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {league.description}
+                  </p>
+                }
+              />
+            </div>
+          )}
+        </CardContent>
 
         <LeagueEditModal
           open={isEditModalOpen}
