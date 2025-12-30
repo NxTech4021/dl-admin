@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 
 // schemas & types
 
-export const divisionLevelEnum = z.enum(["beginner", "intermediate", "advanced"]);
+export const divisionLevelEnum = z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]);
 export const gameTypeEnum = z.enum(["singles", "doubles"]);
 export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
 

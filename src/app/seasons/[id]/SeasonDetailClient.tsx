@@ -297,148 +297,140 @@ export default function SeasonDetailClient({ seasonId }: { seasonId: string }) {
                   </div>
 
                   {/* Quick Info Sidebar - spans 1 column */}
-                  <div className="space-y-6">
-                    {/* Settings & Details Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <IconSettings className="size-4" />
-                          Settings & Details
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {/* Season Status */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Season Status
-                          </h4>
+                  <div className="space-y-4">
+                    {/* Season Status Card */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-bl-full" />
+                      <div className="relative p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10">
+                            <IconSettings className="size-4 text-primary" />
+                          </div>
+                          <span className="text-sm font-semibold tracking-tight">Season Status</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className={`relative p-3 rounded-lg border ${season.isActive ? "bg-emerald-500/5 border-emerald-500/10" : "bg-muted/50 border-border/50"}`}>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              {season.isActive && <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                              <span className={`text-[10px] font-medium uppercase tracking-wider ${season.isActive ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>Status</span>
+                            </div>
+                            <span className={`text-lg font-bold ${season.isActive ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
+                              {season.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                          <div className="relative p-3 rounded-lg bg-muted/50 border border-border/50">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Players</span>
+                            </div>
+                            <span className="text-lg font-bold">
+                              {Math.max(season.registeredUserCount || 0, (season.memberships || []).length)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Configuration Card */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/5 to-transparent rounded-tr-full" />
+                      <div className="relative p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center justify-center size-8 rounded-lg bg-blue-500/10">
+                            <IconCreditCard className="size-4 text-blue-500" />
+                          </div>
+                          <span className="text-sm font-semibold tracking-tight">Configuration</span>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+                            <span className="text-sm text-muted-foreground">Payment</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${season.paymentRequired ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                              {season.paymentRequired ? "Required" : "Not Required"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+                            <span className="text-sm text-muted-foreground">Withdrawals</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${season.withdrawalEnabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                              {season.withdrawalEnabled ? "Allowed" : "Disabled"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+                            <span className="text-sm text-muted-foreground">Promo Codes</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${season.promoCodeSupported ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                              {season.promoCodeSupported ? "Enabled" : "Disabled"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Linked Leagues Card */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute top-0 left-1/2 w-20 h-20 bg-gradient-to-b from-amber-500/5 to-transparent rounded-b-full -translate-x-1/2" />
+                      <div className="relative p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center size-8 rounded-lg bg-amber-500/10">
+                              <IconTrophy className="size-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <span className="text-sm font-semibold tracking-tight">Linked Leagues</span>
+                          </div>
+                          {season.leagues && season.leagues.length > 0 && (
+                            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                              {season.leagues.length}
+                            </span>
+                          )}
+                        </div>
+
+                        {season.leagues && season.leagues.length > 0 ? (
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Status
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  season.isActive
-                                    ? "bg-green-100 text-green-800 border-green-200"
-                                    : "bg-gray-100 text-gray-800 border-gray-200"
-                                }
+                            {season.leagues.map((league: any) => (
+                              <div
+                                key={league.id}
+                                className="flex items-center gap-2.5 p-2 rounded-lg bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/10"
                               >
-                                {season.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Registered Players
-                              </span>
-                              <span className="font-medium text-sm">
-                                {Math.max(season.registeredUserCount || 0, (season.memberships || []).length)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Configuration */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Configuration
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Payment Required
-                              </span>
-                              <Badge
-                                variant={
-                                  season.paymentRequired
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {season.paymentRequired ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Withdrawals Allowed
-                              </span>
-                              <Badge
-                                variant={
-                                  season.withdrawalEnabled
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {season.withdrawalEnabled ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Promo Codes
-                              </span>
-                              <Badge
-                                variant={
-                                  season.promoCodeSupported
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {season.promoCodeSupported
-                                  ? "Enabled"
-                                  : "Disabled"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Linked Leagues */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Linked Leagues
-                          </h4>
-                          <div className="text-sm font-medium">
-                            {season.leagues && season.leagues.length > 0 ? (
-                              <div className="space-y-1">
-                                {season.leagues.map((league: any) => (
-                                  <Badge
-                                    key={league.id}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {league.name}
-                                  </Badge>
-                                ))}
+                                <div className="flex items-center justify-center size-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                  {(league.name || "L")[0].toUpperCase()}
+                                </div>
+                                <span className="text-sm font-medium truncate">
+                                  {league.name}
+                                </span>
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                No leagues linked
-                              </span>
-                            )}
+                            ))}
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-4 text-center">
+                            <div className="flex items-center justify-center size-10 rounded-full bg-muted/50 mb-2">
+                              <IconTrophy className="size-5 text-muted-foreground/50" />
+                            </div>
+                            <span className="text-sm text-muted-foreground">No leagues linked</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                        {/* Linked Categories */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Linked Category
-                          </h4>
-                          <div className="text-sm font-medium">
-                            {season.category ? (
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {season.category.name || "Unnamed Category"}
-                                </Badge>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                No category linked
-                              </span>
-                            )}
+                    {/* Linked Category Card */}
+                    {season.category && (
+                      <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                        <div className="relative p-5">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="flex items-center justify-center size-8 rounded-lg bg-violet-500/10">
+                              <IconTarget className="size-4 text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <span className="text-sm font-semibold tracking-tight">Category</span>
+                          </div>
+                          <div className="flex items-center gap-2.5 p-2 rounded-lg bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10">
+                            <div className="flex items-center justify-center size-6 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-bold">
+                              {(season.category.name || "C")[0].toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium truncate">
+                              {season.category.name || "Unnamed Category"}
+                            </span>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

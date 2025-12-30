@@ -41,7 +41,7 @@ const dateGroupVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 24,
       staggerChildren: 0.06,
@@ -56,7 +56,7 @@ const cardVariants = {
     y: 0,
     scale: 1,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 400,
       damping: 25,
     },
@@ -170,20 +170,10 @@ const formatPlayerName = (name: string, maxLength = 16): string => {
   return `${parts[0]} ${parts.slice(1).map((p) => p[0]).join("")}.`;
 };
 
-// Format set scores as inline string (e.g., "6-4, 7-5")
-function formatSetScores(setScores: SetScore[]): string {
-  if (!setScores || setScores.length === 0) return "";
-
-  return setScores
-    .sort((a, b) => a.setNumber - b.setNumber)
-    .map((set) => {
-      let score = `${set.team1Games}-${set.team2Games}`;
-      if (set.hasTiebreak && set.team1Tiebreak != null && set.team2Tiebreak != null) {
-        score += ` (${set.team1Tiebreak}-${set.team2Tiebreak})`;
-      }
-      return score;
-    })
-    .join(", ");
+// Sort set scores by set number
+function getSortedSetScores(setScores: SetScore[]): SetScore[] {
+  if (!setScores || setScores.length === 0) return [];
+  return [...setScores].sort((a, b) => a.setNumber - b.setNumber);
 }
 
 // Player Avatar component
@@ -247,6 +237,44 @@ const TeamDisplay = ({
   );
 };
 
+// Score Badge component - works for both Tennis/Padel sets and Pickleball games
+const SetScoreBadge = ({ set, index }: { set: SetScore; index: number }) => {
+  const team1Won = set.team1Games > set.team2Games;
+  const team2Won = set.team2Games > set.team1Games;
+
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-[10px] text-muted-foreground font-medium mb-1">
+        {set.setNumber || index + 1}
+      </span>
+      <div className="flex items-center gap-1 bg-muted/50 rounded-md px-2 py-1">
+        <span
+          className={cn(
+            "text-sm font-bold tabular-nums",
+            team1Won ? "text-emerald-600" : "text-foreground"
+          )}
+        >
+          {set.team1Games}
+        </span>
+        <span className="text-xs text-muted-foreground">-</span>
+        <span
+          className={cn(
+            "text-sm font-bold tabular-nums",
+            team2Won ? "text-emerald-600" : "text-foreground"
+          )}
+        >
+          {set.team2Games}
+        </span>
+      </div>
+      {set.hasTiebreak && set.team1Tiebreak != null && set.team2Tiebreak != null && (
+        <span className="text-[10px] text-muted-foreground mt-0.5">
+          ({set.team1Tiebreak}-{set.team2Tiebreak})
+        </span>
+      )}
+    </div>
+  );
+};
+
 // Individual match card in drawer
 const MatchCardInDrawer = ({
   match,
@@ -260,7 +288,8 @@ const MatchCardInDrawer = ({
   const isTeam1Winner = match.outcome === "team1";
   const isTeam2Winner = match.outcome === "team2";
   const commentsExpanded = expandedComments.has(match.id);
-  const setScoresFormatted = formatSetScores(match.setScores);
+  const sortedSetScores = getSortedSetScores(match.setScores);
+  const hasSetScores = sortedSetScores.length > 0;
   const hasComments = match.comments && match.comments.length > 0;
   const visibleComments = commentsExpanded ? match.comments : match.comments?.slice(0, 2);
 
@@ -305,10 +334,14 @@ const MatchCardInDrawer = ({
           <TeamDisplay players={match.team2Players} isWinner={isTeam2Winner} side="right" />
         </div>
 
-        {/* Set Scores - inline below main score */}
-        {setScoresFormatted && (
-          <div className="mt-3 text-center">
-            <span className="text-sm text-muted-foreground font-mono">{setScoresFormatted}</span>
+        {/* Set Scores - individual set breakdown */}
+        {hasSetScores && (
+          <div className="mt-4 pt-3 border-t">
+            <div className="flex items-center justify-center gap-3">
+              {sortedSetScores.map((set, index) => (
+                <SetScoreBadge key={set.setNumber || index} set={set} index={index} />
+              ))}
+            </div>
           </div>
         )}
 
