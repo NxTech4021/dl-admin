@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Table,
@@ -20,10 +20,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import {
-  IconFileText,
   IconCheck,
   IconX,
   IconClock,
@@ -32,6 +30,9 @@ import {
   IconSearch,
   IconChevronLeft,
   IconChevronRight,
+  IconUserMinus,
+  IconCircleCheck,
+  IconCircleX,
 } from '@tabler/icons-react';
 import { WithdrawalRequest } from '@/constants/zod/season-schema';
 import { toast } from 'sonner';
@@ -49,13 +50,15 @@ const getInitials = (name: string | null | undefined): string => {
   return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
 };
 
-const formatDate = (date: Date | string | null | undefined): string => {
+const formatDateTime = (date: Date | string | null | undefined): string => {
   if (!date) return '—';
   const dateObject = date instanceof Date ? date : new Date(date);
   return dateObject.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   });
 };
 
@@ -70,7 +73,7 @@ const formatRelativeDate = (date: Date | string | null | undefined): string => {
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  return formatDate(dateObject);
+  return formatDateTime(dateObject);
 };
 
 const truncateText = (text: string, maxLength: number = 40): string => {
@@ -220,6 +223,17 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
     setSearchQuery('');
   };
 
+  // Track animation state to prevent replay on modal open/close
+  const hasAnimatedRef = useRef(false);
+  const animationKey = `${activeTab}-${searchQuery}-${currentPage}`;
+  const prevAnimationKeyRef = useRef(animationKey);
+
+  // Only animate when key actually changes (tab/search/page change), not on modal interactions
+  if (animationKey !== prevAnimationKeyRef.current) {
+    hasAnimatedRef.current = false;
+    prevAnimationKeyRef.current = animationKey;
+  }
+
   const RequestTable = ({ requests: tableRequests }: { requests: WithdrawalRequest[] }) => (
     <div className="rounded-lg border bg-card">
       {tableRequests.length > 0 ? (
@@ -232,21 +246,23 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
               <TableHead className="w-[120px] py-2.5 font-medium text-xs">Request Date</TableHead>
               <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
               <TableHead className="w-[140px] py-2.5 font-medium text-xs">Processed By</TableHead>
-              <TableHead className="w-[160px] py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
+              <TableHead className="w-[160px] py-2.5 pr-4 font-medium text-xs text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <motion.tbody
-            key={`${activeTab}-${searchQuery}-${currentPage}`}
-            initial="hidden"
+            key={animationKey}
+            initial={hasAnimatedRef.current ? false : "hidden"}
             animate="visible"
             variants={tableContainerVariants}
+            onAnimationComplete={() => { hasAnimatedRef.current = true; }}
           >
             {tableRequests.map((request, index) => (
               <motion.tr
                 key={request.id}
                 variants={tableRowVariants}
                 transition={fastTransition}
-                className="hover:bg-muted/30 border-b transition-colors"
+                className="hover:bg-muted/30 border-b transition-colors cursor-pointer"
+                onClick={() => handleViewDetails(request)}
               >
                 {/* Row Number */}
                 <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
@@ -315,8 +331,8 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
                 </TableCell>
 
                 {/* Actions */}
-                <TableCell className="py-3 pr-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-center gap-2">
                     {request.status === 'PENDING' && (
                       <>
                         <Button
@@ -501,77 +517,117 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
 
       {/* Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <IconFileText className="size-5" />
+              <IconUserMinus className="size-5" />
               Withdrawal Request Details
             </DialogTitle>
-            <DialogDescription>
-              Full details of the withdrawal request
-            </DialogDescription>
           </DialogHeader>
 
           {selectedRequest && (
-            <div className="space-y-4">
-              {/* Player Info */}
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Avatar className="size-10 ring-2 ring-background">
-                  <AvatarFallback className={`text-white text-sm font-semibold ${getAvatarColor(selectedRequest.user?.name || selectedRequest.userId)}`}>
-                    {getInitials(selectedRequest.user?.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{selectedRequest.user?.name || 'Unknown User'}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedRequest.user?.email || (selectedRequest.userId ? `User ID: ${selectedRequest.userId}` : '—')}
+            <div className="space-y-5">
+              {/* Player Card */}
+              <div className="rounded-lg border bg-card overflow-hidden">
+                <div className="px-4 py-2 bg-muted/40 border-b">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Player</span>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="size-10 ring-2 ring-background">
+                      {selectedRequest.user?.image && (
+                        <AvatarImage src={selectedRequest.user.image} alt={selectedRequest.user?.name || 'User'} />
+                      )}
+                      <AvatarFallback className={cn("text-white text-sm font-semibold", getAvatarColor(selectedRequest.user?.name || selectedRequest.userId))}>
+                        {getInitials(selectedRequest.user?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium">{selectedRequest.user?.name || 'Unknown User'}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {selectedRequest.user?.email || (selectedRequest.userId ? `User ID: ${selectedRequest.userId}` : '—')}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Request Details */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Reason</label>
-                  <div className="mt-1 p-3 bg-muted/30 rounded-lg text-sm">
-                    {selectedRequest.reason}
-                  </div>
+              {/* Request Timeline Card */}
+              <div className="rounded-lg border bg-card overflow-hidden">
+                <div className="px-4 py-2 bg-muted/40 border-b">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Request Timeline</span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Request Date</label>
-                    <div className="mt-1 text-sm">
-                      {formatDate(selectedRequest.requestDate || selectedRequest.createdAt)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className={cn('text-xs font-medium border flex items-center gap-1 w-fit', getStatusBadgeClass(selectedRequest.status))}
-                      >
-                        {getStatusIcon(selectedRequest.status)}
-                        {selectedRequest.status.charAt(0) + selectedRequest.status.slice(1).toLowerCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedRequest.processedByAdmin && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Processed By</label>
-                    <div className="mt-1 text-sm">
-                      <div className="font-medium">{selectedRequest.processedByAdmin.name}</div>
-                      {selectedRequest.updatedAt && (
-                        <div className="text-muted-foreground">
-                          {formatDate(selectedRequest.updatedAt)}
+                <div className="p-4">
+                  <div className="space-y-0">
+                    {/* Request Submitted */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                          <IconUserMinus className="size-4 text-amber-600 dark:text-amber-400" />
                         </div>
-                      )}
+                        <div className="w-px flex-1 bg-border my-1" />
+                      </div>
+                      <div className="pb-4 flex-1">
+                        <div className="text-sm font-medium">Withdrawal Requested</div>
+                        <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedRequest.requestDate || selectedRequest.createdAt)}</div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Avatar className="size-5">
+                            {selectedRequest.user?.image && (
+                              <AvatarImage src={selectedRequest.user.image} />
+                            )}
+                            <AvatarFallback className={cn("text-white text-[8px]", getAvatarColor(selectedRequest.user?.name))}>
+                              {getInitials(selectedRequest.user?.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{selectedRequest.user?.name || 'Unknown User'}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 italic">
+                          "{selectedRequest.reason}"
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className={cn(
+                          "size-8 rounded-full flex items-center justify-center",
+                          selectedRequest.status === "APPROVED"
+                            ? "bg-emerald-100 dark:bg-emerald-900/30"
+                            : selectedRequest.status === "REJECTED"
+                            ? "bg-red-100 dark:bg-red-900/30"
+                            : "bg-slate-100 dark:bg-slate-800"
+                        )}>
+                          {selectedRequest.status === "APPROVED" ? (
+                            <IconCircleCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+                          ) : selectedRequest.status === "REJECTED" ? (
+                            <IconCircleX className="size-4 text-red-600 dark:text-red-400" />
+                          ) : (
+                            <IconClock className="size-4 text-slate-600 dark:text-slate-400" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          {selectedRequest.status === "APPROVED" ? "Approved" : selectedRequest.status === "REJECTED" ? "Rejected" : "Pending Review"}
+                          <Badge
+                            variant="outline"
+                            className={cn("text-[10px]", getStatusBadgeClass(selectedRequest.status))}
+                          >
+                            {selectedRequest.status.charAt(0) + selectedRequest.status.slice(1).toLowerCase()}
+                          </Badge>
+                        </div>
+                        {selectedRequest.processedByAdmin ? (
+                          <div className="text-xs text-muted-foreground">
+                            {formatDateTime(selectedRequest.updatedAt)} by {selectedRequest.processedByAdmin.name}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">Awaiting admin review</div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Actions for pending requests */}
@@ -579,7 +635,7 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
                 <div className="flex gap-2 pt-2 border-t">
                   <Button
                     variant="outline"
-                    className="flex-1 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300"
+                    className="flex-1 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
                     onClick={() => {
                       handleApprove(selectedRequest.id);
                       setIsModalOpen(false);
@@ -591,7 +647,7 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+                    className="flex-1 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"
                     onClick={() => {
                       handleReject(selectedRequest.id);
                       setIsModalOpen(false);

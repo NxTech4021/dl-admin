@@ -136,7 +136,7 @@ export const queryKeys = {
       [...queryKeys.partnershipAdmin.withdrawalRequests(), filters] as const,
     withdrawalRequestStats: () => [...queryKeys.partnershipAdmin.all, "stats"] as const,
     dissolvedPartnerships: () => [...queryKeys.partnershipAdmin.all, "dissolved"] as const,
-    dissolvedPartnershipList: (filters?: { seasonId?: string; search?: string }) =>
+    dissolvedPartnershipList: (filters?: { seasonId?: string; search?: string; status?: string }) =>
       [...queryKeys.partnershipAdmin.dissolvedPartnerships(), filters] as const,
     dissolvedPartnershipDetail: (id: string) =>
       [...queryKeys.partnershipAdmin.dissolvedPartnerships(), "detail", id] as const,
@@ -1815,6 +1815,7 @@ export function useWithdrawalRequestStats() {
 export function useDissolvedPartnerships(filters?: {
   seasonId?: string;
   search?: string;
+  status?: "DISSOLVED" | "EXPIRED";
 }) {
   return useQuery({
     queryKey: queryKeys.partnershipAdmin.dissolvedPartnershipList(filters),
@@ -1822,6 +1823,7 @@ export function useDissolvedPartnerships(filters?: {
       const params = new URLSearchParams();
       if (filters?.seasonId) params.append("seasonId", filters.seasonId);
       if (filters?.search) params.append("search", filters.search);
+      if (filters?.status) params.append("status", filters.status);
 
       const url = params.toString()
         ? `${endpoints.partnershipAdmin.getDissolvedPartnerships}?${params.toString()}`

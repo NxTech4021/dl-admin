@@ -32,10 +32,13 @@ import {
   WithdrawalRequestAdmin,
   DissolvedPartnership,
   WithdrawalRequestStatus,
+  PartnershipStatus,
   getWithdrawalStatusLabel,
   getWithdrawalStatusColor,
   getPartnershipStatusLabel,
+  getPartnershipStatusColor,
 } from "@/constants/zod/partnership-admin-schema";
+import { ExportButton, ExportColumn } from "@/components/shared/export-button";
 import {
   Table,
   TableCell,
@@ -75,6 +78,11 @@ const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending" },
   { value: "APPROVED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
+];
+
+const HISTORY_STATUS_OPTIONS = [
+  { value: "DISSOLVED", label: "Dissolved" },
+  { value: "EXPIRED", label: "Expired" },
 ];
 
 export const Route = createFileRoute("/_authenticated/team-change-requests/")({
@@ -170,6 +178,7 @@ function PartnershipAvatars({
 function PartnershipChangesPage() {
   const [activeTab, setActiveTab] = useState<"withdrawals" | "history">("withdrawals");
   const [selectedStatus, setSelectedStatus] = useState<WithdrawalRequestStatus | undefined>();
+  const [selectedHistoryStatus, setSelectedHistoryStatus] = useState<"DISSOLVED" | "EXPIRED" | undefined>();
   const [selectedSeason, setSelectedSeason] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -192,6 +201,7 @@ function PartnershipChangesPage() {
   const { data: dissolvedPartnerships, isLoading: dissolvedLoading, refetch: refetchDissolved } = useDissolvedPartnerships({
     seasonId: selectedSeason,
     search: searchQuery || undefined,
+    status: selectedHistoryStatus,
   });
   const { data: seasons } = useSeasons();
   const processRequest = useProcessWithdrawalRequest();
@@ -263,6 +273,7 @@ function PartnershipChangesPage() {
 
   const clearFilters = useCallback(() => {
     setSelectedStatus(undefined);
+    setSelectedHistoryStatus(undefined);
     setSelectedSeason(undefined);
     setSearchQuery("");
     setCurrentPage(1);
@@ -274,6 +285,44 @@ function PartnershipChangesPage() {
   }, [refetchWithdrawals, refetchDissolved]);
 
   const totalWithdrawalPagesForDisplay = activeTab === "withdrawals" ? totalWithdrawalPages : totalDissolvedPages;
+
+  // Export columns for withdrawal requests
+  const withdrawalExportColumns: ExportColumn<WithdrawalRequestAdmin>[] = [
+    { key: "partnership.captain.name", header: "Captain" },
+    { key: "partnership.captain.email", header: "Captain Email" },
+    { key: "partnership.captain.username", header: "Captain Username" },
+    { key: "partnership.partner.name", header: "Partner" },
+    { key: "partnership.partner.email", header: "Partner Email" },
+    { key: "partnership.division.name", header: "Division" },
+    { key: "user.name", header: "Who Left" },
+    { key: "user.email", header: "Who Left Email" },
+    { key: "reason", header: "Reason" },
+    { key: "season.name", header: "Season" },
+    { key: "status", header: "Status" },
+    { key: "requestDate", header: "Request Date", formatter: (v) => formatDateTime(v as string) },
+  ];
+
+  // Export columns for dissolved partnerships
+  const dissolvedExportColumns: ExportColumn<DissolvedPartnership>[] = [
+    { key: "captain.name", header: "Captain" },
+    { key: "captain.email", header: "Captain Email" },
+    { key: "captain.username", header: "Captain Username" },
+    { key: "partner.name", header: "Partner" },
+    { key: "partner.email", header: "Partner Email" },
+    { key: "division.name", header: "Division" },
+    { key: "season.name", header: "Season" },
+    { key: "status", header: "Status" },
+    { key: "dissolvedAt", header: "Dissolved Date", formatter: (v) => formatDateTime(v as string) },
+    { key: "withdrawalRequest.user.name", header: "Who Left" },
+    { key: "withdrawalRequest.reason", header: "Reason" },
+    {
+      key: "successors",
+      header: "New Partnership",
+      formatter: (_, row) => row.successors && row.successors.length > 0
+        ? `${row.successors[0].captain?.name || "Unknown"}${row.successors[0].partner ? ` & ${row.successors[0].partner.name}` : " (finding partner)"}`
+        : "None"
+    },
+  ];
 
   return (
     <>
@@ -358,6 +407,18 @@ function PartnershipChangesPage() {
                     triggerClassName="w-[150px]"
                   />
                 )}
+                {activeTab === "history" && (
+                  <FilterSelect
+                    value={selectedHistoryStatus}
+                    onChange={(value) => {
+                      setSelectedHistoryStatus(value as "DISSOLVED" | "EXPIRED" | undefined);
+                      setCurrentPage(1);
+                    }}
+                    options={HISTORY_STATUS_OPTIONS}
+                    allLabel="All Statuses"
+                    triggerClassName="w-[150px]"
+                  />
+                )}
                 <FilterSelect
                   value={selectedSeason}
                   onChange={(value) => {
@@ -368,7 +429,7 @@ function PartnershipChangesPage() {
                   allLabel="All Seasons"
                   triggerClassName="w-[180px]"
                 />
-                {(selectedStatus || selectedSeason || searchQuery) && (
+                {(selectedStatus || selectedHistoryStatus || selectedSeason || searchQuery) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -379,6 +440,25 @@ function PartnershipChangesPage() {
                   </Button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
+                  {activeTab === "withdrawals" ? (
+                    <ExportButton
+                      data={filteredWithdrawals}
+                      columns={withdrawalExportColumns}
+                      filename="withdrawal-requests"
+                      formats={["csv", "excel"]}
+                      variant="outline"
+                      size="sm"
+                    />
+                  ) : (
+                    <ExportButton
+                      data={filteredDissolved}
+                      columns={dissolvedExportColumns}
+                      filename="partnership-history"
+                      formats={["csv", "excel"]}
+                      variant="outline"
+                      size="sm"
+                    />
+                  )}
                   <Button variant="outline" size="sm" onClick={refetchAll} className="cursor-pointer">
                     <IconRefresh className="mr-2 size-4" />
                     Refresh
@@ -455,14 +535,14 @@ function PartnershipChangesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/50 hover:bg-muted/50">
-                            <TableHead className="w-[50px] text-center">#</TableHead>
-                            <TableHead className="min-w-[200px]">Partnership</TableHead>
-                            <TableHead className="min-w-[150px]">Who Left</TableHead>
-                            <TableHead className="min-w-[180px]">Reason</TableHead>
-                            <TableHead>Season</TableHead>
-                            <TableHead className="w-[100px]">Status</TableHead>
-                            <TableHead className="w-[110px]">Requested</TableHead>
-                            <TableHead className="w-[140px] text-right pr-6">Actions</TableHead>
+                            <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">Partnership</TableHead>
+                            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Who Left</TableHead>
+                            <TableHead className="w-[200px] py-2.5 font-medium text-xs">Reason</TableHead>
+                            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Season</TableHead>
+                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
+                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Requested</TableHead>
+                            <TableHead className="w-[100px] py-2.5 pr-4 font-medium text-xs text-center">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <motion.tbody
@@ -476,13 +556,14 @@ function PartnershipChangesPage() {
                               key={request.id}
                               variants={tableRowVariants}
                               transition={fastTransition}
-                              className="border-b transition-colors hover:bg-muted/50"
+                              className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
+                              onClick={() => handleViewWithdrawal(request)}
                             >
-                              <TableCell className="text-center text-muted-foreground font-mono text-sm">
+                              <TableCell className="pl-4 text-muted-foreground font-mono text-xs">
                                 {(currentPage - 1) * pageSize + index + 1}
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   <PartnershipAvatars
                                     captain={request.partnership?.captain || null}
                                     partner={request.partnership?.partner || null}
@@ -499,7 +580,7 @@ function PartnershipChangesPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <Avatar className="size-6 ring-1 ring-background">
+                                  <Avatar className="size-6 ring-1 ring-background flex-shrink-0">
                                     {request.user?.image && (
                                       <AvatarImage src={request.user.image} alt={request.user?.name || ""} />
                                     )}
@@ -507,17 +588,17 @@ function PartnershipChangesPage() {
                                       {getInitials(request.user?.name)}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span className="text-sm font-medium truncate max-w-[100px]">
+                                  <span className="text-sm font-medium">
                                     {request.user?.name || "Unknown"}
                                   </span>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <span
-                                  className="text-sm text-muted-foreground truncate block max-w-[180px]"
+                                  className="text-sm text-muted-foreground"
                                   title={request.reason}
                                 >
-                                  {truncateText(request.reason, 35)}
+                                  {request.reason}
                                 </span>
                               </TableCell>
                               <TableCell>
@@ -534,10 +615,10 @@ function PartnershipChangesPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">
-                                {formatDate(request.requestDate)}
+                                {formatDateTime(request.requestDate)}
                               </TableCell>
-                              <TableCell className="pr-6">
-                                <div className="flex items-center justify-end gap-1">
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center gap-1">
                                   {request.status === "PENDING" && (
                                     <>
                                       <Button
@@ -617,13 +698,14 @@ function PartnershipChangesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/50 hover:bg-muted/50">
-                            <TableHead className="w-[50px] text-center">#</TableHead>
-                            <TableHead className="min-w-[200px]">Original Partnership</TableHead>
-                            <TableHead>Division</TableHead>
-                            <TableHead className="w-[110px]">Dissolved</TableHead>
-                            <TableHead className="min-w-[180px]">Reason</TableHead>
-                            <TableHead className="min-w-[180px]">Successor</TableHead>
-                            <TableHead className="w-[80px] text-right pr-6">Actions</TableHead>
+                            <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">Original Partnership</TableHead>
+                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Division</TableHead>
+                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Dissolved</TableHead>
+                            <TableHead className="w-[200px] py-2.5 font-medium text-xs">Reason</TableHead>
+                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
+                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">New Partnership</TableHead>
+                            <TableHead className="w-[60px] py-2.5 pr-4 font-medium text-xs text-center">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <motion.tbody
@@ -637,13 +719,14 @@ function PartnershipChangesPage() {
                               key={partnership.id}
                               variants={tableRowVariants}
                               transition={fastTransition}
-                              className="border-b transition-colors hover:bg-muted/50"
+                              className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
+                              onClick={() => handleViewPartnership(partnership)}
                             >
-                              <TableCell className="text-center text-muted-foreground font-mono text-sm">
+                              <TableCell className="pl-4 text-muted-foreground font-mono text-xs">
                                 {(currentPage - 1) * pageSize + index + 1}
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   <PartnershipAvatars
                                     captain={partnership.captain}
                                     partner={partnership.partner}
@@ -662,7 +745,7 @@ function PartnershipChangesPage() {
                                 <span className="text-sm">{partnership.division?.name || "—"}</span>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground">
-                                {formatDate(partnership.dissolvedAt)}
+                                {formatDateTime(partnership.dissolvedAt)}
                               </TableCell>
                               <TableCell>
                                 {partnership.withdrawalRequest ? (
@@ -670,13 +753,21 @@ function PartnershipChangesPage() {
                                     <span className="text-xs text-muted-foreground">
                                       {partnership.withdrawalRequest.user?.name} left
                                     </span>
-                                    <span className="text-sm truncate max-w-[150px]" title={partnership.withdrawalRequest.reason}>
-                                      {truncateText(partnership.withdrawalRequest.reason, 25)}
+                                    <span className="text-sm" title={partnership.withdrawalRequest.reason}>
+                                      {partnership.withdrawalRequest.reason}
                                     </span>
                                   </div>
                                 ) : (
                                   <span className="text-sm text-muted-foreground">—</span>
                                 )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={cn("text-xs font-medium", getPartnershipStatusColor(partnership.status as PartnershipStatus))}
+                                >
+                                  {getPartnershipStatusLabel(partnership.status as PartnershipStatus)}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 {partnership.successors && partnership.successors.length > 0 ? (
@@ -710,8 +801,8 @@ function PartnershipChangesPage() {
                                   </Badge>
                                 )}
                               </TableCell>
-                              <TableCell className="pr-6">
-                                <div className="flex justify-end">
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <div className="flex justify-center">
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -898,7 +989,7 @@ function PartnershipChangesPage() {
                       </div>
                       <div className="pb-4 flex-1">
                         <div className="text-sm font-medium">Withdrawal Requested</div>
-                        <div className="text-xs text-muted-foreground mb-2">{formatDate(selectedRequest.requestDate)}</div>
+                        <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedRequest.requestDate)}</div>
                         <div className="flex items-center gap-2 mb-2">
                           <Avatar className="size-5">
                             {selectedRequest.user?.image && (
@@ -951,7 +1042,7 @@ function PartnershipChangesPage() {
                         </div>
                         {selectedRequest.processedByAdmin ? (
                           <div className="text-xs text-muted-foreground">
-                            {formatDate(selectedRequest.updatedAt)} by {selectedRequest.processedByAdmin.name}
+                            {formatDateTime(selectedRequest.updatedAt)} by {selectedRequest.processedByAdmin.name}
                           </div>
                         ) : (
                           <div className="text-xs text-muted-foreground">Awaiting admin review</div>
@@ -979,7 +1070,7 @@ function PartnershipChangesPage() {
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium">New Partnership Formed</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDate(selectedRequest.partnership.successors[0].createdAt)}</div>
+                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedRequest.partnership.successors[0].createdAt)}</div>
                           <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
                             <PartnershipAvatars
                               captain={selectedRequest.partnership.successors[0].captain}
@@ -1058,7 +1149,7 @@ function PartnershipChangesPage() {
                       </div>
                       <div className="pb-4 flex-1">
                         <div className="text-sm font-medium">Partnership Created</div>
-                        <div className="text-xs text-muted-foreground">{formatDate(selectedPartnership.createdAt)}</div>
+                        <div className="text-xs text-muted-foreground">{formatDateTime(selectedPartnership.createdAt)}</div>
                       </div>
                     </div>
 
@@ -1073,7 +1164,7 @@ function PartnershipChangesPage() {
                         </div>
                         <div className="pb-4 flex-1">
                           <div className="text-sm font-medium">{selectedPartnership.withdrawalRequest.user?.name} Left</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDate(selectedPartnership.withdrawalRequest.requestDate)}</div>
+                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedPartnership.withdrawalRequest.requestDate)}</div>
                           <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 italic">
                             "{selectedPartnership.withdrawalRequest.reason}"
                           </div>
@@ -1093,7 +1184,7 @@ function PartnershipChangesPage() {
                       </div>
                       <div className={cn("flex-1", selectedPartnership.successors && selectedPartnership.successors.length > 0 ? "pb-4" : "")}>
                         <div className="text-sm font-medium">Partnership Dissolved</div>
-                        <div className="text-xs text-muted-foreground">{formatDate(selectedPartnership.dissolvedAt)}</div>
+                        <div className="text-xs text-muted-foreground">{formatDateTime(selectedPartnership.dissolvedAt)}</div>
                       </div>
                     </div>
 
@@ -1117,7 +1208,7 @@ function PartnershipChangesPage() {
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium">New Partnership Formed</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDate(selectedPartnership.successors[0].createdAt)}</div>
+                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedPartnership.successors[0].createdAt)}</div>
                           <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
                             <PartnershipAvatars
                               captain={selectedPartnership.successors[0].captain}

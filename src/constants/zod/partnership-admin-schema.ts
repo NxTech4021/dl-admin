@@ -46,6 +46,15 @@ const divisionInfoSchema = z.object({
   name: z.string(),
 });
 
+// Standing info schema
+const standingInfoSchema = z.object({
+  rank: z.number(),
+  wins: z.number(),
+  losses: z.number(),
+  matchesPlayed: z.number(),
+  totalInDivision: z.number().optional(),
+});
+
 // Successor partnership schema
 const successorPartnershipSchema = z.object({
   id: z.string(),
@@ -68,6 +77,7 @@ const partnershipInRequestSchema = z.object({
   captain: userInfoSchema,
   partner: userInfoSchema.nullable(),
   division: divisionInfoSchema.nullable(),
+  standing: standingInfoSchema.nullable(),
   successors: z.array(successorPartnershipSchema),
 });
 
@@ -125,6 +135,7 @@ export const dissolvedPartnershipSchema = z.object({
   partner: userInfoSchema.nullable(),
   season: seasonInfoSchema,
   division: divisionInfoSchema.nullable(),
+  standing: standingInfoSchema.nullable(),
   withdrawalRequest: withdrawalRequestInPartnershipSchema.nullable(),
   successors: z.array(successorPartnershipSchema),
 });
@@ -183,4 +194,27 @@ export const getPartnershipStatusColor = (status: PartnershipStatus): string => 
     EXPIRED: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
   };
   return colors[status] || "";
+};
+
+// Standing helper functions
+const getOrdinal = (n: number): string => {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
+export const formatRank = (rank: number, total?: number): string => {
+  const ordinal = getOrdinal(rank);
+  return total ? `${ordinal} of ${total}` : ordinal;
+};
+
+export const formatRecord = (wins: number, losses: number): string => {
+  return `${wins}W - ${losses}L`;
+};
+
+export const formatStanding = (standing: { rank: number; wins: number; losses: number; totalInDivision?: number } | null | undefined): string => {
+  if (!standing) return "—";
+  const rank = formatRank(standing.rank, standing.totalInDivision);
+  const record = formatRecord(standing.wins, standing.losses);
+  return `${rank} (${record})`;
 };
