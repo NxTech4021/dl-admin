@@ -16,8 +16,8 @@ import {
   IconUserCircle,
   IconCalendar,
   IconBuilding,
-  IconSettings,
   IconTrophy,
+  IconUsers,
 } from "@tabler/icons-react";
 
 import { LeagueOverviewStats } from "@/components/league/league-overview-stats";
@@ -269,95 +269,119 @@ export default function LeagueViewPage({
                   </div>
 
                   {/* Quick Info Sidebar - spans 1 column */}
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <IconSettings className="size-4" />
-                          Quick Info
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {/* Season Status */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Season Status
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Active Seasons
-                              </span>
-                              <Badge variant="outline">{activeSeasonCount}</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Total Seasons
-                              </span>
-                              <span className="font-medium text-sm">
-                                {seasons.length}
-                              </span>
-                            </div>
+                  <div className="space-y-4">
+                    {/* Season Activity Card */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-bl-full" />
+                      <div className="relative p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10">
+                            <IconCalendar className="size-4 text-primary" />
                           </div>
+                          <span className="text-sm font-semibold tracking-tight">Season Activity</span>
                         </div>
 
-                        {/* Participation */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Participation
-                          </h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Unique Players
-                              </span>
-                              <span className="font-medium text-sm">
-                                {uniqueMemberCount}
-                              </span>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="relative p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Active</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
-                                Total Divisions
-                              </span>
-                              <span className="font-medium text-sm">
-                                {totalDivisions}
-                              </span>
+                            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeSeasonCount}</span>
+                          </div>
+                          <div className="relative p-3 rounded-lg bg-muted/50 border border-border/50">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total</span>
                             </div>
+                            <span className="text-2xl font-bold">{seasons.length}</span>
                           </div>
                         </div>
+                      </div>
+                    </div>
 
-                        {/* Sponsors */}
+                    {/* Participation Stats */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/5 to-transparent rounded-tr-full" />
+                      <div className="relative p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center justify-center size-8 rounded-lg bg-blue-500/10">
+                            <IconUsers className="size-4 text-blue-500" />
+                          </div>
+                          <span className="text-sm font-semibold tracking-tight">Participation</span>
+                        </div>
+
                         <div className="space-y-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Sponsors
-                          </h4>
-                          <div className="text-sm font-medium">
-                            {sponsorships.length > 0 ? (
-                              <div className="space-y-1">
-                                {sponsorships.slice(0, 3).map((sponsor) => (
-                                  <Badge
-                                    key={sponsor.id}
-                                    variant="outline"
-                                    className="text-xs mr-1"
-                                  >
-                                    {sponsor.sponsoredName || "Sponsor"}
-                                  </Badge>
-                                ))}
-                                {sponsorships.length > 3 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    +{sponsorships.length - 3} more
-                                  </span>
-                                )}
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex items-center justify-center size-7 rounded-md bg-background border border-border/50 shadow-sm">
+                                <IconUserCircle className="size-3.5 text-muted-foreground" />
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                No sponsors linked
-                              </span>
+                              <span className="text-sm text-muted-foreground">Players</span>
+                            </div>
+                            <span className="text-sm font-semibold tabular-nums">{uniqueMemberCount}</span>
+                          </div>
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex items-center justify-center size-7 rounded-md bg-background border border-border/50 shadow-sm">
+                                <IconTrophy className="size-3.5 text-muted-foreground" />
+                              </div>
+                              <span className="text-sm text-muted-foreground">Divisions</span>
+                            </div>
+                            <span className="text-sm font-semibold tabular-nums">{totalDivisions}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sponsors Card */}
+                    <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-background via-background to-muted/20">
+                      <div className="absolute top-0 left-1/2 w-20 h-20 bg-gradient-to-b from-amber-500/5 to-transparent rounded-b-full -translate-x-1/2" />
+                      <div className="relative p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center size-8 rounded-lg bg-amber-500/10">
+                              <IconBuilding className="size-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <span className="text-sm font-semibold tracking-tight">Sponsors</span>
+                          </div>
+                          {sponsorships.length > 0 && (
+                            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                              {sponsorships.length}
+                            </span>
+                          )}
+                        </div>
+
+                        {sponsorships.length > 0 ? (
+                          <div className="space-y-2">
+                            {sponsorships.slice(0, 3).map((sponsor, index) => (
+                              <div
+                                key={sponsor.id}
+                                className="flex items-center gap-2.5 p-2 rounded-lg bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-colors"
+                              >
+                                <div className="flex items-center justify-center size-6 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                  {(sponsor.sponsoredName || "S")[0].toUpperCase()}
+                                </div>
+                                <span className="text-sm font-medium truncate">
+                                  {sponsor.sponsoredName || "Sponsor"}
+                                </span>
+                              </div>
+                            ))}
+                            {sponsorships.length > 3 && (
+                              <button className="w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground py-2 transition-colors">
+                                +{sponsorships.length - 3} more sponsors
+                              </button>
                             )}
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-4 text-center">
+                            <div className="flex items-center justify-center size-10 rounded-full bg-muted/50 mb-2">
+                              <IconBuilding className="size-5 text-muted-foreground/50" />
+                            </div>
+                            <span className="text-sm text-muted-foreground">No sponsors yet</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

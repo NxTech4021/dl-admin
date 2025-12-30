@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,24 +20,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   IconLoader2,
   IconTrophy,
   IconX,
   IconCheck,
   IconMapPin,
-  IconArrowLeft,
-  IconArrowRight,
-  IconEye,
+  IconBuilding,
+  IconForms,
+  IconFileDescription,
+  IconSettings,
 } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { getErrorMessage } from "@/lib/api-error";
 import {
   SPORTS_OPTIONS,
   LOCATION_OPTIONS,
   STATUS_OPTIONS,
   getSportColor,
   type League,
+  type SponsorOption,
   type SportType,
 } from "@/constants/types/league";
 
@@ -55,18 +59,22 @@ export default function LeagueEditModal({
   league,
   onLeagueUpdated,
 }: LeagueEditModalProps) {
-  const [currentStep, setCurrentStep] = useState<"form" | "preview">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(false);
+  const [sponsorInputValue, setSponsorInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
     sportType: "",
     location: "",
     status: "",
-    gameType: "",
-    joinType: "",
     description: "",
+    hasSponsor: false,
+    existingSponsorId: "",
   });
 
   useEffect(() => {
@@ -76,34 +84,82 @@ export default function LeagueEditModal({
         sportType: league.sportType || "",
         location: league.location || "",
         status: league.status || "",
-        gameType: league.gameType || "",
-        joinType: league.joinType || "",
         description: league.description || "",
+        hasSponsor: false,
+        existingSponsorId: "",
       });
-      setCurrentStep("form");
       setError("");
+      setSponsorInputValue("");
+      setShowSuggestions(false);
+      setFilteredSponsors([]);
     }
   }, [league, open]);
 
+  useEffect(() => {
+    if (formData.hasSponsor) {
+      setSponsorsLoading(true);
+      axiosInstance.get(endpoints.sponsors.getAll)
+        .then(res => {
+          const api = res.data;
+          const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as Array<{ id: string; sponsoredName?: string }>;
+          const mapped = sponsorships.map((s) => ({
+            id: s.id,
+            name: s.sponsoredName || "Unnamed Sponsor",
+          }));
+          setSponsors(mapped);
+        })
+        .catch(() => {
+          setSponsors([]);
+        })
+        .finally(() => setSponsorsLoading(false));
+    }
+  }, [formData.hasSponsor]);
+
   const updateFormData = (
     field: keyof typeof formData,
-    value: string
+    value: string | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleSponsorInputChange = (value: string) => {
+    setSponsorInputValue(value);
+
+    if (value.trim() === "") {
+      setFilteredSponsors([]);
+      setShowSuggestions(false);
+      updateFormData("existingSponsorId", "");
+      return;
+    }
+
+    const filtered = sponsors.filter(sponsor =>
+      sponsor.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredSponsors(filtered);
+    setShowSuggestions(true);
+  };
+
+  const handleSponsorSelect = (sponsor: SponsorOption) => {
+    setSponsorInputValue(sponsor.name);
+    updateFormData("existingSponsorId", sponsor.id);
+    setShowSuggestions(false);
+  };
+
+  const handleSponsorInputBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
   const resetModal = () => {
-    setCurrentStep("form");
     setError("");
+    setLoading(false);
+    setSponsorInputValue("");
+    setShowSuggestions(false);
+    setFilteredSponsors([]);
   };
 
   const isFormValid = formData.name && formData.sportType && formData.location;
-
-  const handleNextToPreview = () => {
-    if (isFormValid) setCurrentStep("preview");
-  };
-
-  const handleBackToForm = () => setCurrentStep("form");
 
   const handleUpdateLeague = async () => {
     if (!isFormValid) return;
@@ -117,8 +173,6 @@ export default function LeagueEditModal({
         sportType: formData.sportType,
         location: formData.location,
         status: formData.status,
-        gameType: formData.gameType,
-        joinType: formData.joinType,
         description: formData.description || null,
       });
 
@@ -126,29 +180,13 @@ export default function LeagueEditModal({
       resetModal();
       onOpenChange(false);
       await onLeagueUpdated?.();
-    } catch (err: any) {
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to update league";
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to update league");
       setError(message);
       toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getSportLabel = (value: string) => {
-    return SPORTS_OPTIONS.find((s) => s.value === value)?.label || value;
-  };
-
-  const getLocationLabel = (value: string) => {
-    return LOCATION_OPTIONS.find((l) => l.value === value)?.label || value;
-  };
-
-  const getStatusLabel = (value: string) => {
-    return STATUS_OPTIONS.find((s) => s.value === value)?.label || value;
   };
 
   return (
@@ -159,316 +197,285 @@ export default function LeagueEditModal({
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              {currentStep === "form" ? (
-                <IconTrophy className="h-5 w-5 text-primary" />
-              ) : (
-                <IconEye className="h-5 w-5 text-primary" />
-              )}
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border/50">
+          <DialogHeader className="px-6 pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 rounded-xl bg-primary/10">
+                <IconTrophy className="size-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <DialogTitle className="text-lg font-semibold">
+                  Edit League
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Update your league details and configuration.
+                </DialogDescription>
+              </div>
             </div>
-            {currentStep === "form" ? "Edit League" : "Confirm Changes"}
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            {currentStep === "form"
-              ? "Update the league information below."
-              : "Review your changes before updating."}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center space-x-4 mb-6">
-          <div
-            className={cn(
-              "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-              currentStep === "form"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            <span>1. Details</span>
-          </div>
-          <div className="w-8 h-px bg-border" />
-          <div
-            className={cn(
-              "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium transition-colors",
-              currentStep === "preview"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            <span>2. Confirm</span>
-          </div>
+          </DialogHeader>
         </div>
 
-        {/* Form Step */}
-        {currentStep === "form" && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* League Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
-                  League Name *
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="e.g., KL League"
-                  value={formData.name}
-                  onChange={(e) => updateFormData("name", e.target.value)}
-                  className="h-11"
+        <div className="px-6 py-5 space-y-4">
+          {/* Basic Information Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconForms className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Basic Information
+              </span>
+            </div>
+            <div className="p-3 space-y-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                {/* League Name */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-sm font-medium flex items-center gap-1">
+                    League Name
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="e.g., KL League"
+                    value={formData.name}
+                    onChange={(e) => updateFormData("name", e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+
+                {/* Sport */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    Sport
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.sportType}
+                    onValueChange={(value) => updateFormData("sportType", value)}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select a sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPORTS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="size-2 rounded-full"
+                              style={{ backgroundColor: getSportColor(option.value) }}
+                            />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <IconMapPin className="size-3.5" />
+                    Location
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.location}
+                    onValueChange={(value) => updateFormData("location", value)}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOCATION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <IconSettings className="size-3.5" />
+                    Status
+                  </Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => updateFormData("status", value)}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "size-2 rounded-full",
+                              option.value === "ACTIVE" && "bg-emerald-500",
+                              option.value === "UPCOMING" && "bg-blue-500"
+                            )} />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sponsor Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconBuilding className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Sponsorship
+              </span>
+              <Badge variant="outline" className="text-[10px] ml-auto bg-background">
+                Optional
+              </Badge>
+            </div>
+            <div className="p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "size-2 rounded-full",
+                    formData.hasSponsor ? "bg-emerald-500" : "bg-slate-400"
+                  )} />
+                  <Label htmlFor="hasSponsor" className="text-sm font-medium cursor-pointer">
+                    This league has a sponsor
+                  </Label>
+                </div>
+                <Checkbox
+                  id="hasSponsor"
+                  checked={formData.hasSponsor}
+                  onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
                 />
               </div>
 
-              {/* Sport */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Sport *</Label>
-                <Select
-                  value={formData.sportType}
-                  onValueChange={(value) => updateFormData("sportType", value)}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select a sport" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SPORTS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
+              {formData.hasSponsor && (
+                <div className="pt-3 border-t border-border/50">
+                  <div className="space-y-1.5 relative">
+                    <Label htmlFor="existingSponsor" className="text-sm font-medium flex items-center gap-1">
+                      Select Sponsor
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="existingSponsor"
+                      placeholder="Type to search sponsors..."
+                      value={sponsorInputValue}
+                      onChange={(e) => handleSponsorInputChange(e.target.value)}
+                      onFocus={() => {
+                        if (sponsorInputValue.trim() !== "") {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      onBlur={handleSponsorInputBlur}
+                      className="h-9"
+                    />
+
+                    {/* Suggestions dropdown */}
+                    {showSuggestions && filteredSponsors.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+                        {filteredSponsors.map((sponsor) => (
                           <div
-                            className="w-3 h-3 rounded-full"
-                            style={{
-                              backgroundColor: getSportColor(option.value),
-                            }}
-                          />
-                          {option.label}
+                            key={sponsor.id}
+                            className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
+                            onClick={() => handleSponsorSelect(sponsor)}
+                          >
+                            {sponsor.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* No results message */}
+                    {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg">
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                          No sponsors found
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Location */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Location *</Label>
-                <Select
-                  value={formData.location}
-                  onValueChange={(value) => updateFormData("location", value)}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATION_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <IconMapPin className="h-4 w-4 text-muted-foreground" />
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => updateFormData("status", value)}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Game Type */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Game Type</Label>
-                <Select
-                  value={formData.gameType}
-                  onValueChange={(value) => updateFormData("gameType", value)}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select game type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SINGLES">Singles</SelectItem>
-                    <SelectItem value="DOUBLES">Doubles</SelectItem>
-                    <SelectItem value="MIXED">Mixed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Join Type */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Join Type</Label>
-                <Select
-                  value={formData.joinType}
-                  onValueChange={(value) => updateFormData("joinType", value)}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select join type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PUBLIC">Public</SelectItem>
-                    <SelectItem value="PRIVATE">Private</SelectItem>
-                    <SelectItem value="INVITE_ONLY">Invite Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
+          {/* Description Section */}
+          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
+              <IconFileDescription className="size-4 text-muted-foreground" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Description
-              </Label>
+              </span>
+              <Badge variant="outline" className="text-[10px] ml-auto bg-background">
+                Optional
+              </Badge>
+            </div>
+            <div className="p-3">
               <Textarea
                 id="description"
                 placeholder="Brief description of the league..."
                 value={formData.description}
                 onChange={(e) => updateFormData("description", e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[80px] resize-none"
               />
             </div>
+          </div>
 
-            {/* Error Display */}
-            {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
-                <div className="h-4 w-4 rounded-full bg-destructive/20 flex items-center justify-center">
-                  <IconX className="h-2.5 w-2.5" />
+          {/* Error Display */}
+          {error && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center size-8 rounded-lg bg-destructive/10">
+                  <IconX className="size-4 text-destructive" />
                 </div>
-                {error}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Preview Step */}
-        {currentStep === "preview" && (
-          <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-            <div className="text-center space-y-3">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto">
-                <IconTrophy className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold">{formData.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                {formData.description || "No description"}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Sport
-                </span>
-                <span className="text-sm font-medium">
-                  {getSportLabel(formData.sportType)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Location
-                </span>
-                <span className="text-sm font-medium">
-                  {getLocationLabel(formData.location)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Status
-                </span>
-                <span className="text-sm font-medium">
-                  {getStatusLabel(formData.status)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Game Type
-                </span>
-                <span className="text-sm font-medium capitalize">
-                  {formData.gameType?.toLowerCase()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Join Type
-                </span>
-                <span className="text-sm font-medium capitalize">
-                  {formData.joinType?.toLowerCase().replace("_", " ")}
-                </span>
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             </div>
-          </div>
-        )}
-
-        <DialogFooter className="flex gap-3 pt-4">
-          {currentStep === "form" ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleNextToPreview}
-                disabled={!isFormValid || loading}
-                className="flex-1 sm:flex-none min-w-[140px]"
-              >
-                <IconArrowRight className="mr-2 h-4 w-4" />
-                Review Changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBackToForm}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                <IconArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-              <Button
-                type="button"
-                onClick={handleUpdateLeague}
-                disabled={loading}
-                className="flex-1 sm:flex-none min-w-[160px]"
-              >
-                {loading ? (
-                  <>
-                    <IconLoader2 className="animate-spin mr-2 h-4 w-4" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <IconCheck className="mr-2 h-4 w-4" />
-                    Update League
-                  </>
-                )}
-              </Button>
-            </>
           )}
-        </DialogFooter>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-background border-t border-border/50 px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUpdateLeague}
+              disabled={loading || !isFormValid}
+              className="gap-2 min-w-[140px]"
+            >
+              {loading ? (
+                <>
+                  <IconLoader2 className="animate-spin size-4" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <IconCheck className="size-4" />
+                  Update League
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
