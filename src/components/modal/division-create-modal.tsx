@@ -940,16 +940,24 @@ export default function DivisionCreateModal({
                           Max Players
                           <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          type="number"
-                          {...register("maxSinglesPlayers", {
-                            valueAsNumber: true,
-                          })}
-                          className={cn(
-                            "h-9 max-w-[180px]",
-                            errors.maxSinglesPlayers && "border-destructive focus-visible:ring-destructive"
+                        <Controller
+                          control={control}
+                          name="maxSinglesPlayers"
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              className={cn(
+                                "h-9 max-w-[180px]",
+                                errors.maxSinglesPlayers && "border-destructive focus-visible:ring-destructive"
+                              )}
+                              placeholder="e.g., 12"
+                            />
                           )}
-                          placeholder="e.g., 12"
                         />
                         {errors.maxSinglesPlayers && (
                           <p className="text-xs text-destructive">
@@ -966,16 +974,24 @@ export default function DivisionCreateModal({
                           Max Teams
                           <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          type="number"
-                          {...register("maxDoublesTeams", {
-                            valueAsNumber: true,
-                          })}
-                          className={cn(
-                            "h-9 max-w-[180px]",
-                            errors.maxDoublesTeams && "border-destructive focus-visible:ring-destructive"
+                        <Controller
+                          control={control}
+                          name="maxDoublesTeams"
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              className={cn(
+                                "h-9 max-w-[180px]",
+                                errors.maxDoublesTeams && "border-destructive focus-visible:ring-destructive"
+                              )}
+                              placeholder="e.g., 10"
+                            />
                           )}
-                          placeholder="e.g., 10"
                         />
                         {errors.maxDoublesTeams && (
                           <p className="text-xs text-destructive">
