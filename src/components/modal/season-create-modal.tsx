@@ -274,6 +274,16 @@ export default function SeasonCreateModal({
     }
   }, [isCategoryDropdownOpen]);
 
+  // Auto-disable payment for free seasons
+  const entryFee = watch("entryFee");
+  const isFreeEntry = entryFee === 0;
+
+  useEffect(() => {
+    if (isFreeEntry) {
+      setValue("paymentRequired", false);
+    }
+  }, [isFreeEntry, setValue]);
+
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
     if (!categorySearch) return allCategories;
@@ -920,36 +930,56 @@ export default function SeasonCreateModal({
                       { key: "paymentRequired" as const, label: "Payment Required" },
                       { key: "promoCodeSupported" as const, label: "Promo Codes" },
                       { key: "withdrawalEnabled" as const, label: "Withdrawals" },
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "size-2 rounded-full transition-colors",
-                              formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-                            )}
-                          />
-                          <Label className="text-sm font-medium cursor-pointer" htmlFor={key}>
-                            {label}
-                          </Label>
-                        </div>
-                        <Controller
-                          control={control}
-                          name={key}
-                          render={({ field: { value, onChange } }) => (
-                            <Switch
-                              id={key}
-                              checked={value}
-                              onCheckedChange={onChange}
-                              className="scale-90"
-                            />
+                    ].map(({ key, label }) => {
+                      const isDisabled = key === "paymentRequired" && isFreeEntry;
+                      return (
+                        <div
+                          key={key}
+                          className={cn(
+                            "flex flex-col p-2.5 rounded-lg border border-border/50 bg-background",
+                            isDisabled && "opacity-60"
                           )}
-                        />
-                      </div>
-                    ))}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={cn(
+                                  "size-2 rounded-full transition-colors",
+                                  formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                                )}
+                              />
+                              <Label
+                                className={cn(
+                                  "text-sm font-medium",
+                                  isDisabled ? "cursor-not-allowed" : "cursor-pointer"
+                                )}
+                                htmlFor={key}
+                              >
+                                {label}
+                              </Label>
+                            </div>
+                            <Controller
+                              control={control}
+                              name={key}
+                              render={({ field: { value, onChange } }) => (
+                                <Switch
+                                  id={key}
+                                  checked={value}
+                                  onCheckedChange={onChange}
+                                  className="scale-90"
+                                  disabled={isDisabled}
+                                />
+                              )}
+                            />
+                          </div>
+                          {isDisabled && (
+                            <span className="text-xs text-muted-foreground mt-1">
+                              Not required for free seasons
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
