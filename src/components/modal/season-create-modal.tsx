@@ -925,11 +925,11 @@ export default function SeasonCreateModal({
                 <div className="p-3">
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { key: "isActive" as const, label: "Active", hint: undefined },
-                      { key: "paymentRequired" as const, label: "Payment Required", hint: "Auto-set by entry fee" },
-                      { key: "promoCodeSupported" as const, label: "Promo Codes", hint: undefined },
-                      { key: "withdrawalEnabled" as const, label: "Withdrawals", hint: undefined },
-                    ].map(({ key, label, hint }) => {
+                      { key: "isActive" as const, label: "Active" },
+                      { key: "paymentRequired" as const, label: "Payment Required" },
+                      { key: "promoCodeSupported" as const, label: "Promo Codes" },
+                      { key: "withdrawalEnabled" as const, label: "Withdrawals" },
+                    ].map(({ key, label }) => {
                       // Payment Required is auto-managed based on entry fee
                       const isPaymentRequired = key === "paymentRequired";
                       const isFreeEntry = !entryFee || entryFee === 0;
