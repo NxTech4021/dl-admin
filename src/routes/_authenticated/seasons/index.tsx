@@ -3,9 +3,9 @@ import React, { lazy, Suspense, useState, useCallback, useMemo } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatsCard } from "@/components/ui/stats-card";
-import { StatsGrid } from "@/components/ui/stats-grid";
 import { Button } from "@/components/ui/button";
 import { Season, seasonSchema } from "@/constants/zod/season-schema";
+import { groupSeasonsByName } from "@/lib/group-seasons";
 import {
   IconCalendar,
   IconStar,
@@ -173,6 +173,11 @@ function SeasonsPage() {
 
   const seasons = data;
 
+  // Group seasons by name for the data table
+  const groupedSeasons = useMemo(() => {
+    return groupSeasonsByName(seasons);
+  }, [seasons]);
+
   const totalSeasons = seasons.length;
   const activeSeasons = seasons.filter((s) => s.status === "ACTIVE").length;
   const totalParticipants = seasons.reduce(
@@ -302,7 +307,7 @@ function SeasonsPage() {
           <div className="flex-1 px-4 lg:px-6 pb-6">
             <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
               <SeasonsDataTable
-                data={seasons}
+                data={groupedSeasons}
                 isLoading={isLoading}
                 onViewSeason={handleViewSeason}
                 onRefresh={fetchSeasons}

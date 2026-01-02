@@ -1,9 +1,8 @@
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/constants/zod/season-schema";
+import { groupSeasonsByName } from "@/lib/group-seasons";
 import SeasonCreateModal from "@/components/modal/season-create-modal";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
@@ -114,6 +113,11 @@ export function LeagueSeasonsWrapper({
     };
   }, [leagueId]);
 
+  // Group seasons by name
+  const groupedSeasons = useMemo(() => {
+    return groupSeasonsByName(seasonsWithPlayers);
+  }, [seasonsWithPlayers]);
+
   const handleViewSeason = (seasonId: string) => {
     navigate({ to: `/seasons/${seasonId}` });
   };
@@ -194,9 +198,10 @@ export function LeagueSeasonsWrapper({
 
       {/* Data Table */}
       <SeasonsDataTable
-        data={seasonsWithPlayers}
+        data={groupedSeasons}
         isLoading={seasonsLoading}
         onViewSeason={handleViewSeason}
+        onRefresh={onRefresh}
       />
 
       {/* Modals */}

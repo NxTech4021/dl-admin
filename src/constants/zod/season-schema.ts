@@ -156,3 +156,20 @@ export const seasonSchema = z.object({
 export type Season = z.infer<typeof seasonSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
 export type WithdrawalRequest = z.infer<typeof withdrawalRequestSchema>;
+
+// Grouped season type for displaying seasons with the same name but different categories
+export interface GroupedSeason {
+  groupKey: string; // Season name used for grouping
+  name: string; // Display name
+  seasons: Season[]; // All seasons in this group
+  aggregated: {
+    totalPlayers: number; // Sum of registeredUserCount
+    entryFeeDisplay: string; // "RM 20.00" | "RM 20 - 40" | "Free"
+    statuses: string[]; // Unique statuses
+    categories: { id: string; name: string | null; seasonId: string }[];
+    leagues: { id: string; name: string; sportType?: string }[];
+    earliestDeadline: Date | null;
+    dateRange: { start: Date | null; end: Date | null };
+    sportType: string | null; // Primary sport type from first season
+  };
+}

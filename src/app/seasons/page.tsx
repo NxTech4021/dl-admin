@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { PageHeader } from "@/components/ui/page-header";
@@ -8,6 +8,7 @@ import { StatsGrid } from "@/components/ui/stats-grid";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Season, seasonSchema } from "@/constants/zod/season-schema";
+import { groupSeasonsByName } from "@/lib/group-seasons";
 import {
   IconCalendar,
   IconDownload,
@@ -106,6 +107,11 @@ export default function Page() {
 
   const seasons = data;
 
+  // Group seasons by name for the data table
+  const groupedSeasons = useMemo(() => {
+    return groupSeasonsByName(seasons);
+  }, [seasons]);
+
   // Calculate stats
   const totalSeasons = seasons.length;
   const activeSeasons = seasons.filter((s) => s.status === "ACTIVE").length;
@@ -201,7 +207,7 @@ export default function Page() {
             {/* Data Table */}
             <div className="flex-1 px-4 lg:px-6 pb-6">
               <SeasonsDataTable
-                data={seasons}
+                data={groupedSeasons}
                 isLoading={isLoading}
                 onViewSeason={handleViewSeason}
                 onRefresh={fetchSeasons}

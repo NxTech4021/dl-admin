@@ -10,8 +10,12 @@ import {
   IconClock,
 } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
-import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
-import { Season } from "@/constants/zod/season-schema";
+import {
+  tableContainerVariants,
+  tableRowVariants,
+  fastTransition,
+} from "@/lib/animation-variants";
+import { Season, GroupedSeason } from "@/constants/zod/season-schema";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 
@@ -46,15 +50,15 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { cn } from "@/lib/utils";
 import { getSportIcon } from "@/constants/sports";
 
-import { SeasonRowActions } from "@/components/season/season-row-actions";
+import {
+  SeasonRowActions,
+  GroupedSeasonRowActions,
+} from "@/components/season/season-row-actions";
 import { SeasonDetailModal } from "@/components/season/season-detail-modal";
+import { SeasonCategorySelectionModal } from "@/components/season/season-category-selection-modal";
 import SeasonEditModal from "@/components/modal/season-edit-modal";
 
-import {
-  formatTableDate,
-  formatCurrency,
-  ACTION_MESSAGES,
-} from "./constants";
+import { formatTableDate, ACTION_MESSAGES } from "./constants";
 
 /** Format status to Title Case (e.g., "ACTIVE" -> "Active") */
 const formatStatus = (status: string | undefined): string => {
@@ -96,7 +100,7 @@ const getSportBgClass = (sportType: string | null | undefined): string => {
 };
 
 export type SeasonsDataTableProps = {
-  data: Season[];
+  data: GroupedSeason[];
   isLoading: boolean;
   onViewSeason?: (seasonId: string) => void;
   onRefresh?: () => void;
@@ -134,6 +138,11 @@ export function SeasonsDataTable({
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
+  // Category selection modal state
+  const [selectedGroup, setSelectedGroup] =
+    React.useState<GroupedSeason | null>(null);
+  const [isCategorySelectOpen, setIsCategorySelectOpen] = React.useState(false);
+
   const handleViewSeason = React.useCallback((season: Season) => {
     setViewSeason(season);
     setIsViewOpen(true);
@@ -153,13 +162,19 @@ export function SeasonsDataTable({
     if (!deleteSeason) return;
     try {
       setIsDeleting(true);
-      const response = await axiosInstance.delete(endpoints.season.delete(deleteSeason.id));
+      const response = await axiosInstance.delete(
+        endpoints.season.delete(deleteSeason.id)
+      );
       toast.success(response.data?.message ?? ACTION_MESSAGES.SUCCESS.DELETE);
       onRefresh?.();
       setDeleteSeason(null);
       setIsDeleteOpen(false);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || ACTION_MESSAGES.ERROR.DELETE_FAILED;
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        ACTION_MESSAGES.ERROR.DELETE_FAILED;
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -172,9 +187,29 @@ export function SeasonsDataTable({
     setIsEditOpen(false);
   }, [onRefresh]);
 
-  const handleManagePlayers = React.useCallback((season: Season) => {
-    navigate({ to: `/seasons/${season.id}?tab=players` });
-  }, [navigate]);
+  const handleManagePlayers = React.useCallback(
+    (season: Season) => {
+      navigate({ to: `/seasons/${season.id}?tab=players` });
+    },
+    [navigate]
+  );
+
+  const handleRowClick = React.useCallback(
+    (group: GroupedSeason) => {
+      if (group.seasons.length === 1) {
+        // Single season - navigate directly
+        navigate({
+          to: "/seasons/$seasonId",
+          params: { seasonId: group.seasons[0].id },
+        });
+      } else {
+        // Multiple seasons - open category selection modal
+        setSelectedGroup(group);
+        setIsCategorySelectOpen(true);
+      }
+    },
+    [navigate]
+  );
 
   // Filter data by search, sport, and league
   const filteredData = React.useMemo(() => {
@@ -183,29 +218,79 @@ export function SeasonsDataTable({
     // Apply search filter
     if (searchQuery) {
       const search = searchQuery.toLowerCase();
-      filtered = filtered.filter(s =>
-        s.name.toLowerCase().includes(search) ||
-        s.status?.toLowerCase().includes(search) ||
-        s.sportType?.toLowerCase().includes(search) ||
-        s.category?.name?.toLowerCase().includes(search) ||
-        s.leagues?.some(l => l.sportType?.toLowerCase().includes(search))
-      );
+      filtered = filtered.filter((group) => {
+        // Search in group name
+        if (group.name.toLowerCase().includes(search)) return true;
+
+        // Search in categories
+        if (
+          group.aggregated.categories.some((c) =>
+            c.name?.toLowerCase().includes(search)
+          )
+        )
+          return true;
+
+        // Search in statuses
+        if (
+          group.aggregated.statuses.some((s) =>
+            s.toLowerCase().includes(search)
+          )
+        )
+          return true;
+
+        // Search in leagues sport types
+        if (
+          group.aggregated.leagues.some((l) =>
+            l.sportType?.toLowerCase().includes(search)
+          )
+        )
+          return true;
+
+        // Search in individual seasons
+        return group.seasons.some(
+          (s) =>
+            s.name.toLowerCase().includes(search) ||
+            s.status?.toLowerCase().includes(search) ||
+            s.sportType?.toLowerCase().includes(search) ||
+            s.category?.name?.toLowerCase().includes(search)
+        );
+      });
     }
 
-    // Apply sport filter - check both season's sportType and leagues' sportType
+    // Apply sport filter
     if (sportFilter) {
       const filterUpper = sportFilter.toUpperCase();
-      filtered = filtered.filter(s => {
-        // Check season's own sportType first
-        if (s.sportType?.toUpperCase() === filterUpper) return true;
-        // Also check if any of the season's leagues match the sport filter
-        return s.leagues?.some(l => l.sportType?.toUpperCase() === filterUpper);
+      filtered = filtered.filter((group) => {
+        // Check aggregated sport type
+        if (group.aggregated.sportType?.toUpperCase() === filterUpper)
+          return true;
+        // Check leagues
+        if (
+          group.aggregated.leagues.some(
+            (l) => l.sportType?.toUpperCase() === filterUpper
+          )
+        )
+          return true;
+        // Check individual seasons
+        return group.seasons.some(
+          (s) =>
+            s.sportType?.toUpperCase() === filterUpper ||
+            s.leagues?.some((l) => l.sportType?.toUpperCase() === filterUpper)
+        );
       });
     }
 
     // Apply league filter
     if (leagueFilter) {
-      filtered = filtered.filter(s => s.leagues?.some(l => l.id === leagueFilter));
+      filtered = filtered.filter((group) => {
+        // Check aggregated leagues
+        if (group.aggregated.leagues.some((l) => l.id === leagueFilter))
+          return true;
+        // Check individual seasons
+        return group.seasons.some((s) =>
+          s.leagues?.some((l) => l.id === leagueFilter)
+        );
+      });
     }
 
     return filtered;
@@ -213,7 +298,10 @@ export function SeasonsDataTable({
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
-  const paginatedData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <>
@@ -231,15 +319,33 @@ export function SeasonsDataTable({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
-                    <TableHead className="py-2.5 font-medium text-xs">Season</TableHead>
-                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">Leagues</TableHead>
-                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">Category</TableHead>
-                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
-                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">Entry Fee</TableHead>
-                    <TableHead className="w-[90px] py-2.5 font-medium text-xs">Players</TableHead>
-                    <TableHead className="w-[130px] py-2.5 font-medium text-xs">Deadline</TableHead>
-                    <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">Actions</TableHead>
+                    <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">
+                      #
+                    </TableHead>
+                    <TableHead className="py-2.5 font-medium text-xs">
+                      Season
+                    </TableHead>
+                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">
+                      Leagues
+                    </TableHead>
+                    <TableHead className="w-[150px] py-2.5 font-medium text-xs">
+                      Category
+                    </TableHead>
+                    <TableHead className="w-[120px] py-2.5 font-medium text-xs">
+                      Status
+                    </TableHead>
+                    <TableHead className="w-[100px] py-2.5 font-medium text-xs">
+                      Entry Fee
+                    </TableHead>
+                    <TableHead className="w-[90px] py-2.5 font-medium text-xs">
+                      Players
+                    </TableHead>
+                    <TableHead className="w-[130px] py-2.5 font-medium text-xs">
+                      Deadline
+                    </TableHead>
+                    <TableHead className="w-[50px] py-2.5 pr-4 font-medium text-xs">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <motion.tbody
@@ -248,44 +354,63 @@ export function SeasonsDataTable({
                   animate="visible"
                   variants={tableContainerVariants}
                 >
-                  {paginatedData.map((season, index) => {
-                    const leagues = season.leagues || [];
-                    const sportType = season.sportType || (leagues[0]?.sportType);
-                    const sportIcon = sportType ? getSportIcon(sportType, 16) : <IconTrophy className="size-4" />;
+                  {paginatedData.map((group, index) => {
+                    // Defensive check for malformed data
+                    if (!group || !group.aggregated) {
+                      console.warn("Invalid group data:", group);
+                      return null;
+                    }
+
+                    const leagues = group.aggregated.leagues || [];
+                    const sportType = group.aggregated.sportType;
+                    const sportIcon = sportType ? (
+                      getSportIcon(sportType, 16)
+                    ) : (
+                      <IconTrophy className="size-4" />
+                    );
+                    const hasMultipleCategories = (group.seasons?.length || 0) > 1;
+
+                    // Get date range for display
+                    const firstSeason = group.seasons?.[0];
+                    const dateRange =
+                      group.aggregated.dateRange?.start &&
+                      group.aggregated.dateRange?.end
+                        ? `${formatTableDate(group.aggregated.dateRange.start)} - ${formatTableDate(group.aggregated.dateRange.end)}`
+                        : firstSeason?.startDate && firstSeason?.endDate
+                          ? `${formatTableDate(firstSeason.startDate)} - ${formatTableDate(firstSeason.endDate)}`
+                          : null;
 
                     return (
                       <motion.tr
-                        key={season.id}
+                        key={group.groupKey}
                         variants={tableRowVariants}
                         transition={fastTransition}
                         className="hover:bg-muted/30 border-b transition-colors cursor-pointer"
-                        onClick={() => navigate({ to: "/seasons/$seasonId", params: { seasonId: season.id } })}
+                        onClick={() => handleRowClick(group)}
                       >
                         {/* Row Number */}
                         <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
-                          {((currentPage - 1) * pageSize) + index + 1}
+                          {(currentPage - 1) * pageSize + index + 1}
                         </TableCell>
 
                         {/* Season Name */}
                         <TableCell className="py-3">
                           <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "flex h-9 w-9 items-center justify-center rounded-lg",
-                              getSportBgClass(sportType)
-                            )}>
+                            <div
+                              className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg",
+                                getSportBgClass(sportType)
+                              )}
+                            >
                               {sportIcon}
                             </div>
                             <div className="min-w-0">
-                              <Link
-                                to="/seasons/$seasonId"
-                                params={{ seasonId: season.id }}
-                                className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]"
-                              >
-                                {season.name}
-                              </Link>
-                              {season.startDate && season.endDate && (
+                              <div className="font-medium hover:text-primary transition-colors block truncate max-w-[200px]">
+                                {group.name}
+                              </div>
+                              {dateRange && (
                                 <span className="text-xs text-muted-foreground">
-                                  {formatTableDate(season.startDate)} - {formatTableDate(season.endDate)}
+                                  {dateRange}
                                 </span>
                               )}
                             </div>
@@ -297,82 +422,151 @@ export function SeasonsDataTable({
                           {leagues.length > 0 ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Badge variant="secondary" className="cursor-pointer">
-                                  {leagues.length} League{leagues.length !== 1 ? "s" : ""}
+                                <Badge
+                                  variant="secondary"
+                                  className="cursor-pointer"
+                                >
+                                  {leagues.length} League
+                                  {leagues.length !== 1 ? "s" : ""}
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-1">
                                   {leagues.slice(0, 5).map((league) => (
-                                    <div key={league.id} className="text-xs">{league.name}</div>
+                                    <div key={league.id} className="text-xs">
+                                      {league.name}
+                                    </div>
                                   ))}
                                   {leagues.length > 5 && (
-                                    <div className="text-xs text-muted-foreground">+{leagues.length - 5} more</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      +{leagues.length - 5} more
+                                    </div>
                                   )}
                                 </div>
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </TableCell>
-
-                        {/* Category */}
-                        <TableCell className="py-3">
-                          {season.category?.name ? (
-                            <Badge variant="outline" className="text-xs">
-                              {season.category.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">No category</span>
-                          )}
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell className="py-3">
-                          <Badge
-                            variant="outline"
-                            className={cn("text-xs font-medium border", getStatusBadgeClass(season.status))}
-                          >
-                            {formatStatus(season.status)}
-                          </Badge>
-                        </TableCell>
-
-                        {/* Entry Fee */}
-                        <TableCell className="py-3">
-                          {season.entryFee && Number(season.entryFee) > 0 ? (
-                            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                              {formatCurrency(Number(season.entryFee), "MYR")}
+                            <span className="text-muted-foreground text-xs">
+                              -
                             </span>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">Free</span>
                           )}
                         </TableCell>
 
-                        {/* Players */}
+                        {/* Category - show first 2 badges, then +N for additional */}
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-1">
+                            {group.aggregated.categories
+                              .slice(0, 2)
+                              .map((cat, catIndex) => (
+                                <React.Fragment key={cat.seasonId}>
+                                  <Badge variant="outline" className="text-xs">
+                                    {cat.name || "No category"}
+                                  </Badge>
+                                  {catIndex === 1 &&
+                                    group.aggregated.categories.length > 2 && (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs cursor-pointer"
+                                          >
+                                            +{group.aggregated.categories.length - 2}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <div className="space-y-1">
+                                            {group.aggregated.categories
+                                              .slice(2)
+                                              .map((extraCat) => (
+                                                <div
+                                                  key={extraCat.seasonId}
+                                                  className="text-xs"
+                                                >
+                                                  {extraCat.name || "No category"}
+                                                </div>
+                                              ))}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
+                                </React.Fragment>
+                              ))}
+                            {group.aggregated.categories.length === 1 && null}
+                            {group.aggregated.categories.length === 0 && (
+                              <span className="text-muted-foreground text-sm">
+                                No category
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Status - show multiple badges if different */}
+                        <TableCell className="py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {group.aggregated.statuses.map((status) => (
+                              <Badge
+                                key={status}
+                                variant="outline"
+                                className={cn(
+                                  "text-xs font-medium border",
+                                  getStatusBadgeClass(status)
+                                )}
+                              >
+                                {formatStatus(status)}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+
+                        {/* Entry Fee - show aggregated */}
+                        <TableCell className="py-3">
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              group.aggregated.entryFeeDisplay !== "Free"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {group.aggregated.entryFeeDisplay}
+                          </span>
+                        </TableCell>
+
+                        {/* Players - show total */}
                         <TableCell className="py-3">
                           <div className="flex items-center gap-1 text-sm">
                             <IconUsers className="size-4 text-muted-foreground" />
-                            <span className="font-medium">{season.registeredUserCount || 0}</span>
+                            <span className="font-medium">
+                              {group.aggregated.totalPlayers}
+                            </span>
                           </div>
                         </TableCell>
 
                         {/* Deadline */}
                         <TableCell className="py-3">
-                          {season.regiDeadline ? (
+                          {group.aggregated.earliestDeadline ? (
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <IconClock className="size-4" />
-                              <span>{formatTableDate(season.regiDeadline)}</span>
+                              <span>
+                                {formatTableDate(
+                                  group.aggregated.earliestDeadline
+                                )}
+                              </span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <span className="text-muted-foreground text-xs">
+                              -
+                            </span>
                           )}
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
-                          <SeasonRowActions
-                            season={season}
+                        <TableCell
+                          className="py-3 pr-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <GroupedSeasonRowActions
+                            group={group}
                             onView={handleViewSeason}
                             onEdit={handleEditSeason}
                             onDelete={handleDeleteRequest}
@@ -396,7 +590,9 @@ export function SeasonsDataTable({
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} seasons
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
+              {filteredData.length} seasons
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -436,7 +632,9 @@ export function SeasonsDataTable({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
               >
                 Next
@@ -446,6 +644,16 @@ export function SeasonsDataTable({
           </div>
         )}
       </div>
+
+      {/* Category Selection Modal */}
+      <SeasonCategorySelectionModal
+        group={selectedGroup}
+        open={isCategorySelectOpen}
+        onOpenChange={(open) => {
+          if (!open) setSelectedGroup(null);
+          setIsCategorySelectOpen(open);
+        }}
+      />
 
       {/* Season Detail Modal */}
       <SeasonDetailModal
@@ -468,7 +676,9 @@ export function SeasonsDataTable({
             setIsEditOpen(open);
           }}
           season={editSeason}
-          onSeasonUpdated={async () => { handleEditSuccess(); }}
+          onSeasonUpdated={async () => {
+            handleEditSuccess();
+          }}
         />
       )}
 
@@ -486,7 +696,10 @@ export function SeasonsDataTable({
             <AlertDialogDescription>
               {ACTION_MESSAGES.DELETE_CONFIRM}
               <br />
-              <span className="font-semibold">{deleteSeason?.name ?? "this season"}</span>? This action cannot be undone.
+              <span className="font-semibold">
+                {deleteSeason?.name ?? "this season"}
+              </span>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
