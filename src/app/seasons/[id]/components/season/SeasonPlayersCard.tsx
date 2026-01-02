@@ -30,6 +30,9 @@ import {
   IconSearch,
   IconX,
   IconUsers,
+  IconArrowsSort,
+  IconSortAscending,
+  IconSortDescending,
 } from "@tabler/icons-react";
 import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 import { cn } from "@/lib/utils";
@@ -120,6 +123,8 @@ export default function SeasonPlayersCard({
   const [divisionFilter, setDivisionFilter] = useState<string | undefined>(undefined);
   const [ratingThreshold, setRatingThreshold] = useState<string>("");
   const [activeTab, setActiveTab] = useState("active");
+  const [activeSortDirection, setActiveSortDirection] = useState<"asc" | "desc" | null>(null);
+  const [waitlistSortDirection, setWaitlistSortDirection] = useState<"asc" | "desc" | null>(null);
 
   // Helper function to get initials from name
   const getInitials = (name: string | null | undefined): string => {
@@ -440,10 +445,61 @@ export default function SeasonPlayersCard({
     prevAnimationKeyRef.current = animationKey;
   }
 
-  const PlayerTable = ({ players, isWaitlistTab = false }: { players: Membership[]; isWaitlistTab?: boolean }) => {
+  const PlayerTable = ({
+    players,
+    isWaitlistTab = false,
+    sortDirection,
+    onSortChange,
+  }: {
+    players: Membership[];
+    isWaitlistTab?: boolean;
+    sortDirection: "asc" | "desc" | null;
+    onSortChange: (direction: "asc" | "desc" | null) => void;
+  }) => {
     const groupedPlayers = groupMembershipsByPartnerships(players);
     const gameType = getGameType();
     const isDoublesMode = gameType === "DOUBLES";
+
+    // Helper to get rating value for a group (partnership or individual)
+    const getGroupRating = (group: typeof groupedPlayers[0]): number => {
+      if (group.type === "partnership" && group.memberships.length === 2) {
+        const [member1, member2] = group.memberships;
+        const rating1 = getSportRating(member1);
+        const rating2 = getSportRating(member2);
+        return rating1.value > 0 && rating2.value > 0
+          ? Math.round((rating1.value + rating2.value) / 2)
+          : rating1.value > 0 ? rating1.value : rating2.value;
+      } else {
+        return getSportRating(group.memberships[0]).value;
+      }
+    };
+
+    // Sort grouped players by rating if sort direction is set
+    const sortedGroupedPlayers = sortDirection
+      ? [...groupedPlayers].sort((a, b) => {
+          const ratingA = getGroupRating(a);
+          const ratingB = getGroupRating(b);
+          return sortDirection === "desc" ? ratingB - ratingA : ratingA - ratingB;
+        })
+      : groupedPlayers;
+
+    // Handle sort button click - cycle through: null -> desc -> asc -> null
+    const handleSortClick = () => {
+      if (sortDirection === null) {
+        onSortChange("desc");
+      } else if (sortDirection === "desc") {
+        onSortChange("asc");
+      } else {
+        onSortChange(null);
+      }
+    };
+
+    // Get sort icon based on current direction
+    const SortIcon = sortDirection === "desc"
+      ? IconSortDescending
+      : sortDirection === "asc"
+        ? IconSortAscending
+        : IconArrowsSort;
 
     return (
       <div className="rounded-md border">
@@ -453,7 +509,15 @@ export default function SeasonPlayersCard({
               <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
               <TableHead className="py-2.5 font-medium text-xs min-w-[240px]">Player</TableHead>
               <TableHead className="w-[140px] py-2.5 font-medium text-xs">Division</TableHead>
-              <TableHead className="w-[100px] py-2.5 font-medium text-xs">Rating</TableHead>
+              <TableHead className="w-[100px] py-2.5 font-medium text-xs">
+                <button
+                  onClick={handleSortClick}
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                >
+                  Rating
+                  <SortIcon className={cn("size-3.5", sortDirection ? "text-foreground" : "text-muted-foreground")} />
+                </button>
+              </TableHead>
               <TableHead className="w-[120px] py-2.5 font-medium text-xs">Joined</TableHead>
               <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
               <TableHead className="w-[140px] py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
@@ -466,8 +530,8 @@ export default function SeasonPlayersCard({
             variants={tableContainerVariants}
             onAnimationComplete={() => { hasAnimatedRef.current = true; }}
           >
-            {groupedPlayers.length > 0 ? (
-              groupedPlayers.map((group, index) => {
+            {sortedGroupedPlayers.length > 0 ? (
+              sortedGroupedPlayers.map((group, index) => {
                 if (group.type === "partnership" && group.memberships.length === 2) {
                   // Doubles team
                   const [member1, member2] = group.memberships;
@@ -807,10 +871,20 @@ export default function SeasonPlayersCard({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="active" className="mt-0">
-            <PlayerTable players={activePlayers} isWaitlistTab={false} />
+            <PlayerTable
+              players={activePlayers}
+              isWaitlistTab={false}
+              sortDirection={activeSortDirection}
+              onSortChange={setActiveSortDirection}
+            />
           </TabsContent>
           <TabsContent value="waitlisted" className="mt-0">
-            <PlayerTable players={waitlistedPlayers} isWaitlistTab={true} />
+            <PlayerTable
+              players={waitlistedPlayers}
+              isWaitlistTab={true}
+              sortDirection={waitlistSortDirection}
+              onSortChange={setWaitlistSortDirection}
+            />
           </TabsContent>
         </Tabs>
       </div>
