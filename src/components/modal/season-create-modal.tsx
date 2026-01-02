@@ -210,6 +210,15 @@ export default function SeasonCreateModal({
   const hasSponsor = watch("hasSponsor");
   const categoryIds = watch("categoryIds");
   const existingSponsorId = watch("existingSponsorId");
+  const entryFee = watch("entryFee");
+
+  // Auto-manage paymentRequired based on entryFee
+  // - Entry fee > 0: automatically enable payment required
+  // - Entry fee = 0 or empty: automatically disable payment required
+  useEffect(() => {
+    const isFree = !entryFee || entryFee === 0;
+    setValue("paymentRequired", !isFree, { shouldValidate: true });
+  }, [entryFee, setValue]);
 
   // Check if form step is valid (without sponsor validation)
   const isFormStepValid = useMemo(() => {
@@ -273,16 +282,6 @@ export default function SeasonCreateModal({
       fetchCategories();
     }
   }, [isCategoryDropdownOpen]);
-
-  // Auto-disable payment for free seasons
-  const entryFee = watch("entryFee");
-  const isFreeEntry = entryFee === 0;
-
-  useEffect(() => {
-    if (isFreeEntry) {
-      setValue("paymentRequired", false);
-    }
-  }, [isFreeEntry, setValue]);
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
@@ -931,52 +930,50 @@ export default function SeasonCreateModal({
                       { key: "promoCodeSupported" as const, label: "Promo Codes" },
                       { key: "withdrawalEnabled" as const, label: "Withdrawals" },
                     ].map(({ key, label }) => {
-                      const isDisabled = key === "paymentRequired" && isFreeEntry;
+                      // Payment Required is auto-managed based on entry fee
+                      const isPaymentRequired = key === "paymentRequired";
+                      const isFreeEntry = !entryFee || entryFee === 0;
+                      const isDisabled = isPaymentRequired; // Always disabled - auto-managed
+
                       return (
                         <div
                           key={key}
                           className={cn(
-                            "flex flex-col p-2.5 rounded-lg border border-border/50 bg-background",
+                            "flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background",
                             isDisabled && "opacity-60"
                           )}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={cn(
-                                  "size-2 rounded-full transition-colors",
-                                  formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-                                )}
-                              />
-                              <Label
-                                className={cn(
-                                  "text-sm font-medium",
-                                  isDisabled ? "cursor-not-allowed" : "cursor-pointer"
-                                )}
-                                htmlFor={key}
-                              >
-                                {label}
-                              </Label>
-                            </div>
-                            <Controller
-                              control={control}
-                              name={key}
-                              render={({ field: { value, onChange } }) => (
-                                <Switch
-                                  id={key}
-                                  checked={value}
-                                  onCheckedChange={onChange}
-                                  className="scale-90"
-                                  disabled={isDisabled}
-                                />
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "size-2 rounded-full transition-colors",
+                                formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
                               )}
                             />
+                            <div className="flex flex-col">
+                              <Label className={cn("text-sm font-medium", !isDisabled && "cursor-pointer")} htmlFor={key}>
+                                {label}
+                              </Label>
+                              {isPaymentRequired && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {isFreeEntry ? "Free season" : "Paid season"}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {isDisabled && (
-                            <span className="text-xs text-muted-foreground mt-1">
-                              Not required for free seasons
-                            </span>
-                          )}
+                          <Controller
+                            control={control}
+                            name={key}
+                            render={({ field: { value, onChange } }) => (
+                              <Switch
+                                id={key}
+                                checked={value}
+                                onCheckedChange={onChange}
+                                disabled={isDisabled}
+                                className="scale-90"
+                              />
+                            )}
+                          />
                         </div>
                       );
                     })}
