@@ -210,6 +210,15 @@ export default function SeasonCreateModal({
   const hasSponsor = watch("hasSponsor");
   const categoryIds = watch("categoryIds");
   const existingSponsorId = watch("existingSponsorId");
+  const entryFee = watch("entryFee");
+
+  // Auto-manage paymentRequired based on entryFee
+  // - Entry fee > 0: automatically enable payment required
+  // - Entry fee = 0 or empty: automatically disable payment required
+  useEffect(() => {
+    const isFree = !entryFee || entryFee === 0;
+    setValue("paymentRequired", !isFree, { shouldValidate: true });
+  }, [entryFee, setValue]);
 
   // Check if form step is valid (without sponsor validation)
   const isFormStepValid = useMemo(() => {
@@ -916,40 +925,58 @@ export default function SeasonCreateModal({
                 <div className="p-3">
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { key: "isActive" as const, label: "Active" },
-                      { key: "paymentRequired" as const, label: "Payment Required" },
-                      { key: "promoCodeSupported" as const, label: "Promo Codes" },
-                      { key: "withdrawalEnabled" as const, label: "Withdrawals" },
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "size-2 rounded-full transition-colors",
-                              formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                      { key: "isActive" as const, label: "Active", hint: undefined },
+                      { key: "paymentRequired" as const, label: "Payment Required", hint: "Auto-set by entry fee" },
+                      { key: "promoCodeSupported" as const, label: "Promo Codes", hint: undefined },
+                      { key: "withdrawalEnabled" as const, label: "Withdrawals", hint: undefined },
+                    ].map(({ key, label, hint }) => {
+                      // Payment Required is auto-managed based on entry fee
+                      const isPaymentRequired = key === "paymentRequired";
+                      const isFreeEntry = !entryFee || entryFee === 0;
+                      const isDisabled = isPaymentRequired; // Always disabled - auto-managed
+
+                      return (
+                        <div
+                          key={key}
+                          className={cn(
+                            "flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background",
+                            isDisabled && "opacity-60"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "size-2 rounded-full transition-colors",
+                                formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <Label className={cn("text-sm font-medium", !isDisabled && "cursor-pointer")} htmlFor={key}>
+                                {label}
+                              </Label>
+                              {isPaymentRequired && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {isFreeEntry ? "Free season" : "Paid season"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Controller
+                            control={control}
+                            name={key}
+                            render={({ field: { value, onChange } }) => (
+                              <Switch
+                                id={key}
+                                checked={value}
+                                onCheckedChange={onChange}
+                                disabled={isDisabled}
+                                className="scale-90"
+                              />
                             )}
                           />
-                          <Label className="text-sm font-medium cursor-pointer" htmlFor={key}>
-                            {label}
-                          </Label>
                         </div>
-                        <Controller
-                          control={control}
-                          name={key}
-                          render={({ field: { value, onChange } }) => (
-                            <Switch
-                              id={key}
-                              checked={value}
-                              onCheckedChange={onChange}
-                              className="scale-90"
-                            />
-                          )}
-                        />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
