@@ -1,5 +1,3 @@
-
-
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
@@ -251,14 +249,24 @@ export function DivisionsDataTable({
 
   // Filter data by search
   const filteredData = React.useMemo(() => {
-    if (!searchQuery) return data;
+    if (!searchQuery) return data.slice().sort((a, b) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aDate - bDate; // OLDEST to NEWEST
+    });
     const search = searchQuery.toLowerCase();
-    return data.filter(d =>
-      d.name.toLowerCase().includes(search) ||
-      (d as any).season?.name?.toLowerCase().includes(search) ||
-      d.divisionLevel?.toLowerCase().includes(search) ||
-      d.gameType?.toLowerCase().includes(search)
-    );
+    return data
+      .filter(d =>
+        d.name.toLowerCase().includes(search) ||
+        (d as any).season?.name?.toLowerCase().includes(search) ||
+        d.divisionLevel?.toLowerCase().includes(search) ||
+        d.gameType?.toLowerCase().includes(search)
+      )
+      .sort((a, b) => {
+        const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return aDate - bDate;
+      });
   }, [data, searchQuery]);
 
   // Pagination
