@@ -29,7 +29,11 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
+import {
+  tableContainerVariants,
+  tableRowVariants,
+  fastTransition,
+} from "@/lib/animation-variants";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,7 +65,9 @@ import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const CategoryEditModal = React.lazy(() => import("@/components/modal/category-edit-modal"));
+const CategoryEditModal = React.lazy(
+  () => import("@/components/modal/category-edit-modal")
+);
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-MY", {
@@ -107,7 +113,6 @@ const getStatusBadgeClass = (isActive: boolean): string => {
   return "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-700";
 };
 
-
 // const getSeasonsDisplay = (category: Category): React.ReactNode => {
 //   if (!category.season) {
 //     return <span className="text-muted-foreground text-xs">No season Found</span>;
@@ -138,7 +143,9 @@ const getStatusBadgeClass = (isActive: boolean): string => {
 
 const getSeasonsDisplay = (category: Category): React.ReactNode => {
   if (!category.seasons || category.seasons.length === 0) {
-    return <span className="text-muted-foreground text-xs">No season assigned</span>;
+    return (
+      <span className="text-muted-foreground text-xs">No season assigned</span>
+    );
   }
 
   if (category.seasons.length === 1) {
@@ -149,14 +156,13 @@ const getSeasonsDisplay = (category: Category): React.ReactNode => {
     );
   }
 
- 
   //   <Badge variant="secondary" className="cursor-pointer">
   //     {category.season.name}
   //   </Badge>
-  
+
   return (
     <Badge variant="secondary" className="cursor-pointer">
-      {category.seasons.length} Season{category.seasons.length !== 1 ? 's' : ''}
+      {category.seasons.length} Season{category.seasons.length !== 1 ? "s" : ""}
     </Badge>
   );
 };
@@ -198,7 +204,9 @@ const createColumns = (
     cell: ({ row }) => {
       const category = row.original;
       return (
-        <div className="font-medium text-foreground">{category.name || "Unnamed Category"}</div>
+        <div className="font-medium text-foreground">
+          {category.name || "Unnamed Category"}
+        </div>
       );
     },
     enableHiding: false,
@@ -211,7 +219,10 @@ const createColumns = (
       return (
         <Badge
           variant="outline"
-          className={cn("text-xs font-medium border capitalize", getGenderBadgeClass(restriction))}
+          className={cn(
+            "text-xs font-medium border capitalize",
+            getGenderBadgeClass(restriction)
+          )}
         >
           {restriction.toLowerCase()}
         </Badge>
@@ -226,7 +237,10 @@ const createColumns = (
       return gameType ? (
         <Badge
           variant="outline"
-          className={cn("text-xs font-medium border capitalize", getGameTypeBadgeClass(gameType))}
+          className={cn(
+            "text-xs font-medium border capitalize",
+            getGameTypeBadgeClass(gameType)
+          )}
         >
           {gameType.toLowerCase()}
         </Badge>
@@ -241,7 +255,9 @@ const createColumns = (
     cell: ({ row }) => {
       const format = row.original.matchFormat;
       return format ? (
-        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{format}</code>
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+          {format}
+        </code>
       ) : (
         <span className="text-muted-foreground text-sm">-</span>
       );
@@ -262,7 +278,10 @@ const createColumns = (
     cell: ({ row }) => (
       <Badge
         variant="outline"
-        className={cn("text-xs font-medium border", getStatusBadgeClass(row.original.isActive))}
+        className={cn(
+          "text-xs font-medium border",
+          getStatusBadgeClass(row.original.isActive)
+        )}
       >
         {row.original.isActive ? "Active" : "Inactive"}
       </Badge>
@@ -308,7 +327,10 @@ const createColumns = (
 
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => handleDeleteCategory(category.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteCategory(category.id);
+              }}
             >
               <IconTrash className="mr-2 size-4" />
               Delete Category
@@ -324,26 +346,34 @@ interface CategoriesDataTableProps {
   refreshTrigger?: number;
 }
 
-export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps) {
+export function CategoriesDataTable({
+  refreshTrigger,
+}: CategoriesDataTableProps) {
   const [data, setData] = React.useState<Category[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  
+
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] =
+    React.useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = React.useState(false);
-  const [categoryToDelete, setCategoryToDelete] = React.useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    React.useState<Category | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   // Filter states
   const [gameTypeFilter, setGameTypeFilter] = React.useState<string>("all");
-  const [genderRestrictionFilter, setGenderRestrictionFilter] = React.useState<string>("all");
+  const [genderRestrictionFilter, setGenderRestrictionFilter] =
+    React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [showFilters, setShowFilters] = React.useState<boolean>(false);
 
@@ -452,7 +482,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    const category = data.find(cat => cat.id === categoryId);
+    const category = data.find((cat) => cat.id === categoryId);
     if (category) {
       setCategoryToDelete(category);
       setDeleteModalOpen(true);
@@ -464,23 +494,29 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
 
     setIsDeleting(true);
     try {
-      const response = await axiosInstance.delete(endpoints.categories.delete(categoryToDelete.id));
+      const response = await axiosInstance.delete(
+        endpoints.categories.delete(categoryToDelete.id)
+      );
       if (response.status === 200) {
-        setData(prevData => prevData.filter(category => category.id !== categoryToDelete.id));
-        setRowSelection(prev => {
+        setData((prevData) =>
+          prevData.filter((category) => category.id !== categoryToDelete.id)
+        );
+        setRowSelection((prev) => {
           const newSelection = { ...prev };
           delete (newSelection as any)[categoryToDelete.id];
           return newSelection;
         });
         setDeleteModalOpen(false);
         setCategoryToDelete(null);
-        toast.success(`Category "${categoryToDelete.name}" deleted successfully`);
+        toast.success(
+          `Category "${categoryToDelete.name}" deleted successfully`
+        );
       }
     } catch (error: any) {
       console.error("Failed to delete category:", error);
       toast.error(
-        error.response?.data?.message || 
-        `Failed to delete category "${categoryToDelete.name}"`
+        error.response?.data?.message ||
+          `Failed to delete category "${categoryToDelete.name}"`
       );
     } finally {
       setIsDeleting(false);
@@ -495,9 +531,11 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
 
   const confirmBulkDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const selectedIds = selectedRows.map(row => row.original.id);
-    const selectedNames = selectedRows.map(row => row.original.name || "Unnamed Category");
-    
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    const selectedNames = selectedRows.map(
+      (row) => row.original.name || "Unnamed Category"
+    );
+
     if (selectedIds.length === 0) return;
 
     setIsDeleting(true);
@@ -507,21 +545,32 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
     try {
       for (let i = 0; i < selectedIds.length; i++) {
         try {
-          await axiosInstance.delete(endpoints.categories.delete(selectedIds[i]));
+          await axiosInstance.delete(
+            endpoints.categories.delete(selectedIds[i])
+          );
           successCount++;
         } catch (error: any) {
-          console.error(`Failed to delete category ${selectedNames[i]}:`, error);
+          console.error(
+            `Failed to delete category ${selectedNames[i]}:`,
+            error
+          );
           failedCategories.push(selectedNames[i]);
         }
       }
       const failedIds = selectedRows
         .filter((_, index) => failedCategories.includes(selectedNames[index]))
-        .map(row => row.original.id);
-      
-      const successfullyDeletedIds = selectedIds.filter(id => !failedIds.includes(id));
-      
-      setData(prevData => prevData.filter(category => !successfullyDeletedIds.includes(category.id)));
-      
+        .map((row) => row.original.id);
+
+      const successfullyDeletedIds = selectedIds.filter(
+        (id) => !failedIds.includes(id)
+      );
+
+      setData((prevData) =>
+        prevData.filter(
+          (category) => !successfullyDeletedIds.includes(category.id)
+        )
+      );
+
       // Clear all selections
       setRowSelection({});
       setBulkDeleteModalOpen(false);
@@ -529,17 +578,15 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
       // Show appropriate toasts based on results
       if (successCount === selectedIds.length) {
         toast.success(
-          `Successfully deleted ${successCount} categor${successCount === 1 ? 'y' : 'ies'}`
+          `Successfully deleted ${successCount} categor${successCount === 1 ? "y" : "ies"}`
         );
       } else {
-        toast.error(
-          `Failed to delete all ${selectedIds.length} categories`,
-          {
-            description: failedCategories.length <= 3
-              ? `Categories: ${failedCategories.join(', ')}`
-              : `Including: ${failedCategories.slice(0, 3).join(', ')} and others`,
-          }
-        );
+        toast.error(`Failed to delete all ${selectedIds.length} categories`, {
+          description:
+            failedCategories.length <= 3
+              ? `Categories: ${failedCategories.join(", ")}`
+              : `Including: ${failedCategories.slice(0, 3).join(", ")} and others`,
+        });
       }
     } catch (error: any) {
       console.error("Failed to delete categories:", error);
@@ -577,13 +624,21 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
   });
 
   // Filter options for FilterSelect
-  const gameTypeOptions: FilterOption[] = React.useMemo(() =>
-    uniqueGameTypes.map(type => ({ value: type, label: type.charAt(0) + type.slice(1).toLowerCase() })),
+  const gameTypeOptions: FilterOption[] = React.useMemo(
+    () =>
+      uniqueGameTypes.map((type) => ({
+        value: type,
+        label: type.charAt(0) + type.slice(1).toLowerCase(),
+      })),
     [uniqueGameTypes]
   );
 
-  const genderOptions: FilterOption[] = React.useMemo(() =>
-    uniqueGenderRestrictions.map(gender => ({ value: gender, label: gender.charAt(0) + gender.slice(1).toLowerCase() })),
+  const genderOptions: FilterOption[] = React.useMemo(
+    () =>
+      uniqueGenderRestrictions.map((gender) => ({
+        value: gender,
+        label: gender.charAt(0) + gender.slice(1).toLowerCase(),
+      })),
     [uniqueGenderRestrictions]
   );
 
@@ -599,10 +654,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
   return (
     <div className="space-y-4 px-4 lg:px-6">
       {/* Filter Bar */}
-      <FilterBar
-        onClearAll={clearFilters}
-        showClearButton={hasActiveFilters}
-      >
+      <FilterBar onClearAll={clearFilters} showClearButton={hasActiveFilters}>
         <SearchInput
           value={globalFilter ?? ""}
           onChange={setGlobalFilter}
@@ -617,7 +669,11 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
           triggerClassName="w-[150px]"
         />
         <FilterSelect
-          value={genderRestrictionFilter === "all" ? undefined : genderRestrictionFilter}
+          value={
+            genderRestrictionFilter === "all"
+              ? undefined
+              : genderRestrictionFilter
+          }
           onChange={(value) => setGenderRestrictionFilter(value || "all")}
           options={genderOptions}
           allLabel="All Genders"
@@ -631,11 +687,7 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
           triggerClassName="w-[130px]"
         />
         {table.getFilteredSelectedRowModel().rows.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleBulkDelete}
-          >
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
             <IconTrashX className="mr-2 size-4" />
             Delete ({table.getFilteredSelectedRowModel().rows.length})
           </Button>
@@ -645,7 +697,9 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
       {/* Header with count */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{filteredData.length.toLocaleString()}</span>
+          <span className="text-sm font-medium">
+            {filteredData.length.toLocaleString()}
+          </span>
           <span className="text-sm text-muted-foreground">
             {filteredData.length === 1 ? "category" : "categories"}
             {hasActiveFilters && ` (filtered from ${data.length})`}
@@ -670,7 +724,10 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="bg-muted/50 hover:bg-muted/50">
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-muted/50 hover:bg-muted/50"
+                >
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
@@ -679,7 +736,10 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
                     >
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -703,7 +763,10 @@ export function CategoriesDataTable({ refreshTrigger }: CategoriesDataTableProps
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </motion.tr>

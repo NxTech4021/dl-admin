@@ -3,10 +3,10 @@ import { z } from "zod";
 export const categorySchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED"]),
+  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]),
   matchFormat: z.string().nullable(),
   gameType: z.enum(["SINGLES", "DOUBLES"]).nullable(),
-  genderCategory: z.enum(["MALE", "FEMALE", "MIXED"]).nullable(),
+  genderCategory: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]).nullable(),
   isActive: z.boolean(),
   categoryOrder: z.number(),
    seasons: z
@@ -28,11 +28,14 @@ export type Category = z.infer<typeof categorySchema>;
 // Schema for creating a new category
 export const createCategorySchema = z.object({
   name: z.string().min(1, "Category name is required"),
-  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED"]),
+  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]),
   matchFormat: z.string().optional(),
   game_type: z.enum(["SINGLES", "DOUBLES"]).optional(),
-  gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).optional(),
-  categoryOrder: z.number().min(0, "Category order must be non-negative").default(0),
+  gender_category: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]).optional(),
+  categoryOrder: z
+    .number()
+    .min(0, "Category order must be non-negative")
+    .default(0),
   seasonId: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -42,11 +45,14 @@ export type CreateCategoryData = z.infer<typeof createCategorySchema>;
 // Schema for updating a category
 export const updateCategorySchema = z.object({
   name: z.string().min(1, "Category name is required").optional(),
-  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED"]).optional(),
+  genderRestriction: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]).optional(),
   matchFormat: z.string().optional(),
   game_type: z.enum(["SINGLES", "DOUBLES"]).optional(),
-  gender_category: z.enum(["MALE", "FEMALE", "MIXED"]).optional(),
-  categoryOrder: z.number().min(0, "Category order must be non-negative").optional(),
+  gender_category: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"]).optional(),
+  categoryOrder: z
+    .number()
+    .min(0, "Category order must be non-negative")
+    .optional(),
   seasonId: z.string().nullable().optional(),
   isActive: z.boolean().optional(),
 });

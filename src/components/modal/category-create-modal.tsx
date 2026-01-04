@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 type GameType = "SINGLES" | "DOUBLES";
-type GenderType = "MALE" | "FEMALE" | "MIXED";
+type GenderType = "MALE" | "FEMALE" | "MIXED" | "OPEN";
 type GenderRestriction = "MALE" | "FEMALE" | "MIXED" | "OPEN";
 
 const GAME_TYPE_OPTIONS: { value: GameType; label: string; icon: React.ReactNode }[] = [
@@ -52,12 +52,13 @@ const GENDER_TYPE_OPTIONS: { value: GenderType; label: string }[] = [
   { value: "MALE", label: "Men's" },
   { value: "FEMALE", label: "Women's" },
   { value: "MIXED", label: "Mixed" },
+  { value: "OPEN", label: "Open" },
 ];
 
 // Zod schema for form validation
 const categoryCreateSchema = z
   .object({
-    gender_category: z.enum(["MALE", "FEMALE", "MIXED"], {
+    gender_category: z.enum(["MALE", "FEMALE", "MIXED", "OPEN"], {
       message: "Gender is required",
     }),
     game_type: z.enum(["SINGLES", "DOUBLES"], {
@@ -142,6 +143,8 @@ export default function CategoryCreateModal({
         genderPrefix = "Mixed";
       } else if (gender === "MALE") {
         genderPrefix = "Men's";
+      } else if (gender === "OPEN") {
+        genderPrefix = "Open";
       } else {
         genderPrefix = "Women's";
       }

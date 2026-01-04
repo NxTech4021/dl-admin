@@ -25,7 +25,7 @@ import { Category } from "./types";
 interface CategoryCardProps {
   categories: Category[];
   onEditCategory?: (category: Category) => void; 
-  onAddCategory?: () => void; // new prop
+  onAddCategory?: () => void;
   onDeleteCategory?: (categoryId: string) => void;
 }
 
