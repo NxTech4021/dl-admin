@@ -120,8 +120,15 @@ export default function SeasonDivisionsCard({
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
-  const totalPages = Math.ceil(divisions.length / pageSize);
-  const paginatedDivisions = divisions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const sortedDivisions = React.useMemo(() => {
+    return divisions.slice().sort((a, b) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aDate - bDate; // OLDEST to NEWEST
+    });
+  }, [divisions]);
+  const totalPages = Math.ceil(sortedDivisions.length / pageSize);
+  const paginatedDivisions = sortedDivisions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleDivisionCreated = () => {
     onDivisionCreated?.();
