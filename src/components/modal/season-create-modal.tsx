@@ -118,13 +118,6 @@ const seasonCreateSchema = z
         message: "End date must be after start date",
       });
     }
-    if (data.regiDeadline && data.startDate && data.regiDeadline >= data.startDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["regiDeadline"],
-        message: "Registration deadline must be before start date",
-      });
-    }
     // Sponsor validation - only require sponsorId if hasSponsor is true
     if (data.hasSponsor && !data.existingSponsorId) {
       ctx.addIssue({
@@ -228,8 +221,7 @@ export default function SeasonCreateModal({
       formValues.startDate &&
       formValues.endDate &&
       formValues.regiDeadline &&
-      formValues.startDate < formValues.endDate &&
-      formValues.regiDeadline < formValues.startDate
+      formValues.startDate < formValues.endDate
     );
   }, [formValues]);
 
