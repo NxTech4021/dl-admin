@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { IconLoader2 } from "@tabler/icons-react";
 
 type GameType = "SINGLES" | "DOUBLES";
-type GenderType = "MEN" | "WOMEN" | "MIXED";
+type GenderType = "MEN" | "WOMEN" | "MIXED" | "OPEN";
 
 const GAME_TYPE_OPTIONS: { value: GameType; label: string }[] = [
   { value: "SINGLES", label: "Singles" },
@@ -30,6 +30,7 @@ const GENDER_OPTIONS: { value: GenderType; label: string }[] = [
   { value: "MEN", label: "Men" },
   { value: "WOMEN", label: "Women" },
   { value: "MIXED", label: "Mixed" },
+  { value: "OPEN", label: "Open" },
 ];
 
 interface CategoryFormData {
@@ -73,9 +74,11 @@ export function EditCategoryModal({
         genderPrefix = "Mixed";
       } else if (gender === "MEN") {
         genderPrefix = "Men's";
-      } else {
-        // gender === "WOMEN"
+      } else if (gender === "WOMEN") {
         genderPrefix = "Women's";
+      } else {
+        // gender === "OPEN"
+        genderPrefix = "Open";
       }
       // Game type should be plural: Singles, Doubles
       const gameTypeSuffix = gameType === "SINGLES" ? "Singles" : "Doubles";
