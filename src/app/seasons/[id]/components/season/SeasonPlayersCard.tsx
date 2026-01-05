@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -21,6 +21,7 @@ import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { Membership } from "@/constants/zod/season-schema";
@@ -125,6 +126,8 @@ export default function SeasonPlayersCard({
   const [activeTab, setActiveTab] = useState("active");
   const [activeSortDirection, setActiveSortDirection] = useState<"asc" | "desc" | null>(null);
   const [waitlistSortDirection, setWaitlistSortDirection] = useState<"asc" | "desc" | null>(null);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
+  const [isBatchAssigning, setIsBatchAssigning] = useState(false);
 
   // Helper function to get initials from name
   const getInitials = (name: string | null | undefined): string => {
@@ -373,6 +376,10 @@ export default function SeasonPlayersCard({
     setRatingThreshold("");
   };
 
+  useEffect(() => {
+    setSelectedPlayerIds(new Set());
+  }, [activeTab]);
+
   // Group memberships by partnerships
   const groupMembershipsByPartnerships = (players: Membership[]) => {
     const processed = new Set<string>();
@@ -432,6 +439,42 @@ export default function SeasonPlayersCard({
       setSelectedTeamMembers(null);
     }
     setIsAssignModalOpen(true);
+  };
+
+  const handleBatchAssign = () => {
+    setIsBatchAssigning(true);
+    setIsAssignModalOpen(true);
+  };
+
+  const handleTogglePlayer = (userId: string) => {
+    setSelectedPlayerIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (players: Membership[]) => {
+    const groupedPlayers = groupMembershipsByPartnerships(players);
+    const allUserIds = new Set<string>();
+    groupedPlayers.forEach((group) => {
+      group.memberships.forEach((m) => {
+        if (m.userId) allUserIds.add(m.userId);
+      });
+    });
+    setSelectedPlayerIds(allUserIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedPlayerIds(new Set());
+  };
+
+  const getSelectedMemberships = () => {
+    return memberships.filter((m) => m.userId && selectedPlayerIds.has(m.userId));
   };
 
   // Track animation state to prevent replay on modal open/close
@@ -501,11 +544,38 @@ export default function SeasonPlayersCard({
         ? IconSortAscending
         : IconArrowsSort;
 
+    const allGroupUserIds = new Set<string>();
+    sortedGroupedPlayers.forEach((group) => {
+      group.memberships.forEach((m) => {
+        if (m.userId) allGroupUserIds.add(m.userId);
+      });
+    });
+    const allSelected = allGroupUserIds.size > 0 && 
+      Array.from(allGroupUserIds).every((id) => selectedPlayerIds.has(id));
+    const someSelected = !allSelected && 
+      Array.from(allGroupUserIds).some((id) => selectedPlayerIds.has(id));
+
     return (
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
+              {isWaitlistTab && (
+                <TableHead className="w-[50px] py-2.5 pl-4">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleSelectAll(players);
+                      } else {
+                        handleDeselectAll();
+                      }
+                    }}
+                    aria-label="Select all"
+                    className={cn(someSelected && !allSelected && "data-[state=checked]:bg-muted-foreground")}
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
               <TableHead className="py-2.5 font-medium text-xs min-w-[240px]">Player</TableHead>
               <TableHead className="w-[140px] py-2.5 font-medium text-xs">Division</TableHead>
@@ -545,6 +615,8 @@ export default function SeasonPlayersCard({
                     : rating1.value > 0 ? rating1.value : rating2.value;
 
                   const divisionId = partnership?.divisionId || member1.divisionId || member2.divisionId || null;
+                  const isGroupSelected = member1.userId && member2.userId && 
+                    selectedPlayerIds.has(member1.userId) && selectedPlayerIds.has(member2.userId);
 
                   return (
                     <motion.tr
@@ -553,6 +625,34 @@ export default function SeasonPlayersCard({
                       transition={fastTransition}
                       className="hover:bg-muted/30 border-b transition-colors"
                     >
+                      {/* Checkbox for waitlist */}
+                      {isWaitlistTab && (
+                        <TableCell className="py-3 pl-4">
+                          <Checkbox
+                            checked={isGroupSelected}
+                            onCheckedChange={(checked) => {
+                              if (member1.userId && member2.userId) {
+                                if (checked) {
+                                  setSelectedPlayerIds((prev) => {
+                                    const newSet = new Set(prev);
+                                    newSet.add(member1.userId!);
+                                    newSet.add(member2.userId!);
+                                    return newSet;
+                                  });
+                                } else {
+                                  setSelectedPlayerIds((prev) => {
+                                    const newSet = new Set(prev);
+                                    newSet.delete(member1.userId!);
+                                    newSet.delete(member2.userId!);
+                                    return newSet;
+                                  });
+                                }
+                              }
+                            }}
+                            aria-label={`Select ${member1.user?.name || 'player'} and ${member2.user?.name || 'partner'}`}
+                          />
+                        </TableCell>
+                      )}
                       {/* Row Number */}
                       <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                         {index + 1}
@@ -678,6 +778,7 @@ export default function SeasonPlayersCard({
                   // Individual player
                   const member = group.memberships[0];
                   const rating = getSportRating(member);
+                  const isPlayerSelected = member.userId ? selectedPlayerIds.has(member.userId) : false;
 
                   return (
                     <motion.tr
@@ -686,6 +787,20 @@ export default function SeasonPlayersCard({
                       transition={fastTransition}
                       className="hover:bg-muted/30 border-b transition-colors"
                     >
+                      {/* Checkbox for waitlist */}
+                      {isWaitlistTab && (
+                        <TableCell className="py-3 pl-4">
+                          <Checkbox
+                            checked={isPlayerSelected}
+                            onCheckedChange={() => {
+                              if (member.userId) {
+                                handleTogglePlayer(member.userId);
+                              }
+                            }}
+                            aria-label={`Select ${member.user?.name || 'player'}`}
+                          />
+                        </TableCell>
+                      )}
                       {/* Row Number */}
                       <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
                         {index + 1}
@@ -769,7 +884,7 @@ export default function SeasonPlayersCard({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={isWaitlistTab ? 8 : 7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
                       <IconUser className="size-6 opacity-50" />
@@ -879,6 +994,36 @@ export default function SeasonPlayersCard({
             />
           </TabsContent>
           <TabsContent value="waitlisted" className="mt-0">
+            {selectedPlayerIds.size > 0 && (
+              <div className="mb-4 flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={true}
+                    onCheckedChange={handleDeselectAll}
+                    aria-label="Deselect all"
+                  />
+                  <span className="text-sm font-medium">
+                    {selectedPlayerIds.size} player{selectedPlayerIds.size > 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                  >
+                    Clear Selection
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleBatchAssign}
+                  >
+                    <IconUsers className="size-4 mr-2" />
+                    Assign to Division
+                  </Button>
+                </div>
+              </div>
+            )}
             <PlayerTable
               players={waitlistedPlayers}
               isWaitlistTab={true}
@@ -891,12 +1036,22 @@ export default function SeasonPlayersCard({
 
       <AssignDivisionModal
         isOpen={isAssignModalOpen}
-        onOpenChange={setIsAssignModalOpen}
-        member={selectedMember}
-        teamMembers={selectedTeamMembers}
+        onOpenChange={(open) => {
+          setIsAssignModalOpen(open);
+          if (!open) {
+            setIsBatchAssigning(false);
+          }
+        }}
+        member={isBatchAssigning ? null : selectedMember}
+        teamMembers={isBatchAssigning ? null : selectedTeamMembers}
+        batchMembers={isBatchAssigning ? getSelectedMemberships() : undefined}
         divisions={divisions}
         seasonId={seasonId}
-        onAssigned={onMembershipUpdated}
+        onAssigned={async () => {
+          await onMembershipUpdated?.();
+          setSelectedPlayerIds(new Set());
+          setIsBatchAssigning(false);
+        }}
         adminId={adminId || ""}
         getSportRating={getSportRating}
         gameType={getGameType()}

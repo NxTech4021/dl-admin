@@ -55,7 +55,7 @@ type DivisionBase = {
   threshold?: number | null;
   divisionLevel: "beginner" | "improver" | "intermediate" | "upper_intermediate" | "expert" | "advanced";
   gameType: "singles" | "doubles";
-  genderCategory?: "male" | "female" | "mixed" | null;
+  genderCategory?: "male" | "female" | "mixed" | "open" | null;
   maxSingles?: number | null;
   maxDoublesTeams?: number | null;
   autoAssignmentEnabled?: boolean;
@@ -96,7 +96,7 @@ const divisionSchema = z
     seasonId: z.string().min(1, "Select a season"),
     divisionLevel: z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]),
     gameType: z.enum(["singles", "doubles"]),
-    genderCategory: z.enum(["male", "female", "mixed"]),
+    genderCategory: z.enum(["male", "female", "mixed", "open"]),
     maxSinglesPlayers: z.preprocess((val) => {
       if (
         val === undefined ||
@@ -262,6 +262,7 @@ const formatGender = (gender: string | null | undefined): string => {
     case "male": return "Men's";
     case "female": return "Women's";
     case "mixed": return "Mixed";
+    case "open": return "Open";
     default: return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
   }
 };
@@ -431,7 +432,8 @@ export default function DivisionCreateModal({
         genderCategoryValue.toLowerCase() as
           | "male"
           | "female"
-          | "mixed";
+          | "mixed"
+          | "open";
 
       setValue("gameType", gameTypeLower);
       setValue("genderCategory", genderCategoryLower);
@@ -924,6 +926,7 @@ export default function DivisionCreateModal({
                               <SelectItem value="male">Men's</SelectItem>
                               <SelectItem value="female">Women's</SelectItem>
                               <SelectItem value="mixed">Mixed</SelectItem>
+                              <SelectItem value="open">Open</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
