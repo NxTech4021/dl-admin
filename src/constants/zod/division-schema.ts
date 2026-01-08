@@ -37,8 +37,8 @@ export const divisionSchema = z.object({
   isActive: z.boolean(),
   prizePoolTotal: z.number().nullable().optional(),
   sponsoredDivisionName: z.string().nullable().optional(),
-  currentSinglesCount: z.number().optional().default(0),
-  currentDoublesCount: z.number().optional().default(0),
+  currentSinglesCount: z.number().nullable().optional().default(0),
+  currentDoublesCount: z.number().nullable().optional().default(0),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date()),
   season: z.object({
@@ -46,8 +46,8 @@ export const divisionSchema = z.object({
     name: z.string(),
     startDate: z.string().or(z.date()).nullable().optional(),
     endDate: z.string().or(z.date()).nullable().optional(),
-  }).nullable().optional(),
-});
+  }).passthrough().nullable().optional(),
+}).passthrough();
 
 export type Division = z.infer<typeof divisionSchema>;
 
