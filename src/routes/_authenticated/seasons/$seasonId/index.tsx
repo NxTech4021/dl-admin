@@ -83,6 +83,7 @@ function SeasonDetailPage() {
       const parsed = z.array(divisionSchema).parse(response.data.data);
       setDivisions(parsed);
     } catch (error) {
+      console.error("Failed to load divisions:", error);
       setDivisions([]);
       toast.error("Unable to load divisions.");
     } finally {
