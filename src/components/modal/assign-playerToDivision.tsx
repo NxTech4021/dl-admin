@@ -40,6 +40,7 @@ interface AssignDivisionModalProps {
   onOpenChange: (open: boolean) => void;
   member: Membership | null;
   teamMembers?: Membership[] | null;
+  batchMembers?: Membership[];
   divisions: Division[];
   seasonId: string;
   adminId: string;
@@ -94,6 +95,7 @@ export default function AssignDivisionModal({
   onOpenChange,
   member,
   teamMembers,
+  batchMembers,
   divisions,
   seasonId,
   onAssigned,
@@ -101,6 +103,7 @@ export default function AssignDivisionModal({
   getSportRating,
   gameType,
 }: AssignDivisionModalProps) {
+  const isBatchMode = batchMembers && batchMembers.length > 0;
   const isTeam = teamMembers && teamMembers.length > 0;
   const [selectedDivisionId, setSelectedDivisionId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
@@ -110,10 +113,12 @@ export default function AssignDivisionModal({
   // Reset selected division when modal opens with new member
   useEffect(() => {
     if (isOpen) {
-      const currentDivision = member?.divisionId || teamMembers?.[0]?.divisionId || "";
+      const currentDivision = isBatchMode 
+        ? "" 
+        : member?.divisionId || teamMembers?.[0]?.divisionId || "";
       setSelectedDivisionId(currentDivision);
     }
-  }, [isOpen, member, teamMembers]);
+  }, [isOpen, member, teamMembers, isBatchMode]);
 
   const getDivisionName = (divisionId: string | null) => {
     if (!divisionId) return "Unassigned";
@@ -137,7 +142,12 @@ export default function AssignDivisionModal({
 
     const threshold = selectedDivision.threshold;
 
-    if (isTeam && teamMembers) {
+    if (isBatchMode && batchMembers) {
+      return batchMembers.some((batchMember) => {
+        const rating = getSportRating(batchMember);
+        return rating.value > threshold;
+      });
+    } else if (isTeam && teamMembers) {
       return teamMembers.some((teamMember) => {
         const rating = getSportRating(teamMember);
         return rating.value > threshold;
@@ -151,30 +161,48 @@ export default function AssignDivisionModal({
   };
 
   const performAssignment = async (overrideThreshold: boolean = false) => {
-    if (!member || !selectedDivisionId) {
+    if (!selectedDivisionId) {
       toast.error("Please select a division");
+      return;
+    }
+
+    if (!isBatchMode && !member) {
+      toast.error("No player selected");
       return;
     }
 
     setIsAssigning(true);
     try {
-      if (isTeam && teamMembers) {
-        await Promise.all(
-          teamMembers.map((teamMember) =>
-            axiosInstance.post(endpoints.division.assignPlayer, {
-              userId: teamMember.userId,
-              divisionId: selectedDivisionId,
-              seasonId,
-              assignedBy: adminId,
-              overrideThreshold: overrideThreshold,
-            })
-          )
-        );
+      if (isBatchMode && batchMembers) {
+        // Batch assignment - send array of user IDs
+        const userIds = batchMembers.map((m) => m.userId).filter((id): id is string => !!id);
+        
+        await axiosInstance.post(endpoints.division.assignPlayer, {
+          userIds: userIds,
+          divisionId: selectedDivisionId,
+          seasonId,
+          assignedBy: adminId,
+          overrideThreshold: overrideThreshold,
+        });
+
+        toast.success(`${userIds.length} player${userIds.length > 1 ? 's' : ''} assigned to division successfully!`);
+      } else if (isTeam && teamMembers) {
+        // Team assignment - send array of user IDs
+        const userIds = teamMembers.map((m) => m.userId).filter((id): id is string => !!id);
+        
+        await axiosInstance.post(endpoints.division.assignPlayer, {
+          userIds: userIds,
+          divisionId: selectedDivisionId,
+          seasonId,
+          assignedBy: adminId,
+          overrideThreshold: overrideThreshold,
+        });
 
         toast.success("Team assigned to division successfully!");
-      } else {
+      } else if (member) {
+        // Single player assignment - send single user ID in array
         await axiosInstance.post(endpoints.division.assignPlayer, {
-          userId: member.userId,
+          userIds: [member.userId],
           divisionId: selectedDivisionId,
           seasonId,
           assignedBy: adminId,
@@ -192,7 +220,7 @@ export default function AssignDivisionModal({
     } catch (error: any) {
       toast.error(
         error.response?.data?.error ||
-          `Failed to assign ${isTeam ? "team" : "player"} to division`
+          `Failed to assign ${isBatchMode ? 'players' : isTeam ? "team" : "player"} to division`
       );
     } finally {
       setIsAssigning(false);
@@ -201,8 +229,13 @@ export default function AssignDivisionModal({
   };
 
   const handleAssignSubmit = async () => {
-    if (!member || !selectedDivisionId) {
+    if (!selectedDivisionId) {
       toast.error("Please select a division");
+      return;
+    }
+
+    if (!isBatchMode && !member) {
+      toast.error("No player selected");
       return;
     }
 
@@ -223,7 +256,13 @@ export default function AssignDivisionModal({
   };
 
   // Get player(s) to display
-  const displayMembers = isTeam && teamMembers ? teamMembers : member ? [member] : [];
+  const displayMembers = isBatchMode && batchMembers 
+    ? batchMembers 
+    : isTeam && teamMembers 
+      ? teamMembers 
+      : member 
+        ? [member] 
+        : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -238,7 +277,7 @@ export default function AssignDivisionModal({
                   ? "bg-amber-100 dark:bg-amber-900/30"
                   : "bg-primary/10"
               )}>
-                {isTeam ? (
+                {isBatchMode || isTeam ? (
                   <IconUsers className={cn(
                     "size-5",
                     isReassignment ? "text-amber-600 dark:text-amber-400" : "text-primary"
@@ -252,14 +291,18 @@ export default function AssignDivisionModal({
               </div>
               <div className="flex-1 min-w-0">
                 <DialogTitle className="text-base font-semibold">
-                  {isReassignment
-                    ? isTeam ? "Reassign Team" : "Reassign Player"
-                    : isTeam ? "Assign Team to Division" : "Assign to Division"}
+                  {isBatchMode
+                    ? "Assign Players to Division"
+                    : isReassignment
+                      ? isTeam ? "Reassign Team" : "Reassign Player"
+                      : isTeam ? "Assign Team to Division" : "Assign to Division"}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">
-                  {isReassignment
-                    ? "Select a new division for this assignment"
-                    : "Select a division to assign"}
+                  {isBatchMode
+                    ? `Assign ${displayMembers.length} players to a division`
+                    : isReassignment
+                      ? "Select a new division for this assignment"
+                      : "Select a division to assign"}
                 </DialogDescription>
               </div>
             </div>
@@ -270,16 +313,16 @@ export default function AssignDivisionModal({
           {/* Player(s) Card */}
           <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
-              {isTeam ? (
+              {isBatchMode || isTeam ? (
                 <IconUsers className="size-3.5 text-muted-foreground" />
               ) : (
                 <IconUser className="size-3.5 text-muted-foreground" />
               )}
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {isTeam ? "Team Members" : "Player"}
+                {isBatchMode ? `${displayMembers.length} Players` : isTeam ? "Team Members" : "Player"}
               </span>
             </div>
-            <div className="p-3 space-y-2">
+            <div className="p-3 space-y-2 max-h-[240px] overflow-y-auto">
               {displayMembers.map((teamMember) => {
                 const rating = getSportRating ? getSportRating(teamMember) : null;
                 return (
@@ -375,7 +418,9 @@ export default function AssignDivisionModal({
                   Rating exceeds threshold
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  {isTeam ? "One or more team members have" : "This player has"} a rating above the division threshold of {getSelectedDivision()?.threshold}. You can still proceed.
+                  {isBatchMode
+                    ? "One or more players have"
+                    : isTeam ? "One or more team members have" : "This player has"} a rating above the division threshold of {getSelectedDivision()?.threshold}. You can still proceed.
                 </p>
               </div>
             </div>
@@ -425,7 +470,11 @@ export default function AssignDivisionModal({
         description={
           <div className="space-y-3">
             <p>
-              {isTeam
+              {isBatchMode
+                ? `One or more players have ratings that exceed the division threshold of ${
+                    getSelectedDivision()?.threshold || 0
+                  } points.`
+                : isTeam
                 ? `One or more team members have ratings that exceed the division threshold of ${
                     getSelectedDivision()?.threshold || 0
                   } points.`

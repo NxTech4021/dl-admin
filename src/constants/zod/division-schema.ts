@@ -18,6 +18,7 @@ export const genderCategoryEnum = z.enum([
   "male",
   "female", 
   "mixed",
+  "open",
 ]);
 
 // Base Division Schema (for API responses/table data)
