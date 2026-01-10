@@ -19,6 +19,7 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -46,4 +47,4 @@ docker-compose.override.yml
 
 #package
 package-lock.json
-yarn.lock
+yarn.lockdist/

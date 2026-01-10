@@ -51,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import axios from "axios";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
 import LeagueHistory from "./player-profile/league-history-card";
@@ -133,28 +134,42 @@ const formatQuestionKey = (key: string) => {
 };
 
 // Helper function to format various answer types into readable strings
-const formatAnswerValue = (value: any): string => {
-  if (Array.isArray(value)) {
-    return value.join(", ");
-  }
-  if (typeof value === "object" && value !== null) {
-    // Handle objects like skills - format them nicely
-    return Object.entries(value)
-      .map(([key, val]) => {
-        // Format key names (remove underscores, capitalize)
-        const formattedKey = key
-          .replace(/_/g, " ")
-          .replace(/([A-Z])/g, " $1")
-          .replace(/^./, (str) => str.toUpperCase());
-        return `${formattedKey}: ${val}`;
-      })
-      .join("; ");
+// Uses a seen Set to prevent circular reference crashes
+const formatAnswerValue = (value: any, seen = new WeakSet()): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
   }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";
   }
-  if (value === null || value === undefined) {
-    return "N/A";
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => formatAnswerValue(v, seen)).join(", ");
+  }
+  if (typeof value === "object") {
+    // Check for circular reference
+    if (seen.has(value)) {
+      return "[Circular Reference]";
+    }
+    seen.add(value);
+
+    // Handle objects like skills - format them nicely
+    try {
+      return Object.entries(value)
+        .map(([key, val]) => {
+          // Format key names (remove underscores, capitalize)
+          const formattedKey = key
+            .replace(/_/g, " ")
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase());
+          return `${formattedKey}: ${formatAnswerValue(val, seen)}`;
+        })
+        .join("; ");
+    } catch {
+      return "[Object]";
+    }
   }
   return String(value);
 };
@@ -174,76 +189,175 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
     matches: false,
   });
 
+  // Error states for user feedback
+  const [profileError, setProfileError] = React.useState<string | null>(null);
+  const [profileRetryCount, setProfileRetryCount] = React.useState(0);
+  const [historyError, setHistoryError] = React.useState<{
+    leagues: string | null;
+    seasons: string | null;
+    matches: string | null;
+  }>({ leagues: null, seasons: null, matches: null });
+
+  // Refs for race condition prevention and cleanup
+  const isMountedRef = React.useRef(true);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+  const fetchInProgressRef = React.useRef({
+    profile: false,
+    leagues: false,
+    seasons: false,
+    matches: false,
+  });
+
+  // Reset history state when playerId changes to prevent stale data
+  React.useEffect(() => {
+    setLeagueHistory(null);
+    setSeasonHistory(null);
+    setMatchHistory(null);
+    setHistoryError({ leagues: null, seasons: null, matches: null });
+    setHistoryLoading({ leagues: false, seasons: false, matches: false });
+    fetchInProgressRef.current = {
+      profile: false,
+      leagues: false,
+      seasons: false,
+      matches: false,
+    };
+  }, [playerId]);
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   React.useEffect(() => {
     if (!playerId) return;
 
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const fetchProfile = async () => {
+      // Guard against concurrent requests
+      if (fetchInProgressRef.current.profile) return;
+      fetchInProgressRef.current.profile = true;
+
       setIsLoading(true);
+      setProfileError(null);
       try {
         const response = await axiosInstance.get(
-          endpoints.player.getById(playerId)
+          endpoints.player.getById(playerId),
+          { signal: controller.signal }
         );
         if (response.status !== 200) {
           throw new Error("Failed to fetch profile");
         }
         const result = response.data;
-        setProfile(result.data);
+        if (isMountedRef.current) {
+          setProfile(result.data);
+        }
       } catch (error) {
+        // Ignore abort errors (axios.isCancel works across axios versions)
+        if (axios.isCancel(error)) {
+          return;
+        }
         console.error("Error fetching player profile:", error);
+        if (isMountedRef.current) {
+          setProfileError(
+            error instanceof Error ? error.message : "Failed to load profile"
+          );
+        }
       } finally {
-        setIsLoading(false);
+        fetchInProgressRef.current.profile = false;
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchProfile();
-  }, [playerId]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [playerId, profileRetryCount]);
 
   // Data fetching functions for history tabs
   const fetchLeagueHistory = async () => {
-    if (leagueHistory) return; // Already loaded
+    // Already loaded or fetch in progress
+    if (leagueHistory || fetchInProgressRef.current.leagues) return;
+    fetchInProgressRef.current.leagues = true;
 
     setHistoryLoading((prev) => ({ ...prev, leagues: true }));
+    setHistoryError((prev) => ({ ...prev, leagues: null }));
     try {
       const response = await axiosInstance.get(
         endpoints.player.getLeagueHistory(playerId)
       );
-      if (response.status === 200) {
+      if (response.status === 200 && isMountedRef.current) {
         setLeagueHistory(response.data.data.leagues);
       }
     } catch (error) {
       console.error("Failed to load league history:", error);
+      if (isMountedRef.current) {
+        setHistoryError((prev) => ({
+          ...prev,
+          leagues: "Failed to load league history. Please try again.",
+        }));
+      }
     } finally {
-      setHistoryLoading((prev) => ({ ...prev, leagues: false }));
+      fetchInProgressRef.current.leagues = false;
+      if (isMountedRef.current) {
+        setHistoryLoading((prev) => ({ ...prev, leagues: false }));
+      }
     }
   };
 
   const fetchSeasonHistory = async () => {
-    if (seasonHistory) return; // Already loaded
+    // Already loaded or fetch in progress
+    if (seasonHistory || fetchInProgressRef.current.seasons) return;
+    fetchInProgressRef.current.seasons = true;
 
     setHistoryLoading((prev) => ({ ...prev, seasons: true }));
+    setHistoryError((prev) => ({ ...prev, seasons: null }));
     try {
       const response = await axiosInstance.get(
         endpoints.player.getSeasonHistory(playerId)
       );
-      if (response.status === 200) {
+      if (response.status === 200 && isMountedRef.current) {
         setSeasonHistory(response.data.data.seasons);
       }
     } catch (error) {
       console.error("Failed to load season history:", error);
+      if (isMountedRef.current) {
+        setHistoryError((prev) => ({
+          ...prev,
+          seasons: "Failed to load season history. Please try again.",
+        }));
+      }
     } finally {
-      setHistoryLoading((prev) => ({ ...prev, seasons: false }));
+      fetchInProgressRef.current.seasons = false;
+      if (isMountedRef.current) {
+        setHistoryLoading((prev) => ({ ...prev, seasons: false }));
+      }
     }
   };
 
   const fetchMatchHistory = async () => {
-    if (matchHistory) return; // Already loaded
+    // Already loaded or fetch in progress
+    if (matchHistory || fetchInProgressRef.current.matches) return;
+    fetchInProgressRef.current.matches = true;
 
     setHistoryLoading((prev) => ({ ...prev, matches: true }));
+    setHistoryError((prev) => ({ ...prev, matches: null }));
     try {
       const response = await axiosInstance.get(
         endpoints.player.getMatchHistoryAdmin(playerId)
       );
-      if (response.status === 200) {
+      if (response.status === 200 && isMountedRef.current) {
         // Transform match data to player-specific format
         const matches = response.data.data.matches || [];
         const transformedMatches = matches.map((match: any) => {
@@ -318,8 +432,17 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       }
     } catch (error) {
       console.error("Failed to load match history:", error);
+      if (isMountedRef.current) {
+        setHistoryError((prev) => ({
+          ...prev,
+          matches: "Failed to load match history. Please try again.",
+        }));
+      }
     } finally {
-      setHistoryLoading((prev) => ({ ...prev, matches: false }));
+      fetchInProgressRef.current.matches = false;
+      if (isMountedRef.current) {
+        setHistoryLoading((prev) => ({ ...prev, matches: false }));
+      }
     }
   };
 
@@ -332,10 +455,28 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       <div className="container p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Player Not Found</CardTitle>
+            <CardTitle>
+              {profileError ? "Error Loading Profile" : "Player Not Found"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>The requested player could not be found.</p>
+            <p>
+              {profileError ||
+                "The requested player could not be found."}
+            </p>
+            {profileError && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => {
+                  setProfileError(null);
+                  fetchInProgressRef.current.profile = false;
+                  setProfileRetryCount((c) => c + 1);
+                }}
+              >
+                Retry
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -714,6 +855,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {profile.questionnaires && profile.questionnaires.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -780,6 +922,14 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     ))}
                   </TableBody>
                 </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <IconListCheck className="size-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No questionnaire history available
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -902,27 +1052,84 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
 
       {/* MATCHES TAB */}
       <TabsContent value="matches">
-        <MatchHistory
-          matches={matchHistory}
-          isLoading={historyLoading.matches}
-          playerId={playerId}
-        />
+        {historyError.matches ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconTarget className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.matches}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, matches: null }));
+                  setMatchHistory(null);
+                  fetchMatchHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <MatchHistory
+            matches={matchHistory}
+            isLoading={historyLoading.matches}
+            playerId={playerId}
+          />
+        )}
       </TabsContent>
 
       {/* LEAGUE HISTORY TAB */}
-      <TabsContent value="league_history" onFocus={fetchLeagueHistory}>
-        <LeagueHistory
-          leagues={leagueHistory}
-          isLoading={historyLoading.leagues}
-        />
+      <TabsContent value="league_history">
+        {historyError.leagues ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconTrophy className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.leagues}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, leagues: null }));
+                  setLeagueHistory(null);
+                  fetchLeagueHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <LeagueHistory
+            leagues={leagueHistory}
+            isLoading={historyLoading.leagues}
+          />
+        )}
       </TabsContent>
 
       {/* SEASON HISTORY TAB */}
-      <TabsContent value="season_history" onFocus={fetchSeasonHistory}>
-        <SeasonHistory
-          seasons={seasonHistory}
-          isLoading={historyLoading.seasons}
-        />
+      <TabsContent value="season_history">
+        {historyError.seasons ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconCalendar className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.seasons}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, seasons: null }));
+                  setSeasonHistory(null);
+                  fetchSeasonHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <SeasonHistory
+            seasons={seasonHistory}
+            isLoading={historyLoading.seasons}
+          />
+        )}
       </TabsContent>
 
       {/* ACHIEVEMENTS TAB */}
@@ -957,7 +1164,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             </p>
           </div> */}
 
-          {profile.questionnaires.length > 0 ? (
+          {profile.questionnaires && profile.questionnaires.length > 0 ? (
             <div className="space-y-6">
               {profile.questionnaires.map((q, index) => (
                 <Card key={index} className="overflow-hidden">
