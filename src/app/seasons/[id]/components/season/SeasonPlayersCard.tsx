@@ -615,8 +615,8 @@ export default function SeasonPlayersCard({
                     : rating1.value > 0 ? rating1.value : rating2.value;
 
                   const divisionId = partnership?.divisionId || member1.divisionId || member2.divisionId || null;
-                  const isGroupSelected = member1.userId && member2.userId && 
-                    selectedPlayerIds.has(member1.userId) && selectedPlayerIds.has(member2.userId);
+                  const isGroupSelected = !!(member1.userId && member2.userId &&
+                    selectedPlayerIds.has(member1.userId) && selectedPlayerIds.has(member2.userId));
 
                   return (
                     <motion.tr
