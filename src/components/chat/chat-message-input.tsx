@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import { useTypingIndicator } from "@/app/chat/hooks/chat";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Message } from "@/constants/types/chat";
+import type { EmojiClickData } from "emoji-picker-react";
 
 const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
@@ -18,7 +20,7 @@ interface ChatMessageInputProps {
   selectedConversationId?: string;
   disabled?: boolean;
   onSendMessage?: (content: string) => Promise<void>;
-  replyingTo?: any;
+  replyingTo?: Message | null;
   onCancelReply?: () => void;
 }
 
@@ -195,7 +197,7 @@ export default function ChatMessageInput({
   );
 
   const handleEmojiClick = useCallback(
-    (emojiData: any) => {
+    (emojiData: EmojiClickData) => {
       const emoji = emojiData.emoji;
       const textarea = textareaRef.current;
 

@@ -17,6 +17,8 @@ import { useChatData, useMessages } from "@/app/chat/hooks/chat";
 import type {
   Conversation,
   ChatParticipant,
+  ChatUser,
+  Message,
   Thread,
 } from "@/constants/types/chat";
 
@@ -35,7 +37,7 @@ function ChatPage() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const {
@@ -161,7 +163,7 @@ function ChatPage() {
   }, [threads, user?.id]);
 
   const currentConversation = selectedConversationId
-    ? conversations.find((conv) => conv.id === selectedConversationId)
+    ? conversations.find((conv) => conv.id === selectedConversationId) ?? null
     : null;
 
   const participants = currentConversation?.participants || [];
@@ -174,7 +176,7 @@ function ChatPage() {
     setShowDetails(true);
   }, []);
 
-  const handleReply = useCallback((message: any) => {
+  const handleReply = useCallback((message: Message) => {
     setReplyingTo(message);
   }, []);
 
@@ -392,7 +394,7 @@ function ChatPage() {
             conversations={conversations}
             loading={threadsLoading}
             selectedConversationId={selectedConversationId}
-            user={user}
+            user={user as ChatUser}
             onConversationSelect={handleConversationSelect}
             onThreadCreated={handleThreadCreated}
           />
@@ -416,7 +418,7 @@ function ChatPage() {
                   conversations={conversations}
                   loading={threadsLoading}
                   selectedConversationId={selectedConversationId}
-                  user={user}
+                  user={user as ChatUser}
                   onConversationSelect={handleConversationSelect}
                   onThreadCreated={handleThreadCreated}
                   forceMobileList={true}

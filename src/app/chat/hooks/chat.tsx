@@ -352,11 +352,11 @@ export function useMessages(threadId?: string) {
       setMessages((prev) => [...prev, optimisticMessage]);
 
       try {
-        const payload: any = {
+        const payload: { senderId: string; content: string; repliesToId?: string } = {
           senderId,
           content,
         };
-        
+
         if (repliesToId) {
           payload.repliesToId = repliesToId;
         }

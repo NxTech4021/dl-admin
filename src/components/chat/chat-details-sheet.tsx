@@ -3,12 +3,13 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ChatRoomGroup from "./chat-room-group";
 import ChatRoomSingle from "./chat-room-single";
+import type { Conversation, ChatParticipant } from "@/constants/types/chat";
 
 interface ChatDetailsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conversation: any;
-  participants: any[];
+  conversation: Conversation | null;
+  participants: ChatParticipant[];
 }
 
 export default function ChatDetailsSheet({
