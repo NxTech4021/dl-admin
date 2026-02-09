@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "@/lib/auth-client";
-import { useSocket } from "@/context/socket-context";
+import { useSocket } from "@/contexts/socket-context";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 
 interface Thread {

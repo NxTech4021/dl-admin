@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { SocketProvider } from "@/context/socket-context";
+import { SocketProvider } from "@/contexts/socket-context";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ context, location }) => {

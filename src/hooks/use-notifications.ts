@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "@/lib/auth-client";
-import { useSocket } from "@/context/socket-context";
+import { useSocket } from "@/contexts/socket-context";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 

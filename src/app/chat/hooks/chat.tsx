@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { useSocket } from "@/context/socket-context";
+import { useSocket } from "@/contexts/socket-context";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import type {
