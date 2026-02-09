@@ -7,6 +7,7 @@ import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // Import types
 import type { Conversation, ChatParticipant } from "@/constants/types/chat";
@@ -189,7 +190,7 @@ const ChatNavItem = ({
       if (!mdUp && onCloseMobile) onCloseMobile();
       navigate({ to: `${paths.dashboard.chat}?id=${conversation.id}` });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }, [conversation.id, mdUp, onCloseMobile, navigate]);
 
