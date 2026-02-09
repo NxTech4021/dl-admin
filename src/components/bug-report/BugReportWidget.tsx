@@ -265,7 +265,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
       await fetch(`${apiUrl}/api/bug/reports/${report.id}/sync`, {
         method: "POST",
         credentials: "include",
-      }).catch(console.error);
+      }).catch((err) => logger.error('Bug report submit error:', err));
 
       toast.success(`Bug report ${report.reportNumber} created successfully`);
 
