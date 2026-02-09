@@ -191,9 +191,10 @@ React.useEffect(() => {
       };
 
       const response = await axiosInstance.post(endpoints.sponsors.create, payload);
-      const created = response.data?.data || response.data;
-      const createdId = created?.id || created?.sponsorship?.id;
-      const createdName = created?.sponsoredName || created?.sponsorship?.sponsoredName || newSponsor.sponsoredName.trim();
+      // API returns: { success, status, data: { id, sponsoredName, ... } }
+      const created = response.data?.data;
+      const createdId = created?.id;
+      const createdName = created?.sponsoredName || newSponsor.sponsoredName.trim();
 
       // Auto-select the newly created sponsor
       if (createdId) {
