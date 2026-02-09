@@ -67,6 +67,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 // import Image from "next/image";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -244,7 +245,7 @@ export default function BugDashboard() {
         setAdmins(data.data?.getAllAdmins || []);
       }
     } catch (error) {
-      console.error("Failed to fetch admins:", error);
+      logger.error("Failed to fetch admins:", error);
     }
   };
 
@@ -257,11 +258,11 @@ export default function BugDashboard() {
         const data = await res.json();
         setStats(data);
       } else {
-        console.error("Failed to fetch stats:", res.status);
+        logger.error("Failed to fetch stats:", res.status);
         setStats(DEFAULT_STATS);
       }
     } catch (error) {
-      console.error("Failed to fetch stats:", error);
+      logger.error("Failed to fetch stats:", error);
       setStats(DEFAULT_STATS);
     }
   };
@@ -291,12 +292,12 @@ export default function BugDashboard() {
         setTotalPages(data.pagination?.totalPages ?? 1);
         setTotalCount(data.pagination?.total ?? 0);
       } else {
-        console.error("Failed to fetch reports:", res.status);
+        logger.error("Failed to fetch reports:", res.status);
         toast.error("Failed to load bug reports");
         setReports([]);
       }
     } catch (error) {
-      console.error("Failed to fetch reports:", error);
+      logger.error("Failed to fetch reports:", error);
       toast.error("Failed to load bug reports");
       setReports([]);
     } finally {
