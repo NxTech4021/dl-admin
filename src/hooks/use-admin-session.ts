@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { apiClient } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/api-error";
 import { isAxiosError } from "axios";
+import { logger } from "@/lib/logger";
 
 interface AdminUser {
   id: string;
@@ -53,7 +54,7 @@ export function useAdminSession(): UseAdminSessionReturn {
         setAdmin(null);
         setError(null);
       } else {
-        console.error("Session fetch error:", err);
+        logger.error("Session fetch error:", err);
         setError(getErrorMessage(err, "Failed to fetch session"));
         setUser(null);
         setAdmin(null);
@@ -67,7 +68,7 @@ export function useAdminSession(): UseAdminSessionReturn {
     try {
       await apiClient.post("/api/admin/logout");
     } catch (err) {
-      console.error("Logout error:", err);
+      logger.error("Logout error:", err);
     } finally {
       setUser(null);
       setAdmin(null);
