@@ -5,6 +5,7 @@ import { useSession } from "@/lib/auth-client";
 import { useSocket } from "@/contexts/socket-context";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 // Updated types to match your backend
 export type NotificationCategory =
@@ -157,7 +158,7 @@ export const useNotifications = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching notifications:", error);
+        logger.error("Error fetching notifications:", error);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -188,7 +189,7 @@ export const useNotifications = () => {
         setUnreadCount(response.data.data.unreadCount || 0);
       }
     } catch (error) {
-      console.error("Failed to fetch unread count:", error);
+      logger.error("Failed to fetch unread count:", error);
     }
   }, [session?.user?.id]);
 
@@ -214,7 +215,7 @@ export const useNotifications = () => {
         // Update unread count
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (error) {
-        console.error("Error marking notification as read:", error);
+        logger.error("Error marking notification as read:", error);
       }
     },
     [session?.user?.id]
@@ -237,7 +238,7 @@ export const useNotifications = () => {
         toast.success("All notifications marked as read");
       }
     } catch (error) {
-      console.error("Error archiving notification:", error);
+      logger.error("Error archiving notification:", error);
     }
   }, [session?.user?.id]);
 
@@ -263,7 +264,7 @@ export const useNotifications = () => {
 
         toast.success("Notification deleted");
       } catch (error) {
-        console.error("Error deleting notification:", error);
+        logger.error("Error deleting notification:", error);
         toast.error("Failed to delete notification");
       }
     },
@@ -295,7 +296,7 @@ export const useNotifications = () => {
 
         toast.success(`${notificationIds.length} notification${notificationIds.length > 1 ? 's' : ''} deleted`);
       } catch (error) {
-        console.error("Error deleting notifications:", error);
+        logger.error("Error deleting notifications:", error);
         toast.error("Failed to delete notifications");
       }
     },
@@ -316,7 +317,7 @@ export const useNotifications = () => {
 
       toast.success("All notifications cleared");
     } catch (error) {
-      console.error("Error clearing notifications:", error);
+      logger.error("Error clearing notifications:", error);
       toast.error("Failed to clear notifications");
     }
   }, [session?.user?.id]);
@@ -338,10 +339,10 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!socket || !isConnected || !session?.user?.id) return;
 
-    console.log("🔔 [Notifications] Setting up socket listeners for user:", session.user.id);
+    logger.debug("🔔 [Notifications] Setting up socket listeners for user:", session.user.id);
 
     const handleNewNotification = (notification: Notification) => {
-      console.log("🔔 [Notifications] Received new_notification:", notification);
+      logger.debug("🔔 [Notifications] Received new_notification:", notification);
       setNotifications((prev) => [notification, ...prev]);
       if (!notification.read) {
         setUnreadCount((prev) => prev + 1);
@@ -349,7 +350,7 @@ export const useNotifications = () => {
     };
 
     const handleNotificationRead = (data: { notificationId: string }) => {
-      console.log("🔔 [Notifications] Received notification_read:", data);
+      logger.debug("🔔 [Notifications] Received notification_read:", data);
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === data.notificationId
@@ -361,7 +362,7 @@ export const useNotifications = () => {
     };
 
     const handleAllNotificationsRead = () => {
-      console.log("🔔 [Notifications] Received all_notifications_read");
+      logger.debug("🔔 [Notifications] Received all_notifications_read");
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, read: true, readAt: new Date().toISOString() }))
       );
