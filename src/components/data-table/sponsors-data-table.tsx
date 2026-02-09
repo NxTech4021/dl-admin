@@ -62,6 +62,7 @@ import {
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { sponsorSchema, Sponsor } from "@/constants/zod/sponsor-schema";
+import { logger } from "@/lib/logger";
 
 const SponsorEditModal = React.lazy(() => import("@/components/modal/sponsor-edit-modal").then((mod) => ({ default: mod.SponsorEditModal })));
 
@@ -233,7 +234,7 @@ const createColumns = (
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => {
                 // TODO: Implement view sponsor functionality
-                console.log("View sponsor:", sponsor.id);
+                logger.debug("View sponsor:", sponsor.id);
               }}
             >
               <IconEye className="mr-2 size-4" />
@@ -255,7 +256,7 @@ const createColumns = (
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => {
                 // TODO: Implement delete sponsor functionality
-                console.log("Delete sponsor:", sponsor.id);
+                logger.debug("Delete sponsor:", sponsor.id);
               }}
             >
               <IconTrash className="mr-2 size-4" />
@@ -331,8 +332,8 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
           throw new Error("Network response was not ok");
         }
         const result = await response.data;
-        console.log("Sponsors API response:", result);
-        console.log("Sponsors data:", result.data);
+        logger.debug("Sponsors API response:", result);
+        logger.debug("Sponsors data:", result.data);
         
         // Handle potential Decimal conversion
         const processedData = result.data.map((sponsor: any) => ({
@@ -344,8 +345,8 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
         const parsedData = sponsorSchema.array().parse(processedData);
         setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch sponsors:", error);
-        console.error("Error details:", error);
+        logger.error("Failed to fetch sponsors:", error);
+        logger.error("Error details:", error);
       } finally {
         setIsLoading(false);
       }
@@ -366,7 +367,7 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
       const response = await axiosInstance.get(endpoints.sponsors.getAll);
       if (response.status === 200) {
         const result = await response.data;
-        console.log("Sponsors refresh response:", result);
+        logger.debug("Sponsors refresh response:", result);
         
         // Handle potential Decimal conversion
         const processedData = result.data.map((sponsor: any) => ({
@@ -379,8 +380,8 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
         setData(parsedData);
       }
     } catch (error) {
-      console.error("Failed to refresh sponsors:", error);
-      console.error("Error details:", error);
+      logger.error("Failed to refresh sponsors:", error);
+      logger.error("Error details:", error);
     } finally {
       setIsLoading(false);
     }
