@@ -38,6 +38,8 @@ import {
 import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 import { cn } from "@/lib/utils";
 
+type Partnership = NonNullable<NonNullable<SeasonPlayersCardProps["season"]>["partnerships"]>[number];
+
 interface SeasonPlayersCardProps {
   memberships: Membership[];
   divisions: Division[];
@@ -386,7 +388,7 @@ export default function SeasonPlayersCard({
     const grouped: Array<{
       type: "partnership" | "individual";
       memberships: Membership[];
-      partnership?: SeasonPlayersCardProps["season"] extends { partnerships?: (infer P)[] } ? P : never;
+      partnership?: Partnership;
     }> = [];
 
     for (const member of players) {
@@ -620,7 +622,7 @@ export default function SeasonPlayersCard({
 
                   return (
                     <motion.tr
-                      key={`partnership-${partnership.id}`}
+                      key={`partnership-${partnership?.id}`}
                       variants={tableRowVariants}
                       transition={fastTransition}
                       className="hover:bg-muted/30 border-b transition-colors"
