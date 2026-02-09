@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useCallback, useEffect, useState, Suspense, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { Loader2, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,11 +62,11 @@ function ChatPage() {
 
   useEffect(() => {
     if (threadsError) {
-      console.error("Threads error:", threadsError);
+      logger.error("Threads error:", threadsError);
       toast.error("Failed to load conversations");
     }
     if (messagesError) {
-      console.error("Messages error:", messagesError);
+      logger.error("Messages error:", messagesError);
       toast.error("Failed to load messages");
     }
   }, [threadsError, messagesError]);
@@ -191,7 +192,7 @@ function ChatPage() {
         await deleteMessage(messageId);
         toast.success("Message deleted successfully");
       } catch (error) {
-        console.error("Failed to delete message:", error);
+        logger.error("Failed to delete message:", error);
       }
     },
     [deleteMessage]
@@ -211,7 +212,7 @@ function ChatPage() {
           updateThreadLastMessage(selectedConversationId, newMessage);
         }
       } catch (error) {
-        console.error("Failed to send message:", error);
+        logger.error("Failed to send message:", error);
         toast.error("Failed to send message. Please try again.");
       }
     },
