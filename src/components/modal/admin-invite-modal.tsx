@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Mail, Loader2, UserPlus } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface AdminInviteModalProps {
   open: boolean;
@@ -51,10 +52,10 @@ export default function AdminInviteModal({
           username: tempUsername,
         }
       );
-      console.log("Success toast about to fire");
+      logger.debug("Success toast about to fire");
       toast.success(res.data.message || "Invitation sent successfully!");
 
-      console.log("email", res.data);
+      logger.debug("email", res.data);
       setSuccess(res.data.message);
       setEmail("");
       setName("");
