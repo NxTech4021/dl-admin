@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,7 +120,7 @@ function LeagueViewPage() {
       }
       setLeague(data);
     } catch (error) {
-      console.error("Failed to fetch league:", error);
+      logger.error("Failed to fetch league:", error);
       toast.error("Failed to load league details");
     } finally {
       setIsLoading(false);
