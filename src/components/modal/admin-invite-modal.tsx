@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import axiosInstance from "@/lib/endpoints";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -44,8 +44,8 @@ export default function AdminInviteModal({
       const tempUsername =
         email.split("@")[0] + Math.floor(Math.random() * 1000);
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/invite`,
+      const res = await axiosInstance.post(
+        "/api/admin/invite",
         {
           email,
           name,
