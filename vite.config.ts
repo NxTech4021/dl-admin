@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -31,6 +32,28 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+    },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/__tests__/setup.ts"],
+    globals: true,
+    css: true,
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      "e2e/**",
+      // Legacy Jest-based test (uses jest.mock/jest.fn) - migrate to vitest separately
+      "src/components/bug-report/__tests__/BugReportWidget.test.tsx",
+    ],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      exclude: [
+        "node_modules/",
+        "src/components/ui/",
+        "src/__tests__/",
+      ],
     },
   },
 });
