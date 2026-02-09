@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
+import { logger } from "@/lib/logger";
 
 interface SeasonInfoCardProps {
   season: Season;
@@ -39,7 +40,7 @@ export default function SeasonInfoCard({ season }: SeasonInfoCardProps) {
       // await axiosInstance.patch(endpoints.season.update(season.id), formData);
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update season:', error);
+      logger.error('Failed to update season:', error);
     }
   };
 
