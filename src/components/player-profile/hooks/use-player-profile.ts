@@ -1,6 +1,7 @@
 import * as React from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { PlayerProfileData } from "../utils/types";
+import { logger } from "@/lib/logger";
 
 export function usePlayerProfile(playerId: string) {
   const [profile, setProfile] = React.useState<PlayerProfileData | null>(null);
@@ -21,7 +22,7 @@ export function usePlayerProfile(playerId: string) {
         const result = response.data;
         setProfile(result.data);
       } catch (err) {
-        console.error("Error fetching player profile:", err);
+        logger.error("Error fetching player profile:", err);
         setError(err instanceof Error ? err : new Error("Unknown error"));
       } finally {
         setIsLoading(false);
