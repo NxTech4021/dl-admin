@@ -5,6 +5,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get all matches with filters
@@ -62,7 +63,7 @@ export function useMatches(filters: MatchFilters = {}) {
       // Safe parse with error handling for schema mismatches
       const parseResult = z.array(matchSchema).safeParse(response.data.matches);
       if (!parseResult.success) {
-        console.error("Match schema validation failed:", parseResult.error.issues);
+        logger.error("Match schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback to prevent complete failure
         return {
           matches: response.data.matches ?? [],
@@ -98,7 +99,7 @@ export function useMatch(id: string) {
       // Safe parse with error handling for schema mismatches
       const parseResult = matchSchema.safeParse(response.data.data);
       if (!parseResult.success) {
-        console.error("Match detail schema validation failed:", parseResult.error.issues);
+        logger.error("Match detail schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback
         return response.data.data;
       }
@@ -130,7 +131,7 @@ export function useMatchStats(filters?: {
       // Safe parse with error handling for schema mismatches
       const parseResult = matchStatsSchema.safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Match stats schema validation failed:", parseResult.error.issues);
+        logger.error("Match stats schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback
         return response.data;
       }
@@ -177,7 +178,7 @@ export function useVoidMatch() {
       });
     },
     onError: (error) => {
-      console.error("Failed to void match:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to void match:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -220,7 +221,7 @@ export function useConvertToWalkover() {
       });
     },
     onError: (error) => {
-      console.error("Failed to convert match to walkover:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to convert match to walkover:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -266,7 +267,7 @@ export function useEditMatchResult() {
       });
     },
     onError: (error) => {
-      console.error("Failed to edit match result:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to edit match result:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -301,7 +302,7 @@ export function useMessageParticipants() {
       return response.data;
     },
     onError: (error) => {
-      console.error("Failed to message participants:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to message participants:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -344,7 +345,7 @@ export function useReviewCancellation() {
       });
     },
     onError: (error) => {
-      console.error("Failed to review cancellation:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to review cancellation:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -445,7 +446,7 @@ export function useEditMatchParticipants() {
       });
     },
     onError: (error) => {
-      console.error("Failed to edit participants:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to edit participants:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -481,7 +482,7 @@ export function useHideMatch() {
       });
     },
     onError: (error) => {
-      console.error("Failed to hide match:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to hide match:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -506,7 +507,7 @@ export function useUnhideMatch() {
       });
     },
     onError: (error) => {
-      console.error("Failed to unhide match:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to unhide match:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -540,7 +541,7 @@ export function useReportMatchAbuse() {
       });
     },
     onError: (error) => {
-      console.error("Failed to report match abuse:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to report match abuse:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -565,7 +566,7 @@ export function useClearMatchReport() {
       });
     },
     onError: (error) => {
-      console.error("Failed to clear match report:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to clear match report:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
