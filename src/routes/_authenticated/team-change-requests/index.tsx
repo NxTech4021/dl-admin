@@ -7,16 +7,10 @@ import { Button } from "@/components/ui/button";
 import {
   IconUserMinus,
   IconRefresh,
-  IconChevronLeft,
-  IconChevronRight,
-  IconCheck,
-  IconX,
   IconClock,
   IconCircleCheck,
   IconCircleX,
   IconUsers,
-  IconEye,
-  IconUserPlus,
   IconHistory,
 } from "@tabler/icons-react";
 import { useState, useMemo, useCallback } from "react";
@@ -28,152 +22,33 @@ import {
   useProcessWithdrawalRequest,
   useSeasons,
 } from "@/hooks/use-queries";
-import {
+import type {
   WithdrawalRequestAdmin,
   DissolvedPartnership,
   WithdrawalRequestStatus,
-  PartnershipStatus,
-  getWithdrawalStatusLabel,
-  getWithdrawalStatusColor,
-  getPartnershipStatusLabel,
-  getPartnershipStatusColor,
 } from "@/constants/zod/partnership-admin-schema";
-import { ExportButton, ExportColumn } from "@/components/shared/export-button";
-import {
-  Table,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ExportButton } from "@/components/shared/export-button";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { SearchInput } from "@/components/ui/search-input";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 import {
   AnimatedStatsGrid,
   AnimatedStatsCard,
   AnimatedFilterBar,
-  AnimatedEmptyState,
 } from "@/components/ui/animated-container";
-import {
-  tableContainerVariants,
-  tableRowVariants,
-  fastTransition,
-} from "@/lib/animation-variants";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-const STATUS_OPTIONS = [
-  { value: "PENDING", label: "Pending" },
-  { value: "APPROVED", label: "Approved" },
-  { value: "REJECTED", label: "Rejected" },
-];
-
-const HISTORY_STATUS_OPTIONS = [
-  { value: "DISSOLVED", label: "Dissolved" },
-  { value: "EXPIRED", label: "Expired" },
-];
+// Sub-components
+import { WithdrawalsTable } from "@/components/team-change/withdrawals-table";
+import { PartnershipHistoryTable } from "@/components/team-change/partnership-history-table";
+import { ProcessDialog } from "@/components/team-change/process-dialog";
+import { DetailsDialog } from "@/components/team-change/details-dialog";
+import { withdrawalExportColumns, dissolvedExportColumns } from "@/components/team-change/export-columns";
+import { STATUS_OPTIONS, HISTORY_STATUS_OPTIONS, PAGE_SIZE } from "@/components/team-change/utils";
 
 export const Route = createFileRoute("/_authenticated/team-change-requests/")({
   component: PartnershipChangesPage,
 });
-
-// Helper functions
-const getInitials = (name: string | null | undefined): string => {
-  if (!name) return "??";
-  return name
-    .split(" ")
-    .map((word) => word.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-const formatDate = (date: Date | string | null | undefined): string => {
-  if (!date) return "—";
-  const dateObject = date instanceof Date ? date : new Date(date);
-  return dateObject.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const formatDateTime = (date: Date | string | null | undefined): string => {
-  if (!date) return "—";
-  const dateObject = date instanceof Date ? date : new Date(date);
-  return dateObject.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-};
-
-const truncateText = (text: string | null | undefined, maxLength: number = 40): string => {
-  if (!text) return "—";
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-};
-
-const getAvatarColor = (name: string | null | undefined): string => {
-  const colors = [
-    "bg-slate-600",
-    "bg-emerald-600",
-    "bg-sky-600",
-    "bg-violet-600",
-    "bg-amber-600",
-    "bg-rose-600",
-    "bg-teal-600",
-    "bg-indigo-600",
-  ];
-  if (!name) return colors[0];
-  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
-
-// Partnership avatars component - shows captain + partner
-function PartnershipAvatars({
-  captain,
-  partner,
-  size = "sm",
-}: {
-  captain: { name: string | null; image?: string | null } | null;
-  partner: { name: string | null; image?: string | null } | null;
-  size?: "sm" | "md";
-}) {
-  const sizeClass = size === "sm" ? "size-7" : "size-9";
-  const textSize = size === "sm" ? "text-[10px]" : "text-xs";
-
-  return (
-    <div className="flex items-center">
-      <Avatar className={cn(sizeClass, "ring-2 ring-background z-10")}>
-        {captain?.image && <AvatarImage src={captain.image} alt={captain?.name || "Captain"} />}
-        <AvatarFallback className={cn("text-white font-semibold", textSize, getAvatarColor(captain?.name))}>
-          {getInitials(captain?.name)}
-        </AvatarFallback>
-      </Avatar>
-      <Avatar className={cn(sizeClass, "ring-2 ring-background -ml-2")}>
-        {partner?.image && <AvatarImage src={partner.image} alt={partner?.name || "Partner"} />}
-        <AvatarFallback className={cn("text-white font-semibold", textSize, partner ? getAvatarColor(partner?.name) : "bg-slate-300")}>
-          {partner ? getInitials(partner?.name) : "?"}
-        </AvatarFallback>
-      </Avatar>
-    </div>
-  );
-}
 
 function PartnershipChangesPage() {
   const [activeTab, setActiveTab] = useState<"withdrawals" | "history">("withdrawals");
@@ -188,8 +63,6 @@ function PartnershipChangesPage() {
   const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequestAdmin | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedPartnership, setSelectedPartnership] = useState<DissolvedPartnership | null>(null);
-
-  const pageSize = 15;
 
   // Queries
   const { data: stats, isLoading: statsLoading } = useWithdrawalRequestStats();
@@ -216,18 +89,18 @@ function PartnershipChangesPage() {
 
   // Pagination for withdrawals
   const filteredWithdrawals = withdrawalRequests || [];
-  const totalWithdrawalPages = Math.ceil(filteredWithdrawals.length / pageSize);
+  const totalWithdrawalPages = Math.ceil(filteredWithdrawals.length / PAGE_SIZE);
   const paginatedWithdrawals = filteredWithdrawals.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
   );
 
   // Pagination for dissolved partnerships
   const filteredDissolved = dissolvedPartnerships || [];
-  const totalDissolvedPages = Math.ceil(filteredDissolved.length / pageSize);
+  const totalDissolvedPages = Math.ceil(filteredDissolved.length / PAGE_SIZE);
   const paginatedDissolved = filteredDissolved.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
   );
 
   const handleProcess = useCallback((request: WithdrawalRequestAdmin, action: "APPROVED" | "REJECTED") => {
@@ -283,46 +156,6 @@ function PartnershipChangesPage() {
     refetchWithdrawals();
     refetchDissolved();
   }, [refetchWithdrawals, refetchDissolved]);
-
-  const totalWithdrawalPagesForDisplay = activeTab === "withdrawals" ? totalWithdrawalPages : totalDissolvedPages;
-
-  // Export columns for withdrawal requests
-  const withdrawalExportColumns: ExportColumn<WithdrawalRequestAdmin>[] = [
-    { key: "partnership.captain.name", header: "Captain" },
-    { key: "partnership.captain.email", header: "Captain Email" },
-    { key: "partnership.captain.username", header: "Captain Username" },
-    { key: "partnership.partner.name", header: "Partner" },
-    { key: "partnership.partner.email", header: "Partner Email" },
-    { key: "partnership.division.name", header: "Division" },
-    { key: "user.name", header: "Who Left" },
-    { key: "user.email", header: "Who Left Email" },
-    { key: "reason", header: "Reason" },
-    { key: "season.name", header: "Season" },
-    { key: "status", header: "Status" },
-    { key: "requestDate", header: "Request Date", formatter: (v) => formatDateTime(v as string) },
-  ];
-
-  // Export columns for dissolved partnerships
-  const dissolvedExportColumns: ExportColumn<DissolvedPartnership>[] = [
-    { key: "captain.name", header: "Captain" },
-    { key: "captain.email", header: "Captain Email" },
-    { key: "captain.username", header: "Captain Username" },
-    { key: "partner.name", header: "Partner" },
-    { key: "partner.email", header: "Partner Email" },
-    { key: "division.name", header: "Division" },
-    { key: "season.name", header: "Season" },
-    { key: "status", header: "Status" },
-    { key: "dissolvedAt", header: "Dissolved Date", formatter: (v) => formatDateTime(v as string) },
-    { key: "withdrawalRequest.user.name", header: "Who Left" },
-    { key: "withdrawalRequest.reason", header: "Reason" },
-    {
-      key: "successors",
-      header: "New Partnership",
-      formatter: (_, row) => row.successors && row.successors.length > 0
-        ? `${row.successors[0].captain?.name || "Unknown"}${row.successors[0].partner ? ` & ${row.successors[0].partner.name}` : " (finding partner)"}`
-        : "None"
-    },
-  ];
 
   return (
     <>
@@ -525,158 +358,19 @@ function PartnershipChangesPage() {
                     transition={{ duration: 0.2 }}
                     className="rounded-lg border bg-card"
                   >
-                    {withdrawalsLoading ? (
-                      <div className="p-6 space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-14 w-full" />
-                        ))}
-                      </div>
-                    ) : paginatedWithdrawals.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50 hover:bg-muted/50">
-                            <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
-                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">Partnership</TableHead>
-                            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Who Left</TableHead>
-                            <TableHead className="w-[200px] py-2.5 font-medium text-xs">Reason</TableHead>
-                            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Season</TableHead>
-                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
-                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Requested</TableHead>
-                            <TableHead className="w-[100px] py-2.5 pr-4 font-medium text-xs text-center">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <motion.tbody
-                          key={`withdrawals-${searchQuery}-${selectedStatus || ""}-${currentPage}`}
-                          initial="hidden"
-                          animate="visible"
-                          variants={tableContainerVariants}
-                        >
-                          {paginatedWithdrawals.map((request, index) => (
-                            <motion.tr
-                              key={request.id}
-                              variants={tableRowVariants}
-                              transition={fastTransition}
-                              className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
-                              onClick={() => handleViewWithdrawal(request)}
-                            >
-                              <TableCell className="pl-4 text-muted-foreground font-mono text-xs">
-                                {(currentPage - 1) * pageSize + index + 1}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <PartnershipAvatars
-                                    captain={request.partnership?.captain || null}
-                                    partner={request.partnership?.partner || null}
-                                  />
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="font-medium text-sm truncate">
-                                      {request.partnership?.captain?.name || "Unknown"}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground truncate">
-                                      & {request.partnership?.partner?.name || "Unknown"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="size-6 ring-1 ring-background flex-shrink-0">
-                                    {request.user?.image && (
-                                      <AvatarImage src={request.user.image} alt={request.user?.name || ""} />
-                                    )}
-                                    <AvatarFallback className={cn("text-white text-[9px] font-semibold", getAvatarColor(request.user?.name))}>
-                                      {getInitials(request.user?.name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm font-medium">
-                                    {request.user?.name || "Unknown"}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  className="text-sm text-muted-foreground"
-                                  title={request.reason}
-                                >
-                                  {request.reason}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm text-muted-foreground">
-                                  {request.season?.name || "—"}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={cn("text-xs font-medium", getWithdrawalStatusColor(request.status))}
-                                >
-                                  {getWithdrawalStatusLabel(request.status)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatDateTime(request.requestDate)}
-                              </TableCell>
-                              <TableCell onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-center gap-1">
-                                  {request.status === "PENDING" && (
-                                    <>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 cursor-pointer"
-                                        onClick={() => handleProcess(request, "APPROVED")}
-                                        title="Approve"
-                                      >
-                                        <IconCheck className="size-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-8 text-red-600 hover:text-red-700 hover:bg-red-100 cursor-pointer"
-                                        onClick={() => handleProcess(request, "REJECTED")}
-                                        title="Reject"
-                                      >
-                                        <IconX className="size-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 cursor-pointer"
-                                    onClick={() => handleViewWithdrawal(request)}
-                                    title="View Details"
-                                  >
-                                    <IconEye className="size-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </motion.tr>
-                          ))}
-                        </motion.tbody>
-                      </Table>
-                    ) : (
-                      <AnimatedEmptyState>
-                        <div className="text-center py-16">
-                          <IconUserMinus className="size-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold mb-2">No Withdrawal Requests</h3>
-                          <p className="text-sm text-muted-foreground">
-                            There are no withdrawal requests matching your filters.
-                          </p>
-                        </div>
-                      </AnimatedEmptyState>
-                    )}
-
-                    {totalWithdrawalPages > 1 && paginatedWithdrawals.length > 0 && (
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalWithdrawalPages}
-                        totalItems={filteredWithdrawals.length}
-                        pageSize={pageSize}
-                        onPageChange={setCurrentPage}
-                      />
-                    )}
+                    <WithdrawalsTable
+                      isLoading={withdrawalsLoading}
+                      paginatedWithdrawals={paginatedWithdrawals}
+                      currentPage={currentPage}
+                      pageSize={PAGE_SIZE}
+                      totalPages={totalWithdrawalPages}
+                      totalItems={filteredWithdrawals.length}
+                      searchQuery={searchQuery}
+                      selectedStatus={selectedStatus}
+                      onPageChange={setCurrentPage}
+                      onProcess={handleProcess}
+                      onViewDetails={handleViewWithdrawal}
+                    />
                   </motion.div>
                 )}
 
@@ -688,157 +382,17 @@ function PartnershipChangesPage() {
                     transition={{ duration: 0.2 }}
                     className="rounded-lg border bg-card"
                   >
-                    {dissolvedLoading ? (
-                      <div className="p-6 space-y-4">
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-14 w-full" />
-                        ))}
-                      </div>
-                    ) : paginatedDissolved.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50 hover:bg-muted/50">
-                            <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
-                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">Original Partnership</TableHead>
-                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Division</TableHead>
-                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Dissolved</TableHead>
-                            <TableHead className="w-[200px] py-2.5 font-medium text-xs">Reason</TableHead>
-                            <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
-                            <TableHead className="w-[180px] py-2.5 font-medium text-xs">New Partnership</TableHead>
-                            <TableHead className="w-[60px] py-2.5 pr-4 font-medium text-xs text-center">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <motion.tbody
-                          key={`dissolved-${searchQuery}-${currentPage}`}
-                          initial="hidden"
-                          animate="visible"
-                          variants={tableContainerVariants}
-                        >
-                          {paginatedDissolved.map((partnership, index) => (
-                            <motion.tr
-                              key={partnership.id}
-                              variants={tableRowVariants}
-                              transition={fastTransition}
-                              className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
-                              onClick={() => handleViewPartnership(partnership)}
-                            >
-                              <TableCell className="pl-4 text-muted-foreground font-mono text-xs">
-                                {(currentPage - 1) * pageSize + index + 1}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <PartnershipAvatars
-                                    captain={partnership.captain}
-                                    partner={partnership.partner}
-                                  />
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="font-medium text-sm truncate">
-                                      {partnership.captain?.name || "Unknown"}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground truncate">
-                                      & {partnership.partner?.name || "Unknown"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm">{partnership.division?.name || "—"}</span>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {formatDateTime(partnership.dissolvedAt)}
-                              </TableCell>
-                              <TableCell>
-                                {partnership.withdrawalRequest ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs text-muted-foreground">
-                                      {partnership.withdrawalRequest.user?.name} left
-                                    </span>
-                                    <span className="text-sm" title={partnership.withdrawalRequest.reason}>
-                                      {partnership.withdrawalRequest.reason}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={cn("text-xs font-medium", getPartnershipStatusColor(partnership.status as PartnershipStatus))}
-                                >
-                                  {getPartnershipStatusLabel(partnership.status as PartnershipStatus)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {partnership.successors && partnership.successors.length > 0 ? (
-                                  <div className="flex items-center gap-2">
-                                    <PartnershipAvatars
-                                      captain={partnership.successors[0].captain}
-                                      partner={partnership.successors[0].partner}
-                                      size="sm"
-                                    />
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="text-xs font-medium truncate">
-                                        {partnership.successors[0].captain?.name}
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "text-[10px] w-fit",
-                                          partnership.successors[0].status === "ACTIVE"
-                                            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                            : "text-amber-700 bg-amber-50 border-amber-200"
-                                        )}
-                                      >
-                                        {getPartnershipStatusLabel(partnership.successors[0].status as any)}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs text-slate-600 bg-slate-50 border-slate-200">
-                                    <IconUserPlus className="size-3 mr-1" />
-                                    Finding partner
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell onClick={(e) => e.stopPropagation()}>
-                                <div className="flex justify-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 cursor-pointer"
-                                    onClick={() => handleViewPartnership(partnership)}
-                                    title="View Details"
-                                  >
-                                    <IconEye className="size-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </motion.tr>
-                          ))}
-                        </motion.tbody>
-                      </Table>
-                    ) : (
-                      <AnimatedEmptyState>
-                        <div className="text-center py-16">
-                          <IconHistory className="size-12 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold mb-2">No Dissolved Partnerships</h3>
-                          <p className="text-sm text-muted-foreground">
-                            There are no dissolved partnerships matching your filters.
-                          </p>
-                        </div>
-                      </AnimatedEmptyState>
-                    )}
-
-                    {totalDissolvedPages > 1 && paginatedDissolved.length > 0 && (
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalDissolvedPages}
-                        totalItems={filteredDissolved.length}
-                        pageSize={pageSize}
-                        onPageChange={setCurrentPage}
-                      />
-                    )}
+                    <PartnershipHistoryTable
+                      isLoading={dissolvedLoading}
+                      paginatedDissolved={paginatedDissolved}
+                      currentPage={currentPage}
+                      pageSize={PAGE_SIZE}
+                      totalPages={totalDissolvedPages}
+                      totalItems={filteredDissolved.length}
+                      searchQuery={searchQuery}
+                      onPageChange={setCurrentPage}
+                      onViewDetails={handleViewPartnership}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -848,472 +402,24 @@ function PartnershipChangesPage() {
       </div>
 
       {/* Process Dialog */}
-      <Dialog open={processDialogOpen} onOpenChange={setProcessDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {processAction === "APPROVED" ? (
-                <IconCheck className="size-5 text-emerald-600" />
-              ) : (
-                <IconX className="size-5 text-red-600" />
-              )}
-              {processAction === "APPROVED" ? "Approve Withdrawal" : "Reject Withdrawal"}
-            </DialogTitle>
-            <DialogDescription>
-              {processAction === "APPROVED" ? (
-                <>
-                  This will dissolve the partnership between{" "}
-                  <strong>{selectedRequest?.partnership?.captain?.name}</strong> and{" "}
-                  <strong>{selectedRequest?.partnership?.partner?.name}</strong>.
-                  The remaining player will be able to find a new partner.
-                </>
-              ) : (
-                <>
-                  This will reject {selectedRequest?.user?.name}'s request to leave the partnership.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {selectedRequest && (
-              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                <div className="flex items-center gap-3">
-                  <PartnershipAvatars
-                    captain={selectedRequest.partnership?.captain || null}
-                    partner={selectedRequest.partnership?.partner || null}
-                    size="md"
-                  />
-                  <div>
-                    <div className="font-medium">
-                      {selectedRequest.partnership?.captain?.name} & {selectedRequest.partnership?.partner?.name}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {selectedRequest.partnership?.division?.name} • {selectedRequest.season?.name}
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="text-xs text-muted-foreground mb-1">Reason for leaving:</div>
-                  <div className="text-sm">{selectedRequest.reason}</div>
-                </div>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="admin-notes">Admin Notes (optional)</Label>
-              <Textarea
-                id="admin-notes"
-                placeholder="Add any notes about this decision..."
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setProcessDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant={processAction === "APPROVED" ? "default" : "destructive"}
-              onClick={confirmProcess}
-              disabled={processRequest.isPending}
-            >
-              {processRequest.isPending
-                ? "Processing..."
-                : processAction === "APPROVED"
-                ? "Approve & Dissolve"
-                : "Reject Request"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProcessDialog
+        open={processDialogOpen}
+        onOpenChange={setProcessDialogOpen}
+        selectedRequest={selectedRequest}
+        processAction={processAction}
+        adminNotes={adminNotes}
+        onAdminNotesChange={setAdminNotes}
+        onConfirm={confirmProcess}
+        isPending={processRequest.isPending}
+      />
 
       {/* Details Dialog */}
-      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedRequest ? (
-                <>
-                  <IconUserMinus className="size-5" />
-                  Withdrawal Request Details
-                </>
-              ) : (
-                <>
-                  <IconHistory className="size-5" />
-                  Partnership Lifecycle
-                </>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedRequest && (
-            <div className="space-y-5">
-              {/* Partnership Card */}
-              <div className="rounded-lg border bg-card overflow-hidden">
-                <div className="px-4 py-2 bg-muted/40 border-b">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Partnership</span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-3">
-                    <PartnershipAvatars
-                      captain={selectedRequest.partnership?.captain || null}
-                      partner={selectedRequest.partnership?.partner || null}
-                      size="md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">
-                        {selectedRequest.partnership?.captain?.name} & {selectedRequest.partnership?.partner?.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {selectedRequest.partnership?.division?.name || "No division"} • {selectedRequest.season?.name}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Request Timeline Card */}
-              <div className="rounded-lg border bg-card overflow-hidden">
-                <div className="px-4 py-2 bg-muted/40 border-b">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Request Timeline</span>
-                </div>
-                <div className="p-4">
-                  <div className="space-y-0">
-                    {/* Request Submitted */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                          <IconUserMinus className="size-4 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="w-px flex-1 bg-border my-1" />
-                      </div>
-                      <div className="pb-4 flex-1">
-                        <div className="text-sm font-medium">Withdrawal Requested</div>
-                        <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedRequest.requestDate)}</div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Avatar className="size-5">
-                            {selectedRequest.user?.image && (
-                              <AvatarImage src={selectedRequest.user.image} />
-                            )}
-                            <AvatarFallback className={cn("text-white text-[8px]", getAvatarColor(selectedRequest.user?.name))}>
-                              {getInitials(selectedRequest.user?.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{selectedRequest.user?.name}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 italic">
-                          "{selectedRequest.reason}"
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className={cn(
-                          "size-8 rounded-full flex items-center justify-center",
-                          selectedRequest.status === "APPROVED"
-                            ? "bg-emerald-100 dark:bg-emerald-900/30"
-                            : selectedRequest.status === "REJECTED"
-                            ? "bg-red-100 dark:bg-red-900/30"
-                            : "bg-slate-100 dark:bg-slate-800"
-                        )}>
-                          {selectedRequest.status === "APPROVED" ? (
-                            <IconCircleCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-                          ) : selectedRequest.status === "REJECTED" ? (
-                            <IconCircleX className="size-4 text-red-600 dark:text-red-400" />
-                          ) : (
-                            <IconClock className="size-4 text-slate-600 dark:text-slate-400" />
-                          )}
-                        </div>
-                        {selectedRequest.partnership?.successors && selectedRequest.partnership.successors.length > 0 && (
-                          <div className="w-px flex-1 bg-border my-1" />
-                        )}
-                      </div>
-                      <div className={cn("flex-1", selectedRequest.partnership?.successors && selectedRequest.partnership.successors.length > 0 ? "pb-4" : "")}>
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          {selectedRequest.status === "APPROVED" ? "Approved" : selectedRequest.status === "REJECTED" ? "Rejected" : "Pending Review"}
-                          <Badge
-                            variant="outline"
-                            className={cn("text-[10px]", getWithdrawalStatusColor(selectedRequest.status))}
-                          >
-                            {getWithdrawalStatusLabel(selectedRequest.status)}
-                          </Badge>
-                        </div>
-                        {selectedRequest.processedByAdmin ? (
-                          <div className="text-xs text-muted-foreground">
-                            {formatDateTime(selectedRequest.updatedAt)} by {selectedRequest.processedByAdmin.name}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-muted-foreground">Awaiting admin review</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Successor Partnership */}
-                    {selectedRequest.partnership?.successors && selectedRequest.partnership.successors.length > 0 && (
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={cn(
-                            "size-8 rounded-full flex items-center justify-center",
-                            selectedRequest.partnership.successors[0].status === "ACTIVE"
-                              ? "bg-emerald-100 dark:bg-emerald-900/30"
-                              : "bg-amber-100 dark:bg-amber-900/30"
-                          )}>
-                            <IconUserPlus className={cn(
-                              "size-4",
-                              selectedRequest.partnership.successors[0].status === "ACTIVE"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-amber-600 dark:text-amber-400"
-                            )} />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">New Partnership Formed</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedRequest.partnership.successors[0].createdAt)}</div>
-                          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
-                            <PartnershipAvatars
-                              captain={selectedRequest.partnership.successors[0].captain}
-                              partner={selectedRequest.partnership.successors[0].partner}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate">
-                                {selectedRequest.partnership.successors[0].captain?.name}
-                                {selectedRequest.partnership.successors[0].partner
-                                  ? ` & ${selectedRequest.partnership.successors[0].partner.name}`
-                                  : " (finding partner)"}
-                              </div>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] shrink-0",
-                                selectedRequest.partnership.successors[0].status === "ACTIVE"
-                                  ? "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                  : "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400"
-                              )}
-                            >
-                              {getPartnershipStatusLabel(selectedRequest.partnership.successors[0].status as any)}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {selectedPartnership && (
-            <div className="space-y-5">
-              {/* Original Partnership Card */}
-              <div className="rounded-lg border bg-card overflow-hidden">
-                <div className="px-4 py-2 bg-muted/40 border-b">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Original Partnership</span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-3">
-                    <PartnershipAvatars
-                      captain={selectedPartnership.captain}
-                      partner={selectedPartnership.partner}
-                      size="md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">
-                        {selectedPartnership.captain?.name} & {selectedPartnership.partner?.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {selectedPartnership.division?.name || "No division"} • {selectedPartnership.season?.name}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline Card */}
-              <div className="rounded-lg border bg-card overflow-hidden">
-                <div className="px-4 py-2 bg-muted/40 border-b">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lifecycle Timeline</span>
-                </div>
-                <div className="p-4">
-                  <div className="space-y-0">
-                    {/* Created */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="size-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                          <IconCircleCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="w-px flex-1 bg-border my-1" />
-                      </div>
-                      <div className="pb-4 flex-1">
-                        <div className="text-sm font-medium">Partnership Created</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(selectedPartnership.createdAt)}</div>
-                      </div>
-                    </div>
-
-                    {/* Withdrawal Request */}
-                    {selectedPartnership.withdrawalRequest && (
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                            <IconUserMinus className="size-4 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <div className="w-px flex-1 bg-border my-1" />
-                        </div>
-                        <div className="pb-4 flex-1">
-                          <div className="text-sm font-medium">{selectedPartnership.withdrawalRequest.user?.name} Left</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedPartnership.withdrawalRequest.requestDate)}</div>
-                          <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 italic">
-                            "{selectedPartnership.withdrawalRequest.reason}"
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Dissolved */}
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                          <IconCircleX className="size-4 text-slate-600 dark:text-slate-400" />
-                        </div>
-                        {selectedPartnership.successors && selectedPartnership.successors.length > 0 && (
-                          <div className="w-px flex-1 bg-border my-1" />
-                        )}
-                      </div>
-                      <div className={cn("flex-1", selectedPartnership.successors && selectedPartnership.successors.length > 0 ? "pb-4" : "")}>
-                        <div className="text-sm font-medium">Partnership Dissolved</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(selectedPartnership.dissolvedAt)}</div>
-                      </div>
-                    </div>
-
-                    {/* Successor */}
-                    {selectedPartnership.successors && selectedPartnership.successors.length > 0 && (
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={cn(
-                            "size-8 rounded-full flex items-center justify-center",
-                            selectedPartnership.successors[0].status === "ACTIVE"
-                              ? "bg-emerald-100 dark:bg-emerald-900/30"
-                              : "bg-amber-100 dark:bg-amber-900/30"
-                          )}>
-                            <IconUserPlus className={cn(
-                              "size-4",
-                              selectedPartnership.successors[0].status === "ACTIVE"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-amber-600 dark:text-amber-400"
-                            )} />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">New Partnership Formed</div>
-                          <div className="text-xs text-muted-foreground mb-2">{formatDateTime(selectedPartnership.successors[0].createdAt)}</div>
-                          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
-                            <PartnershipAvatars
-                              captain={selectedPartnership.successors[0].captain}
-                              partner={selectedPartnership.successors[0].partner}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate">
-                                {selectedPartnership.successors[0].captain?.name}
-                                {selectedPartnership.successors[0].partner
-                                  ? ` & ${selectedPartnership.successors[0].partner.name}`
-                                  : " (finding partner)"}
-                              </div>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] shrink-0",
-                                selectedPartnership.successors[0].status === "ACTIVE"
-                                  ? "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                  : "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400"
-                              )}
-                            >
-                              {getPartnershipStatusLabel(selectedPartnership.successors[0].status as any)}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <DetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        selectedRequest={selectedRequest}
+        selectedPartnership={selectedPartnership}
+      />
     </>
-  );
-}
-
-// Pagination component
-function Pagination({
-  currentPage,
-  totalPages,
-  totalItems,
-  pageSize,
-  onPageChange,
-}: {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between px-4 py-4 border-t">
-      <div className="text-sm text-muted-foreground">
-        Showing {(currentPage - 1) * pageSize + 1} to{" "}
-        {Math.min(currentPage * pageSize, totalItems)} of {totalItems}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-        >
-          <IconChevronLeft className="size-4 mr-1" />
-          Previous
-        </Button>
-        <div className="flex items-center gap-1">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum: number;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
-            }
-            return (
-              <Button
-                key={pageNum}
-                variant={currentPage === pageNum ? "default" : "outline"}
-                size="sm"
-                className="w-8 h-8 p-0"
-                onClick={() => onPageChange(pageNum)}
-              >
-                {pageNum}
-              </Button>
-            );
-          })}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-          <IconChevronRight className="size-4 ml-1" />
-        </Button>
-      </div>
-    </div>
   );
 }
