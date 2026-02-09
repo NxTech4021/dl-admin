@@ -61,6 +61,7 @@ import { DateRangePicker, ExportButton, type ExportColumn, type DateRange } from
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { AnimatedFilterBar, AnimatedEmptyState, AnimatedContainer } from "@/components/ui/animated-container";
 import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 
@@ -202,7 +203,7 @@ function AdminLogsPage() {
         if (actionTypesRes.data.success) setActionTypes(actionTypesRes.data.data);
         if (targetTypesRes.data.success) setTargetTypes(targetTypesRes.data.data);
       } catch (err) {
-        console.error("Failed to fetch filter options:", err);
+        logger.error("Failed to fetch filter options:", err);
       }
     };
     fetchFilterOptions();
