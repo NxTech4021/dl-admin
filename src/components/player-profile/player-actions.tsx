@@ -36,6 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 type PlayerStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "BANNED" | "DELETED";
 
@@ -91,7 +92,7 @@ export function PlayerActions({
         setStatusHistory(response.data.data);
       }
     } catch (error) {
-      console.error("Failed to fetch status history:", error);
+      logger.error("Failed to fetch status history:", error);
       toast.error("Failed to load status history");
     } finally {
       setHistoryLoading(false);
@@ -122,7 +123,7 @@ export function PlayerActions({
         onStatusChange?.("BANNED");
       }
     } catch (error: unknown) {
-      console.error("Failed to ban player:", error);
+      logger.error("Failed to ban player:", error);
       toast.error(getErrorMessage(error, "Failed to ban player"));
     } finally {
       setIsLoading(false);
@@ -146,7 +147,7 @@ export function PlayerActions({
         onStatusChange?.("ACTIVE");
       }
     } catch (error: unknown) {
-      console.error("Failed to unban player:", error);
+      logger.error("Failed to unban player:", error);
       toast.error(getErrorMessage(error, "Failed to unban player"));
     } finally {
       setIsLoading(false);
@@ -175,7 +176,7 @@ export function PlayerActions({
         onStatusChange?.("DELETED");
       }
     } catch (error: unknown) {
-      console.error("Failed to delete player:", error);
+      logger.error("Failed to delete player:", error);
       toast.error(getErrorMessage(error, "Failed to delete player"));
     } finally {
       setIsLoading(false);
