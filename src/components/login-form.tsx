@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2Icon, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 /**
  * LoginForm - Secure authentication form with comprehensive error handling
@@ -86,7 +87,7 @@ export function LoginForm({
     } catch (err) {
       // Log but don't surface to user
       if (process.env.NODE_ENV === "development") {
-        console.warn("Failed to track login activity:", err);
+        logger.warn("Failed to track login activity:", err);
       }
     }
   };
