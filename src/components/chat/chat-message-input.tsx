@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { useTypingIndicator } from "@/app/chat/hooks/chat";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -111,7 +112,7 @@ export default function ChatMessageInput({
         textareaRef.current?.focus();
       }, 0);
     } catch (error) {
-      console.error("Failed to send message:", error);
+      logger.error("Failed to send message:", error);
       setMessage(messageToSend);
       // Restore draft if send failed
       if (selectedConversationId) {
