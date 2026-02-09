@@ -25,6 +25,7 @@ import {
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface PlayerData {
   id: string;
@@ -106,7 +107,7 @@ export function EditPlayerModal({ player, onUpdate }: EditPlayerModalProps) {
         onUpdate?.(response.data.data);
       }
     } catch (error: unknown) {
-      console.error("Failed to update player:", error);
+      logger.error("Failed to update player:", error);
       toast.error(
         getErrorMessage(error, "Failed to update player")
       );
