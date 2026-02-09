@@ -1,5 +1,6 @@
 import * as React from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 interface PairingRequest {
   id: string;
@@ -52,7 +53,7 @@ export function usePlayerPairingRequests(playerId: string) {
         });
       }
     } catch (error) {
-      console.error("Failed to load pairing requests:", error);
+      logger.error("Failed to load pairing requests:", error);
       setPairingRequests({ received: [], sent: [] });
     } finally {
       setPairingLoading({ received: false, sent: false });
@@ -67,7 +68,7 @@ export function usePlayerPairingRequests(playerId: string) {
         setPairingRequests({ received: [], sent: [] });
         await fetchPairingRequests();
       } catch (error) {
-        console.error("Failed to accept request:", error);
+        logger.error("Failed to accept request:", error);
       }
     },
     [fetchPairingRequests]
@@ -81,7 +82,7 @@ export function usePlayerPairingRequests(playerId: string) {
         setPairingRequests({ received: [], sent: [] });
         await fetchPairingRequests();
       } catch (error) {
-        console.error("Failed to deny request:", error);
+        logger.error("Failed to deny request:", error);
       }
     },
     [fetchPairingRequests]
@@ -95,7 +96,7 @@ export function usePlayerPairingRequests(playerId: string) {
         setPairingRequests({ received: [], sent: [] });
         await fetchPairingRequests();
       } catch (error) {
-        console.error("Failed to cancel request:", error);
+        logger.error("Failed to cancel request:", error);
       }
     },
     [fetchPairingRequests]
