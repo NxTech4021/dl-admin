@@ -13,6 +13,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get all withdrawal requests with optional filters
@@ -39,7 +40,7 @@ export function useWithdrawalRequestsAdmin(filters?: {
       // Safe parse with error handling
       const parseResult = z.array(withdrawalRequestAdminSchema).safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Withdrawal requests schema validation failed:", parseResult.error.issues);
+        logger.error("Withdrawal requests schema validation failed:", parseResult.error.issues);
         return response.data ?? [];
       }
 
@@ -60,7 +61,7 @@ export function useWithdrawalRequestStats() {
 
       const parseResult = withdrawalRequestStatsSchema.safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Withdrawal stats schema validation failed:", parseResult.error.issues);
+        logger.error("Withdrawal stats schema validation failed:", parseResult.error.issues);
         return { pending: 0, approved: 0, rejected: 0, total: 0, totalDissolved: 0 };
       }
 
@@ -94,7 +95,7 @@ export function useDissolvedPartnerships(filters?: {
 
       const parseResult = z.array(dissolvedPartnershipSchema).safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Dissolved partnerships schema validation failed:", parseResult.error.issues);
+        logger.error("Dissolved partnerships schema validation failed:", parseResult.error.issues);
         return response.data ?? [];
       }
 
@@ -116,7 +117,7 @@ export function useDissolvedPartnership(id: string | null) {
 
       const parseResult = dissolvedPartnershipSchema.safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Dissolved partnership schema validation failed:", parseResult.error.issues);
+        logger.error("Dissolved partnership schema validation failed:", parseResult.error.issues);
         return response.data;
       }
 
@@ -152,7 +153,7 @@ export function useProcessWithdrawalRequest() {
       queryClient.invalidateQueries({ queryKey: queryKeys.partnershipAdmin.all });
     },
     onError: (error) => {
-      console.error("Failed to process withdrawal request:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to process withdrawal request:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
