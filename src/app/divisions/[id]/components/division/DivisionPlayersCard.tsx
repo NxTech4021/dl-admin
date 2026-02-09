@@ -34,6 +34,7 @@ import { Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import {
   IconUsers,
   IconUserPlus,
@@ -115,7 +116,7 @@ export default function DivisionPlayersCard({
           : []
       );
     } catch (error) {
-      console.error("Failed to fetch available players:", error);
+      logger.error("Failed to fetch available players:", error);
       setAvailablePlayers([]);
     } finally {
       setIsLoadingAvailable(false);
