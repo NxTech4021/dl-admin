@@ -12,6 +12,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get all payments with filters and pagination
@@ -39,7 +40,7 @@ export function usePayments(filters: Partial<PaymentFilters> = {}) {
       // Safe parse with error handling
       const parseResult = paginatedPaymentsSchema.safeParse(response.data);
       if (!parseResult.success) {
-        console.error("Payments schema validation failed:", parseResult.error.issues);
+        logger.error("Payments schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback
         return {
           data: response.data.data ?? [],
@@ -81,7 +82,7 @@ export function usePaymentStats(filters?: {
       // Safe parse with error handling
       const parseResult = paymentStatsSchema.safeParse(response.data.data || response.data);
       if (!parseResult.success) {
-        console.error("Payment stats schema validation failed:", parseResult.error.issues);
+        logger.error("Payment stats schema validation failed:", parseResult.error.issues);
         // Return default stats as fallback
         return {
           total: 0,
@@ -124,7 +125,7 @@ export function useUpdatePaymentStatus() {
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all });
     },
     onError: (error) => {
-      console.error("Failed to update payment status:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to update payment status:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -148,7 +149,7 @@ export function useBulkUpdatePaymentStatus() {
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all });
     },
     onError: (error) => {
-      console.error("Failed to bulk update payment statuses:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to bulk update payment statuses:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
