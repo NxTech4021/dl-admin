@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 import type { Socket } from "socket.io-client";
 import { useSession } from "@/lib/auth-client";
 import { getApiBaseUrl } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -42,11 +43,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   useEffect(() => {
     if (!user?.id) {
-      console.log("⏳ [Socket] Waiting for user session...");
+      logger.debug("[Socket] Waiting for user session...");
       return;
     }
 
-    console.log("🚀 [Socket] Initializing socket connection for user:", user.id);
+    logger.debug("[Socket] Initializing socket connection for user:", user.id);
 
     const socketInstance = io(
       getApiBaseUrl(),
@@ -64,39 +65,35 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       }
     );
 
-    // Connection events
     socketInstance.on("connect", () => {
-      console.log("✅ Socket connected:", socketInstance.id);
-      console.log("🔌 Socket transport:", socketInstance.io.engine.transport.name);
+      logger.debug("[Socket] Connected:", socketInstance.id);
       setIsConnected(true);
     });
 
     socketInstance.on("disconnect", (reason) => {
-      console.log("❌ Socket disconnected:", reason);
+      logger.debug("[Socket] Disconnected:", reason);
       setIsConnected(false);
     });
 
     socketInstance.on("connect_error", (error: Error) => {
-      console.error("❌ Socket connection error:", error);
+      logger.error("[Socket] Connection error:", error);
       setIsConnected(false);
     });
 
-    // Listen for thread join confirmations
     socketInstance.on("thread_joined", (data: { threadId: string; socketId: string }) => {
-      console.log(`✅ Successfully joined thread: ${data.threadId}`);
+      logger.debug("[Socket] Joined thread:", data.threadId);
     });
 
     socketInstance.on("thread_join_error", (data: { threadId: string; error: string }) => {
-      console.error(`❌ Failed to join thread ${data.threadId}:`, data.error);
+      logger.error("[Socket] Failed to join thread:", data.threadId, data.error);
     });
 
-    // Join user's personal room for notifications
     socketInstance.emit("join_user_room", user.id);
 
     setSocket(socketInstance);
 
     return () => {
-      console.log("🧹 Cleaning up socket connection");
+      logger.debug("[Socket] Cleaning up connection");
       socketInstance.off("thread_joined");
       socketInstance.off("thread_join_error");
       socketInstance.disconnect();
@@ -106,34 +103,32 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const joinThread = (threadId: string) => {
     if (socket && isConnected) {
       socket.emit("join_thread", threadId);
-      console.log(`📥 Joined thread: ${threadId}`);
+      logger.debug("[Socket] Joined thread:", threadId);
     }
   };
 
   const leaveThread = (threadId: string) => {
     if (socket && isConnected) {
       socket.emit("leave_thread", threadId);
-      console.log(`📤 Left thread: ${threadId}`);
+      logger.debug("[Socket] Left thread:", threadId);
     }
   };
-  
-const sendTyping = (threadId: string, isTyping: boolean) => {
-  if (socket && isConnected && user?.id) {
-    // console.log(`⌨️ Sending typing event:`, { threadId, userId: user.id, isTyping });
-    
-    if (isTyping) {
-      socket.emit('typing_start', {
-        threadId,
-        senderId: user.id,
-      });
-    } else {
-      socket.emit('typing_stop', {
-        threadId,
-        senderId: user.id,
-      });
+
+  const sendTyping = (threadId: string, isTyping: boolean) => {
+    if (socket && isConnected && user?.id) {
+      if (isTyping) {
+        socket.emit('typing_start', {
+          threadId,
+          senderId: user.id,
+        });
+      } else {
+        socket.emit('typing_stop', {
+          threadId,
+          senderId: user.id,
+        });
+      }
     }
-  }
-};
+  };
 
   const value: SocketContextType = {
     socket,
