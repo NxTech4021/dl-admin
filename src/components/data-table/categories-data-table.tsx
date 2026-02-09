@@ -62,6 +62,7 @@ import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/constants/zod/category-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -451,7 +452,7 @@ export function CategoriesDataTable({
         const parsedData = categorySchema.array().parse(result.data);
         setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        logger.error("Failed to fetch categories:", error);
       } finally {
         setIsLoading(false);
       }
@@ -476,7 +477,7 @@ export function CategoriesDataTable({
         setData(parsedData);
       }
     } catch (error) {
-      console.error("Failed to refresh categories:", error);
+      logger.error("Failed to refresh categories:", error);
     } finally {
       setIsLoading(false);
     }
@@ -514,7 +515,7 @@ export function CategoriesDataTable({
         );
       }
     } catch (error: unknown) {
-      console.error("Failed to delete category:", error);
+      logger.error("Failed to delete category:", error);
       toast.error(
         getErrorMessage(error, `Failed to delete category "${categoryToDelete.name}"`)
       );
@@ -550,7 +551,7 @@ export function CategoriesDataTable({
           );
           successCount++;
         } catch (error: unknown) {
-          console.error(
+          logger.error(
             `Failed to delete category ${selectedNames[i]}:`,
             error
           );
@@ -589,7 +590,7 @@ export function CategoriesDataTable({
         });
       }
     } catch (error: unknown) {
-      console.error("Failed to delete categories:", error);
+      logger.error("Failed to delete categories:", error);
       toast.error("An unexpected error occurred during bulk deletion");
     } finally {
       setIsDeleting(false);
