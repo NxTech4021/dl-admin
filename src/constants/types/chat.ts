@@ -15,6 +15,7 @@ export interface ChatUser {
 export interface ChatParticipant extends ChatUser {
   displayName: string;
   photoURL?: string;
+  avatarUrl?: string;
   status: "online" | "offline" | "away" | "busy";
   role?: string;
   isCurrentUser?: boolean;
@@ -94,6 +95,11 @@ export interface Message {
   messageType?: 'TEXT' | 'MATCH' | 'SYSTEM';
   matchId?: string;
   matchData?: MatchData;
+  // Legacy/alternative content field
+  body?: string;
+  contentType?: string;
+  // Reactions
+  reactions?: { emoji: string; count: number; isSelected: boolean }[];
 }
 
 // Message Read Status
