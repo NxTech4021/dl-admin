@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import {
   IconUserCircle,
@@ -114,7 +115,7 @@ function LeagueDetailPage() {
       }
       setLeague(data);
     } catch (error) {
-      console.error("Failed to fetch league:", error);
+      logger.error("Failed to fetch league:", error);
       toast.error("Failed to load league details");
     } finally {
       setIsLoading(false);
