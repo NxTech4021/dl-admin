@@ -55,8 +55,11 @@ import axios from "axios";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
 import LeagueHistory from "./player-profile/league-history-card";
+import type { LeagueHistoryData } from "./player-profile/league-history-card";
 import SeasonHistory from "./player-profile/season-history-card";
+import type { SeasonHistoryData } from "./player-profile/season-history-card";
 import MatchHistory from "./player-profile/match-history-card";
+import type { MatchData } from "./player-profile/match-history-card";
 import { PlayerActions } from "./player-profile/player-actions";
 import { EditPlayerModal } from "./player-profile/edit-player-modal";
 import { logger } from "@/lib/logger";
@@ -181,9 +184,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
   const [activeTab, setActiveTab] = React.useState("overview");
 
   // History data states
-  const [leagueHistory, setLeagueHistory] = React.useState<Record<string, unknown>[] | null>(null);
-  const [seasonHistory, setSeasonHistory] = React.useState<Record<string, unknown>[] | null>(null);
-  const [matchHistory, setMatchHistory] = React.useState<Record<string, unknown>[] | null>(null);
+  const [leagueHistory, setLeagueHistory] = React.useState<LeagueHistoryData[] | null>(null);
+  const [seasonHistory, setSeasonHistory] = React.useState<SeasonHistoryData[] | null>(null);
+  const [matchHistory, setMatchHistory] = React.useState<MatchData[] | null>(null);
   const [historyLoading, setHistoryLoading] = React.useState({
     leagues: false,
     seasons: false,
@@ -360,14 +363,61 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       );
       if (response.status === 200 && isMountedRef.current) {
         // Transform match data to player-specific format
-        const matches = response.data.data.matches || [];
-        const transformedMatches = matches.map((match: Record<string, unknown>) => {
+        interface RawMatchOpponent {
+          id: string;
+          name: string;
+          username?: string;
+          image?: string;
+          team?: string;
+          role?: string;
+        }
+        interface RawSetScore {
+          player: number;
+          opponent: number;
+          tiebreak?: { player: number; opponent: number };
+        }
+        interface RawGameScore {
+          player: number;
+          opponent: number;
+        }
+        interface RawMatchData {
+          id: string;
+          sport?: string;
+          matchType?: string;
+          playerScore: number | null;
+          opponentScore: number | null;
+          status: string;
+          matchDate: string;
+          location: string | null;
+          venue: string | null;
+          notes: string | null;
+          duration?: number | null;
+          isFriendly?: boolean;
+          isWalkover?: boolean;
+          isDisputed?: boolean;
+          requiresAdminReview?: boolean;
+          isReportedForAbuse?: boolean;
+          opponents?: RawMatchOpponent[];
+          setScores?: RawSetScore[];
+          pickleballScores?: RawGameScore[];
+          division?: {
+            id: string;
+            name: string;
+            league?: {
+              id: string;
+              name: string;
+            };
+          };
+        }
+
+        const matches: RawMatchData[] = response.data.data.matches || [];
+        const transformedMatches: MatchData[] = matches.map((match) => {
           // Use the pre-calculated scores from the backend
           const playerScore = match.playerScore;
           const opponentScore = match.opponentScore;
 
           // Calculate outcome
-          let outcome = null;
+          let outcome: "win" | "loss" | "draw" | null = null;
           if (match.status === "COMPLETED" && playerScore !== null && opponentScore !== null) {
             if (playerScore > opponentScore) outcome = "win";
             else if (playerScore < opponentScore) outcome = "loss";
@@ -376,13 +426,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
 
           // Format opponents info
           const opponents = match.opponents || [];
-          const opponentNames = opponents.map((opp: Record<string, unknown>) => opp.name).filter(Boolean);
+          const opponentNames = opponents.map((opp) => opp.name).filter(Boolean);
 
           // Format set scores for display (e.g., "6-4, 7-5")
-          let formattedScore = null;
+          let formattedScore: string | null = null;
           if (match.setScores && match.setScores.length > 0) {
             formattedScore = match.setScores
-              .map((set: { player: number; opponent: number; tiebreak?: { player: number; opponent: number } }) => {
+              .map((set) => {
                 let score = `${set.player}-${set.opponent}`;
                 if (set.tiebreak) {
                   score += `(${set.tiebreak.player}-${set.tiebreak.opponent})`;
@@ -392,7 +442,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               .join(", ");
           } else if (match.pickleballScores && match.pickleballScores.length > 0) {
             formattedScore = match.pickleballScores
-              .map((game: { player: number; opponent: number }) => `${game.player}-${game.opponent}`)
+              .map((game) => `${game.player}-${game.opponent}`)
               .join(", ");
           }
 
@@ -425,8 +475,8 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               league: match.division.league ? {
                 id: match.division.league.id,
                 name: match.division.league.name,
-              } : null,
-            } : null,
+              } : undefined,
+            } : undefined,
           };
         });
         setMatchHistory(transformedMatches);

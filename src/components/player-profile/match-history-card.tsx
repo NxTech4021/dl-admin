@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDuration } from "@/lib/utils/format";
 
-interface OpponentInfo {
+export interface OpponentInfo {
   id: string;
   name: string;
   username?: string;
@@ -49,7 +49,7 @@ interface OpponentInfo {
   role?: string;
 }
 
-interface MatchData {
+export interface MatchData {
   id: string;
   sport: string;
   matchType: string;

@@ -60,7 +60,7 @@ interface SeasonMembership {
   } | null;
 }
 
-interface LeagueHistoryData {
+export interface LeagueHistoryData {
   id: string;
   name: string;
   sportType: string;

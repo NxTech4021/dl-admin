@@ -29,7 +29,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 
-interface SeasonHistoryData {
+export interface SeasonHistoryData {
   id: string;
   name: string;
   startDate: string | null;
