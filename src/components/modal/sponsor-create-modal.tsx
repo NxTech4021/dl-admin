@@ -38,6 +38,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
 
@@ -107,19 +108,19 @@ export function CreateSponsorModal({
       axiosInstance
         .get(endpoints.league.getAll)
         .then((res) => {
-          console.log("Leagues API response:", res.data);
+          logger.debug("Leagues API response:", res.data);
           // The leagues are nested under data.leagues
           const leaguesData = res.data?.data?.leagues || res.data?.leagues || [];
           // Ensure we always set an array
           if (Array.isArray(leaguesData)) {
             setLeagues(leaguesData);
           } else {
-            console.warn("Leagues data is not an array:", leaguesData);
+            logger.warn("Leagues data is not an array:", leaguesData);
             setLeagues([]);
           }
         })
         .catch((error) => {
-          console.error("Error fetching leagues:", error);
+          logger.error("Error fetching leagues:", error);
           setLeagues([]);
         })
         .finally(() => setLeaguesLoading(false));
@@ -180,7 +181,7 @@ export function CreateSponsorModal({
         leagueIds: [],
       });
     } catch (err: unknown) {
-      console.error("Error creating sponsor:", err);
+      logger.error("Error creating sponsor:", err);
       toast.error(getErrorMessage(err, "Failed to create sponsor"));
     } finally {
       setLoading(false);
