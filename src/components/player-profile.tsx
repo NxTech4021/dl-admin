@@ -59,6 +59,7 @@ import SeasonHistory from "./player-profile/season-history-card";
 import MatchHistory from "./player-profile/match-history-card";
 import { PlayerActions } from "./player-profile/player-actions";
 import { EditPlayerModal } from "./player-profile/edit-player-modal";
+import { logger } from "@/lib/logger";
 
 // Tab configuration for reuse
 const TABS = [
@@ -264,7 +265,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         if (axios.isCancel(error)) {
           return;
         }
-        console.error("Error fetching player profile:", error);
+        logger.error("Error fetching player profile:", error);
         if (isMountedRef.current) {
           setProfileError(
             error instanceof Error ? error.message : "Failed to load profile"
@@ -301,7 +302,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         setLeagueHistory(response.data.data.leagues);
       }
     } catch (error) {
-      console.error("Failed to load league history:", error);
+      logger.error("Failed to load league history:", error);
       if (isMountedRef.current) {
         setHistoryError((prev) => ({
           ...prev,
@@ -331,7 +332,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         setSeasonHistory(response.data.data.seasons);
       }
     } catch (error) {
-      console.error("Failed to load season history:", error);
+      logger.error("Failed to load season history:", error);
       if (isMountedRef.current) {
         setHistoryError((prev) => ({
           ...prev,
@@ -431,7 +432,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
         setMatchHistory(transformedMatches);
       }
     } catch (error) {
-      console.error("Failed to load match history:", error);
+      logger.error("Failed to load match history:", error);
       if (isMountedRef.current) {
         setHistoryError((prev) => ({
           ...prev,
