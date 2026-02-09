@@ -3,6 +3,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 // Types for bug report settings
 export interface BugReportSettings {
@@ -89,7 +90,7 @@ export function useUpdateBugReportSettings() {
       queryClient.invalidateQueries({ queryKey: queryKeys.bug.settings(variables.appId) });
     },
     onError: (error) => {
-      console.error("Failed to update bug report settings:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to update bug report settings:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
