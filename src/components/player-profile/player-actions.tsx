@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 
 type PlayerStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "BANNED" | "DELETED";
@@ -120,9 +121,9 @@ export function PlayerActions({
         setBanNotes("");
         onStatusChange?.("BANNED");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to ban player:", error);
-      toast.error(error.response?.data?.message || "Failed to ban player");
+      toast.error(getErrorMessage(error, "Failed to ban player"));
     } finally {
       setIsLoading(false);
     }
@@ -144,9 +145,9 @@ export function PlayerActions({
         setUnbanNotes("");
         onStatusChange?.("ACTIVE");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to unban player:", error);
-      toast.error(error.response?.data?.message || "Failed to unban player");
+      toast.error(getErrorMessage(error, "Failed to unban player"));
     } finally {
       setIsLoading(false);
     }
@@ -173,9 +174,9 @@ export function PlayerActions({
         setDeleteReason("");
         onStatusChange?.("DELETED");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete player:", error);
-      toast.error(error.response?.data?.message || "Failed to delete player");
+      toast.error(getErrorMessage(error, "Failed to delete player"));
     } finally {
       setIsLoading(false);
     }

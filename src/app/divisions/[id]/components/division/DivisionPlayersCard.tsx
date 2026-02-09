@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import {
   IconUsers,
@@ -136,8 +137,8 @@ export default function DivisionPlayersCard({
       toast.success("Player assigned successfully");
       await onPlayersUpdated();
       await fetchAvailablePlayers();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to assign player");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to assign player"));
     } finally {
       setIsAssigning(false);
     }
@@ -153,8 +154,8 @@ export default function DivisionPlayersCard({
       toast.success("Player removed successfully");
       await onPlayersUpdated();
       setPlayerToRemove(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to remove player");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to remove player"));
     } finally {
       setIsRemoving(false);
     }

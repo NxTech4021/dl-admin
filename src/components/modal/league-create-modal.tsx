@@ -49,6 +49,17 @@ import {
   type LeagueStatus,
 } from "@/constants/types/league";
 
+interface LeagueCreatePayload {
+  name: string;
+  location: string;
+  status: string;
+  sportType: SportType;
+  gameType: "SINGLES" | "DOUBLES" | "MIXED";
+  description: string | null;
+  createdById: string | undefined;
+  existingSponsorshipIds?: string[];
+}
+
 interface LeagueCreateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -95,7 +106,7 @@ export default function LeagueCreateModal({
 
 
 React.useEffect(() => {
-  if (formData.hasSponsor) {
+  if (formData.hasSponsor && sponsors.length === 0) {
     setSponsorsLoading(true);
     axiosInstance.get(endpoints.sponsors.getAll)
       .then(res => {
@@ -163,6 +174,14 @@ React.useEffect(() => {
       return;
     }
 
+    if (newSponsor.contractAmount) {
+      const amount = Number(newSponsor.contractAmount);
+      if (isNaN(amount) || amount < 0) {
+        toast.error("Contract amount must be a positive number");
+        return;
+      }
+    }
+
     setCreatingSponsor(true);
     try {
       const payload = {
@@ -221,18 +240,6 @@ React.useEffect(() => {
   };
 
   const isFormValid = formData.leagueName && formData.sport && formData.location;
-
-/** Payload for creating a league */
-interface LeagueCreatePayload {
-  name: string;
-  location: string;
-  status: string;
-  sportType: SportType;
-  gameType: "SINGLES" | "DOUBLES" | "MIXED";
-  description: string | null;
-  createdById: string | undefined;
-  existingSponsorshipIds?: string[];
-}
 
 const handleCreateLeague = async () => {
   if (!isFormValid) return;
@@ -438,7 +445,7 @@ const handleCreateLeague = async () => {
                 <Checkbox
                   id="hasSponsor"
                   checked={formData.hasSponsor}
-                  onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
+                  onCheckedChange={(checked) => updateFormData("hasSponsor", checked === true)}
                 />
               </div>
 
@@ -515,6 +522,7 @@ const handleCreateLeague = async () => {
                           className="h-6 w-6 p-0"
                           onClick={cancelCreateSponsor}
                           disabled={creatingSponsor}
+                          aria-label="Cancel sponsor creation"
                         >
                           <IconX className="size-3.5" />
                         </Button>

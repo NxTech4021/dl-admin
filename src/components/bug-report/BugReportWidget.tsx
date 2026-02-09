@@ -83,12 +83,12 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
         if (process.env.NODE_ENV === "development") {
           console.log("✅ Bug reporting ready");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (process.env.NODE_ENV === "development") {
-          if (error.name === "AbortError") {
+          if (error instanceof Error && error.name === "AbortError") {
             console.warn("Bug reporting: Request timeout");
           } else {
-            console.warn("Bug reporting:", error.message);
+            console.warn("Bug reporting:", error instanceof Error ? error.message : error);
           }
         }
       }

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import {
   IconSettings,
@@ -53,8 +54,8 @@ export default function DivisionSettingsCard({
           : "Division activated successfully"
       );
       await onDivisionUpdated();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to update status"));
     } finally {
       setIsUpdating(false);
     }
@@ -72,8 +73,8 @@ export default function DivisionSettingsCard({
           : "Auto-assignment enabled"
       );
       await onDivisionUpdated();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update auto-assignment");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to update auto-assignment"));
     } finally {
       setIsUpdating(false);
     }
@@ -85,8 +86,8 @@ export default function DivisionSettingsCard({
       await axiosInstance.delete(endpoints.division.delete(division.id));
       toast.success("Division deleted successfully");
       navigate({ to: "/divisions" });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to delete division");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to delete division"));
       setIsDeleting(false);
     }
   };

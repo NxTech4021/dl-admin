@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Category } from "../league/types";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { IconLoader2 } from "@tabler/icons-react";
 
@@ -150,9 +151,9 @@ export function EditCategoryModal({
       toast.success("Category updated!");
       onCategoryUpdated?.();
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to update category");
+      toast.error(getErrorMessage(err, "Failed to update category"));
     } finally {
       setLoading(false);
     }

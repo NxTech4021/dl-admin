@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { Admin } from "@/constants/zod/admin-schema";
 import { cn } from "@/lib/utils";
@@ -80,8 +81,8 @@ const handleResendInvite = async (adminId: string) => {
       adminId,
     });
     toast.success(res.data.message || "Invite resent successfully!");
-  } catch (err: any) {
-    toast.error(err.response?.data?.message || "Failed to resend invite");
+  } catch (err: unknown) {
+    toast.error(getErrorMessage(err, "Failed to resend invite"));
   }
 };
 

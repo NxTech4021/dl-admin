@@ -5,6 +5,7 @@ import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 import {
   Dialog,
   DialogContent,
@@ -59,14 +60,8 @@ export default function AdminInviteModal({
       setName("");
       // Close modal after successful invite
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to send invite");
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to send invite";
-
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to send invite");
       toast.error(message);
       setError(message);
     } finally {

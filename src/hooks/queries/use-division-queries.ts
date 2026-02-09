@@ -58,20 +58,20 @@ export function useDivisionsStats(seasonId?: string) {
         : "/api/division/";
       const response = await apiClient.get(url);
       const divisions = response.data?.data || response.data?.divisions || response.data || [];
-      const divisionsArray = Array.isArray(divisions) ? divisions : [];
+      const divisionsArray: Division[] = Array.isArray(divisions) ? divisions : [];
 
       return {
         total: divisionsArray.length,
-        active: divisionsArray.filter((d: any) => d.isActive).length,
-        inactive: divisionsArray.filter((d: any) => !d.isActive).length,
+        active: divisionsArray.filter((d) => d.isActive).length,
+        inactive: divisionsArray.filter((d) => !d.isActive).length,
         byLevel: {
-          beginner: divisionsArray.filter((d: any) => d.divisionLevel === "beginner").length,
-          intermediate: divisionsArray.filter((d: any) => d.divisionLevel === "intermediate").length,
-          advanced: divisionsArray.filter((d: any) => d.divisionLevel === "advanced").length,
+          beginner: divisionsArray.filter((d) => d.divisionLevel === "beginner").length,
+          intermediate: divisionsArray.filter((d) => d.divisionLevel === "intermediate").length,
+          advanced: divisionsArray.filter((d) => d.divisionLevel === "advanced").length,
         },
         byGameType: {
-          singles: divisionsArray.filter((d: any) => d.gameType === "singles").length,
-          doubles: divisionsArray.filter((d: any) => d.gameType === "doubles").length,
+          singles: divisionsArray.filter((d) => d.gameType === "singles").length,
+          doubles: divisionsArray.filter((d) => d.gameType === "doubles").length,
         },
       };
     },

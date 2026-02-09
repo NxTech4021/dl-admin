@@ -37,6 +37,7 @@ import { IconLoader2, IconX } from "@tabler/icons-react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 
 type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
 
@@ -178,9 +179,9 @@ export function CreateSponsorModal({
         sponsorRevenue: null,
         leagueIds: [],
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error creating sponsor:", err);
-      toast.error(err.response?.data?.message || "Failed to create sponsor");
+      toast.error(getErrorMessage(err, "Failed to create sponsor"));
     } finally {
       setLoading(false);
     }

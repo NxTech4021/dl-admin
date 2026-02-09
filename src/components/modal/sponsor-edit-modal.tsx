@@ -37,6 +37,7 @@ import { IconLoader2, IconX } from "@tabler/icons-react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { Sponsor } from "@/constants/zod/sponsor-schema";
 
 type PackageTier = "BRONZE" | "SILVER" | "GOLD" | "PLATINUM";
@@ -203,9 +204,9 @@ export function SponsorEditModal({
       if (onSponsorUpdated) {
         await onSponsorUpdated();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating sponsor:", err);
-      toast.error(err.response?.data?.message || "Failed to update sponsor");
+      toast.error(getErrorMessage(err, "Failed to update sponsor"));
     } finally {
       setLoading(false);
     }

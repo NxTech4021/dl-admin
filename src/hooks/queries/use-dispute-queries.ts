@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { endpoints } from "@/lib/endpoints";
 import { apiClient } from "@/lib/api-client";
+import { FinalScore } from "@/constants/zod/dispute-schema";
 import { queryKeys } from "./query-keys";
 
 /**
@@ -83,7 +84,7 @@ export function useResolveDispute() {
     }: {
       disputeId: string;
       action: string;
-      finalScore?: any;
+      finalScore?: FinalScore;
       reason: string;
       notifyPlayers?: boolean;
     }) => {

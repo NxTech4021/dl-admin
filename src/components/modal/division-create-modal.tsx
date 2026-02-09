@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import {
   Dialog,
   DialogContent,
@@ -556,12 +557,8 @@ export default function DivisionCreateModal({
       refreshNotifications();
       resetModal();
       onOpenChange(false);
-    } catch (err: any) {
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to create division";
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to create division");
       toast.error(message);
       setError(message);
     } finally {

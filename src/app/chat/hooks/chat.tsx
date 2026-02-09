@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { useSocket } from "@/contexts/socket-context";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
@@ -67,13 +68,9 @@ export function useChatData(userId?: string, selectedThreadId?: string) {
 
       setThreads(threadsData);
       return threadsData;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching threads:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch threads";
+      const errorMessage = getErrorMessage(err, "Failed to fetch threads");
       setError(errorMessage);
       toast.error("Failed to load chat threads");
       setThreads([]);
@@ -323,13 +320,9 @@ export function useMessages(threadId?: string) {
       } else {
         setMessages([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching messages:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch messages";
+      const errorMessage = getErrorMessage(err, "Failed to fetch messages");
       setError(errorMessage);
       setMessages([]);
     } finally {
@@ -390,19 +383,14 @@ export function useMessages(threadId?: string) {
           console.log('✅ Message sent successfully, waiting for socket broadcast');
           return newMessage;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Remove optimistic message on error
         setMessages((prev) =>
           prev.filter((msg) => msg.id !== optimisticMessage.id)
         );
-        
+
         console.error("Error sending message:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to send message";
-        toast.error(errorMessage);
+        toast.error(getErrorMessage(err, "Failed to send message"));
         throw err;
       }
     },
@@ -437,16 +425,11 @@ export function useMessages(threadId?: string) {
 
         toast.success("Message deleted successfully");
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Rollback optimistic update on failure
         setMessages(originalMessages);
 
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to delete message";
-        toast.error(errorMessage);
+        toast.error(getErrorMessage(err, "Failed to delete message"));
         throw err;
       }
     },
@@ -756,13 +739,9 @@ export function useThreadMembers(threadId?: string) {
       } else {
         setMembers([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching thread members:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch thread members";
+      const errorMessage = getErrorMessage(err, "Failed to fetch thread members");
       setError(errorMessage);
       setMembers([]);
     } finally {
@@ -820,13 +799,9 @@ export function useCreateThread() {
         }
 
         throw new Error("Failed to create thread");
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error creating thread:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to create thread";
+        const errorMessage = getErrorMessage(err, "Failed to create thread");
         setError(errorMessage);
         toast.error(errorMessage);
         throw err;
@@ -879,13 +854,9 @@ export function useAvailableUsers(currentUserId?: string) {
         (user) => user.id !== currentUserId
       );
       setUsers(filteredUsers);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching available users:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch users";
+      const errorMessage = getErrorMessage(err, "Failed to fetch users");
       setError(errorMessage);
       setUsers([]);
     } finally {
