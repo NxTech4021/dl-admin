@@ -27,6 +27,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function AdminRegisterForm({
   className,
@@ -59,14 +60,14 @@ export function AdminRegisterForm({
 
   useEffect(() => {
     if (!token) return;
-    console.log("Fetching invite for token:", token);
+    logger.debug("Fetching invite for token:", token);
     const fetchEmail = async () => {
       try {
         const res = await apiClient.get(`/api/admin/get-invite?token=${token}`);
-        console.log("res", res.data);
+        logger.debug("res", res.data);
         setEmail(res.data.email);
       } catch (err) {
-        console.error("Error fetching invite email:", err);
+        logger.error("Error fetching invite email:", err);
         setError("Invalid or expired invite token");
       }
     };
@@ -137,7 +138,7 @@ export function AdminRegisterForm({
     setSuccess("");
 
     const formData = { token, email, username: safeUsername, name, password };
-    console.log("Submitting form data:", formData);
+    logger.debug("Submitting form data:", formData);
 
     try {
       const res = await apiClient.post("/api/admin/register", formData);
