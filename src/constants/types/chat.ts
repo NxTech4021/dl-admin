@@ -89,7 +89,7 @@ export interface Message {
     image?: string;
   };
   repliesTo?: Message;
-  readBy?: any[];
+  readBy?: MessageRead[];
   // Match message fields
   messageType?: 'TEXT' | 'MATCH' | 'SYSTEM';
   matchId?: string;
@@ -290,7 +290,7 @@ export interface SendMessageData {
 
 export interface ChatNavProps {
   loading: boolean;
-  user: any;
+  user: ChatUser;
   conversations: Conversation[];
   selectedConversationId: string;
   onConversationSelect?: (conversationId: string) => void;
@@ -375,7 +375,7 @@ export interface TypingIndicatorProps {
 
 // Socket Context
 export interface SocketContextType {
-  socket: any | null;
+  socket: import("socket.io-client").Socket | null;
   isConnected: boolean;
   joinThread: (threadId: string) => void;
   leaveThread: (threadId: string) => void;
@@ -401,7 +401,7 @@ export interface UseBooleanReturn {
 }
 
 // API Response Types
-export interface ChatApiResponse<T = any> {
+export interface ChatApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

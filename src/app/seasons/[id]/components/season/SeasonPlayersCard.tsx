@@ -192,14 +192,14 @@ export default function SeasonPlayersCard({
 
     // Check divisions for game type
     if (divisions && divisions.length > 0) {
-      const doublesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).gameType;
+      const doublesDivision = divisions.find((div: Division) => {
+        const divGameType = div.gameType;
         return divGameType && String(divGameType).toUpperCase().trim() === "DOUBLES";
       });
       if (doublesDivision) return "DOUBLES";
 
-      const singlesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).gameType;
+      const singlesDivision = divisions.find((div: Division) => {
+        const divGameType = div.gameType;
         return divGameType && String(divGameType).toUpperCase().trim() === "SINGLES";
       });
       if (singlesDivision) return "SINGLES";
@@ -386,7 +386,7 @@ export default function SeasonPlayersCard({
     const grouped: Array<{
       type: "partnership" | "individual";
       memberships: Membership[];
-      partnership?: any;
+      partnership?: SeasonPlayersCardProps["season"] extends { partnerships?: (infer P)[] } ? P : never;
     }> = [];
 
     for (const member of players) {

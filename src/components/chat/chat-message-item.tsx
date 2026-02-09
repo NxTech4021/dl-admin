@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import MatchMessageCard from "./match-message-card";
-import type { MatchData } from "@/constants/types/chat";
+import type { MatchData, Message, ChatParticipant } from "@/constants/types/chat";
 
 // Reaction type for local state
 interface Reaction {
@@ -31,11 +31,11 @@ interface Reaction {
 }
 
 interface ChatMessageItemProps {
-  message: any;
-  participants: any[];
+  message: Message;
+  participants: ChatParticipant[];
   showAvatar?: boolean;
   onOpenLightbox?: (url: string) => void;
-  onReply?: (message: any) => void;
+  onReply?: (message: Message) => void;
   onDelete?: (messageId: string) => void;
 }
 

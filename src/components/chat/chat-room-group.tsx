@@ -17,9 +17,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useBoolean } from "@/app/chat/hooks/use-boolean"
 import ChatRoomParticipantDialog from "./chat-room-participant-dialog"
 
+import type { ChatParticipant, Conversation } from "@/constants/types/chat"
+
 interface ChatRoomGroupProps {
-  participants: any[]
-  conversation: any
+  participants: ChatParticipant[]
+  conversation: Conversation
 }
 
 const getInitials = (name: string) => {
@@ -51,10 +53,10 @@ export default function ChatRoomGroup({
   participants,
   conversation,
 }: ChatRoomGroupProps) {
-  const [selected, setSelected] = useState<any | null>(null)
+  const [selected, setSelected] = useState<ChatParticipant | null>(null)
   const collapse = useBoolean(true)
 
-  const handleOpen = useCallback((participant: any) => {
+  const handleOpen = useCallback((participant: ChatParticipant) => {
     setSelected(participant)
   }, [])
 
@@ -119,7 +121,7 @@ export default function ChatRoomGroup({
   const renderContent = (
     <ScrollArea className="h-[500px]">
       <ul className="divide-y divide-border">
-        {participants.map((participant: any) => (
+        {participants.map((participant: ChatParticipant) => (
           <li
             key={participant.id}
             onClick={() => handleOpen(participant)}

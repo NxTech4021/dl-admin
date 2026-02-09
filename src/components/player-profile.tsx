@@ -96,7 +96,7 @@ interface PlayerProfileData {
     qHash: string;
     completedAt: string | null;
     startedAt: string;
-    answersJson: any;
+    answersJson: Record<string, unknown>;
     result: {
       rating: number;
       confidence: string;
@@ -104,7 +104,7 @@ interface PlayerProfileData {
       singles?: number;
       doubles?: number;
       source?: string;
-      detail?: any;
+      detail?: Record<string, unknown>;
     } | null;
   }[];
   skillRatings: Record<
@@ -135,7 +135,7 @@ const formatQuestionKey = (key: string) => {
 
 // Helper function to format various answer types into readable strings
 // Uses a seen Set to prevent circular reference crashes
-const formatAnswerValue = (value: any, seen = new WeakSet()): string => {
+const formatAnswerValue = (value: unknown, seen = new WeakSet()): string => {
   if (value === null || value === undefined) {
     return "N/A";
   }
@@ -180,9 +180,9 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
   const [activeTab, setActiveTab] = React.useState("overview");
 
   // History data states
-  const [leagueHistory, setLeagueHistory] = React.useState<any[] | null>(null);
-  const [seasonHistory, setSeasonHistory] = React.useState<any[] | null>(null);
-  const [matchHistory, setMatchHistory] = React.useState<any[] | null>(null);
+  const [leagueHistory, setLeagueHistory] = React.useState<Record<string, unknown>[] | null>(null);
+  const [seasonHistory, setSeasonHistory] = React.useState<Record<string, unknown>[] | null>(null);
+  const [matchHistory, setMatchHistory] = React.useState<Record<string, unknown>[] | null>(null);
   const [historyLoading, setHistoryLoading] = React.useState({
     leagues: false,
     seasons: false,
@@ -360,7 +360,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       if (response.status === 200 && isMountedRef.current) {
         // Transform match data to player-specific format
         const matches = response.data.data.matches || [];
-        const transformedMatches = matches.map((match: any) => {
+        const transformedMatches = matches.map((match: Record<string, unknown>) => {
           // Use the pre-calculated scores from the backend
           const playerScore = match.playerScore;
           const opponentScore = match.opponentScore;
@@ -375,13 +375,13 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
 
           // Format opponents info
           const opponents = match.opponents || [];
-          const opponentNames = opponents.map((opp: any) => opp.name).filter(Boolean);
+          const opponentNames = opponents.map((opp: Record<string, unknown>) => opp.name).filter(Boolean);
 
           // Format set scores for display (e.g., "6-4, 7-5")
           let formattedScore = null;
           if (match.setScores && match.setScores.length > 0) {
             formattedScore = match.setScores
-              .map((set: any) => {
+              .map((set: { player: number; opponent: number; tiebreak?: { player: number; opponent: number } }) => {
                 let score = `${set.player}-${set.opponent}`;
                 if (set.tiebreak) {
                   score += `(${set.tiebreak.player}-${set.tiebreak.opponent})`;
@@ -391,7 +391,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
               .join(", ");
           } else if (match.pickleballScores && match.pickleballScores.length > 0) {
             formattedScore = match.pickleballScores
-              .map((game: any) => `${game.player}-${game.opponent}`)
+              .map((game: { player: number; opponent: number }) => `${game.player}-${game.opponent}`)
               .join(", ");
           }
 
