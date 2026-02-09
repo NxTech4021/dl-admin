@@ -10,7 +10,7 @@ import {
   IconRefresh,
   IconAlertTriangle,
 } from "@tabler/icons-react";
-import { useDivisionsStats } from "@/hooks/use-queries";
+import { useDivisionsStats } from "@/hooks/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";

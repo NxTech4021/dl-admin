@@ -4,7 +4,7 @@ import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, DollarSign, Target } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useSportMetrics } from "@/hooks/use-queries"
+import { useSportMetrics } from "@/hooks/queries"
 
 function formatValue(value: number, format: "number" | "currency" | "percentage" = "number"): string {
   switch (format) {

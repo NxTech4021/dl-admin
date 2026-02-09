@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IconNotes, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useAddDisputeNote } from "@/hooks/use-queries";
+import { useAddDisputeNote } from "@/hooks/queries";
 import { Dispute } from "@/constants/zod/dispute-schema";
 
 interface DisputeAddNoteModalProps {

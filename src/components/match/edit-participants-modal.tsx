@@ -29,7 +29,7 @@ import {
   useAvailablePlayers,
   useValidateParticipants,
   ParticipantInput,
-} from "@/hooks/use-queries";
+} from "@/hooks/queries";
 import {
   IconUsers,
   IconLoader2,

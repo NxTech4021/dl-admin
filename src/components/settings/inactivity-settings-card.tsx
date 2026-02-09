@@ -34,7 +34,7 @@ import {
   useUpdateInactivitySettings,
   useDeleteInactivitySettings,
   useTriggerInactivityCheck,
-} from "@/hooks/use-queries";
+} from "@/hooks/queries";
 import { inactivitySettingsFormSchema, type InactivitySettingsFormValues } from "@/constants/zod/inactivity-settings-schema";
 import { toast } from "sonner";
 

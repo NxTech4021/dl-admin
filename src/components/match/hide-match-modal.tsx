@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Match } from "@/constants/zod/match-schema";
-import { useHideMatch } from "@/hooks/use-queries";
+import { useHideMatch } from "@/hooks/queries";
 import { IconEyeOff, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 

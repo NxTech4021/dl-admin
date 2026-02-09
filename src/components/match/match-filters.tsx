@@ -7,7 +7,7 @@ import { IconFilter } from "@tabler/icons-react";
 import { MatchStatus } from "@/constants/zod/match-schema";
 import { MatchFilterDrawer, type Sport, type MatchFlagType } from "./match-filter-drawer";
 import { ActiveFilterChips } from "./active-filter-chips";
-import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
+import { useLeagues, useSeasons, useDivisions } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 

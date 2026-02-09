@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Match } from "@/constants/zod/match-schema";
-import { useMessageParticipants } from "@/hooks/use-queries";
+import { useMessageParticipants } from "@/hooks/queries";
 import { IconMessage, IconLoader2, IconMail, IconBell } from "@tabler/icons-react";
 import { toast } from "sonner";
 

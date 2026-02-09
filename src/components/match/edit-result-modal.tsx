@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Match } from "@/constants/zod/match-schema";
-import { useEditMatchResult } from "@/hooks/use-queries";
+import { useEditMatchResult } from "@/hooks/queries";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 

@@ -13,7 +13,7 @@ import {
   IconAlertTriangle,
   IconCurrencyDollar,
 } from "@tabler/icons-react";
-import { usePayments, usePaymentStats, useSeasons } from "@/hooks/use-queries";
+import { usePayments, usePaymentStats, useSeasons } from "@/hooks/queries";
 import { PaymentsDataTable } from "@/components/payments/payments-data-table";
 import { PaymentsFilters } from "@/components/payments/payments-filters";
 import { PaymentDetailModal } from "@/components/payments/payment-detail-modal";

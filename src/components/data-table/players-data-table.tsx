@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Player } from "@/constants/zod/player-schema";
-import { usePlayers } from "@/hooks/use-queries";
+import { usePlayers } from "@/hooks/queries";
 import { getSportLabel, getSportColor } from "@/constants/sports";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";

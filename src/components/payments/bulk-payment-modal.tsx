@@ -27,7 +27,7 @@ import {
   IconAlertCircle,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useBulkUpdatePaymentStatus } from "@/hooks/use-queries";
+import { useBulkUpdatePaymentStatus } from "@/hooks/queries";
 import type { PaymentStatus } from "@/constants/zod/payment-schema";
 
 interface BulkPaymentModalProps {

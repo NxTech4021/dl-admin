@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useLeagues, useSeasons, useDivisions } from "@/hooks/use-queries";
+import { useLeagues, useSeasons, useDivisions } from "@/hooks/queries";
 import { MatchStatus } from "@/constants/zod/match-schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

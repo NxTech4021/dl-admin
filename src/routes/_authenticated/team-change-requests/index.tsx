@@ -21,7 +21,7 @@ import {
   useDissolvedPartnerships,
   useProcessWithdrawalRequest,
   useSeasons,
-} from "@/hooks/use-queries";
+} from "@/hooks/queries";
 import type {
   WithdrawalRequestAdmin,
   DissolvedPartnership,

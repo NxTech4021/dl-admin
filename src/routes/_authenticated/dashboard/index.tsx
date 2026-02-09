@@ -5,7 +5,7 @@ import { DashboardChartFilters } from "@/components/dashboard-chart-filters";
 import { ChartLoadingOverlay } from "@/components/ui/chart-loading-overlay";
 import { useDashboardKeyboard } from "@/hooks/use-dashboard-keyboard";
 import { useDashboardExport } from "@/hooks/use-dashboard-export";
-import { queryKeys } from "@/hooks/use-queries";
+import { queryKeys } from "@/hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useState, useCallback } from "react";
 import { toast } from "sonner";

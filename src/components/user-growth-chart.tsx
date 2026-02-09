@@ -16,7 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUserGrowth } from "@/hooks/use-queries";
+import { useUserGrowth } from "@/hooks/queries";
 
 // === Constants
 const WEEKS_PER_MONTH = 4.3;

@@ -20,7 +20,7 @@ import {
   IconCalendar,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useUpdatePaymentStatus } from "@/hooks/use-queries";
+import { useUpdatePaymentStatus } from "@/hooks/queries";
 import type { PaymentRecord, PaymentStatus } from "@/constants/zod/payment-schema";
 
 interface PaymentRowActionsProps {

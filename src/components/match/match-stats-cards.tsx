@@ -11,7 +11,7 @@ import {
   IconRefresh,
   IconHeartHandshake,
 } from "@tabler/icons-react";
-import { useMatchStats } from "@/hooks/use-queries";
+import { useMatchStats } from "@/hooks/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { IconDownload, IconUsers, IconRefresh, IconAlertCircle } from "@tabler/icons-react";
-import { useAdmins } from "@/hooks/use-queries";
+import { useAdmins } from "@/hooks/queries";
 import { AnimatedContainer, AnimatedFilterBar } from "@/components/ui/animated-container";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterSelect } from "@/components/ui/filter-select";
