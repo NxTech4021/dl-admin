@@ -4,6 +4,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get all team change requests with optional filters
@@ -85,7 +86,7 @@ export function useProcessTeamChangeRequest() {
       queryClient.invalidateQueries({ queryKey: queryKeys.teamChangeRequests.all });
     },
     onError: (error) => {
-      console.error("Failed to process team change request:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to process team change request:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
