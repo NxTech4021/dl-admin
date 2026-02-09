@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 
 interface ChartErrorBoundaryProps {
@@ -30,7 +31,7 @@ export class ChartErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Chart Error:", error, errorInfo);
+    logger.error("Chart Error:", error, errorInfo);
   }
 
   render() {
