@@ -71,6 +71,13 @@ export default function LeagueCreateModal({
   const [sponsorInputValue, setSponsorInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
+  const [showCreateSponsor, setShowCreateSponsor] = useState(false);
+  const [creatingSponsor, setCreatingSponsor] = useState(false);
+  const [newSponsor, setNewSponsor] = useState({
+    sponsoredName: "",
+    packageTier: "",
+    contractAmount: "",
+  });
   const { data } = useSession();
 
   const userId = data?.user.id;
@@ -145,7 +152,54 @@ React.useEffect(() => {
     }, 200);
   };
 
-  
+  // Handle inline sponsor creation
+  const handleCreateSponsorInline = async () => {
+    if (!newSponsor.sponsoredName.trim()) {
+      toast.error("Sponsor name is required");
+      return;
+    }
+    if (!newSponsor.packageTier) {
+      toast.error("Please select a package tier");
+      return;
+    }
+
+    setCreatingSponsor(true);
+    try {
+      const payload = {
+        sponsoredName: newSponsor.sponsoredName.trim(),
+        packageTier: newSponsor.packageTier,
+        contractAmount: newSponsor.contractAmount ? Number(newSponsor.contractAmount) : undefined,
+      };
+
+      const response = await axiosInstance.post(endpoints.sponsors.create, payload);
+      const created = response.data?.data || response.data;
+      const createdId = created?.id || created?.sponsorship?.id;
+      const createdName = created?.sponsoredName || created?.sponsorship?.sponsoredName || newSponsor.sponsoredName.trim();
+
+      // Auto-select the newly created sponsor
+      if (createdId) {
+        setSponsorInputValue(createdName);
+        updateFormData("existingSponsorId", createdId);
+        // Add to local sponsors list
+        setSponsors(prev => [...prev, { id: createdId, name: createdName }]);
+      }
+
+      toast.success("Sponsor created successfully!");
+      setShowCreateSponsor(false);
+      setNewSponsor({ sponsoredName: "", packageTier: "", contractAmount: "" });
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to create sponsor");
+      toast.error(message);
+    } finally {
+      setCreatingSponsor(false);
+    }
+  };
+
+  const cancelCreateSponsor = () => {
+    setShowCreateSponsor(false);
+    setNewSponsor({ sponsoredName: "", packageTier: "", contractAmount: "" });
+  };
+
   const resetModal = () => {
     setFormData({
       leagueName: "",
@@ -161,6 +215,9 @@ React.useEffect(() => {
     setSponsorInputValue("");
     setShowSuggestions(false);
     setFilteredSponsors([]);
+    setShowCreateSponsor(false);
+    setCreatingSponsor(false);
+    setNewSponsor({ sponsoredName: "", packageTier: "", contractAmount: "" });
   };
 
   const isFormValid = formData.leagueName && formData.sport && formData.location;
@@ -387,49 +444,167 @@ const handleCreateLeague = async () => {
 
               {formData.hasSponsor && (
                 <div className="pt-3 border-t border-border/50">
-                  <div className="space-y-1.5 relative">
-                    <Label htmlFor="existingSponsor" className="text-sm font-medium flex items-center gap-1">
-                      Select Sponsor
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="existingSponsor"
-                      placeholder="Type to search sponsors..."
-                      value={sponsorInputValue}
-                      onChange={(e) => handleSponsorInputChange(e.target.value)}
-                      onFocus={() => {
-                        if (sponsorInputValue.trim() !== "") {
-                          setShowSuggestions(true);
-                        }
-                      }}
-                      onBlur={handleSponsorInputBlur}
-                      className="h-9"
-                    />
+                  {!showCreateSponsor ? (
+                    <>
+                      {/* Search existing sponsors */}
+                      <div className="space-y-1.5 relative">
+                        <Label htmlFor="existingSponsor" className="text-sm font-medium flex items-center gap-1">
+                          Select Sponsor
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="existingSponsor"
+                          placeholder="Type to search sponsors..."
+                          value={sponsorInputValue}
+                          onChange={(e) => handleSponsorInputChange(e.target.value)}
+                          onFocus={() => {
+                            if (sponsorInputValue.trim() !== "") {
+                              setShowSuggestions(true);
+                            }
+                          }}
+                          onBlur={handleSponsorInputBlur}
+                          className="h-9"
+                        />
 
-                    {/* Suggestions dropdown */}
-                    {showSuggestions && filteredSponsors.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
-                        {filteredSponsors.map((sponsor) => (
-                          <div
-                            key={sponsor.id}
-                            className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
-                            onClick={() => handleSponsorSelect(sponsor)}
-                          >
-                            {sponsor.name}
+                        {/* Suggestions dropdown */}
+                        {showSuggestions && filteredSponsors.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
+                            {filteredSponsors.map((sponsor) => (
+                              <div
+                                key={sponsor.id}
+                                className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
+                                onClick={() => handleSponsorSelect(sponsor)}
+                              >
+                                {sponsor.name}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {/* No results message */}
-                    {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg">
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          No sponsors found
-                        </div>
+                        {/* No results message */}
+                        {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
+                          <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg">
+                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                              No sponsors found
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+
+                      {/* Create new sponsor button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 gap-1.5 text-xs"
+                        onClick={() => setShowCreateSponsor(true)}
+                      >
+                        <IconPlus className="size-3.5" />
+                        Create New Sponsor
+                      </Button>
+                    </>
+                  ) : (
+                    /* Inline sponsor creation form */
+                    <div className="space-y-3 rounded-lg border border-border/50 bg-muted/10 p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">New Sponsor</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={cancelCreateSponsor}
+                          disabled={creatingSponsor}
+                        >
+                          <IconX className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          Sponsor Name
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          placeholder="e.g. Nike Malaysia"
+                          value={newSponsor.sponsoredName}
+                          onChange={(e) => setNewSponsor(prev => ({ ...prev, sponsoredName: e.target.value }))}
+                          className="h-9"
+                          disabled={creatingSponsor}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium flex items-center gap-1">
+                          Package Tier
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={newSponsor.packageTier}
+                          onValueChange={(value) => setNewSponsor(prev => ({ ...prev, packageTier: value }))}
+                          disabled={creatingSponsor}
+                        >
+                          <SelectTrigger className="h-9 w-full">
+                            <SelectValue placeholder="Select tier" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="BRONZE">Bronze</SelectItem>
+                            <SelectItem value="SILVER">Silver</SelectItem>
+                            <SelectItem value="GOLD">Gold</SelectItem>
+                            <SelectItem value="PLATINUM">Platinum</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">
+                          Contract Amount (RM)
+                          <Badge variant="outline" className="text-[10px] ml-1.5">Optional</Badge>
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g. 10000.00"
+                          value={newSponsor.contractAmount}
+                          onChange={(e) => setNewSponsor(prev => ({ ...prev, contractAmount: e.target.value }))}
+                          className="h-9"
+                          disabled={creatingSponsor}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelCreateSponsor}
+                          disabled={creatingSponsor}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateSponsorInline}
+                          disabled={creatingSponsor}
+                          className="gap-1.5"
+                        >
+                          {creatingSponsor ? (
+                            <>
+                              <IconLoader2 className="animate-spin size-3.5" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <IconPlus className="size-3.5" />
+                              Save Sponsor
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
