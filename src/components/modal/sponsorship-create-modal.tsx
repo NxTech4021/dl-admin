@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 interface SponsorshipCreateModalProps {
   open: boolean;
@@ -51,7 +52,7 @@ export default function SponsorshipCreateModal({ open, onOpenChange, onCreated }
         packageTier,
         contractAmount: contractAmount ? Number(contractAmount) : undefined,
       };
-      console.log("Creating sponsorship with payload:", payload);
+      logger.debug("Creating sponsorship with payload:", payload);
       
       await axiosInstance.post(endpoints.sponsors.create, payload);
       toast.success("Sponsorship created");
@@ -59,7 +60,7 @@ export default function SponsorshipCreateModal({ open, onOpenChange, onCreated }
       resetForm();
       onCreated?.();
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error("Failed to create sponsorship");
     } finally {
       setIsSubmitting(false);
