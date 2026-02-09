@@ -1,28 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { apiClient } from "@/lib/api-client";
 
-const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
-});
-
-axiosInstance.interceptors.response.use(
-  (res) => res,
-  // (error) =>
-  //   Promise.reject(
-  //     (error.response && error.response.data) || "Something went wrong"
-  //   )
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
-);
-
-export default axiosInstance;
-
-export const fetcher = async (args: unknown) => {
-  const [url, config] = Array.isArray(args) ? args : [args];
-  const res = await axiosInstance.get(url, { ...config });
-  return res.data;
-};
+// Re-export apiClient as default for backward compatibility.
+// New code should import { apiClient } from "@/lib/api-client" directly.
+export default apiClient;
 
 export const endpoints = {
   user: {

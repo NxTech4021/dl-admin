@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { io } from "socket.io-client";
 import type { Socket } from "socket.io-client";
 import { useSession } from "@/lib/auth-client";
+import { getApiBaseUrl } from "@/lib/api-client";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -48,7 +49,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     console.log("🚀 [Socket] Initializing socket connection for user:", user.id);
 
     const socketInstance = io(
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3001",
+      getApiBaseUrl(),
       {
         auth: {
           userId: user.id,

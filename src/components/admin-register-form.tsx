@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import axios from "axios";
+import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,9 +62,7 @@ export function AdminRegisterForm({
     console.log("Fetching invite for token:", token);
     const fetchEmail = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/admin/get-invite?token=${token}`
-        );
+        const res = await apiClient.get(`/api/admin/get-invite?token=${token}`);
         console.log("res", res.data);
         setEmail(res.data.email);
       } catch (err) {
@@ -141,18 +140,15 @@ export function AdminRegisterForm({
     console.log("Submitting form data:", formData);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/register`,
-        formData,
-        { withCredentials: true }
-      );
+      const res = await apiClient.post("/api/admin/register", formData);
 
       setSuccess(res.data.message);
       toast.success(res.data.message || "You have registered successfully!");
       setTimeout(() => navigate({ to: "/login" }), 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to register");
-      toast.error(err.response?.data?.message || "Failed to register admin");
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to register");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

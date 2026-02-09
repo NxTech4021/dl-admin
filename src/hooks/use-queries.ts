@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { z } from "zod";
 import { playerSchema, Player } from "@/constants/zod/player-schema";
 import { leagueSchema, League } from "@/constants/zod/league-schema";
@@ -32,12 +31,7 @@ import {
 } from "@/constants/zod/partnership-admin-schema";
 import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
-
-const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
-  timeout: 30000,
-});
+import { apiClient } from "@/lib/api-client";
 
 // Query Keys
 export const queryKeys = {
@@ -151,7 +145,7 @@ export function usePlayers() {
   return useQuery({
     queryKey: queryKeys.players.list(),
     queryFn: async (): Promise<Player[]> => {
-      const response = await axiosInstance.get("/api/player/");
+      const response = await apiClient.get("/api/player/");
       const result = response.data;
       return z.array(playerSchema).parse(result.data);
     },
@@ -162,7 +156,7 @@ export function usePlayer(id: string) {
   return useQuery({
     queryKey: queryKeys.players.detail(id),
     queryFn: async (): Promise<Player> => {
-      const response = await axiosInstance.get(`/api/player/${id}`);
+      const response = await apiClient.get(`/api/player/${id}`);
       return playerSchema.parse(response.data.data);
     },
     enabled: !!id,
@@ -173,7 +167,7 @@ export function usePlayerStats() {
   return useQuery({
     queryKey: queryKeys.players.stats(),
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/player/stats");
+      const response = await apiClient.get("/api/player/stats");
       return response.data.data;
     },
   });
@@ -187,7 +181,7 @@ export function useLeagues() {
   return useQuery({
     queryKey: queryKeys.leagues.list(),
     queryFn: async (): Promise<League[]> => {
-      const response = await axiosInstance.get("/api/league/");
+      const response = await apiClient.get("/api/league/");
       const result = response.data;
       // API returns { data: { leagues: [...] } } structure
       const leaguesData = result.data?.leagues || result.data || [];
@@ -200,7 +194,7 @@ export function useLeague(id: string) {
   return useQuery({
     queryKey: queryKeys.leagues.detail(id),
     queryFn: async (): Promise<League> => {
-      const response = await axiosInstance.get(`/api/league/${id}`);
+      const response = await apiClient.get(`/api/league/${id}`);
       return leagueSchema.parse(response.data.data);
     },
     enabled: !!id,
@@ -212,7 +206,7 @@ export function useCreateLeague() {
 
   return useMutation({
     mutationFn: async (data: Partial<League>) => {
-      const response = await axiosInstance.post("/api/league/create", data);
+      const response = await apiClient.post("/api/league/create", data);
       return response.data;
     },
     onSuccess: () => {
@@ -226,7 +220,7 @@ export function useUpdateLeague() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<League> }) => {
-      const response = await axiosInstance.put(`/api/league/${id}`, data);
+      const response = await apiClient.put(`/api/league/${id}`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -241,7 +235,7 @@ export function useDeleteLeague() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await axiosInstance.delete(`/api/league/${id}`);
+      const response = await apiClient.delete(`/api/league/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -258,7 +252,7 @@ export function useSeasons() {
   return useQuery({
     queryKey: queryKeys.seasons.list(),
     queryFn: async (): Promise<Season[]> => {
-      const response = await axiosInstance.get("/api/season/");
+      const response = await apiClient.get("/api/season/");
       const result = response.data;
       return z.array(seasonSchema).parse(result.data);
     },
@@ -269,7 +263,7 @@ export function useSeason(id: string) {
   return useQuery({
     queryKey: queryKeys.seasons.detail(id),
     queryFn: async (): Promise<Season> => {
-      const response = await axiosInstance.get(`/api/season/${id}`);
+      const response = await apiClient.get(`/api/season/${id}`);
       return seasonSchema.parse(response.data.data);
     },
     enabled: !!id,
@@ -281,7 +275,7 @@ export function useCreateSeason() {
 
   return useMutation({
     mutationFn: async (data: Partial<Season>) => {
-      const response = await axiosInstance.post("/api/season/", data);
+      const response = await apiClient.post("/api/season/", data);
       return response.data;
     },
     onSuccess: () => {
@@ -295,7 +289,7 @@ export function useDeleteSeason() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await axiosInstance.delete(`/api/season/${id}`);
+      const response = await apiClient.delete(`/api/season/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -312,7 +306,7 @@ export function useDivisions() {
   return useQuery({
     queryKey: queryKeys.divisions.list(),
     queryFn: async (): Promise<Division[]> => {
-      const response = await axiosInstance.get("/api/division/");
+      const response = await apiClient.get("/api/division/");
       const result = response.data;
       return z.array(divisionSchema).parse(result.data);
     },
@@ -323,7 +317,7 @@ export function useDivision(id: string) {
   return useQuery({
     queryKey: queryKeys.divisions.detail(id),
     queryFn: async (): Promise<Division> => {
-      const response = await axiosInstance.get(`/api/division/${id}`);
+      const response = await apiClient.get(`/api/division/${id}`);
       return divisionSchema.parse(response.data.data);
     },
     enabled: !!id,
@@ -335,7 +329,7 @@ export function useDeleteDivision() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await axiosInstance.delete(`/api/division/${id}`);
+      const response = await apiClient.delete(`/api/division/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -360,7 +354,7 @@ export function useDivisionsStats(seasonId?: string) {
       const url = seasonId
         ? `/api/division/season/${seasonId}`
         : "/api/division/";
-      const response = await axiosInstance.get(url);
+      const response = await apiClient.get(url);
       const divisions = response.data?.data || response.data?.divisions || response.data || [];
       const divisionsArray = Array.isArray(divisions) ? divisions : [];
 
@@ -390,7 +384,7 @@ export function useAdmins() {
   return useQuery({
     queryKey: queryKeys.admins.list(),
     queryFn: async (): Promise<Admin[]> => {
-      const response = await axiosInstance.get("/api/admin/getadmins");
+      const response = await apiClient.get("/api/admin/getadmins");
       const result = response.data;
       return z.array(adminSchema).parse(result.data.getAllAdmins);
     },
@@ -401,7 +395,7 @@ export function useAdminSession() {
   return useQuery({
     queryKey: queryKeys.admins.session(),
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/admin/session");
+      const response = await apiClient.get("/api/admin/session");
       return response.data.data;
     },
     retry: false,
@@ -433,7 +427,7 @@ export function useSponsors(enabled: boolean = true) {
   return useQuery({
     queryKey: queryKeys.sponsors.list(),
     queryFn: async (): Promise<SponsorOption[]> => {
-      const response = await axiosInstance.get(endpoints.sponsors.getAll);
+      const response = await apiClient.get(endpoints.sponsors.getAll);
       const api = response.data;
       const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as SponsorshipResponse[];
       return sponsorships.map((s) => ({
@@ -498,7 +492,7 @@ export function useMatches(filters: MatchFilters = {}) {
       if (filters.page) params.append("page", String(filters.page));
       if (filters.limit) params.append("limit", String(filters.limit));
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.admin.matches.getAll}?${params.toString()}`
       );
 
@@ -535,7 +529,7 @@ export function useMatch(id: string) {
   return useQuery({
     queryKey: queryKeys.matches.detail(id),
     queryFn: async (): Promise<Match> => {
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         endpoints.admin.matches.getById(id)
       );
       // Safe parse with error handling for schema mismatches
@@ -567,7 +561,7 @@ export function useMatchStats(filters?: {
       if (filters?.seasonId) params.append("seasonId", filters.seasonId);
       if (filters?.divisionId) params.append("divisionId", filters.divisionId);
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.admin.matches.getStats}?${params.toString()}`
       );
       // Safe parse with error handling for schema mismatches
@@ -604,7 +598,7 @@ export function useVoidMatch() {
       reason: string;
       notifyParticipants?: boolean;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.voidMatch(matchId),
         {
           reason,
@@ -645,7 +639,7 @@ export function useConvertToWalkover() {
       winningPlayerId: string;
       notifyParticipants?: boolean;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.convertWalkover(matchId),
         {
           reason,
@@ -690,7 +684,7 @@ export function useEditMatchResult() {
       outcome?: string;
       reason: string;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.editResult(matchId),
         {
           team1Score,
@@ -732,7 +726,7 @@ export function useMessageParticipants() {
       sendEmail?: boolean;
       sendPush?: boolean;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.messageParticipants(matchId),
         {
           subject,
@@ -769,7 +763,7 @@ export function useReviewCancellation() {
       penaltySeverity?: string;
       reason?: string;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.reviewCancellation(matchId),
         {
           approved,
@@ -814,7 +808,7 @@ export function useDisputes(filters?: {
       if (filters?.page) params.append("page", String(filters.page));
       if (filters?.limit) params.append("limit", String(filters.limit));
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
       return response.data;
@@ -829,7 +823,7 @@ export function useDispute(id: string) {
   return useQuery({
     queryKey: queryKeys.disputes.detail(id),
     queryFn: async () => {
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         endpoints.admin.disputes.getById(id)
       );
       return response.data;
@@ -846,7 +840,7 @@ export function useStartDisputeReview() {
 
   return useMutation({
     mutationFn: async (disputeId: string) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.disputes.startReview(disputeId)
       );
       return response.data;
@@ -880,7 +874,7 @@ export function useResolveDispute() {
       reason: string;
       notifyPlayers?: boolean;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.disputes.resolve(disputeId),
         {
           action,
@@ -913,7 +907,7 @@ export function useOpenDisputeCount() {
       params.append("status", "OPEN,UNDER_REVIEW");
       params.append("limit", "1"); // We only need the total count
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
       return response.data?.total || 0;
@@ -939,7 +933,7 @@ export function useAddDisputeNote() {
       note: string;
       isInternalOnly?: boolean;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         `${endpoints.admin.disputes.getById(disputeId)}/notes`,
         {
           note,
@@ -989,7 +983,7 @@ export function useAvailablePlayers(
       if (excludeMatchId) params.append("excludeMatchId", excludeMatchId);
       if (search) params.append("search", search);
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.admin.divisions.availablePlayers(divisionId!)}?${params.toString()}`
       );
       return response.data as AvailablePlayer[];
@@ -1010,7 +1004,7 @@ export function useValidateParticipants() {
       matchId: string;
       participants: ParticipantInput[];
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.validateParticipants(matchId),
         { participants }
       );
@@ -1039,7 +1033,7 @@ export function useEditMatchParticipants() {
       participants: ParticipantInput[];
       reason: string;
     }) => {
-      const response = await axiosInstance.put(
+      const response = await apiClient.put(
         endpoints.admin.matches.editParticipants(matchId),
         { participants, reason }
       );
@@ -1075,7 +1069,7 @@ export function useHideMatch() {
       matchId: string;
       reason: string;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.hideMatch(matchId),
         { reason }
       );
@@ -1101,7 +1095,7 @@ export function useUnhideMatch() {
 
   return useMutation({
     mutationFn: async ({ matchId }: { matchId: string }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.unhideMatch(matchId)
       );
       return response.data;
@@ -1134,7 +1128,7 @@ export function useReportMatchAbuse() {
       reason: string;
       category: MatchReportCategory;
     }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.reportAbuse(matchId),
         { reason, category }
       );
@@ -1160,7 +1154,7 @@ export function useClearMatchReport() {
 
   return useMutation({
     mutationFn: async ({ matchId }: { matchId: string }) => {
-      const response = await axiosInstance.post(
+      const response = await apiClient.post(
         endpoints.admin.matches.clearReport(matchId)
       );
       return response.data;
@@ -1196,7 +1190,7 @@ export function useInactivitySettings(params?: { leagueId?: string; seasonId?: s
         ? `${endpoints.admin.inactivity.getSettings}?${queryParams.toString()}`
         : endpoints.admin.inactivity.getSettings;
 
-      const response = await axiosInstance.get(url);
+      const response = await apiClient.get(url);
 
       // Backend may return null if no settings exist
       if (!response.data || !response.data.data) {
@@ -1215,7 +1209,7 @@ export function useAllInactivitySettings() {
   return useQuery({
     queryKey: queryKeys.inactivity.allSettings(),
     queryFn: async (): Promise<InactivitySettings[]> => {
-      const response = await axiosInstance.get(endpoints.admin.inactivity.getAllSettings);
+      const response = await apiClient.get(endpoints.admin.inactivity.getAllSettings);
       return z.array(inactivitySettingsSchema).parse(response.data.data || []);
     },
   });
@@ -1228,7 +1222,7 @@ export function useInactivityStats() {
   return useQuery({
     queryKey: queryKeys.inactivity.stats(),
     queryFn: async (): Promise<InactivityStats> => {
-      const response = await axiosInstance.get(endpoints.admin.inactivity.getStats);
+      const response = await apiClient.get(endpoints.admin.inactivity.getStats);
       return inactivityStatsSchema.parse(response.data.data);
     },
   });
@@ -1242,7 +1236,7 @@ export function useUpdateInactivitySettings() {
 
   return useMutation({
     mutationFn: async (input: InactivitySettingsInput) => {
-      const response = await axiosInstance.put(
+      const response = await apiClient.put(
         endpoints.admin.inactivity.updateSettings,
         input
       );
@@ -1265,7 +1259,7 @@ export function useDeleteInactivitySettings() {
 
   return useMutation({
     mutationFn: async (settingsId: string) => {
-      const response = await axiosInstance.delete(
+      const response = await apiClient.delete(
         endpoints.admin.inactivity.deleteSettings(settingsId)
       );
       return response.data;
@@ -1287,7 +1281,7 @@ export function useTriggerInactivityCheck() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await axiosInstance.post(endpoints.admin.inactivity.triggerCheck);
+      const response = await apiClient.post(endpoints.admin.inactivity.triggerCheck);
       return response.data;
     },
     onSuccess: () => {
@@ -1311,7 +1305,7 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: async (): Promise<DashboardStats> => {
-      const response = await axiosInstance.get(endpoints.admin.dashboard.getAll);
+      const response = await apiClient.get(endpoints.admin.dashboard.getAll);
       return dashboardStatsSchema.parse(response.data.data);
     },
     staleTime: 60000, // 1 minute cache
@@ -1325,7 +1319,7 @@ export function useDashboardKPI() {
   return useQuery({
     queryKey: queryKeys.dashboard.kpi(),
     queryFn: async (): Promise<DashboardKPI> => {
-      const response = await axiosInstance.get(endpoints.admin.dashboard.getKPI);
+      const response = await apiClient.get(endpoints.admin.dashboard.getKPI);
       return dashboardKPISchema.parse(response.data.data);
     },
     staleTime: 60000,
@@ -1339,7 +1333,7 @@ export function useSportMetrics() {
   return useQuery({
     queryKey: queryKeys.dashboard.sports(),
     queryFn: async (): Promise<SportMetrics[]> => {
-      const response = await axiosInstance.get(endpoints.admin.dashboard.getSports);
+      const response = await apiClient.get(endpoints.admin.dashboard.getSports);
       return z.array(sportMetricsSchema).parse(response.data.data);
     },
     staleTime: 60000,
@@ -1354,7 +1348,7 @@ export function useMatchActivity(weeks?: number) {
     queryKey: queryKeys.dashboard.matchActivity(weeks),
     queryFn: async (): Promise<MatchActivity[]> => {
       const params = weeks ? `?weeks=${weeks}` : "";
-      const response = await axiosInstance.get(`${endpoints.admin.dashboard.getMatchActivity}${params}`);
+      const response = await apiClient.get(`${endpoints.admin.dashboard.getMatchActivity}${params}`);
       return z.array(matchActivitySchema).parse(response.data.data);
     },
     staleTime: 60000,
@@ -1369,7 +1363,7 @@ export function useUserGrowth(months?: number) {
     queryKey: queryKeys.dashboard.userGrowth(months),
     queryFn: async (): Promise<UserGrowth[]> => {
       const params = months ? `?months=${months}` : "";
-      const response = await axiosInstance.get(`${endpoints.admin.dashboard.getUserGrowth}${params}`);
+      const response = await apiClient.get(`${endpoints.admin.dashboard.getUserGrowth}${params}`);
       return z.array(userGrowthSchema).parse(response.data.data);
     },
     staleTime: 60000,
@@ -1383,7 +1377,7 @@ export function useSportComparison() {
   return useQuery({
     queryKey: queryKeys.dashboard.sportComparison(),
     queryFn: async (): Promise<SportComparison[]> => {
-      const response = await axiosInstance.get(endpoints.admin.dashboard.getSportComparison);
+      const response = await apiClient.get(endpoints.admin.dashboard.getSportComparison);
       return z.array(sportComparisonSchema).parse(response.data.data);
     },
     staleTime: 60000,
@@ -1412,7 +1406,7 @@ export function useTeamChangeRequests(filters?: {
         ? `${endpoints.teamChangeRequests.getAll}?${params.toString()}`
         : endpoints.teamChangeRequests.getAll;
 
-      const response = await axiosInstance.get(url);
+      const response = await apiClient.get(url);
       return teamChangeRequestsResponseSchema.parse(response.data);
     },
   });
@@ -1426,7 +1420,7 @@ export function useTeamChangeRequest(id: string | null) {
     queryKey: queryKeys.teamChangeRequests.detail(id || ""),
     queryFn: async (): Promise<TeamChangeRequest | null> => {
       if (!id) return null;
-      const response = await axiosInstance.get(endpoints.teamChangeRequests.getById(id));
+      const response = await apiClient.get(endpoints.teamChangeRequests.getById(id));
       return teamChangeRequestSchema.parse(response.data);
     },
     enabled: !!id,
@@ -1440,7 +1434,7 @@ export function usePendingTeamChangeRequestsCount() {
   return useQuery({
     queryKey: queryKeys.teamChangeRequests.pendingCount(),
     queryFn: async (): Promise<number> => {
-      const response = await axiosInstance.get(endpoints.teamChangeRequests.getPendingCount);
+      const response = await apiClient.get(endpoints.teamChangeRequests.getPendingCount);
       return response.data.count || 0;
     },
   });
@@ -1464,7 +1458,7 @@ export function useProcessTeamChangeRequest() {
       adminId: string;
       adminNotes?: string;
     }) => {
-      const response = await axiosInstance.patch(
+      const response = await apiClient.patch(
         endpoints.teamChangeRequests.process(requestId),
         { status, adminId, adminNotes }
       );
@@ -1563,7 +1557,7 @@ export function useBugAppInit() {
   return useQuery({
     queryKey: queryKeys.bug.app("dla"),
     queryFn: async (): Promise<{ appId: string; name: string }> => {
-      const response = await axiosInstance.get(endpoints.bug.init);
+      const response = await apiClient.get(endpoints.bug.init);
       return { appId: response.data.appId, name: response.data.name || "DLA" };
     },
     staleTime: Infinity, // App ID won't change
@@ -1578,7 +1572,7 @@ export function useBugReportSettings(appId: string | null) {
     queryKey: queryKeys.bug.settings(appId || ""),
     queryFn: async (): Promise<BugReportSettings | null> => {
       if (!appId) return null;
-      const response = await axiosInstance.get(endpoints.bug.getSettings(appId));
+      const response = await apiClient.get(endpoints.bug.getSettings(appId));
       return response.data;
     },
     enabled: !!appId,
@@ -1593,7 +1587,7 @@ export function useUpdateBugReportSettings() {
 
   return useMutation({
     mutationFn: async ({ appId, data }: { appId: string; data: BugReportSettingsInput }) => {
-      const response = await axiosInstance.put(endpoints.bug.updateSettings(appId), data);
+      const response = await apiClient.put(endpoints.bug.updateSettings(appId), data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -1628,7 +1622,7 @@ export function usePayments(filters: Partial<PaymentFilters> = {}) {
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.payments.getAll}?${params.toString()}`
       );
 
@@ -1670,7 +1664,7 @@ export function usePaymentStats(filters?: {
       if (filters?.startDate) params.append("startDate", filters.startDate.toISOString());
       if (filters?.endDate) params.append("endDate", filters.endDate.toISOString());
 
-      const response = await axiosInstance.get(
+      const response = await apiClient.get(
         `${endpoints.payments.getStats}?${params.toString()}`
       );
 
@@ -1709,7 +1703,7 @@ export function useUpdatePaymentStatus() {
       membershipId: string;
       data: UpdatePaymentStatusRequest;
     }) => {
-      const response = await axiosInstance.patch(
+      const response = await apiClient.patch(
         endpoints.payments.updateStatus(membershipId),
         data
       );
@@ -1733,7 +1727,7 @@ export function useBulkUpdatePaymentStatus() {
 
   return useMutation({
     mutationFn: async (data: BulkUpdatePaymentStatusRequest) => {
-      const response = await axiosInstance.patch(
+      const response = await apiClient.patch(
         endpoints.payments.bulkUpdateStatus,
         data
       );
@@ -1773,7 +1767,7 @@ export function useWithdrawalRequestsAdmin(filters?: {
         ? `${endpoints.partnershipAdmin.getWithdrawalRequests}?${params.toString()}`
         : endpoints.partnershipAdmin.getWithdrawalRequests;
 
-      const response = await axiosInstance.get(url);
+      const response = await apiClient.get(url);
 
       // Safe parse with error handling
       const parseResult = z.array(withdrawalRequestAdminSchema).safeParse(response.data);
@@ -1795,7 +1789,7 @@ export function useWithdrawalRequestStats() {
   return useQuery({
     queryKey: queryKeys.partnershipAdmin.withdrawalRequestStats(),
     queryFn: async (): Promise<WithdrawalRequestStats> => {
-      const response = await axiosInstance.get(endpoints.partnershipAdmin.getWithdrawalRequestStats);
+      const response = await apiClient.get(endpoints.partnershipAdmin.getWithdrawalRequestStats);
 
       const parseResult = withdrawalRequestStatsSchema.safeParse(response.data);
       if (!parseResult.success) {
@@ -1829,7 +1823,7 @@ export function useDissolvedPartnerships(filters?: {
         ? `${endpoints.partnershipAdmin.getDissolvedPartnerships}?${params.toString()}`
         : endpoints.partnershipAdmin.getDissolvedPartnerships;
 
-      const response = await axiosInstance.get(url);
+      const response = await apiClient.get(url);
 
       const parseResult = z.array(dissolvedPartnershipSchema).safeParse(response.data);
       if (!parseResult.success) {
@@ -1851,7 +1845,7 @@ export function useDissolvedPartnership(id: string | null) {
     queryKey: queryKeys.partnershipAdmin.dissolvedPartnershipDetail(id || ""),
     queryFn: async (): Promise<DissolvedPartnership | null> => {
       if (!id) return null;
-      const response = await axiosInstance.get(endpoints.partnershipAdmin.getDissolvedPartnershipById(id));
+      const response = await apiClient.get(endpoints.partnershipAdmin.getDissolvedPartnershipById(id));
 
       const parseResult = dissolvedPartnershipSchema.safeParse(response.data);
       if (!parseResult.success) {
@@ -1881,7 +1875,7 @@ export function useProcessWithdrawalRequest() {
       status: "APPROVED" | "REJECTED";
       adminNotes?: string;
     }) => {
-      const response = await axiosInstance.patch(
+      const response = await apiClient.patch(
         endpoints.withdrawal.process(requestId),
         { status, adminNotes }
       );
