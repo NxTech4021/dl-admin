@@ -26,6 +26,7 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 const SPORT_OPTIONS = [
   { value: "TENNIS", label: "Tennis" },
@@ -101,11 +102,11 @@ function SeasonsPage() {
       setData(parsedData);
       setError(null);
     } catch (err) {
-      console.error("Failed to fetch seasons:", err);
+      logger.error("Failed to fetch seasons:", err);
 
       if (err instanceof z.ZodError) {
         setError("Invalid data format");
-        console.error("Validation errors:", err.issues);
+        logger.error("Validation errors:", err.issues);
       } else if (err instanceof Error) {
         if (err.message.includes("Network Error")) {
           setError("Network error");
