@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 // Schemas for each separate form
 const maintenanceSchema = z.object({
@@ -154,7 +155,7 @@ export function AppControlsCard() {
         // }
 
       } catch (error) {
-        console.error("Failed to load data:", error);
+        logger.error("Failed to load data:", error);
         toast.error("Failed to load app controls: " + getErrorMessage(error));
       }
     };
