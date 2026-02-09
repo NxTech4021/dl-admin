@@ -5,6 +5,7 @@ import { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get inactivity settings (global, league-specific, or season-specific)
@@ -77,7 +78,7 @@ export function useUpdateInactivitySettings() {
       queryClient.invalidateQueries({ queryKey: queryKeys.inactivity.all });
     },
     onError: (error) => {
-      console.error("Failed to update inactivity settings:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to update inactivity settings:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -99,7 +100,7 @@ export function useDeleteInactivitySettings() {
       queryClient.invalidateQueries({ queryKey: queryKeys.inactivity.all });
     },
     onError: (error) => {
-      console.error("Failed to delete inactivity settings:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to delete inactivity settings:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
@@ -120,7 +121,7 @@ export function useTriggerInactivityCheck() {
       queryClient.invalidateQueries({ queryKey: queryKeys.players.all });
     },
     onError: (error) => {
-      console.error("Failed to trigger inactivity check:", getErrorMessage(error, "Unknown error"));
+      logger.error("Failed to trigger inactivity check:", getErrorMessage(error, "Unknown error"));
     },
   });
 }
