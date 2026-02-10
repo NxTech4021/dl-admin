@@ -320,7 +320,7 @@ function SeasonDetailPage() {
                         <div className="text-sm font-medium">
                           {season.leagues && season.leagues.length > 0 ? (
                             <div className="space-y-1">
-                              {season.leagues.map((league: any) => (
+                              {season.leagues.map((league) => (
                                 <Badge key={league.id} variant="outline" className="text-xs">
                                   {league.name}
                                 </Badge>
@@ -359,7 +359,7 @@ function SeasonDetailPage() {
               divisions={divisions}
               seasonId={season.id}
               adminId={userId}
-              season={season as any}
+              season={season}
               onMembershipUpdated={handleMembershipUpdated}
             />
           </TabsContent>

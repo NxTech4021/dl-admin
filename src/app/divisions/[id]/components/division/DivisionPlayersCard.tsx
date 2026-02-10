@@ -107,7 +107,7 @@ export default function DivisionPlayersCard({
       const playersData = response.data?.data || response.data || [];
       setAvailablePlayers(
         Array.isArray(playersData)
-          ? playersData.map((p: any) => ({
+          ? playersData.map((p: { id: string; name?: string; email?: string; rating?: number }) => ({
               id: p.id,
               name: p.name || "Unknown",
               email: p.email || "",

@@ -58,8 +58,8 @@ interface SeasonPlayersCardProps {
       id: string;
       name: string | null;
       genderRestriction?: string;
-      genderCategory?: string;
-      gameType?: string;
+      genderCategory?: string | null;
+      gameType?: string | null;
       matchFormat?: string | null;
     } | null;
     partnerships?: Array<{
@@ -71,7 +71,7 @@ interface SeasonPlayersCardProps {
       status: string;
       captain: {
         id: string;
-        name: string | null;
+        name?: string | null;
         email?: string;
         username?: string;
         displayUsername?: string | null;
@@ -79,7 +79,7 @@ interface SeasonPlayersCardProps {
       };
       partner: {
         id: string;
-        name: string | null;
+        name?: string | null;
         email?: string;
         username?: string;
         displayUsername?: string | null;
@@ -167,12 +167,12 @@ export default function SeasonPlayersCard({
 
   const getUsername = (user: Membership["user"]) => {
     if (!user) return "unknown";
-    return (user as any).displayUsername || user.username || user.email?.split("@")[0] || "unknown";
+    return (user as Membership["user"] & { displayUsername?: string })?.displayUsername || user.username || user.email?.split("@")[0] || "unknown";
   };
 
   const getGameType = (): "SINGLES" | "DOUBLES" | null => {
     // Check category gameType (both camelCase and snake_case)
-    const categoryGameType = season?.category?.gameType || (season?.category as any)?.game_type;
+    const categoryGameType = season?.category?.gameType || (season?.category as (NonNullable<typeof season>["category"]) & { game_type?: string })?.game_type;
     if (categoryGameType) {
       const normalized = String(categoryGameType).toUpperCase().trim();
       if (normalized === "DOUBLES") return "DOUBLES";
@@ -260,7 +260,7 @@ export default function SeasonPlayersCard({
 
     // Final fallback to general rating
     if (!rating || rating === 0) {
-      const generalRating = (questionnaireResponse.result as any).rating;
+      const generalRating = questionnaireResponse.result.rating;
       if (generalRating && generalRating > 0) {
         rating = generalRating;
       }

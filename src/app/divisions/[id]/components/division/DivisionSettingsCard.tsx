@@ -202,7 +202,7 @@ export default function DivisionSettingsCard({
               <div className="space-y-1">
                 <Label className="text-muted-foreground">Season</Label>
                 <p className="font-medium">
-                  {(division as any).season?.name || "Not assigned"}
+                  {division.season?.name || "Not assigned"}
                 </p>
               </div>
             </div>

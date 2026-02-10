@@ -32,6 +32,7 @@ import type {
   JoinType,
   LeagueStatus,
   Sponsorship,
+  League,
 } from "@/constants/types/league";
 
 import {
@@ -291,7 +292,7 @@ function LeagueDetailPage() {
                   {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
                     <LeagueDetailsSection
-                      league={league as any}
+                      league={league as unknown as League}
                       onLeagueUpdated={fetchLeague}
                       formatLocation={formatLocation}
                       getSportLabel={getSportLabel}
@@ -404,7 +405,7 @@ function LeagueDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <LeagueSeasonsWrapper
-                    seasons={seasons as Season[]}
+                    seasons={seasons as unknown as Season[]}
                     leagueId={leagueId}
                     leagueName={league.name}
                     onRefresh={fetchLeague}

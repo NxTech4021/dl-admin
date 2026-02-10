@@ -98,9 +98,9 @@ function DivisionDetailPage() {
       const playersData =
         response.data?.data || response.data?.players || response.data || [];
       const mappedPlayers = Array.isArray(playersData)
-        ? playersData.map((p: any) => ({
-            id: p.userId || p.id,
-            odUserId: p.odUserId,
+        ? playersData.map((p: { userId?: string; id?: string; odUserId?: string; user?: { name?: string; email?: string; rating?: number }; name?: string; email?: string; rating?: number; wins?: number; losses?: number; matchesPlayed?: number; createdAt?: string; joinedAt?: string }) => ({
+            id: p.userId || p.id || "",
+            odUserId: p.odUserId || "",
             name: p.user?.name || p.name || "Unknown",
             email: p.user?.email || p.email || "",
             rating: p.user?.rating || p.rating,
@@ -261,7 +261,7 @@ function DivisionDetailPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Name</span>
                             <span className="font-medium text-sm">
-                              {(division as any).season?.name || "Not assigned"}
+                              {division.season?.name || "Not assigned"}
                             </span>
                           </div>
                         </div>

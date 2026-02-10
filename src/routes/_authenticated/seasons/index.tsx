@@ -83,7 +83,7 @@ function SeasonsPage() {
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
 
-      let seasonsData: any[] = [];
+      let seasonsData: unknown[] = [];
 
       if (Array.isArray(response.data)) {
         seasonsData = response.data;
