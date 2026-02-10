@@ -100,24 +100,36 @@ const getPackageTierBadgeVariant = (tier: string) => {
 };
 
 const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
-  if (!sponsor.league) {
-    return <span className="text-muted-foreground text-xs">No league</span>;
+  const leagues = sponsor.leagues;
+
+  if (!leagues || leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
+  }
+
+  if (leagues.length === 1) {
+    return (
+      <Badge variant="secondary" className="cursor-default">
+        {leagues[0].name}
+      </Badge>
+    );
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {sponsor.league.name}
+          {leagues.length} leagues
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked League</h4>
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
           <div className="flex flex-wrap gap-1">
-            <Badge variant="outline" className="text-xs">
-              {sponsor.league.name}
-            </Badge>
+            {leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
           </div>
         </div>
       </HoverCardContent>
@@ -193,8 +205,8 @@ const createColumns = (
     ),
   },
   {
-    accessorKey: "league",
-    header: "League",
+    accessorKey: "leagues",
+    header: "Leagues",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
         {getLeagueDisplay(row.original)}
