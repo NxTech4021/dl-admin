@@ -3,11 +3,17 @@ import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { CommandPalette } from "@/components/command-palette";
 import { GlobalModals } from "@/components/global-modals";
+import type { Session, User } from "better-auth/types";
+
+interface AuthUser extends User {
+  username?: string | null;
+  displayUsername?: string | null;
+}
 
 interface AuthContext {
   isAuthenticated: boolean;
-  user: any;
-  session: any;
+  user: AuthUser | null;
+  session: { session: Session; user: AuthUser } | null;
   isLoading: boolean;
 }
 
