@@ -43,8 +43,6 @@ export default defineConfig({
       "node_modules/**",
       "dist/**",
       "e2e/**",
-      // Legacy Jest-based test (uses jest.mock/jest.fn) - migrate to vitest separately
-      "src/components/bug-report/__tests__/BugReportWidget.test.tsx",
     ],
     coverage: {
       provider: "v8",
