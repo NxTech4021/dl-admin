@@ -33,7 +33,7 @@ export const formatQuestionKey = (key: string): string => {
 /**
  * Format various answer types into readable strings
  */
-export const formatAnswerValue = (value: any): string => {
+export const formatAnswerValue = (value: unknown): string => {
   if (Array.isArray(value)) {
     return value.join(", ");
   }
