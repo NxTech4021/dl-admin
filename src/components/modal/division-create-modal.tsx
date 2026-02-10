@@ -315,6 +315,7 @@ export default function DivisionCreateModal({
     trigger,
     formState: { errors, isValid },
   } = useForm<DivisionFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod v4 superRefine output types incompatible with react-hook-form Resolver
     resolver: zodResolver(divisionSchema as any),
     mode: "onChange",
     defaultValues: {
@@ -364,8 +365,27 @@ export default function DivisionCreateModal({
         const res = await axiosInstance.get(endpoints.season.getAll);
         // Handle ApiResponse structure: { success, status, data, message }
         // The actual seasons array is in res.data.data
-        let seasonsData: any[] = [];
-        
+        let seasonsData: Array<{
+          id: string;
+          name: string;
+          category?: {
+            id: string;
+            name: string | null;
+            game_type?: "SINGLES" | "DOUBLES" | null;
+            gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+            gameType?: string | null;
+            genderCategory?: string | null;
+          } | null;
+          categories?: Array<{
+            id: string;
+            name: string | null;
+            game_type?: "SINGLES" | "DOUBLES" | null;
+            gender_category?: "MALE" | "FEMALE" | "MIXED" | null;
+            gameType?: string | null;
+            genderCategory?: string | null;
+          }>;
+        }> = [];
+
         if (Array.isArray(res.data)) {
           // Direct array response (shouldn't happen with ApiResponse, but handle it)
           seasonsData = res.data;
@@ -489,7 +509,7 @@ export default function DivisionCreateModal({
     } else {
       // Show specific validation errors
       const errorMessages = Object.values(errors)
-        .map((error: any) => error?.message)
+        .map((error) => error?.message)
         .filter(Boolean);
       if (errorMessages.length > 0) {
         toast.error(
@@ -509,17 +529,6 @@ export default function DivisionCreateModal({
     setLoading(true);
     setError("");
     try {
-      const payload: any = {
-        name: data.name,
-        seasonId: data.seasonId,
-        adminId: adminId,
-        divisionLevel: data.divisionLevel,
-        gameType: data.gameType,
-        genderCategory: data.genderCategory,
-        autoAssignmentEnabled: Boolean(data.autoAssignmentEnabled),
-        isActive: Boolean(data.isActive),
-      };
-
       const toNumberOrNull = (value: unknown) => {
         if (value === undefined || value === null || value === "") {
           return null;
@@ -528,18 +537,28 @@ export default function DivisionCreateModal({
         return Number.isNaN(parsed) ? null : parsed;
       };
 
-      payload.maxSinglesPlayers = toNumberOrNull(data.maxSinglesPlayers);
-      payload.maxDoublesTeams = toNumberOrNull(data.maxDoublesTeams);
-      payload.prizePoolTotal = toNumberOrNull(data.prizePoolTotal);
-      payload.threshold = toNumberOrNull(data.threshold);
-      payload.sponsorName =
-        data.sponsorName && data.sponsorName.trim().length > 0
-          ? data.sponsorName.trim()
-          : null;
-      payload.description =
-        data.description && data.description.trim().length > 0
-          ? data.description.trim()
-          : null;
+      const payload: Record<string, unknown> = {
+        name: data.name,
+        seasonId: data.seasonId,
+        adminId: adminId,
+        divisionLevel: data.divisionLevel,
+        gameType: data.gameType,
+        genderCategory: data.genderCategory,
+        autoAssignmentEnabled: Boolean(data.autoAssignmentEnabled),
+        isActive: Boolean(data.isActive),
+        maxSinglesPlayers: toNumberOrNull(data.maxSinglesPlayers),
+        maxDoublesTeams: toNumberOrNull(data.maxDoublesTeams),
+        prizePoolTotal: toNumberOrNull(data.prizePoolTotal),
+        threshold: toNumberOrNull(data.threshold),
+        sponsorName:
+          data.sponsorName && data.sponsorName.trim().length > 0
+            ? data.sponsorName.trim()
+            : null,
+        description:
+          data.description && data.description.trim().length > 0
+            ? data.description.trim()
+            : null,
+      };
 
       let res;
       if (isEditMode && division) {

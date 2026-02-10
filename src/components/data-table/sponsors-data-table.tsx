@@ -336,10 +336,10 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
         logger.debug("Sponsors data:", result.data);
         
         // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
+        const processedData = result.data.map((sponsor: Record<string, unknown>) => ({
           ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
+          contractAmount: sponsor.contractAmount ? parseFloat(String(sponsor.contractAmount)) : null,
+          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(String(sponsor.sponsorRevenue)) : null,
         }));
         
         const parsedData = sponsorSchema.array().parse(processedData);
@@ -370,10 +370,10 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
         logger.debug("Sponsors refresh response:", result);
         
         // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
+        const processedData = result.data.map((sponsor: Record<string, unknown>) => ({
           ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
+          contractAmount: sponsor.contractAmount ? parseFloat(String(sponsor.contractAmount)) : null,
+          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(String(sponsor.sponsorRevenue)) : null,
         }));
         
         const parsedData = sponsorSchema.array().parse(processedData);

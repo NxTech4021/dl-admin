@@ -112,8 +112,8 @@ export function DivisionDetailModal({
   if (!division) return null;
 
   const levelStyles = getLevelStyles(division.divisionLevel);
-  const season = (division as any).season;
-  const league = season?.league || (division as any).league;
+  const season = division.season as (typeof division.season & { league?: { id: string; name: string } }) | null | undefined;
+  const league = season?.league || (division as Division & { league?: { id: string; name: string } }).league;
 
   // Calculate capacity based on game type
   const isDoubles = division.gameType?.toLowerCase() === "doubles";

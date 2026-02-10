@@ -505,7 +505,7 @@ export function CategoriesDataTable({
         );
         setRowSelection((prev) => {
           const newSelection = { ...prev };
-          delete (newSelection as any)[categoryToDelete.id];
+          delete (newSelection as Record<string, boolean>)[categoryToDelete.id];
           return newSelection;
         });
         setDeleteModalOpen(false);

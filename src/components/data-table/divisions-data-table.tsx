@@ -258,7 +258,7 @@ export function DivisionsDataTable({
     return data
       .filter(d =>
         d.name.toLowerCase().includes(search) ||
-        (d as any).season?.name?.toLowerCase().includes(search) ||
+        d.season?.name?.toLowerCase().includes(search) ||
         d.divisionLevel?.toLowerCase().includes(search) ||
         d.gameType?.toLowerCase().includes(search)
       )
@@ -327,7 +327,7 @@ export function DivisionsDataTable({
                     const currentCount = isDoubles ? (division.currentDoublesCount || 0) : (division.currentSinglesCount || 0);
                     const maxCount = isDoubles ? division.maxDoublesTeams : division.maxSingles;
                     const capacity = getCapacityDisplay(currentCount, maxCount);
-                    const season = (division as any).season;
+                    const season = division.season;
 
                     return (
                       <motion.tr

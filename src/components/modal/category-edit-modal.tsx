@@ -161,7 +161,7 @@ export default function CategoryEditModal({
                     <span>Leagues</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {leagues.map((league: any) => (
+                    {leagues.map((league: { id: string; name: string }) => (
                       <Badge key={league.id} variant="secondary" className="text-xs">
                         {league.name}
                       </Badge>
@@ -178,7 +178,7 @@ export default function CategoryEditModal({
                     <span>Seasons</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {seasons.map((season: any) => (
+                    {seasons.map((season) => (
                       <Badge key={season.id} variant="outline" className="text-xs">
                         {season.name}
                       </Badge>
