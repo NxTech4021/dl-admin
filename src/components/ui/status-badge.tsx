@@ -33,7 +33,7 @@ export function StatusBadge({
   
   return (
     <Badge 
-      variant={variant as any}
+      variant={variant as "default" | "secondary" | "destructive" | "outline"}
       className={`capitalize ${className} ${additionalClassName}`.trim()}
     >
       {formatLabel(status)}

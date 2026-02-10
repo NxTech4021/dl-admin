@@ -28,7 +28,7 @@ export interface Notification {
   archive: boolean;
   createdAt: string | Date;
   readAt?: string | Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string>;
 }
 
 export interface NotificationStats {

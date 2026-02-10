@@ -328,19 +328,19 @@ function parseSetScores(setScores: unknown, _sport?: string | null): NormalizedS
 
     // Handle object with sets array: { sets: [{ player1, player2 }, ...] }
     if (parsed.sets && Array.isArray(parsed.sets)) {
-      return parsed.sets.map((set: any, idx: number) => ({
+      return parsed.sets.map((set: Record<string, unknown>, idx: number) => ({
         setNumber: idx + 1,
-        team1Score: set.player1 ?? set.team1 ?? 0,
-        team2Score: set.player2 ?? set.team2 ?? 0,
+        team1Score: (set.player1 ?? set.team1 ?? 0) as number,
+        team2Score: (set.player2 ?? set.team2 ?? 0) as number,
       }));
     }
 
     // Handle object with games array (pickleball): { games: [{ player1, player2 }, ...] }
     if (parsed.games && Array.isArray(parsed.games)) {
-      return parsed.games.map((game: any, idx: number) => ({
+      return parsed.games.map((game: Record<string, unknown>, idx: number) => ({
         setNumber: idx + 1,
-        team1Score: game.player1 ?? game.team1 ?? game.player1Points ?? game.team1Points ?? 0,
-        team2Score: game.player2 ?? game.team2 ?? game.player2Points ?? game.team2Points ?? 0,
+        team1Score: (game.player1 ?? game.team1 ?? game.player1Points ?? game.team1Points ?? 0) as number,
+        team2Score: (game.player2 ?? game.team2 ?? game.player2Points ?? game.team2Points ?? 0) as number,
       }));
     }
 

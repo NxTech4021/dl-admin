@@ -31,7 +31,7 @@ const tosSchema = z.object({
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  featureDetails: z.record(z.string(), z.any()).optional(),
+  featureDetails: z.record(z.string(), z.unknown()).optional(),
   releaseDate: z.string().optional(),
   targetAudience: z.array(z.string()).optional(),
 });
