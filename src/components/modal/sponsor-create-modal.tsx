@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,22 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { IconLoader2, IconX } from "@tabler/icons-react";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { IconLoader2 } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
@@ -49,31 +34,11 @@ const PACKAGE_TIER_OPTIONS: { value: PackageTier; label: string }[] = [
   { value: "PLATINUM", label: "Platinum" },
 ];
 
-const getSportTypeBadgeVariant = (sportType: string) => {
-  switch (sportType?.toUpperCase()) {
-    case "PADEL":
-      return "default";
-    case "PICKLEBALL":
-      return "secondary";
-    case "TENNIS":
-      return "outline";
-    default:
-      return "outline";
-  }
-};
-
-interface League {
-  id: string;
-  name: string;
-  sportType: string;
-}
-
 interface SponsorFormData {
   sponsoredName: string;
   packageTier: PackageTier;
   contractAmount: number | null;
   sponsorRevenue: number | null;
-  leagueIds: string[];
 }
 
 interface SponsorCreateModalProps {
@@ -92,66 +57,11 @@ export function CreateSponsorModal({
     packageTier: "BRONZE",
     contractAmount: null,
     sponsorRevenue: null,
-    leagueIds: [],
   });
   const [loading, setLoading] = useState(false);
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [leaguesLoading, setLeaguesLoading] = useState(false);
-  const [leagueSelectOpen, setLeagueSelectOpen] = useState(false);
-  const [leagueSearchTerm, setLeagueSearchTerm] = useState("");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Fetch leagues on mount
-  useEffect(() => {
-    if (open) {
-      setLeaguesLoading(true);
-      axiosInstance
-        .get(endpoints.league.getAll)
-        .then((res) => {
-          logger.debug("Leagues API response:", res.data);
-          // The leagues are nested under data.leagues
-          const leaguesData = res.data?.data?.leagues || res.data?.leagues || [];
-          // Ensure we always set an array
-          if (Array.isArray(leaguesData)) {
-            setLeagues(leaguesData);
-          } else {
-            logger.warn("Leagues data is not an array:", leaguesData);
-            setLeagues([]);
-          }
-        })
-        .catch((error) => {
-          logger.error("Error fetching leagues:", error);
-          setLeagues([]);
-        })
-        .finally(() => setLeaguesLoading(false));
-    }
-  }, [open]);
-
-  const toggleLeague = (leagueId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      leagueIds: prev.leagueIds.includes(leagueId)
-        ? prev.leagueIds.filter((id) => id !== leagueId)
-        : [...prev.leagueIds, leagueId],
-    }));
-  };
-
-  const removeLeague = (leagueId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      leagueIds: prev.leagueIds.filter((id) => id !== leagueId),
-    }));
-  };
-
-  const selectedLeagues = leagues.filter((league) => formData.leagueIds.includes(league.id));
-  
-  // Filter leagues based on search term
-  const filteredLeagues = leagues.filter((league) =>
-    league.name.toLowerCase().includes(leagueSearchTerm.toLowerCase())
-  );
 
   const handleSubmit = async () => {
-    if (!formData.sponsoredName || !formData.packageTier || formData.leagueIds.length === 0) {
+    if (!formData.sponsoredName || !formData.packageTier) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -163,7 +73,6 @@ export function CreateSponsorModal({
         packageTier: formData.packageTier,
         contractAmount: formData.contractAmount,
         sponsorRevenue: formData.sponsorRevenue,
-        leagueIds: formData.leagueIds,
       });
 
       toast.success("Sponsor created successfully!");
@@ -171,14 +80,13 @@ export function CreateSponsorModal({
       if (onSponsorCreated) {
         await onSponsorCreated();
       }
-      
+
       // Reset form
       setFormData({
         sponsoredName: "",
         packageTier: "BRONZE",
         contractAmount: null,
         sponsorRevenue: null,
-        leagueIds: [],
       });
     } catch (err: unknown) {
       logger.error("Error creating sponsor:", err);
@@ -194,7 +102,7 @@ export function CreateSponsorModal({
         <DialogHeader>
           <DialogTitle>Create Sponsor</DialogTitle>
           <DialogDescription>
-            Create a new sponsorship package with league assignments.
+            Create a new sponsorship package.
           </DialogDescription>
         </DialogHeader>
 
@@ -276,106 +184,6 @@ export function CreateSponsorModal({
               />
             </div>
           </div>
-
-          {/* League Selection */}
-          <div className="space-y-2">
-            <Label>Select Leagues *</Label>
-            <Popover open={leagueSelectOpen} onOpenChange={setLeagueSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={leagueSelectOpen}
-                  className="w-full justify-between h-11"
-                >
-                  {selectedLeagues.length > 0
-                    ? `${selectedLeagues.length} league(s) selected`
-                    : "Select leagues..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" style={{ maxHeight: '400px' }}>
-                <div className="p-2">
-                  <Input 
-                    placeholder="Search leagues..." 
-                    className="mb-2"
-                    value={leagueSearchTerm}
-                    onChange={(e) => setLeagueSearchTerm(e.target.value)}
-                  />
-                  <div 
-                    ref={scrollContainerRef}
-                    className="max-h-64 overflow-y-auto overflow-x-hidden"
-                    style={{ 
-                      scrollbarWidth: 'thin',
-                      scrollbarColor: '#d1d5db #f3f4f6',
-                      WebkitOverflowScrolling: 'touch'
-                    }}
-                    onWheel={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (scrollContainerRef.current) {
-                        scrollContainerRef.current.scrollTop += e.deltaY;
-                      }
-                    }}
-                  >
-                    {leaguesLoading ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        Loading leagues...
-                      </div>
-                    ) : filteredLeagues.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        {leagueSearchTerm ? "No leagues found matching your search." : "No leagues found."}
-                      </div>
-                    ) : (
-                      filteredLeagues.map((league) => (
-                        <div
-                          key={league.id}
-                          onClick={() => toggleLeague(league.id)}
-                          className={cn(
-                            "flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground",
-                            formData.leagueIds.includes(league.id) && "bg-accent text-accent-foreground"
-                          )}
-                        >
-                          <div className="flex items-center">
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.leagueIds.includes(league.id)
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">{league.name}</span>
-                          </div>
-                          <Badge 
-                            variant={getSportTypeBadgeVariant(league.sportType)} 
-                            className="text-xs capitalize"
-                          >
-                            {league.sportType?.toLowerCase() || "Unknown"}
-                          </Badge>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Selected Leagues */}
-            {selectedLeagues.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedLeagues.map((league) => (
-                  <Badge key={league.id} variant="secondary" className="flex items-center gap-1">
-                    {league.name}
-                    <IconX
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => removeLeague(league.id)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <DialogFooter className="mt-6">
@@ -384,8 +192,7 @@ export function CreateSponsorModal({
             disabled={
               loading ||
               !formData.sponsoredName ||
-              !formData.packageTier ||
-              formData.leagueIds.length === 0
+              !formData.packageTier
             }
             className="w-full sm:w-auto"
           >
