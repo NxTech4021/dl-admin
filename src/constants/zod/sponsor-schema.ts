@@ -13,7 +13,6 @@ export const sponsorSchema = z.object({
   sponsorRevenue: z.number().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  league: leagueSchema.nullable().optional(),
   leagues: z.array(leagueSchema),
   company: z
     .object({
