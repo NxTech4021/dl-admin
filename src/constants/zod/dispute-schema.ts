@@ -157,7 +157,7 @@ export const disputeSchema = z.object({
   raisedByUser: userMinimalSchema,
 
   // Claimed score (what the disputer says should be the score)
-  claimedScore: z.any().nullable().optional(), // JSON field
+  claimedScore: z.object({ team1Score: z.number().nullable().optional(), team2Score: z.number().nullable().optional() }).passthrough().nullable().optional(), // JSON field
 
   // Description and evidence
   description: z.string().nullable().optional(),
@@ -174,7 +174,7 @@ export const disputeSchema = z.object({
   resolvedAt: z.coerce.date().nullable().optional(),
   resolutionAction: disputeResolutionActionEnum.nullable().optional(),
   adminResolution: z.string().nullable().optional(),
-  finalScore: z.any().nullable().optional(), // JSON field
+  finalScore: z.object({ team1Score: z.number().nullable().optional(), team2Score: z.number().nullable().optional() }).passthrough().nullable().optional(), // JSON field
 
   // Timestamps
   submittedAt: z.coerce.date(),

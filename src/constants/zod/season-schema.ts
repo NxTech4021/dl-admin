@@ -20,7 +20,7 @@ export const membershipSchema = z.object({
       email: z.string().email().optional(),
       image: z.string().nullable().optional(),
       username: z.string().optional(),
-      initialRatingResult: z.any().nullable().optional(),
+      initialRatingResult: z.unknown().nullable().optional(),
       questionnaireResponses: z
         .array(
           z.object({
@@ -35,6 +35,7 @@ export const membershipSchema = z.object({
                 rd: z.number().nullable(),
                 confidence: z.union([z.string(), z.number()]).nullable(),
                 source: z.string().nullable().optional(),
+                rating: z.number().nullable().optional(),
               })
               .nullable(),
           })
@@ -98,7 +99,7 @@ export const seasonSchema = z.object({
   updatedAt: z.coerce.date(),
   memberships: z.array(membershipSchema).default([]),
   withdrawalRequests: z.array(withdrawalRequestSchema).default([]),
-  divisions: z.array(z.any()).default([]),
+  divisions: z.array(z.record(z.string(), z.unknown())).default([]),
   leagues: z
     .array(
       z.object({
