@@ -62,9 +62,9 @@ describe('API Error Utilities', () => {
       expect(getErrorMessage(error)).toBe('Not found');
     });
 
-    it('should extract error field from API error response', () => {
-      const error = { response: { data: { error: 'Bad request' } } };
-      expect(getErrorMessage(error)).toBe('Bad request');
+    it('should fall back when response has no message field', () => {
+      const error = { response: { data: {} } };
+      expect(getErrorMessage(error)).toBe('An unexpected error occurred');
     });
 
     it('should use error.message as fallback', () => {
