@@ -20,14 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   IconLoader2,
   IconTrophy,
   IconX,
   IconCheck,
   IconMapPin,
-  IconBuilding,
   IconForms,
   IconFileDescription,
   IconSettings,
@@ -42,7 +40,6 @@ import {
   STATUS_OPTIONS,
   getSportColor,
   type League,
-  type SponsorOption,
   type SportType,
 } from "@/constants/types/league";
 
@@ -61,11 +58,6 @@ export default function LeagueEditModal({
 }: LeagueEditModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
-  const [sponsorsLoading, setSponsorsLoading] = useState(false);
-  const [sponsorInputValue, setSponsorInputValue] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -73,8 +65,6 @@ export default function LeagueEditModal({
     location: "",
     status: "",
     description: "",
-    hasSponsor: false,
-    existingSponsorId: "",
   });
 
   useEffect(() => {
@@ -85,78 +75,21 @@ export default function LeagueEditModal({
         location: league.location || "",
         status: league.status || "",
         description: league.description || "",
-        hasSponsor: false,
-        existingSponsorId: "",
       });
       setError("");
-      setSponsorInputValue("");
-      setShowSuggestions(false);
-      setFilteredSponsors([]);
     }
   }, [league, open]);
 
-  useEffect(() => {
-    if (formData.hasSponsor) {
-      setSponsorsLoading(true);
-      axiosInstance.get(endpoints.sponsors.getAll)
-        .then(res => {
-          const api = res.data;
-          const sponsorships = (api?.data?.sponsorships || api?.data || api || []) as Array<{ id: string; sponsoredName?: string }>;
-          const mapped = sponsorships.map((s) => ({
-            id: s.id,
-            name: s.sponsoredName || "Unnamed Sponsor",
-          }));
-          setSponsors(mapped);
-        })
-        .catch(() => {
-          setSponsors([]);
-        })
-        .finally(() => setSponsorsLoading(false));
-    }
-  }, [formData.hasSponsor]);
-
   const updateFormData = (
     field: keyof typeof formData,
-    value: string | boolean
+    value: string
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSponsorInputChange = (value: string) => {
-    setSponsorInputValue(value);
-
-    if (value.trim() === "") {
-      setFilteredSponsors([]);
-      setShowSuggestions(false);
-      updateFormData("existingSponsorId", "");
-      return;
-    }
-
-    const filtered = sponsors.filter(sponsor =>
-      sponsor.name.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredSponsors(filtered);
-    setShowSuggestions(true);
-  };
-
-  const handleSponsorSelect = (sponsor: SponsorOption) => {
-    setSponsorInputValue(sponsor.name);
-    updateFormData("existingSponsorId", sponsor.id);
-    setShowSuggestions(false);
-  };
-
-  const handleSponsorInputBlur = () => {
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
   };
 
   const resetModal = () => {
     setError("");
     setLoading(false);
-    setSponsorInputValue("");
-    setShowSuggestions(false);
-    setFilteredSponsors([]);
   };
 
   const isFormValid = formData.name && formData.sportType && formData.location;
@@ -327,85 +260,6 @@ export default function LeagueEditModal({
                   </Select>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Sponsor Section */}
-          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b border-border/50">
-              <IconBuilding className="size-4 text-muted-foreground" />
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Sponsorship
-              </span>
-              <Badge variant="outline" className="text-[10px] ml-auto bg-background">
-                Optional
-              </Badge>
-            </div>
-            <div className="p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "size-2 rounded-full",
-                    formData.hasSponsor ? "bg-emerald-500" : "bg-slate-400"
-                  )} />
-                  <Label htmlFor="hasSponsor" className="text-sm font-medium cursor-pointer">
-                    This league has a sponsor
-                  </Label>
-                </div>
-                <Checkbox
-                  id="hasSponsor"
-                  checked={formData.hasSponsor}
-                  onCheckedChange={(checked) => updateFormData("hasSponsor", checked)}
-                />
-              </div>
-
-              {formData.hasSponsor && (
-                <div className="pt-3 border-t border-border/50">
-                  <div className="space-y-1.5 relative">
-                    <Label htmlFor="existingSponsor" className="text-sm font-medium flex items-center gap-1">
-                      Select Sponsor
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="existingSponsor"
-                      placeholder="Type to search sponsors..."
-                      value={sponsorInputValue}
-                      onChange={(e) => handleSponsorInputChange(e.target.value)}
-                      onFocus={() => {
-                        if (sponsorInputValue.trim() !== "") {
-                          setShowSuggestions(true);
-                        }
-                      }}
-                      onBlur={handleSponsorInputBlur}
-                      className="h-9"
-                    />
-
-                    {/* Suggestions dropdown */}
-                    {showSuggestions && filteredSponsors.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
-                        {filteredSponsors.map((sponsor) => (
-                          <div
-                            key={sponsor.id}
-                            className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
-                            onClick={() => handleSponsorSelect(sponsor)}
-                          >
-                            {sponsor.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* No results message */}
-                    {showSuggestions && filteredSponsors.length === 0 && sponsorInputValue.trim() !== "" && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg">
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          No sponsors found
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
