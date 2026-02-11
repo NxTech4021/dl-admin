@@ -87,6 +87,9 @@ function SeasonsPage() {
 
       if (Array.isArray(response.data)) {
         seasonsData = response.data;
+      } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
+        // ApiResponse wraps paginated result: { success, status, data: { data: [...], pagination }, message }
+        seasonsData = response.data.data.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         seasonsData = response.data.data;
       } else if (response.data?.seasons && Array.isArray(response.data.seasons)) {
