@@ -97,7 +97,6 @@ export interface Sponsorship {
   startDate?: string;
   endDate?: string;
   company?: SponsorCompany;
-  leagueId?: string;
 }
 
 /** Simplified sponsor for autocomplete/selection */
@@ -133,12 +132,6 @@ export interface League {
   seasonCount?: number;
   categoryCount?: number;
   divisionCount?: number;
-  sponsorId?: string;
-  sponsor?: {
-    id: string;
-    sponsoredName: string;
-    packageTier: string;
-  };
   createdBy?: {
     id: string;
     user: {
@@ -147,28 +140,6 @@ export interface League {
       image?: string;
     };
   };
-}
-
-export interface LeagueFormData {
-  name: string;
-  description: string;
-  sportType: SportType;
-  location: string;
-  joinType: JoinType;
-  gameType: GameType;
-  isActive: boolean;
-  hasSponsor: boolean;
-  existingSponsorId: string;
-}
-
-export interface LeagueCreateResponse {
-  success: boolean;
-  data: League;
-  message?: string;
-}
-
-export interface LeagueUpdateData extends Partial<LeagueFormData> {
-  status?: LeagueStatus;
 }
 
 // Form option interfaces
