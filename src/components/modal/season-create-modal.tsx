@@ -36,7 +36,6 @@ import {
   IconSettings,
   IconForms,
   IconCategory,
-  IconBuilding,
   IconSearch,
   IconX,
 } from "@tabler/icons-react";
@@ -47,18 +46,6 @@ import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
 import { Category } from "../league/types";
 import CategoryCreateModal from "./category-create-modal";
-
-/** Sponsor option for dropdown selection */
-interface SponsorOption {
-  id: string;
-  name: string;
-}
-
-/** Raw sponsorship data from API */
-interface SponsorshipApiResponse {
-  id: string;
-  sponsoredName?: string;
-}
 
 /** League reference in category */
 interface CategoryLeagueRef {
@@ -80,7 +67,6 @@ interface SeasonCreatePayload {
   paymentRequired: boolean;
   promoCodeSupported: boolean;
   withdrawalEnabled: boolean;
-  sponsorId?: string;
 }
 
 interface SeasonCreateModalProps {
@@ -106,8 +92,6 @@ const seasonCreateSchema = z
     paymentRequired: z.boolean(),
     promoCodeSupported: z.boolean(),
     withdrawalEnabled: z.boolean(),
-    hasSponsor: z.boolean(),
-    existingSponsorId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Date validation
@@ -118,14 +102,6 @@ const seasonCreateSchema = z
         message: "End date must be after start date",
       });
     }
-    // Sponsor validation - only require sponsorId if hasSponsor is true
-    if (data.hasSponsor && !data.existingSponsorId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["existingSponsorId"],
-        message: "Select a sponsor when sponsor option is enabled",
-      });
-    }
   });
 
 // Use z.input for form field values (what the form handles)
@@ -133,8 +109,8 @@ const seasonCreateSchema = z
 type SeasonFormInput = z.input<typeof seasonCreateSchema>;
 type SeasonFormOutput = z.output<typeof seasonCreateSchema>;
 
-// Step type for 3-step wizard
-type WizardStep = "form" | "sponsor" | "preview";
+// Step type for 2-step wizard
+type WizardStep = "form" | "preview";
 
 export default function SeasonCreateModal({
   open,
@@ -156,13 +132,6 @@ export default function SeasonCreateModal({
 
   // Category creation state
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
-
-  // Sponsor state
-  const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
-  const [sponsorsLoading, setSponsorsLoading] = useState(false);
-  const [sponsorInputValue, setSponsorInputValue] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSponsors, setFilteredSponsors] = useState<SponsorOption[]>([]);
 
   // Batch creation progress
   const [creationProgress, setCreationProgress] = useState<{
@@ -194,15 +163,11 @@ export default function SeasonCreateModal({
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
-      hasSponsor: false,
-      existingSponsorId: "",
     },
   });
 
   const formValues = watch();
-  const hasSponsor = watch("hasSponsor");
   const categoryIds = watch("categoryIds");
-  const existingSponsorId = watch("existingSponsorId");
   const entryFee = watch("entryFee");
 
   // Auto-manage paymentRequired based on entryFee
@@ -213,7 +178,7 @@ export default function SeasonCreateModal({
     setValue("paymentRequired", !isFree, { shouldValidate: true });
   }, [entryFee, setValue]);
 
-  // Check if form step is valid (without sponsor validation)
+  // Check if form step is valid
   const isFormStepValid = useMemo(() => {
     return (
       formValues.name?.length >= 2 &&
@@ -224,37 +189,6 @@ export default function SeasonCreateModal({
       formValues.startDate < formValues.endDate
     );
   }, [formValues]);
-
-  // Check if sponsor step can proceed
-  const canProceedFromSponsor = useMemo(() => {
-    // Can always proceed if no sponsor selected
-    if (!hasSponsor) return true;
-    // If sponsor is enabled, must have selected a sponsor
-    return !!existingSponsorId;
-  }, [hasSponsor, existingSponsorId]);
-
-  // Fetch sponsors when entering sponsor step
-  useEffect(() => {
-    if (currentStep === "sponsor") {
-      setSponsorsLoading(true);
-      axiosInstance
-        .get(endpoints.sponsors.getAll)
-        .then((res) => {
-          const api = res.data;
-          const sponsorships: SponsorshipApiResponse[] = api?.data?.sponsorships || api?.data || api || [];
-          const mapped: SponsorOption[] = sponsorships.map((s) => ({
-            id: s.id,
-            name: s.sponsoredName || "Unnamed Sponsor",
-          }));
-          setSponsors(mapped);
-        })
-        .catch(() => {
-          setSponsors([]);
-          toast.error("Failed to load sponsors");
-        })
-        .finally(() => setSponsorsLoading(false));
-    }
-  }, [currentStep]);
 
   // Fetch categories when dropdown opens
   useEffect(() => {
@@ -286,38 +220,6 @@ export default function SeasonCreateModal({
         )
     );
   }, [allCategories, categorySearch]);
-
-  // Handle sponsor input change
-  const handleSponsorInputChange = (value: string) => {
-    setSponsorInputValue(value);
-
-    if (value.trim() === "") {
-      setFilteredSponsors([]);
-      setShowSuggestions(false);
-      setValue("existingSponsorId", "");
-      return;
-    }
-
-    const filtered = sponsors.filter((sponsor) =>
-      sponsor.name.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredSponsors(filtered);
-    setShowSuggestions(true);
-  };
-
-  // Handle sponsor selection
-  const handleSponsorSelect = (sponsor: SponsorOption) => {
-    setSponsorInputValue(sponsor.name);
-    setValue("existingSponsorId", sponsor.id, { shouldValidate: true });
-    setShowSuggestions(false);
-  };
-
-  // Handle input blur
-  const handleSponsorInputBlur = () => {
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
-  };
 
   // Handle category created callback
   const handleCategoryCreated = async () => {
@@ -364,16 +266,11 @@ export default function SeasonCreateModal({
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
-      hasSponsor: false,
-      existingSponsorId: "",
     });
     setError("");
     setCategorySearch("");
     setIsCategoryDropdownOpen(false);
     setIsCreateCategoryOpen(false);
-    setSponsorInputValue("");
-    setShowSuggestions(false);
-    setFilteredSponsors([]);
     setCreationProgress({ current: 0, total: 0 });
   }, [reset]);
 
@@ -414,16 +311,11 @@ export default function SeasonCreateModal({
   };
 
   // Navigation handlers
-  const handleNextToSponsor = () => {
-    if (isFormStepValid) setCurrentStep("sponsor");
-  };
-
   const handleNextToPreview = () => {
-    setCurrentStep("preview");
+    if (isFormStepValid) setCurrentStep("preview");
   };
 
   const handleBackToForm = () => setCurrentStep("form");
-  const handleBackToSponsor = () => setCurrentStep("sponsor");
 
   // Batch creation submit handler
   const onSubmit = async (data: SeasonFormOutput) => {
@@ -454,7 +346,6 @@ export default function SeasonCreateModal({
           paymentRequired: data.paymentRequired,
           promoCodeSupported: data.promoCodeSupported,
           withdrawalEnabled: data.withdrawalEnabled,
-          ...(data.hasSponsor && data.existingSponsorId && { sponsorId: data.existingSponsorId }),
         };
 
         await axiosInstance.post(endpoints.season.create, payload);
@@ -493,8 +384,7 @@ export default function SeasonCreateModal({
   const getStepIndex = (step: WizardStep): number => {
     switch (step) {
       case "form": return 0;
-      case "sponsor": return 1;
-      case "preview": return 2;
+      case "preview": return 1;
     }
   };
 
@@ -527,7 +417,7 @@ export default function SeasonCreateModal({
             </div>
           </DialogHeader>
 
-          {/* 3-Step Stepper */}
+          {/* 2-Step Stepper */}
           <div className="px-6 pb-4">
             <div className="flex items-center gap-2">
               {/* Step 1: Details */}
@@ -559,7 +449,7 @@ export default function SeasonCreateModal({
                 Details
               </button>
 
-              {/* Connector 1-2 */}
+              {/* Connector */}
               <div
                 className={cn(
                   "flex-1 h-px max-w-[40px]",
@@ -567,55 +457,7 @@ export default function SeasonCreateModal({
                 )}
               />
 
-              {/* Step 2: Sponsor */}
-              <button
-                type="button"
-                onClick={() => currentStepIndex > 1 && setCurrentStep("sponsor")}
-                disabled={currentStepIndex < 1}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-                  currentStep === "sponsor"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : currentStepIndex > 1
-                    ? "bg-muted/50 text-muted-foreground hover:bg-muted cursor-pointer"
-                    : "bg-muted/50 text-muted-foreground"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex items-center justify-center size-5 rounded-full text-xs font-semibold",
-                    currentStep === "sponsor"
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : currentStepIndex > 1
-                      ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
-                      : "bg-muted-foreground/20"
-                  )}
-                >
-                  {currentStepIndex > 1 ? <IconCheck className="size-3" /> : "2"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  Sponsor
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[10px] px-1.5 py-0",
-                      currentStep === "sponsor" && "border-primary-foreground/30 text-primary-foreground/80"
-                    )}
-                  >
-                    Optional
-                  </Badge>
-                </span>
-              </button>
-
-              {/* Connector 2-3 */}
-              <div
-                className={cn(
-                  "flex-1 h-px max-w-[40px]",
-                  currentStepIndex >= 2 ? "bg-primary" : "bg-border"
-                )}
-              />
-
-              {/* Step 3: Review */}
+              {/* Step 2: Review */}
               <div
                 className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium",
@@ -625,7 +467,7 @@ export default function SeasonCreateModal({
                 )}
               >
                 <span className="size-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs">
-                  3
+                  2
                 </span>
                 Review
               </div>
@@ -983,132 +825,7 @@ export default function SeasonCreateModal({
             </form>
           )}
 
-          {/* Step 2: Sponsor */}
-          {currentStep === "sponsor" && (
-            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              {/* Centered Header */}
-              <div className="text-center space-y-3 py-4">
-                <div className="flex items-center justify-center size-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mx-auto">
-                  <IconBuilding className="size-8 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Add a Sponsor</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Optionally link this season to a sponsor
-                  </p>
-                </div>
-              </div>
-
-              {/* Sponsor Section */}
-              <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
-                <div className="p-4 space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "size-3 rounded-full transition-colors",
-                          hasSponsor ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-600"
-                        )}
-                      />
-                      <div>
-                        <Label className="text-sm font-medium cursor-pointer" htmlFor="hasSponsor">
-                          This season has a sponsor
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Enable to add sponsor details
-                        </p>
-                      </div>
-                    </div>
-                    <Controller
-                      control={control}
-                      name="hasSponsor"
-                      render={({ field: { value, onChange } }) => (
-                        <Switch
-                          id="hasSponsor"
-                          checked={value}
-                          onCheckedChange={onChange}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  {hasSponsor && (
-                    <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                      <Label className="text-sm font-medium flex items-center gap-1">
-                        Select Sponsor
-                        <span className="text-destructive">*</span>
-                      </Label>
-                      {sponsorsLoading ? (
-                        <div className="flex items-center justify-center h-11 border rounded-md bg-background">
-                          <IconLoader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            Loading sponsors...
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <Input
-                            placeholder="Type to search sponsors..."
-                            value={sponsorInputValue}
-                            onChange={(e) => handleSponsorInputChange(e.target.value)}
-                            onFocus={() => {
-                              if (sponsorInputValue.trim() !== "") {
-                                setShowSuggestions(true);
-                              }
-                            }}
-                            onBlur={handleSponsorInputBlur}
-                            className={cn(
-                              "h-11 bg-background",
-                              errors.existingSponsorId && "border-destructive"
-                            )}
-                          />
-
-                          {/* Suggestions dropdown */}
-                          {showSuggestions && filteredSponsors.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-                              {filteredSponsors.map((sponsor) => (
-                                <div
-                                  key={sponsor.id}
-                                  className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
-                                  onClick={() => handleSponsorSelect(sponsor)}
-                                >
-                                  {sponsor.name}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* No results message */}
-                          {showSuggestions &&
-                            filteredSponsors.length === 0 &&
-                            sponsorInputValue.trim() !== "" && (
-                              <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg">
-                                <div className="px-3 py-2 text-sm text-muted-foreground">
-                                  No sponsors found
-                                </div>
-                              </div>
-                            )}
-                        </div>
-                      )}
-                      {errors.existingSponsorId && (
-                        <p className="text-xs text-destructive">{errors.existingSponsorId.message}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Info Note */}
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
-                <IconBuilding className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Sponsors can be added or changed later from the season settings. You can skip this step if you don&apos;t have a sponsor yet.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Preview */}
+          {/* Step 2: Preview */}
           {currentStep === "preview" && (
             <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
               {/* Header Section */}
@@ -1226,21 +943,6 @@ export default function SeasonCreateModal({
                 </div>
               </div>
 
-              {/* Sponsor */}
-              {formValues.hasSponsor && formValues.existingSponsorId && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-4">
-                  <div className="flex items-center gap-2">
-                    <IconBuilding className="size-4 text-amber-600 dark:text-amber-400" />
-                    <span className="text-sm font-medium">Sponsored Season</span>
-                    {sponsorInputValue && (
-                      <Badge variant="outline" className="ml-auto">
-                        {sponsorInputValue}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Error Display */}
               {error && (
                 <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
@@ -1275,32 +977,8 @@ export default function SeasonCreateModal({
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleNextToSponsor}
-                  disabled={!isFormStepValid || loading}
-                  className="gap-2"
-                >
-                  Continue
-                  <IconArrowRight className="size-4" />
-                </Button>
-              </>
-            )}
-
-            {currentStep === "sponsor" && (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleBackToForm}
-                  disabled={loading}
-                  className="gap-2 text-muted-foreground"
-                >
-                  <IconArrowLeft className="size-4" />
-                  Back
-                </Button>
-                <Button
-                  type="button"
                   onClick={handleNextToPreview}
-                  disabled={!canProceedFromSponsor || loading}
+                  disabled={!isFormStepValid || loading}
                   className="gap-2"
                 >
                   Continue
@@ -1314,7 +992,7 @@ export default function SeasonCreateModal({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={handleBackToSponsor}
+                  onClick={handleBackToForm}
                   disabled={loading}
                   className="gap-2 text-muted-foreground"
                 >
