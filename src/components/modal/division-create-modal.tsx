@@ -386,18 +386,7 @@ export default function DivisionCreateModal({
           }>;
         }> = [];
 
-        if (Array.isArray(res.data)) {
-          seasonsData = res.data;
-        } else if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
-          // ApiResponse wraps paginated result: { success, status, data: { data: [...], pagination }, message }
-          seasonsData = res.data.data.data;
-        } else if (res.data?.data && Array.isArray(res.data.data)) {
-          seasonsData = res.data.data;
-        } else if (res.data?.seasons && Array.isArray(res.data.seasons)) {
-          seasonsData = res.data.seasons;
-        } else {
-          seasonsData = [];
-        }
+        seasonsData = res.data?.data ?? [];
 
         setSeasons(seasonsData);
       } catch {
