@@ -427,7 +427,7 @@ function LeagueDetailPage() {
                   <LeagueSponsorsSection
                     sponsorships={sponsorships}
                     leagueId={leagueId}
-                    onSponsorDeleted={fetchLeague}
+                    onSponsorChanged={fetchLeague}
                   />
                 </CardContent>
               </Card>
