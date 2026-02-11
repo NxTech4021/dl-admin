@@ -9,9 +9,7 @@ export function useSeasons() {
     queryKey: queryKeys.seasons.list(),
     queryFn: async (): Promise<Season[]> => {
       const response = await apiClient.get("/api/season/");
-      // Backend wraps in ApiResponse: { success, status, data: { data: [...], pagination }, message }
-      const seasons = response.data?.data?.data ?? response.data?.data ?? response.data;
-      return z.array(seasonSchema).parse(seasons);
+      return z.array(seasonSchema).parse(response.data.data);
     },
   });
 }
