@@ -387,13 +387,13 @@ export default function DivisionCreateModal({
         }> = [];
 
         if (Array.isArray(res.data)) {
-          // Direct array response (shouldn't happen with ApiResponse, but handle it)
           seasonsData = res.data;
+        } else if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
+          // ApiResponse wraps paginated result: { success, status, data: { data: [...], pagination }, message }
+          seasonsData = res.data.data.data;
         } else if (res.data?.data && Array.isArray(res.data.data)) {
-          // ApiResponse structure: data.data contains the seasons array
           seasonsData = res.data.data;
         } else if (res.data?.seasons && Array.isArray(res.data.seasons)) {
-          // Fallback: check for res.data.seasons
           seasonsData = res.data.seasons;
         } else {
           seasonsData = [];
