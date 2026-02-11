@@ -9,8 +9,9 @@ export function useSeasons() {
     queryKey: queryKeys.seasons.list(),
     queryFn: async (): Promise<Season[]> => {
       const response = await apiClient.get("/api/season/");
-      const result = response.data;
-      return z.array(seasonSchema).parse(result.data);
+      // Backend wraps in ApiResponse: { success, status, data: { data: [...], pagination }, message }
+      const seasons = response.data?.data?.data ?? response.data?.data ?? response.data;
+      return z.array(seasonSchema).parse(seasons);
     },
   });
 }
@@ -20,7 +21,8 @@ export function useSeason(id: string) {
     queryKey: queryKeys.seasons.detail(id),
     queryFn: async (): Promise<Season> => {
       const response = await apiClient.get(`/api/season/${id}`);
-      return seasonSchema.parse(response.data.data);
+      // getSeasonById returns raw JSON (no ApiResponse wrapper)
+      return seasonSchema.parse(response.data);
     },
     enabled: !!id,
   });
