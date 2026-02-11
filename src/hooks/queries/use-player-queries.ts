@@ -9,9 +9,7 @@ export function usePlayers() {
     queryKey: queryKeys.players.list(),
     queryFn: async (): Promise<Player[]> => {
       const response = await apiClient.get("/api/player/");
-      // Backend wraps in ApiResponse: { success, status, data: { data: [...], pagination }, message }
-      const players = response.data?.data?.data ?? response.data?.data ?? response.data;
-      return z.array(playerSchema).parse(players);
+      return z.array(playerSchema).parse(response.data.data);
     },
   });
 }
