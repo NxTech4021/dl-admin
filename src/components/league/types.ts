@@ -61,29 +61,6 @@ export interface Division {
   };
 }
 
-export interface Season {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  regiDeadline: string;
-  entryFee: number;
-  description?: string;
-  category?: {
-    id: string;
-    name: string;
-  };
-  registeredUserCount?: number;
-  _count?: {
-    memberships: number;
-  };
-  status: string;
-  isActive: boolean;
-  paymentRequired: boolean;
-  promoCodeSupported: boolean;
-  withdrawalEnabled: boolean;
-}
-
 /** Basic league reference for category */
 interface CategoryLeagueRef {
   id: string;
@@ -150,28 +127,6 @@ export const formatDateShort = (dateString: string): string => {
     month: "short",
     year: "numeric",
   });
-};
-
-/**
- * Format date string to full date format
- */
-export const formatDateFull = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-/**
- * Format currency amount (USD)
- */
-export const formatCurrencyUSD = (amount: number): string => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-  }).format(amount);
 };
 
 /**
