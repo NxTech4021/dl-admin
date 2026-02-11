@@ -64,9 +64,9 @@ interface SeasonPlayersCardProps {
     } | null;
     partnerships?: Array<{
       id: string;
-      captainId: string;
-      partnerId: string;
-      seasonId: string;
+      captainId?: string;
+      partnerId?: string;
+      seasonId?: string;
       divisionId?: string | null;
       status: string;
       captain: {
@@ -281,9 +281,12 @@ export default function SeasonPlayersCard({
   };
 
   // Find partnership for a given user ID
+  // Fall back to nested captain.id/partner.id when FK fields are omitted by backend
   const findPartnership = (userId: string) => {
     return season?.partnerships?.find(
-      (p) => p.captainId === userId || p.partnerId === userId
+      (p) =>
+        (p.captainId ?? p.captain?.id) === userId ||
+        (p.partnerId ?? p.partner?.id) === userId
     );
   };
 
@@ -298,9 +301,7 @@ export default function SeasonPlayersCard({
       return true;
     }
 
-    const partnership = season?.partnerships?.find(
-      (p) => p.captainId === member.userId || p.partnerId === member.userId
-    );
+    const partnership = findPartnership(member.userId || "");
     if (partnership?.divisionId !== null && partnership?.divisionId !== undefined) {
       return true;
     }
@@ -396,11 +397,10 @@ export default function SeasonPlayersCard({
 
       const partnership = findPartnership(member.userId || "");
       if (partnership) {
-        const partnerId =
-          partnership.captainId === member.userId
-            ? partnership.partnerId
-            : partnership.captainId;
-        const partnerMembership = getMembershipByUserId(partnerId);
+        const captainId = partnership.captainId ?? partnership.captain?.id;
+        const resolvedPartnerId = partnership.partnerId ?? partnership.partner?.id;
+        const partnerId = captainId === member.userId ? resolvedPartnerId : captainId;
+        const partnerMembership = getMembershipByUserId(partnerId ?? "");
 
         if (partnerMembership) {
           grouped.push({
@@ -409,7 +409,7 @@ export default function SeasonPlayersCard({
             partnership,
           });
           processed.add(member.userId || "");
-          processed.add(partnerId);
+          processed.add(partnerId ?? "");
         } else {
           grouped.push({
             type: "individual",
