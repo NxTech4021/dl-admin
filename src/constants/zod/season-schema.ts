@@ -48,8 +48,8 @@ export const membershipSchema = z.object({
 
 export const withdrawalRequestSchema = z.object({
   id: z.string(),
-  userId: z.string(),
-  seasonId: z.string(),
+  userId: z.string().optional(),
+  seasonId: z.string().optional(),
   reason: z.string(),
   partnershipId: z.string().nullable().optional(),
   requestDate: z.coerce.date().optional(),
@@ -127,9 +127,9 @@ export const seasonSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        captainId: z.string(),
-        partnerId: z.string(),
-        seasonId: z.string(),
+        captainId: z.string().optional(),
+        partnerId: z.string().optional(),
+        seasonId: z.string().optional(),
         divisionId: z.string().nullable().optional(),
         status: z.string(),
         captain: z.object({
