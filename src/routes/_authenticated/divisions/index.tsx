@@ -53,7 +53,8 @@ function DivisionsPage() {
   const fetchSeasons = useCallback(async () => {
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
-      const seasonsData = response.data?.data || response.data || [];
+      // Backend wraps in ApiResponse: { success, status, data: { data: [...], pagination }, message }
+      const seasonsData = response.data?.data?.data ?? response.data?.data ?? response.data ?? [];
       setSeasons(Array.isArray(seasonsData) ? seasonsData : []);
     } catch (error) {
       logger.error("Failed to fetch seasons:", error);
