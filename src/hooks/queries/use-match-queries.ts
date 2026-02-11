@@ -203,12 +203,14 @@ export function useConvertToWalkover() {
       winningPlayerId: string;
       notifyParticipants?: boolean;
     }) => {
+      // Backend expects winnerId (not winningPlayerId) and walkoverReason (enum)
       const response = await apiClient.post(
         endpoints.admin.matches.convertWalkover(matchId),
         {
+          winnerId: winningPlayerId,
           reason,
+          walkoverReason: reason,
           defaultingPlayerId,
-          winningPlayerId,
           notifyParticipants,
         }
       );
