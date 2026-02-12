@@ -100,6 +100,14 @@ export const endpoints = {
       getForTarget: (targetType: string, targetId: string) => `/api/admin/logs/target/${targetType}/${targetId}`,
     },
 
+    // User activity logs (player actions)
+    userActivity: {
+      getAll: "/api/admin/user-activity",
+      getForUser: (userId: string) => `/api/admin/user-activity/user/${userId}`,
+      getForTarget: (targetType: string, targetId: string) =>
+        `/api/admin/user-activity/target/${targetType}/${targetId}`,
+    },
+
     // Admin reports
     reports: {
       playerRegistration: "/api/admin/reports/player-registration",
