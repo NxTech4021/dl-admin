@@ -31,6 +31,7 @@ export const queryKeys = {
     list: () => [...queryKeys.admins.all, "list"] as const,
     detail: (id: string) => [...queryKeys.admins.all, "detail", id] as const,
     session: () => [...queryKeys.admins.all, "session"] as const,
+    statusHistory: (id: string) => [...queryKeys.admins.all, "statusHistory", id] as const,
   },
   categories: {
     all: ["categories"] as const,
