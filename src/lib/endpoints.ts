@@ -83,6 +83,14 @@ export const endpoints = {
       getStatusHistory: (id: string) => `/api/admin/players/${id}/status-history`,
     },
 
+    // Admin status management (suspend, activate, status history, detail)
+    admins: {
+      getDetail: (id: string) => `/api/admin/admins/${id}`,
+      suspend: (id: string) => `/api/admin/admins/${id}/suspend`,
+      activate: (id: string) => `/api/admin/admins/${id}/activate`,
+      getStatusHistory: (id: string) => `/api/admin/admins/${id}/status-history`,
+    },
+
     // Admin action logs
     logs: {
       getAll: "/api/admin/logs",
