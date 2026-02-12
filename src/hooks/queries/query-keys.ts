@@ -121,4 +121,26 @@ export const queryKeys = {
     membership: (filters?: { startDate?: string; endDate?: string }) =>
       [...queryKeys.reports.all, "membership", filters] as const,
   },
+  adminLogs: {
+    all: ["adminLogs"] as const,
+    lists: () => [...queryKeys.adminLogs.all, "list"] as const,
+    list: (filters?: Partial<import("@/constants/zod/admin-log-schema").AdminLogFilters>) =>
+      [...queryKeys.adminLogs.lists(), filters] as const,
+    actionTypes: () => [...queryKeys.adminLogs.all, "actionTypes"] as const,
+    targetTypes: () => [...queryKeys.adminLogs.all, "targetTypes"] as const,
+    summary: (options?: { days?: number; adminId?: string }) =>
+      [...queryKeys.adminLogs.all, "summary", options] as const,
+    forTarget: (targetType?: string, targetId?: string) =>
+      [...queryKeys.adminLogs.all, "forTarget", targetType, targetId] as const,
+  },
+  userActivity: {
+    all: ["userActivity"] as const,
+    lists: () => [...queryKeys.userActivity.all, "list"] as const,
+    list: (filters?: Partial<import("@/constants/zod/admin-log-schema").UserActivityFilters>) =>
+      [...queryKeys.userActivity.lists(), filters] as const,
+    forUser: (userId?: string) =>
+      [...queryKeys.userActivity.all, "forUser", userId] as const,
+    forTarget: (targetType?: string, targetId?: string) =>
+      [...queryKeys.userActivity.all, "forTarget", targetType, targetId] as const,
+  },
 };
