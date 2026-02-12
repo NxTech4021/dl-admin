@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Payment status enum
-export const paymentStatusEnum = z.enum(["PENDING", "COMPLETED", "FAILED"]);
+export const paymentStatusEnum = z.enum(["PENDING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]);
 export type PaymentStatus = z.infer<typeof paymentStatusEnum>;
 
 // Membership status enum
@@ -92,7 +92,7 @@ export type PaymentFilters = z.infer<typeof paymentFiltersSchema>;
 // Update payment status request
 export const updatePaymentStatusSchema = z.object({
   paymentStatus: paymentStatusEnum,
-  reason: z.string().optional(),
+  notes: z.string().optional(),
 });
 export type UpdatePaymentStatusRequest = z.infer<typeof updatePaymentStatusSchema>;
 
@@ -100,6 +100,6 @@ export type UpdatePaymentStatusRequest = z.infer<typeof updatePaymentStatusSchem
 export const bulkUpdatePaymentStatusSchema = z.object({
   membershipIds: z.array(z.string()).min(1),
   paymentStatus: paymentStatusEnum,
-  reason: z.string().optional(),
+  notes: z.string().optional(),
 });
 export type BulkUpdatePaymentStatusRequest = z.infer<typeof bulkUpdatePaymentStatusSchema>;
