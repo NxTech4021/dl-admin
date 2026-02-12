@@ -26,9 +26,10 @@ const DEFAULT_PAGINATION = { page: 1, limit: 50, total: 0, totalPages: 0 };
 /**
  * Get paginated admin logs with filters
  */
-export function useAdminLogs(filters: Partial<AdminLogFilters> = {}) {
+export function useAdminLogs(filters: Partial<AdminLogFilters> = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.adminLogs.list(filters),
+    enabled: options?.enabled ?? true,
     queryFn: async (): Promise<PaginatedAdminLogs> => {
       const params = new URLSearchParams();
 
@@ -162,9 +163,10 @@ export function useAdminLogForTarget(targetType?: string, targetId?: string) {
 /**
  * Get paginated user activity logs with filters
  */
-export function useUserActivityLogs(filters: Partial<UserActivityFilters> = {}) {
+export function useUserActivityLogs(filters: Partial<UserActivityFilters> = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.userActivity.list(filters),
+    enabled: options?.enabled ?? true,
     queryFn: async (): Promise<PaginatedUserActivityLogs> => {
       const params = new URLSearchParams();
 
