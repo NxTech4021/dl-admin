@@ -25,10 +25,13 @@ import {
   IconClock,
   IconAlertTriangle,
   IconLoader2,
+  IconBan,
+  IconReceiptRefund,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useUpdatePaymentStatus } from "@/hooks/queries";
 import type { PaymentRecord, PaymentStatus } from "@/constants/zod/payment-schema";
+import { getPaymentStatusBadge } from "./payment-utils";
 
 interface PaymentStatusModalProps {
   payment: PaymentRecord | null;
@@ -56,48 +59,19 @@ const STATUS_OPTIONS: { value: PaymentStatus; label: string; icon: React.Element
     icon: IconAlertTriangle,
     className: "text-red-600",
   },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    icon: IconBan,
+    className: "text-gray-600",
+  },
+  {
+    value: "REFUNDED",
+    label: "Refunded",
+    icon: IconReceiptRefund,
+    className: "text-purple-600",
+  },
 ];
-
-const getPaymentStatusBadge = (status: string | undefined) => {
-  switch (status) {
-    case "COMPLETED":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800"
-        >
-          <IconCircleCheck className="size-3 mr-1" />
-          Paid
-        </Badge>
-      );
-    case "PENDING":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800"
-        >
-          <IconClock className="size-3 mr-1" />
-          Pending
-        </Badge>
-      );
-    case "FAILED":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800"
-        >
-          <IconAlertTriangle className="size-3 mr-1" />
-          Failed
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="outline" className="text-muted-foreground">
-          Unknown
-        </Badge>
-      );
-  }
-};
 
 export function PaymentStatusModal({
   payment,
@@ -106,7 +80,7 @@ export function PaymentStatusModal({
   onSuccess,
 }: PaymentStatusModalProps) {
   const [newStatus, setNewStatus] = React.useState<PaymentStatus | "">("");
-  const [reason, setReason] = React.useState("");
+  const [notes, setNotes] = React.useState("");
 
   const updateStatus = useUpdatePaymentStatus();
 
@@ -114,7 +88,7 @@ export function PaymentStatusModal({
   React.useEffect(() => {
     if (open && payment) {
       setNewStatus("");
-      setReason("");
+      setNotes("");
     }
   }, [open, payment]);
 
@@ -126,7 +100,7 @@ export function PaymentStatusModal({
         membershipId: payment.id,
         data: {
           paymentStatus: newStatus,
-          reason: reason || undefined,
+          notes: notes || undefined,
         },
       });
       toast.success(`Payment status updated to ${newStatus === "COMPLETED" ? "Paid" : newStatus.toLowerCase()}`);
@@ -196,16 +170,16 @@ export function PaymentStatusModal({
             </Select>
           </div>
 
-          {/* Reason */}
+          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="reason">
-              Reason <span className="text-muted-foreground">(optional)</span>
+            <Label htmlFor="notes">
+              Notes <span className="text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
-              id="reason"
+              id="notes"
               placeholder="Add a note about this status change..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               className="min-h-[80px]"
             />
           </div>
