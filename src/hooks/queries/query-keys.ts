@@ -106,4 +106,19 @@ export const queryKeys = {
     dissolvedPartnershipDetail: (id: string) =>
       [...queryKeys.partnershipAdmin.dissolvedPartnerships(), "detail", id] as const,
   },
+  reports: {
+    all: ["reports"] as const,
+    playerRegistration: (filters?: { startDate?: string; endDate?: string }) =>
+      [...queryKeys.reports.all, "playerRegistration", filters] as const,
+    playerRetention: (filters?: { startDate?: string; endDate?: string }) =>
+      [...queryKeys.reports.all, "playerRetention", filters] as const,
+    seasonPerformance: (seasonId?: string) =>
+      [...queryKeys.reports.all, "seasonPerformance", seasonId] as const,
+    disputeAnalysis: (filters?: { startDate?: string; endDate?: string }) =>
+      [...queryKeys.reports.all, "disputeAnalysis", filters] as const,
+    revenue: (filters?: { startDate?: string; endDate?: string }) =>
+      [...queryKeys.reports.all, "revenue", filters] as const,
+    membership: (filters?: { startDate?: string; endDate?: string }) =>
+      [...queryKeys.reports.all, "membership", filters] as const,
+  },
 };
