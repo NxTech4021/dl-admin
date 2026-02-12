@@ -60,7 +60,7 @@ import { Separator } from "@/components/ui/separator";
 import { DateRangePicker, ExportButton, type ExportColumn, type DateRange } from "@/components/shared";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { AnimatedFilterBar, AnimatedEmptyState, AnimatedContainer } from "@/components/ui/animated-container";
+import { AnimatedFilterBar, AnimatedEmptyState } from "@/components/ui/animated-container";
 import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
 import {
   useAdminLogs,
@@ -183,15 +183,15 @@ function AdminLogsPage() {
   }), [page, debouncedSearch, selectedActionType, selectedTargetType, dateRange]);
 
   // Admin log hooks
-  const adminLogsQuery = useAdminLogs(actorType === "admin" ? filters : { page: 1, limit: 1 });
+  const isAdmin = actorType === "admin";
+  const adminLogsQuery = useAdminLogs(filters, { enabled: isAdmin });
   const { data: actionTypes = [] } = useAdminLogActionTypes();
   const { data: targetTypes = [] } = useAdminLogTargetTypes();
 
   // Player activity log hooks
-  const playerLogsQuery = useUserActivityLogs(actorType === "player" ? filters : { page: 1, limit: 1 });
+  const playerLogsQuery = useUserActivityLogs(filters, { enabled: !isAdmin });
 
   // Unified data from whichever source is active
-  const isAdmin = actorType === "admin";
   const activeQuery = isAdmin ? adminLogsQuery : playerLogsQuery;
   const { isLoading, isError, error, refetch } = activeQuery;
 
@@ -315,12 +315,14 @@ function AdminLogsPage() {
                 onClearAll={handleClearFilters}
                 showClearButton={!!(searchQuery || selectedActionType || selectedTargetType || dateRange)}
               >
-                <SearchInput
-                  value={searchQuery}
-                  onChange={(value) => setSearchQuery(value)}
-                  placeholder="Search logs..."
-                  className="flex-1 min-w-[200px] max-w-sm"
-                />
+                {isAdmin && (
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={(value) => setSearchQuery(value)}
+                    placeholder="Search logs..."
+                    className="flex-1 min-w-[200px] max-w-sm"
+                  />
+                )}
                 <FilterSelect
                   value={selectedActionType}
                   onChange={(value) => {
