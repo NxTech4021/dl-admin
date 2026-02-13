@@ -37,11 +37,14 @@ export function useWithdrawalRequestsAdmin(filters?: {
 
       const response = await apiClient.get(url);
 
+      // Unwrap API envelope: response.data is { success, data: T }, actual payload is response.data.data
+      const payload = response.data?.data ?? response.data;
+
       // Safe parse with error handling
-      const parseResult = z.array(withdrawalRequestAdminSchema).safeParse(response.data);
+      const parseResult = z.array(withdrawalRequestAdminSchema).safeParse(payload);
       if (!parseResult.success) {
         logger.error("Withdrawal requests schema validation failed:", parseResult.error.issues);
-        return response.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       }
 
       return parseResult.data;
@@ -59,7 +62,10 @@ export function useWithdrawalRequestStats() {
     queryFn: async (): Promise<WithdrawalRequestStats> => {
       const response = await apiClient.get(endpoints.partnershipAdmin.getWithdrawalRequestStats);
 
-      const parseResult = withdrawalRequestStatsSchema.safeParse(response.data);
+      // Unwrap API envelope: response.data is { success, data: T }, actual payload is response.data.data
+      const payload = response.data?.data ?? response.data;
+
+      const parseResult = withdrawalRequestStatsSchema.safeParse(payload);
       if (!parseResult.success) {
         logger.error("Withdrawal stats schema validation failed:", parseResult.error.issues);
         return { pending: 0, approved: 0, rejected: 0, total: 0, totalDissolved: 0 };
@@ -93,10 +99,13 @@ export function useDissolvedPartnerships(filters?: {
 
       const response = await apiClient.get(url);
 
-      const parseResult = z.array(dissolvedPartnershipSchema).safeParse(response.data);
+      // Unwrap API envelope: response.data is { success, data: T }, actual payload is response.data.data
+      const payload = response.data?.data ?? response.data;
+
+      const parseResult = z.array(dissolvedPartnershipSchema).safeParse(payload);
       if (!parseResult.success) {
         logger.error("Dissolved partnerships schema validation failed:", parseResult.error.issues);
-        return response.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       }
 
       return parseResult.data;
@@ -115,10 +124,13 @@ export function useDissolvedPartnership(id: string | null) {
       if (!id) return null;
       const response = await apiClient.get(endpoints.partnershipAdmin.getDissolvedPartnershipById(id));
 
-      const parseResult = dissolvedPartnershipSchema.safeParse(response.data);
+      // Unwrap API envelope: response.data is { success, data: T }, actual payload is response.data.data
+      const payload = response.data?.data ?? response.data;
+
+      const parseResult = dissolvedPartnershipSchema.safeParse(payload);
       if (!parseResult.success) {
         logger.error("Dissolved partnership schema validation failed:", parseResult.error.issues);
-        return response.data;
+        return payload ?? null;
       }
 
       return parseResult.data;
