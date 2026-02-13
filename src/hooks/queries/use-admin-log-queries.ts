@@ -69,10 +69,11 @@ export function useAdminLogActionTypes() {
     queryFn: async (): Promise<FilterOption[]> => {
       const response = await apiClient.get(endpoints.admin.logs.getActionTypes);
 
-      const parseResult = z.array(filterOptionSchema).safeParse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(filterOptionSchema).safeParse(payload);
       if (!parseResult.success) {
         logger.error("Action types schema validation failed:", parseResult.error.issues);
-        return response.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       }
 
       return parseResult.data;
@@ -90,10 +91,11 @@ export function useAdminLogTargetTypes() {
     queryFn: async (): Promise<FilterOption[]> => {
       const response = await apiClient.get(endpoints.admin.logs.getTargetTypes);
 
-      const parseResult = z.array(filterOptionSchema).safeParse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(filterOptionSchema).safeParse(payload);
       if (!parseResult.success) {
         logger.error("Target types schema validation failed:", parseResult.error.issues);
-        return response.data ?? [];
+        return Array.isArray(payload) ? payload : [];
       }
 
       return parseResult.data;
@@ -117,10 +119,11 @@ export function useAdminLogSummary(options?: { days?: number; adminId?: string }
         `${endpoints.admin.logs.getSummary}?${params.toString()}`
       );
 
-      const parseResult = activitySummarySchema.safeParse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = activitySummarySchema.safeParse(payload);
       if (!parseResult.success) {
         logger.error("Activity summary schema validation failed:", parseResult.error.issues);
-        return response.data ?? { totalActions: 0, byActionType: [], byTargetType: [], dailyCounts: [], period: "" };
+        return payload ?? { totalActions: 0, byActionType: [], byTargetType: [], dailyCounts: [], period: "" };
       }
 
       return parseResult.data;
