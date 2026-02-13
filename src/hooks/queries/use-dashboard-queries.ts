@@ -4,6 +4,7 @@ import { dashboardStatsSchema, dashboardKPISchema, sportMetricsSchema, matchActi
 import { endpoints } from "@/lib/endpoints";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "./query-keys";
+import { logger } from "@/lib/logger";
 
 /**
  * Get all dashboard stats in one call
@@ -13,7 +14,13 @@ export function useDashboardStats() {
     queryKey: queryKeys.dashboard.stats(),
     queryFn: async (): Promise<DashboardStats> => {
       const response = await apiClient.get(endpoints.admin.dashboard.getAll);
-      return dashboardStatsSchema.parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = dashboardStatsSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("dashboardStatsSchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000, // 1 minute cache
   });
@@ -27,7 +34,13 @@ export function useDashboardKPI() {
     queryKey: queryKeys.dashboard.kpi(),
     queryFn: async (): Promise<DashboardKPI> => {
       const response = await apiClient.get(endpoints.admin.dashboard.getKPI);
-      return dashboardKPISchema.parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = dashboardKPISchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("dashboardKPISchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000,
   });
@@ -41,7 +54,13 @@ export function useSportMetrics() {
     queryKey: queryKeys.dashboard.sports(),
     queryFn: async (): Promise<SportMetrics[]> => {
       const response = await apiClient.get(endpoints.admin.dashboard.getSports);
-      return z.array(sportMetricsSchema).parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(sportMetricsSchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("sportMetricsSchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000,
   });
@@ -56,7 +75,13 @@ export function useMatchActivity(weeks?: number) {
     queryFn: async (): Promise<MatchActivity[]> => {
       const params = weeks ? `?weeks=${weeks}` : "";
       const response = await apiClient.get(`${endpoints.admin.dashboard.getMatchActivity}${params}`);
-      return z.array(matchActivitySchema).parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(matchActivitySchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("matchActivitySchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000,
   });
@@ -71,7 +96,13 @@ export function useUserGrowth(months?: number) {
     queryFn: async (): Promise<UserGrowth[]> => {
       const params = months ? `?months=${months}` : "";
       const response = await apiClient.get(`${endpoints.admin.dashboard.getUserGrowth}${params}`);
-      return z.array(userGrowthSchema).parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(userGrowthSchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("userGrowthSchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000,
   });
@@ -85,7 +116,13 @@ export function useSportComparison() {
     queryKey: queryKeys.dashboard.sportComparison(),
     queryFn: async (): Promise<SportComparison[]> => {
       const response = await apiClient.get(endpoints.admin.dashboard.getSportComparison);
-      return z.array(sportComparisonSchema).parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(sportComparisonSchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("sportComparisonSchema validation failed:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     staleTime: 60000,
   });
