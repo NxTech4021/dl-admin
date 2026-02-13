@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { type Sponsorship, type SponsorTier } from "@/constants/types/league";
-import { formatDateShort, formatCurrencyUSD } from "./types";
+import { formatDateShort, formatCurrencyMYR } from "./types";
 
 /** Available sponsor option for selection dropdown */
 interface SponsorSelectOption {
@@ -36,29 +36,29 @@ interface SponsorSelectOption {
 interface LeagueSponsorsSectionProps {
   sponsorships: Sponsorship[];
   leagueId?: string;
-  onAssignSponsor?: () => void;
-  /** Callback triggered after sponsor changes (assign/delete) to refresh data */
-  onSponsorDeleted?: () => void | Promise<void>;
+  /** Callback triggered after sponsor changes (assign/remove) to refresh data */
+  onSponsorChanged?: () => void | Promise<void>;
 }
 
 export function LeagueSponsorsSection({
   sponsorships,
   leagueId,
-  onAssignSponsor,
-  onSponsorDeleted,
+  onSponsorChanged,
 }: LeagueSponsorsSectionProps) {
   const navigate = useNavigate();
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
   const [available, setAvailable] = React.useState<SponsorSelectOption[]>([]);
   const [selectedId, setSelectedId] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
 
   // Confirmation modal hook
   const confirmation = useConfirmationModal();
 
-  // Fetch sponsors when modal opens
+  // Reset selection and fetch sponsors when modal opens
   React.useEffect(() => {
     if (!isAssignOpen) return;
+    setSelectedId("");
 
     const abortController = new AbortController();
 
@@ -119,8 +119,8 @@ export function LeagueSponsorsSection({
             await axiosInstance.delete(endpoints.sponsors.delete(sponsorshipId));
             toast.success(`"${sponsorName}" has been removed from the league`);
             confirmation.hideConfirmation();
-            if (onSponsorDeleted) {
-              await onSponsorDeleted();
+            if (onSponsorChanged) {
+              await onSponsorChanged();
             }
           } catch (err: unknown) {
             toast.error(getErrorMessage(err, "Failed to remove sponsor from league"));
@@ -130,23 +130,8 @@ export function LeagueSponsorsSection({
         },
       });
     },
-    [confirmation, onSponsorDeleted]
+    [confirmation, onSponsorChanged]
   );
-
-  const getTierBadgeVariant = (tier: SponsorTier | string | undefined) => {
-    switch (tier?.toUpperCase()) {
-      case "PLATINUM":
-        return "default";
-      case "GOLD":
-        return "secondary";
-      case "SILVER":
-        return "outline";
-      case "BRONZE":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
 
   const getTierColor = (tier: SponsorTier | string | undefined) => {
     switch (tier?.toUpperCase()) {
@@ -162,8 +147,6 @@ export function LeagueSponsorsSection({
         return "text-gray-600 bg-gray-50 border-gray-300";
     }
   };
-
-  // Using shared utility functions from ./types
 
   return (
     <div className="space-y-3">
@@ -229,7 +212,7 @@ export function LeagueSponsorsSection({
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       {(s.amount || s.contractAmount) && (
                         <span className="font-medium">
-                          {formatCurrencyUSD(Number(s.amount || s.contractAmount))}
+                          {formatCurrencyMYR(Number(s.amount || s.contractAmount))}
                         </span>
                       )}
                       {s.startDate && <span>{formatDateShort(s.startDate)}</span>}
@@ -307,14 +290,29 @@ export function LeagueSponsorsSection({
               </Button>
               <Button
                 size="sm"
-                disabled={!selectedId || !leagueId}
+                disabled={!selectedId || !leagueId || submitting}
                 onClick={async () => {
-                  if (!selectedId || !leagueId) return;
+                  if (!selectedId || !leagueId || submitting) return;
+                  setSubmitting(true);
                   try {
+                    // Fetch sponsor's existing leagues to avoid overwriting them
+                    // Backend PUT uses .set() (REPLACE), not .connect() (APPEND)
+                    const sponsorRes = await axiosInstance.get(
+                      endpoints.sponsors.getById(selectedId)
+                    );
+                    const existingLeagues: { id: string }[] =
+                      sponsorRes.data?.data?.leagues || [];
+                    const existingIds = existingLeagues.map((l) => l.id);
+
+                    // Merge current league with existing ones (deduplicated)
+                    const mergedIds = [
+                      ...new Set([...existingIds, leagueId]),
+                    ];
+
                     await axiosInstance.put(
                       endpoints.sponsors.update(selectedId),
                       {
-                        leagueIds: [leagueId],
+                        leagueIds: mergedIds,
                       }
                     );
 
@@ -323,11 +321,13 @@ export function LeagueSponsorsSection({
                     setSelectedId("");
 
                     // Refresh via callback instead of page reload
-                    if (onSponsorDeleted) {
-                      await onSponsorDeleted();
+                    if (onSponsorChanged) {
+                      await onSponsorChanged();
                     }
                   } catch (err: unknown) {
                     toast.error(getErrorMessage(err, "Failed to assign sponsor"));
+                  } finally {
+                    setSubmitting(false);
                   }
                 }}
               >

@@ -27,6 +27,12 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBugsIndexRouteImport } from './routes/_authenticated/bugs/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authenticated/admin-logs/index'
+import { Route as AuthenticatedReportsSeasonPerformanceRouteImport } from './routes/_authenticated/reports/season-performance'
+import { Route as AuthenticatedReportsRevenueRouteImport } from './routes/_authenticated/reports/revenue'
+import { Route as AuthenticatedReportsPlayerRetentionRouteImport } from './routes/_authenticated/reports/player-retention'
+import { Route as AuthenticatedReportsPlayerRegistrationRouteImport } from './routes/_authenticated/reports/player-registration'
+import { Route as AuthenticatedReportsMembershipRouteImport } from './routes/_authenticated/reports/membership'
+import { Route as AuthenticatedReportsDisputeAnalysisRouteImport } from './routes/_authenticated/reports/dispute-analysis'
 import { Route as AuthenticatedUtilitiesSponsorsIndexRouteImport } from './routes/_authenticated/utilities/sponsors/index'
 import { Route as AuthenticatedUtilitiesCategoriesIndexRouteImport } from './routes/_authenticated/utilities/categories/index'
 import { Route as AuthenticatedSeasonsSeasonIdIndexRouteImport } from './routes/_authenticated/seasons/$seasonId/index'
@@ -137,6 +143,42 @@ const AuthenticatedAdminLogsIndexRoute =
     path: '/admin-logs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSeasonPerformanceRoute =
+  AuthenticatedReportsSeasonPerformanceRouteImport.update({
+    id: '/reports/season-performance',
+    path: '/reports/season-performance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsRevenueRoute =
+  AuthenticatedReportsRevenueRouteImport.update({
+    id: '/reports/revenue',
+    path: '/reports/revenue',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsPlayerRetentionRoute =
+  AuthenticatedReportsPlayerRetentionRouteImport.update({
+    id: '/reports/player-retention',
+    path: '/reports/player-retention',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsPlayerRegistrationRoute =
+  AuthenticatedReportsPlayerRegistrationRouteImport.update({
+    id: '/reports/player-registration',
+    path: '/reports/player-registration',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsMembershipRoute =
+  AuthenticatedReportsMembershipRouteImport.update({
+    id: '/reports/membership',
+    path: '/reports/membership',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsDisputeAnalysisRoute =
+  AuthenticatedReportsDisputeAnalysisRouteImport.update({
+    id: '/reports/dispute-analysis',
+    path: '/reports/dispute-analysis',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUtilitiesSponsorsIndexRoute =
   AuthenticatedUtilitiesSponsorsIndexRouteImport.update({
     id: '/utilities/sponsors/',
@@ -189,6 +231,12 @@ const AuthenticatedLeagueViewLeagueIdIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/reports/dispute-analysis': typeof AuthenticatedReportsDisputeAnalysisRoute
+  '/reports/membership': typeof AuthenticatedReportsMembershipRoute
+  '/reports/player-registration': typeof AuthenticatedReportsPlayerRegistrationRoute
+  '/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
+  '/reports/revenue': typeof AuthenticatedReportsRevenueRoute
+  '/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
   '/admin-logs': typeof AuthenticatedAdminLogsIndexRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
@@ -216,6 +264,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/reports/dispute-analysis': typeof AuthenticatedReportsDisputeAnalysisRoute
+  '/reports/membership': typeof AuthenticatedReportsMembershipRoute
+  '/reports/player-registration': typeof AuthenticatedReportsPlayerRegistrationRoute
+  '/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
+  '/reports/revenue': typeof AuthenticatedReportsRevenueRoute
+  '/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
   '/admin-logs': typeof AuthenticatedAdminLogsIndexRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
@@ -245,6 +299,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/reports/dispute-analysis': typeof AuthenticatedReportsDisputeAnalysisRoute
+  '/_authenticated/reports/membership': typeof AuthenticatedReportsMembershipRoute
+  '/_authenticated/reports/player-registration': typeof AuthenticatedReportsPlayerRegistrationRoute
+  '/_authenticated/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
+  '/_authenticated/reports/revenue': typeof AuthenticatedReportsRevenueRoute
+  '/_authenticated/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
   '/_authenticated/admin-logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bugs/': typeof AuthenticatedBugsIndexRoute
@@ -274,6 +334,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/reports/dispute-analysis'
+    | '/reports/membership'
+    | '/reports/player-registration'
+    | '/reports/player-retention'
+    | '/reports/revenue'
+    | '/reports/season-performance'
     | '/admin-logs'
     | '/admin'
     | '/bugs'
@@ -301,6 +367,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/reports/dispute-analysis'
+    | '/reports/membership'
+    | '/reports/player-registration'
+    | '/reports/player-retention'
+    | '/reports/revenue'
+    | '/reports/season-performance'
     | '/admin-logs'
     | '/admin'
     | '/bugs'
@@ -329,6 +401,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/reports/dispute-analysis'
+    | '/_authenticated/reports/membership'
+    | '/_authenticated/reports/player-registration'
+    | '/_authenticated/reports/player-retention'
+    | '/_authenticated/reports/revenue'
+    | '/_authenticated/reports/season-performance'
     | '/_authenticated/admin-logs/'
     | '/_authenticated/admin/'
     | '/_authenticated/bugs/'
@@ -488,6 +566,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLogsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/season-performance': {
+      id: '/_authenticated/reports/season-performance'
+      path: '/reports/season-performance'
+      fullPath: '/reports/season-performance'
+      preLoaderRoute: typeof AuthenticatedReportsSeasonPerformanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/revenue': {
+      id: '/_authenticated/reports/revenue'
+      path: '/reports/revenue'
+      fullPath: '/reports/revenue'
+      preLoaderRoute: typeof AuthenticatedReportsRevenueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/player-retention': {
+      id: '/_authenticated/reports/player-retention'
+      path: '/reports/player-retention'
+      fullPath: '/reports/player-retention'
+      preLoaderRoute: typeof AuthenticatedReportsPlayerRetentionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/player-registration': {
+      id: '/_authenticated/reports/player-registration'
+      path: '/reports/player-registration'
+      fullPath: '/reports/player-registration'
+      preLoaderRoute: typeof AuthenticatedReportsPlayerRegistrationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/membership': {
+      id: '/_authenticated/reports/membership'
+      path: '/reports/membership'
+      fullPath: '/reports/membership'
+      preLoaderRoute: typeof AuthenticatedReportsMembershipRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/dispute-analysis': {
+      id: '/_authenticated/reports/dispute-analysis'
+      path: '/reports/dispute-analysis'
+      fullPath: '/reports/dispute-analysis'
+      preLoaderRoute: typeof AuthenticatedReportsDisputeAnalysisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/utilities/sponsors/': {
       id: '/_authenticated/utilities/sponsors/'
       path: '/utilities/sponsors'
@@ -548,6 +668,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedReportsDisputeAnalysisRoute: typeof AuthenticatedReportsDisputeAnalysisRoute
+  AuthenticatedReportsMembershipRoute: typeof AuthenticatedReportsMembershipRoute
+  AuthenticatedReportsPlayerRegistrationRoute: typeof AuthenticatedReportsPlayerRegistrationRoute
+  AuthenticatedReportsPlayerRetentionRoute: typeof AuthenticatedReportsPlayerRetentionRoute
+  AuthenticatedReportsRevenueRoute: typeof AuthenticatedReportsRevenueRoute
+  AuthenticatedReportsSeasonPerformanceRoute: typeof AuthenticatedReportsSeasonPerformanceRoute
   AuthenticatedAdminLogsIndexRoute: typeof AuthenticatedAdminLogsIndexRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedBugsIndexRoute: typeof AuthenticatedBugsIndexRoute
@@ -574,6 +700,16 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedReportsDisputeAnalysisRoute:
+    AuthenticatedReportsDisputeAnalysisRoute,
+  AuthenticatedReportsMembershipRoute: AuthenticatedReportsMembershipRoute,
+  AuthenticatedReportsPlayerRegistrationRoute:
+    AuthenticatedReportsPlayerRegistrationRoute,
+  AuthenticatedReportsPlayerRetentionRoute:
+    AuthenticatedReportsPlayerRetentionRoute,
+  AuthenticatedReportsRevenueRoute: AuthenticatedReportsRevenueRoute,
+  AuthenticatedReportsSeasonPerformanceRoute:
+    AuthenticatedReportsSeasonPerformanceRoute,
   AuthenticatedAdminLogsIndexRoute: AuthenticatedAdminLogsIndexRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedBugsIndexRoute: AuthenticatedBugsIndexRoute,

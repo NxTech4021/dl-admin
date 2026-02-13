@@ -32,7 +32,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import {
   IconUsers,
   IconUserPlus,
@@ -105,7 +107,7 @@ export default function DivisionPlayersCard({
       const playersData = response.data?.data || response.data || [];
       setAvailablePlayers(
         Array.isArray(playersData)
-          ? playersData.map((p: any) => ({
+          ? playersData.map((p: { id: string; name?: string; email?: string; rating?: number }) => ({
               id: p.id,
               name: p.name || "Unknown",
               email: p.email || "",
@@ -114,7 +116,7 @@ export default function DivisionPlayersCard({
           : []
       );
     } catch (error) {
-      console.error("Failed to fetch available players:", error);
+      logger.error("Failed to fetch available players:", error);
       setAvailablePlayers([]);
     } finally {
       setIsLoadingAvailable(false);
@@ -136,8 +138,8 @@ export default function DivisionPlayersCard({
       toast.success("Player assigned successfully");
       await onPlayersUpdated();
       await fetchAvailablePlayers();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to assign player");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to assign player"));
     } finally {
       setIsAssigning(false);
     }
@@ -153,8 +155,8 @@ export default function DivisionPlayersCard({
       toast.success("Player removed successfully");
       await onPlayersUpdated();
       setPlayerToRemove(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to remove player");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to remove player"));
     } finally {
       setIsRemoving(false);
     }

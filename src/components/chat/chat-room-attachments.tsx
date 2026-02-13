@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import { useBoolean } from "@/app/chat/hooks/use-boolean";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -47,7 +48,7 @@ export default function ChatRoomAttachments({ attachments = [] }: ChatRoomAttach
               {/* <FileThumbnail
                 imageView
                 file={attachment.preview}
-                onDownload={() => console.info("DOWNLOAD")}
+                onDownload={() => logger.info("Download attachment")}
                 className="w-7 h-7"
               /> */}
             </div>

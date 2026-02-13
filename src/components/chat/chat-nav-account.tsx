@@ -20,6 +20,7 @@ import {
 } from './constants';
 
 import { ChatNavAccountProps } from '../../constants/types/chat';
+import { logger } from "@/lib/logger";
 
 
 
@@ -43,7 +44,7 @@ export default function ChatNavAccount({
   const handleStatusChange = useCallback((newStatus: UserStatus) => {
     setStatus(newStatus);
     onStatusChange?.(newStatus);
-    console.log('User status changed to:', newStatus);
+    logger.debug('User status changed to:', newStatus);
   }, [onStatusChange]);
 
   // Handle settings click

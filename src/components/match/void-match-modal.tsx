@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Match } from "@/constants/zod/match-schema";
-import { useVoidMatch } from "@/hooks/use-queries";
+import { useVoidMatch } from "@/hooks/queries";
 import { IconBan, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 

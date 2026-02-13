@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useCallback, useEffect, useState, Suspense, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { Loader2, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,6 +17,8 @@ import { useChatData, useMessages } from "@/app/chat/hooks/chat";
 import type {
   Conversation,
   ChatParticipant,
+  ChatUser,
+  Message,
   Thread,
 } from "@/constants/types/chat";
 
@@ -34,7 +37,7 @@ function ChatPage() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const {
@@ -61,11 +64,11 @@ function ChatPage() {
 
   useEffect(() => {
     if (threadsError) {
-      console.error("Threads error:", threadsError);
+      logger.error("Threads error:", threadsError);
       toast.error("Failed to load conversations");
     }
     if (messagesError) {
-      console.error("Messages error:", messagesError);
+      logger.error("Messages error:", messagesError);
       toast.error("Failed to load messages");
     }
   }, [threadsError, messagesError]);
@@ -160,7 +163,7 @@ function ChatPage() {
   }, [threads, user?.id]);
 
   const currentConversation = selectedConversationId
-    ? conversations.find((conv) => conv.id === selectedConversationId)
+    ? conversations.find((conv) => conv.id === selectedConversationId) ?? null
     : null;
 
   const participants = currentConversation?.participants || [];
@@ -173,7 +176,7 @@ function ChatPage() {
     setShowDetails(true);
   }, []);
 
-  const handleReply = useCallback((message: any) => {
+  const handleReply = useCallback((message: Message) => {
     setReplyingTo(message);
   }, []);
 
@@ -191,7 +194,7 @@ function ChatPage() {
         await deleteMessage(messageId);
         toast.success("Message deleted successfully");
       } catch (error) {
-        console.error("Failed to delete message:", error);
+        logger.error("Failed to delete message:", error);
       }
     },
     [deleteMessage]
@@ -211,7 +214,7 @@ function ChatPage() {
           updateThreadLastMessage(selectedConversationId, newMessage);
         }
       } catch (error) {
-        console.error("Failed to send message:", error);
+        logger.error("Failed to send message:", error);
         toast.error("Failed to send message. Please try again.");
       }
     },
@@ -391,7 +394,7 @@ function ChatPage() {
             conversations={conversations}
             loading={threadsLoading}
             selectedConversationId={selectedConversationId}
-            user={user}
+            user={user as ChatUser}
             onConversationSelect={handleConversationSelect}
             onThreadCreated={handleThreadCreated}
           />
@@ -415,7 +418,7 @@ function ChatPage() {
                   conversations={conversations}
                   loading={threadsLoading}
                   selectedConversationId={selectedConversationId}
-                  user={user}
+                  user={user as ChatUser}
                   onConversationSelect={handleConversationSelect}
                   onThreadCreated={handleThreadCreated}
                   forceMobileList={true}

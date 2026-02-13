@@ -24,9 +24,24 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface PairingRequest {
+  id: string;
+  status?: string;
+  message?: string;
+  createdAt?: string;
+  sender?: {
+    name?: string;
+    email?: string;
+  };
+  receiver?: {
+    name?: string;
+    email?: string;
+  };
+}
+
 interface PairingRequests {
-  received: any[];
-  sent: any[];
+  received: PairingRequest[];
+  sent: PairingRequest[];
 }
 
 interface PairingLoading {

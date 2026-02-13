@@ -36,7 +36,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/use-queries";
+import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/queries";
 import { useChatUnreadCount } from "@/hooks/use-chat-unread-count";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

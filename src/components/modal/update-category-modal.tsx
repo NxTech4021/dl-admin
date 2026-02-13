@@ -15,7 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Category } from "../league/types";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { IconLoader2 } from "@tabler/icons-react";
 
 type GameType = "SINGLES" | "DOUBLES";
@@ -150,9 +152,9 @@ export function EditCategoryModal({
       toast.success("Category updated!");
       onCategoryUpdated?.();
       onOpenChange(false);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to update category");
+    } catch (err: unknown) {
+      logger.error(err);
+      toast.error(getErrorMessage(err, "Failed to update category"));
     } finally {
       setLoading(false);
     }

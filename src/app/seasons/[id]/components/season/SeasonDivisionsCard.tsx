@@ -39,6 +39,7 @@ import { Division } from "@/constants/zod/division-schema";
 import { DivisionRowActions } from "@/components/division/division-row-actions";
 import { DivisionDetailModal } from "@/components/division/division-detail-modal";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { cn, formatDivisionLevel } from "@/lib/utils";
@@ -164,7 +165,7 @@ export default function SeasonDivisionsCard({
       toast.success("Division deleted successfully");
       onDivisionDeleted?.();
     } catch (error) {
-      console.error("Failed to delete division:", error);
+      logger.error("Failed to delete division:", error);
       toast.error("Failed to delete division");
     } finally {
       setIsDeleting(false);

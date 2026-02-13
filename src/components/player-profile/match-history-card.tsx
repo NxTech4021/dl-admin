@@ -38,8 +38,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { formatDuration } from "@/lib/utils/format";
 
-interface OpponentInfo {
+export interface OpponentInfo {
   id: string;
   name: string;
   username?: string;
@@ -48,7 +49,7 @@ interface OpponentInfo {
   role?: string;
 }
 
-interface MatchData {
+export interface MatchData {
   id: string;
   sport: string;
   matchType: string;
@@ -131,15 +132,6 @@ const getSportColor = (sport: string) => {
 const formatStatus = (status: string) => {
   if (!status) return "";
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-};
-
-// Helper to format duration in minutes to readable format
-const formatDuration = (minutes: number | null) => {
-  if (!minutes) return null;
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 };
 
 const MatchHistory: React.FC<MatchHistoryProps> = ({

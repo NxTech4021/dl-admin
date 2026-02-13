@@ -1,6 +1,7 @@
 import * as React from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { LeagueHistory, SeasonHistory } from "../utils/types";
+import { logger } from "@/lib/logger";
 // import { LeagueHistory, SeasonHistory } from "../types";
 
 export function usePlayerHistory(playerId: string) {
@@ -27,7 +28,7 @@ export function usePlayerHistory(playerId: string) {
         setLeagueHistory(response.data.data.leagues);
       }
     } catch (error) {
-      console.error("Failed to load league history:", error);
+      logger.error("Failed to load league history:", error);
     } finally {
       setHistoryLoading((prev) => ({ ...prev, leagues: false }));
     }
@@ -45,7 +46,7 @@ export function usePlayerHistory(playerId: string) {
         setSeasonHistory(response.data.data.seasons);
       }
     } catch (error) {
-      console.error("Failed to load season history:", error);
+      logger.error("Failed to load season history:", error);
     } finally {
       setHistoryLoading((prev) => ({ ...prev, seasons: false }));
     }

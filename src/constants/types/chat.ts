@@ -15,6 +15,7 @@ export interface ChatUser {
 export interface ChatParticipant extends ChatUser {
   displayName: string;
   photoURL?: string;
+  avatarUrl?: string;
   status: "online" | "offline" | "away" | "busy";
   role?: string;
   isCurrentUser?: boolean;
@@ -89,11 +90,16 @@ export interface Message {
     image?: string;
   };
   repliesTo?: Message;
-  readBy?: any[];
+  readBy?: MessageRead[];
   // Match message fields
   messageType?: 'TEXT' | 'MATCH' | 'SYSTEM';
   matchId?: string;
   matchData?: MatchData;
+  // Legacy/alternative content field
+  body?: string;
+  contentType?: string;
+  // Reactions
+  reactions?: { emoji: string; count: number; isSelected: boolean }[];
 }
 
 // Message Read Status
@@ -290,7 +296,7 @@ export interface SendMessageData {
 
 export interface ChatNavProps {
   loading: boolean;
-  user: any;
+  user: ChatUser;
   conversations: Conversation[];
   selectedConversationId: string;
   onConversationSelect?: (conversationId: string) => void;
@@ -375,7 +381,7 @@ export interface TypingIndicatorProps {
 
 // Socket Context
 export interface SocketContextType {
-  socket: any | null;
+  socket: import("socket.io-client").Socket | null;
   isConnected: boolean;
   joinThread: (threadId: string) => void;
   leaveThread: (threadId: string) => void;
@@ -401,7 +407,7 @@ export interface UseBooleanReturn {
 }
 
 // API Response Types
-export interface ChatApiResponse<T = any> {
+export interface ChatApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;

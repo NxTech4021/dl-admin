@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import type {
   ChatNavProps,
   Conversation,
+  Thread,
   UseCollapseNavReturn,
   UseBooleanReturn,
 } from "../../constants/types/chat";
@@ -48,7 +49,7 @@ const useResponsive = (): boolean => {
     const mediaQuery = window.matchMedia(`(min-width: 768px)`);
     const handler = (e: MediaQueryListEvent) => setIsMatch(e.matches);
     mediaQuery.addEventListener("change", handler);
-    handler(mediaQuery as any);
+    handler({ matches: mediaQuery.matches } as MediaQueryListEvent);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
@@ -98,7 +99,7 @@ export default function ChatNav({
 }: ChatNavProps & {
   onThreadCreated?: () => Promise<void> | void;
   forceMobileList?: boolean;
-  addThreadOptimistically?: (thread: any) => void;
+  addThreadOptimistically?: (thread: Thread) => void;
 }) {
   const navigate = useNavigate();
   const mdUp = useResponsive();

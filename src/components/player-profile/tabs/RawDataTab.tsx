@@ -74,7 +74,7 @@ export function RawDataTab({ profile }: RawDataTabProps) {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-4">
                       <div className="space-y-4">
-                        {Object.entries(q.answersJson).map(([key, value]) => (
+                        {Object.entries(q.answersJson ?? {}).map(([key, value]) => (
                           <div key={key} className="border rounded-lg p-4">
                             <h4 className="font-medium text-sm mb-3 text-foreground">
                               {formatQuestionKey(key)}

@@ -32,6 +32,8 @@ import {
 } from "@tabler/icons-react";
 import { PaymentRowActions } from "./payment-row-actions";
 import type { PaymentRecord, PaginatedPayments } from "@/constants/zod/payment-schema";
+import { getPaymentStatusBadge, getMembershipStatusBadge, getInitials, getAvatarColor } from "./payment-utils";
+import { formatCurrency } from "@/lib/utils/format";
 
 interface PaymentsDataTableProps {
   data: PaymentRecord[];
@@ -43,129 +45,6 @@ interface PaymentsDataTableProps {
   onViewDetail: (payment: PaymentRecord) => void;
   onUpdateStatus: (payment: PaymentRecord) => void;
 }
-
-const formatCurrency = (amount: number | null | undefined): string => {
-  if (amount === null || amount === undefined) return "N/A";
-  return new Intl.NumberFormat("ms-MY", {
-    style: "currency",
-    currency: "MYR",
-  }).format(amount);
-};
-
-const getInitials = (name: string | null | undefined): string => {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((word) => word.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-const getAvatarColor = (name: string): string => {
-  const colors = [
-    "bg-slate-600",
-    "bg-zinc-600",
-    "bg-stone-600",
-    "bg-emerald-600",
-    "bg-teal-600",
-    "bg-cyan-600",
-    "bg-sky-600",
-    "bg-indigo-600",
-    "bg-violet-600",
-    "bg-fuchsia-600",
-  ];
-  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
-
-const getPaymentStatusBadge = (status: string | undefined) => {
-  switch (status) {
-    case "COMPLETED":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800"
-        >
-          <IconCircleCheck className="size-3 mr-1" />
-          Paid
-        </Badge>
-      );
-    case "PENDING":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800"
-        >
-          <IconClock className="size-3 mr-1" />
-          Pending
-        </Badge>
-      );
-    case "FAILED":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800"
-        >
-          <IconAlertTriangle className="size-3 mr-1" />
-          Failed
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="outline" className="text-muted-foreground">
-          Unknown
-        </Badge>
-      );
-  }
-};
-
-const getMembershipStatusBadge = (status: string | undefined) => {
-  switch (status) {
-    case "ACTIVE":
-      return (
-        <Badge variant="default" className="capitalize text-xs">
-          Active
-        </Badge>
-      );
-    case "PENDING":
-      return (
-        <Badge variant="secondary" className="capitalize text-xs">
-          Pending
-        </Badge>
-      );
-    case "INACTIVE":
-      return (
-        <Badge variant="outline" className="capitalize text-xs text-muted-foreground">
-          Inactive
-        </Badge>
-      );
-    case "FLAGGED":
-      return (
-        <Badge variant="destructive" className="capitalize text-xs">
-          Flagged
-        </Badge>
-      );
-    case "REMOVED":
-      return (
-        <Badge variant="outline" className="capitalize text-xs text-red-600 border-red-200">
-          Removed
-        </Badge>
-      );
-    case "WAITLISTED":
-      return (
-        <Badge variant="outline" className="capitalize text-xs text-amber-600 border-amber-200">
-          Waitlisted
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="outline" className="capitalize text-xs">
-          {status?.toLowerCase() || "Unknown"}
-        </Badge>
-      );
-  }
-};
 
 // Mobile card view
 function MobilePaymentCard({
@@ -240,12 +119,12 @@ function MobilePaymentCard({
         <div className="flex items-center gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Status</p>
-            <div className="mt-0.5">{getMembershipStatusBadge(payment.status)}</div>
+            <div className="mt-0.5">{getMembershipStatusBadge(payment.status, "sm")}</div>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Amount</p>
             <p className="text-sm font-medium tabular-nums mt-0.5">
-              {formatCurrency(payment.season?.entryFee)}
+              {payment.season?.entryFee != null ? formatCurrency(payment.season.entryFee) : "N/A"}
             </p>
           </div>
         </div>
@@ -504,10 +383,10 @@ export function PaymentsDataTable({
                     </Tooltip>
                   </TableCell>
                   <TableCell className="font-medium tabular-nums">
-                    {formatCurrency(payment.season?.entryFee)}
+                    {payment.season?.entryFee != null ? formatCurrency(payment.season.entryFee) : "N/A"}
                   </TableCell>
                   <TableCell>{getPaymentStatusBadge(payment.paymentStatus)}</TableCell>
-                  <TableCell>{getMembershipStatusBadge(payment.status)}</TableCell>
+                  <TableCell>{getMembershipStatusBadge(payment.status, "sm")}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {payment.joinedAt
                       ? new Date(payment.joinedAt).toLocaleDateString("en-US", {

@@ -36,7 +36,7 @@ export default function Page() {
                     <div>
                       <h1 className="text-2xl font-semibold">Sponsors</h1>
                       <p className="text-sm text-muted-foreground">
-                        Manage sponsorship packages and their league assignments
+                        Manage sponsorship packages
                       </p>
                     </div>
                   </div>

@@ -2,7 +2,7 @@
 
 import { StatsCard } from "@/components/ui/stats-card";
 import { IconAlertCircle, IconEye, IconCheck, IconX } from "@tabler/icons-react";
-import { useDisputes } from "@/hooks/use-queries";
+import { useDisputes } from "@/hooks/queries";
 import { AnimatedStatsGrid, AnimatedStatsCard } from "@/components/ui/animated-container";
 
 export function DisputeStatsCards() {

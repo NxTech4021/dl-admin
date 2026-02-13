@@ -5,6 +5,7 @@ import { IconUsers, IconUserCheck, IconUserX } from "@tabler/icons-react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { StatsCard } from "@/components/ui/stats-card";
 import { AnimatedStatsGrid, AnimatedStatsCard } from "@/components/ui/animated-container";
+import { logger } from "@/lib/logger";
 
 /**
  * PlayerStats - Refactored with industry-standard components
@@ -47,7 +48,7 @@ export function PlayerStatsRefactored() {
       setStats(result.data);
       setError(null);
     } catch (err) {
-      console.error("Failed to fetch player stats:", err);
+      logger.error("Failed to fetch player stats:", err);
 
       // Provide user-friendly error messages
       if (err instanceof Error) {

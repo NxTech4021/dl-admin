@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronDown, ChevronRight, Mail, User, MapPin, Activity, Clock, ExternalLink } from "lucide-react"
 import { ChatRoomSingleProps } from "../../constants/types/chat"
 import { getStatusColor } from "./constants"
-import { usePlayer } from "@/hooks/use-queries"
+import { usePlayer } from "@/hooks/queries"
 
 const getInitials = (name: string) => {
   if (!name) return '?';

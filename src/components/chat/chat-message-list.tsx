@@ -7,6 +7,7 @@ import { isToday, isYesterday, format } from 'date-fns';
 import ChatMessageItem from './chat-message-item';
 import TypingIndicator from './typing-indicator';
 import { Message } from '../../constants/types/chat';
+import type { ChatParticipant } from '../../constants/types/chat';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -27,10 +28,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 interface ChatMessageListProps {
   messages: Message[];
-  participants: any[];
+  participants: ChatParticipant[];
   loading?: boolean;
   threadId?: string;
-  onReply?: (message: any) => void;
+  onReply?: (message: Message) => void;
   onDelete?: (messageId: string) => void;
 }
 

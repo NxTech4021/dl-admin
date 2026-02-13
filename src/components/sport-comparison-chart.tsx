@@ -16,7 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSportComparison } from "@/hooks/use-queries";
+import { useSportComparison } from "@/hooks/queries";
 import { formatValue as formatCurrency } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 

@@ -6,7 +6,7 @@ import { ExternalLink, Mail, MapPin } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { usePlayer } from "@/hooks/use-queries"
+import { usePlayer } from "@/hooks/queries"
 import { getStatusColor } from "./constants"
 
 interface ChatRoomParticipantDialogProps {

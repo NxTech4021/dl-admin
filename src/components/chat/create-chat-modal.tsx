@@ -16,7 +16,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAvailableUsers, useCreateThread } from '@/app/chat/hooks/chat';
-import type { AvailableUser } from '@/constants/types/chat';
+import type { AvailableUser, Thread } from '@/constants/types/chat';
 import { toast } from 'sonner';
 
 interface NewChatModalProps {
@@ -24,7 +24,7 @@ interface NewChatModalProps {
   onOpenChange: (open: boolean) => void;
   currentUserId?: string;
   onThreadCreated?: () => Promise<void> | void;
-  addThreadOptimistically?: (thread: any) => void;
+  addThreadOptimistically?: (thread: Thread) => void;
 }
 
 // Helper function to format last active time

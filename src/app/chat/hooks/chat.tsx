@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
-import { useSocket } from "@/context/socket-context";
+import { getErrorMessage } from "@/lib/api-error";
+import { useSocket } from "@/contexts/socket-context";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
+import { logger } from "@/lib/logger";
 import type {
   ChatUser,
   ThreadMember,
@@ -67,13 +69,9 @@ export function useChatData(userId?: string, selectedThreadId?: string) {
 
       setThreads(threadsData);
       return threadsData;
-    } catch (err: any) {
-      console.error("Error fetching threads:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch threads";
+    } catch (err: unknown) {
+      logger.error("Error fetching threads:", err);
+      const errorMessage = getErrorMessage(err, "Failed to fetch threads");
       setError(errorMessage);
       toast.error("Failed to load chat threads");
       setThreads([]);
@@ -219,13 +217,13 @@ export function useChatData(userId?: string, selectedThreadId?: string) {
       socket.emit("join_thread", threadId);
     });
 
-    console.log(`📥 [Socket] Joined ${threadIds.length} thread rooms for real-time updates`);
+    logger.debug(`📥 [Socket] Joined ${threadIds.length} thread rooms for real-time updates`);
 
     return () => {
       threadIds.forEach((threadId) => {
         socket.emit("leave_thread", threadId);
       });
-      console.log(`📤 [Socket] Left ${threadIds.length} thread rooms`);
+      logger.debug(`📤 [Socket] Left ${threadIds.length} thread rooms`);
     };
   }, [socket, isConnected, threads.length]); // Use threads.length to avoid re-running on every thread update
 
@@ -268,7 +266,7 @@ export function useChatData(userId?: string, selectedThreadId?: string) {
         )
       );
     } catch (error) {
-      console.error("Failed to mark thread as read:", error);
+      logger.error("Failed to mark thread as read:", error);
       // Silently fail - don't disrupt user experience
     }
   }, []);
@@ -323,13 +321,9 @@ export function useMessages(threadId?: string) {
       } else {
         setMessages([]);
       }
-    } catch (err: any) {
-      console.error("Error fetching messages:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch messages";
+    } catch (err: unknown) {
+      logger.error("Error fetching messages:", err);
+      const errorMessage = getErrorMessage(err, "Failed to fetch messages");
       setError(errorMessage);
       setMessages([]);
     } finally {
@@ -358,11 +352,11 @@ export function useMessages(threadId?: string) {
       setMessages((prev) => [...prev, optimisticMessage]);
 
       try {
-        const payload: any = {
+        const payload: { senderId: string; content: string; repliesToId?: string } = {
           senderId,
           content,
         };
-        
+
         if (repliesToId) {
           payload.repliesToId = repliesToId;
         }
@@ -387,22 +381,17 @@ export function useMessages(threadId?: string) {
         if (newMessage) {
           // Don't replace immediately - the socket broadcast will handle it
           // This prevents race conditions and duplicate messages
-          console.log('✅ Message sent successfully, waiting for socket broadcast');
+          logger.debug('✅ Message sent successfully, waiting for socket broadcast');
           return newMessage;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Remove optimistic message on error
         setMessages((prev) =>
           prev.filter((msg) => msg.id !== optimisticMessage.id)
         );
-        
-        console.error("Error sending message:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to send message";
-        toast.error(errorMessage);
+
+        logger.error("Error sending message:", err);
+        toast.error(getErrorMessage(err, "Failed to send message"));
         throw err;
       }
     },
@@ -437,16 +426,11 @@ export function useMessages(threadId?: string) {
 
         toast.success("Message deleted successfully");
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Rollback optimistic update on failure
         setMessages(originalMessages);
 
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to delete message";
-        toast.error(errorMessage);
+        toast.error(getErrorMessage(err, "Failed to delete message"));
         throw err;
       }
     },
@@ -458,7 +442,7 @@ export function useMessages(threadId?: string) {
     if (!socket || !isConnected) return;
 
     const handleNewMessage = (message: Message) => {
-      console.log('🔔 [Socket] Received new_message event:', {
+      logger.debug('🔔 [Socket] Received new_message event:', {
         messageId: message.id,
         threadId: message.threadId,
         currentThreadId: threadId,
@@ -473,7 +457,7 @@ export function useMessages(threadId?: string) {
           // Check if this exact message already exists
           const exists = prev.some(m => m.id === message.id);
           if (exists) {
-            console.log('⚠️ [Socket] Message already exists, skipping duplicate:', message.id);
+            logger.debug('⚠️ [Socket] Message already exists, skipping duplicate:', message.id);
             return prev;
           }
           
@@ -481,21 +465,21 @@ export function useMessages(threadId?: string) {
           // This handles the case where we sent the message and got the real one back
           const hasTempMessage = prev.some(m => m.id.startsWith('temp-'));
           if (hasTempMessage) {
-            console.log('🔄 [Socket] Found temp message, replacing with real message:', message.id);
+            logger.debug('🔄 [Socket] Found temp message, replacing with real message:', message.id);
             // Remove all temp messages and add the real one
             return [...prev.filter(m => !m.id.startsWith('temp-')), message];
           }
           
-          console.log('✅ [Socket] Adding new message to state:', message.id);
+          logger.debug('✅ [Socket] Adding new message to state:', message.id);
           return [...prev, message];
         });
       } else {
-        console.log('⏭️ [Socket] Message not for current thread, ignoring');
+        logger.debug('⏭️ [Socket] Message not for current thread, ignoring');
       }
     };
 
     const handleMessageDeleted = (data: { messageId: string; threadId: string }) => {
-      console.log('🗑️ [Socket] Received message_deleted event:', data);
+      logger.debug('🗑️ [Socket] Received message_deleted event:', data);
       
       if (data.threadId === threadId) {
         setMessages((prev) =>
@@ -568,11 +552,11 @@ export function useMessages(threadId?: string) {
     if (!threadId || !isConnected) return;
 
     if (currentThreadRef.current && currentThreadRef.current !== threadId) {
-      console.log('👋 [Socket] Leaving previous thread:', currentThreadRef.current);
+      logger.debug('👋 [Socket] Leaving previous thread:', currentThreadRef.current);
       leaveThread(currentThreadRef.current);
     }
 
-    console.log('🚪 [Socket] Joining thread room:', threadId);
+    logger.debug('🚪 [Socket] Joining thread room:', threadId);
     joinThread(threadId);
     currentThreadRef.current = threadId;
 
@@ -756,13 +740,9 @@ export function useThreadMembers(threadId?: string) {
       } else {
         setMembers([]);
       }
-    } catch (err: any) {
-      console.error("Error fetching thread members:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch thread members";
+    } catch (err: unknown) {
+      logger.error("Error fetching thread members:", err);
+      const errorMessage = getErrorMessage(err, "Failed to fetch thread members");
       setError(errorMessage);
       setMembers([]);
     } finally {
@@ -820,13 +800,9 @@ export function useCreateThread() {
         }
 
         throw new Error("Failed to create thread");
-      } catch (err: any) {
-        console.error("Error creating thread:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to create thread";
+      } catch (err: unknown) {
+        logger.error("Error creating thread:", err);
+        const errorMessage = getErrorMessage(err, "Failed to create thread");
         setError(errorMessage);
         toast.error(errorMessage);
         throw err;
@@ -879,13 +855,9 @@ export function useAvailableUsers(currentUserId?: string) {
         (user) => user.id !== currentUserId
       );
       setUsers(filteredUsers);
-    } catch (err: any) {
-      console.error("Error fetching available users:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to fetch users";
+    } catch (err: unknown) {
+      logger.error("Error fetching available users:", err);
+      const errorMessage = getErrorMessage(err, "Failed to fetch users");
       setError(errorMessage);
       setUsers([]);
     } finally {

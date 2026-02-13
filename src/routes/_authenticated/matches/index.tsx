@@ -34,7 +34,7 @@ import { MessageParticipantsModal } from "@/components/match/message-participant
 import { EditResultModal } from "@/components/match/edit-result-modal";
 import { EditParticipantsModal } from "@/components/match/edit-participants-modal";
 import { CancellationReviewModal } from "@/components/match/cancellation-review-modal";
-import { useMatches, useMatch } from "@/hooks/use-queries";
+import { useMatches, useMatch } from "@/hooks/queries";
 import { MatchStatusBadge } from "@/components/match/match-status-badge";
 import { MatchParticipantsDisplay } from "@/components/match/match-participants-display";
 import { Badge } from "@/components/ui/badge";

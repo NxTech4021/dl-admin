@@ -32,6 +32,7 @@ import { Membership } from "@/constants/zod/season-schema";
 import { Division } from "@/constants/zod/division-schema";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { cn } from "@/lib/utils";
 
@@ -217,10 +218,9 @@ export default function AssignDivisionModal({
       if (onAssigned) {
         await onAssigned();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error.response?.data?.error ||
-          `Failed to assign ${isBatchMode ? 'players' : isTeam ? "team" : "player"} to division`
+        getErrorMessage(error, `Failed to assign ${isBatchMode ? 'players' : isTeam ? "team" : "player"} to division`)
       );
     } finally {
       setIsAssigning(false);

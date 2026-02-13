@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconLoader2, IconTrophy, IconCalendar } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 import { Category } from "@/constants/zod/category-schema";
 
 const formatGender = (restriction: string): string => {
@@ -92,7 +93,7 @@ export default function CategoryEditModal({
           }
         })
         .catch((err) => {
-          console.error("Error fetching category:", err);
+          logger.error("Error fetching category:", err);
           setError("Failed to load category data");
         })
         .finally(() => {
@@ -160,7 +161,7 @@ export default function CategoryEditModal({
                     <span>Leagues</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {leagues.map((league: any) => (
+                    {leagues.map((league: { id: string; name: string }) => (
                       <Badge key={league.id} variant="secondary" className="text-xs">
                         {league.name}
                       </Badge>
@@ -177,7 +178,7 @@ export default function CategoryEditModal({
                     <span>Seasons</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {seasons.map((season: any) => (
+                    {seasons.map((season) => (
                       <Badge key={season.id} variant="outline" className="text-xs">
                         {season.name}
                       </Badge>

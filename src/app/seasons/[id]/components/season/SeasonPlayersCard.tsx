@@ -38,6 +38,8 @@ import {
 import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 import { cn } from "@/lib/utils";
 
+type Partnership = NonNullable<NonNullable<SeasonPlayersCardProps["season"]>["partnerships"]>[number];
+
 interface SeasonPlayersCardProps {
   memberships: Membership[];
   divisions: Division[];
@@ -56,20 +58,20 @@ interface SeasonPlayersCardProps {
       id: string;
       name: string | null;
       genderRestriction?: string;
-      genderCategory?: string;
-      gameType?: string;
+      genderCategory?: string | null;
+      gameType?: string | null;
       matchFormat?: string | null;
     } | null;
     partnerships?: Array<{
       id: string;
-      captainId: string;
-      partnerId: string;
-      seasonId: string;
+      captainId?: string;
+      partnerId?: string;
+      seasonId?: string;
       divisionId?: string | null;
       status: string;
       captain: {
         id: string;
-        name: string | null;
+        name?: string | null;
         email?: string;
         username?: string;
         displayUsername?: string | null;
@@ -77,7 +79,7 @@ interface SeasonPlayersCardProps {
       };
       partner: {
         id: string;
-        name: string | null;
+        name?: string | null;
         email?: string;
         username?: string;
         displayUsername?: string | null;
@@ -165,12 +167,12 @@ export default function SeasonPlayersCard({
 
   const getUsername = (user: Membership["user"]) => {
     if (!user) return "unknown";
-    return (user as any).displayUsername || user.username || user.email?.split("@")[0] || "unknown";
+    return (user as Membership["user"] & { displayUsername?: string })?.displayUsername || user.username || user.email?.split("@")[0] || "unknown";
   };
 
   const getGameType = (): "SINGLES" | "DOUBLES" | null => {
     // Check category gameType (both camelCase and snake_case)
-    const categoryGameType = season?.category?.gameType || (season?.category as any)?.game_type;
+    const categoryGameType = season?.category?.gameType || (season?.category as (NonNullable<typeof season>["category"]) & { game_type?: string })?.game_type;
     if (categoryGameType) {
       const normalized = String(categoryGameType).toUpperCase().trim();
       if (normalized === "DOUBLES") return "DOUBLES";
@@ -192,14 +194,14 @@ export default function SeasonPlayersCard({
 
     // Check divisions for game type
     if (divisions && divisions.length > 0) {
-      const doublesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).gameType;
+      const doublesDivision = divisions.find((div: Division) => {
+        const divGameType = div.gameType;
         return divGameType && String(divGameType).toUpperCase().trim() === "DOUBLES";
       });
       if (doublesDivision) return "DOUBLES";
 
-      const singlesDivision = divisions.find((div: any) => {
-        const divGameType = div.gameType || (div as any).gameType;
+      const singlesDivision = divisions.find((div: Division) => {
+        const divGameType = div.gameType;
         return divGameType && String(divGameType).toUpperCase().trim() === "SINGLES";
       });
       if (singlesDivision) return "SINGLES";
@@ -258,7 +260,7 @@ export default function SeasonPlayersCard({
 
     // Final fallback to general rating
     if (!rating || rating === 0) {
-      const generalRating = (questionnaireResponse.result as any).rating;
+      const generalRating = questionnaireResponse.result.rating;
       if (generalRating && generalRating > 0) {
         rating = generalRating;
       }
@@ -279,9 +281,12 @@ export default function SeasonPlayersCard({
   };
 
   // Find partnership for a given user ID
+  // Fall back to nested captain.id/partner.id when FK fields are omitted by backend
   const findPartnership = (userId: string) => {
     return season?.partnerships?.find(
-      (p) => p.captainId === userId || p.partnerId === userId
+      (p) =>
+        (p.captainId ?? p.captain?.id) === userId ||
+        (p.partnerId ?? p.partner?.id) === userId
     );
   };
 
@@ -296,9 +301,7 @@ export default function SeasonPlayersCard({
       return true;
     }
 
-    const partnership = season?.partnerships?.find(
-      (p) => p.captainId === member.userId || p.partnerId === member.userId
-    );
+    const partnership = findPartnership(member.userId || "");
     if (partnership?.divisionId !== null && partnership?.divisionId !== undefined) {
       return true;
     }
@@ -386,7 +389,7 @@ export default function SeasonPlayersCard({
     const grouped: Array<{
       type: "partnership" | "individual";
       memberships: Membership[];
-      partnership?: any;
+      partnership?: Partnership;
     }> = [];
 
     for (const member of players) {
@@ -394,11 +397,10 @@ export default function SeasonPlayersCard({
 
       const partnership = findPartnership(member.userId || "");
       if (partnership) {
-        const partnerId =
-          partnership.captainId === member.userId
-            ? partnership.partnerId
-            : partnership.captainId;
-        const partnerMembership = getMembershipByUserId(partnerId);
+        const captainId = partnership.captainId ?? partnership.captain?.id;
+        const resolvedPartnerId = partnership.partnerId ?? partnership.partner?.id;
+        const partnerId = captainId === member.userId ? resolvedPartnerId : captainId;
+        const partnerMembership = getMembershipByUserId(partnerId ?? "");
 
         if (partnerMembership) {
           grouped.push({
@@ -407,7 +409,7 @@ export default function SeasonPlayersCard({
             partnership,
           });
           processed.add(member.userId || "");
-          processed.add(partnerId);
+          processed.add(partnerId ?? "");
         } else {
           grouped.push({
             type: "individual",
@@ -615,12 +617,12 @@ export default function SeasonPlayersCard({
                     : rating1.value > 0 ? rating1.value : rating2.value;
 
                   const divisionId = partnership?.divisionId || member1.divisionId || member2.divisionId || null;
-                  const isGroupSelected = member1.userId && member2.userId && 
-                    selectedPlayerIds.has(member1.userId) && selectedPlayerIds.has(member2.userId);
+                  const isGroupSelected = !!(member1.userId && member2.userId &&
+                    selectedPlayerIds.has(member1.userId) && selectedPlayerIds.has(member2.userId));
 
                   return (
                     <motion.tr
-                      key={`partnership-${partnership.id}`}
+                      key={`partnership-${partnership?.id}`}
                       variants={tableRowVariants}
                       transition={fastTransition}
                       className="hover:bg-muted/30 border-b transition-colors"

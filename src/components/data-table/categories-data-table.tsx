@@ -61,6 +61,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance from "@/lib/endpoints";
 import { categorySchema, Category } from "@/constants/zod/category-schema";
 import { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -450,7 +452,7 @@ export function CategoriesDataTable({
         const parsedData = categorySchema.array().parse(result.data);
         setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        logger.error("Failed to fetch categories:", error);
       } finally {
         setIsLoading(false);
       }
@@ -475,7 +477,7 @@ export function CategoriesDataTable({
         setData(parsedData);
       }
     } catch (error) {
-      console.error("Failed to refresh categories:", error);
+      logger.error("Failed to refresh categories:", error);
     } finally {
       setIsLoading(false);
     }
@@ -503,7 +505,7 @@ export function CategoriesDataTable({
         );
         setRowSelection((prev) => {
           const newSelection = { ...prev };
-          delete (newSelection as any)[categoryToDelete.id];
+          delete (newSelection as Record<string, boolean>)[categoryToDelete.id];
           return newSelection;
         });
         setDeleteModalOpen(false);
@@ -512,11 +514,10 @@ export function CategoriesDataTable({
           `Category "${categoryToDelete.name}" deleted successfully`
         );
       }
-    } catch (error: any) {
-      console.error("Failed to delete category:", error);
+    } catch (error: unknown) {
+      logger.error("Failed to delete category:", error);
       toast.error(
-        error.response?.data?.message ||
-          `Failed to delete category "${categoryToDelete.name}"`
+        getErrorMessage(error, `Failed to delete category "${categoryToDelete.name}"`)
       );
     } finally {
       setIsDeleting(false);
@@ -549,8 +550,8 @@ export function CategoriesDataTable({
             endpoints.categories.delete(selectedIds[i])
           );
           successCount++;
-        } catch (error: any) {
-          console.error(
+        } catch (error: unknown) {
+          logger.error(
             `Failed to delete category ${selectedNames[i]}:`,
             error
           );
@@ -588,8 +589,8 @@ export function CategoriesDataTable({
               : `Including: ${failedCategories.slice(0, 3).join(", ")} and others`,
         });
       }
-    } catch (error: any) {
-      console.error("Failed to delete categories:", error);
+    } catch (error: unknown) {
+      logger.error("Failed to delete categories:", error);
       toast.error("An unexpected error occurred during bulk deletion");
     } finally {
       setIsDeleting(false);

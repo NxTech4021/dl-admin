@@ -9,7 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Season, FormatDateFunction, Category } from "./types";
+import { Season } from "@/constants/zod/season-schema";
+import { FormatDateFunction, Category } from "./types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,8 +88,8 @@ export function SeasonCard({
                   <div>
                     <p className="font-medium">{season.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatDate(season.startDate)} -{" "}
-                      {formatDate(season.endDate)}
+                      {formatDate(String(season.startDate ?? ""))} -{" "}
+                      {formatDate(String(season.endDate ?? ""))}
                     </p>
                   </div>
                 </div>

@@ -23,7 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface PlayerData {
   id: string;
@@ -104,10 +106,10 @@ export function EditPlayerModal({ player, onUpdate }: EditPlayerModalProps) {
         setOpen(false);
         onUpdate?.(response.data.data);
       }
-    } catch (error: any) {
-      console.error("Failed to update player:", error);
+    } catch (error: unknown) {
+      logger.error("Failed to update player:", error);
       toast.error(
-        error.response?.data?.message || "Failed to update player"
+        getErrorMessage(error, "Failed to update player")
       );
     } finally {
       setIsLoading(false);

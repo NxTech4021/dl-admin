@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StaggerContainer, StaggerItem } from "@/components/ui/animated-container";
-import { useDashboardKPI, useSportMetrics } from "@/hooks/use-queries";
+import { useDashboardKPI, useSportMetrics } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {

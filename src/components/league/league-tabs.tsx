@@ -34,7 +34,6 @@ import {
   League,
   Player,
   Division,
-  Season,
   Category,
   Sponsor,
   GetLocationLabelFunction,
@@ -43,6 +42,7 @@ import {
   FormatDateFunction,
   CalculateWinRateFunction,
 } from "./types";
+import { Season } from "@/constants/zod/season-schema";
 
 interface LeagueTabsProps {
   league: League;

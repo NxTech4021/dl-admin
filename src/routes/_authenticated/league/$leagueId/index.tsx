@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import {
   IconUserCircle,
@@ -31,6 +32,7 @@ import type {
   JoinType,
   LeagueStatus,
   Sponsorship,
+  League,
 } from "@/constants/types/league";
 
 import {
@@ -114,7 +116,7 @@ function LeagueDetailPage() {
       }
       setLeague(data);
     } catch (error) {
-      console.error("Failed to fetch league:", error);
+      logger.error("Failed to fetch league:", error);
       toast.error("Failed to load league details");
     } finally {
       setIsLoading(false);
@@ -290,7 +292,7 @@ function LeagueDetailPage() {
                   {/* Main Details - spans 2 columns */}
                   <div className="lg:col-span-2">
                     <LeagueDetailsSection
-                      league={league as any}
+                      league={league as unknown as League}
                       onLeagueUpdated={fetchLeague}
                       formatLocation={formatLocation}
                       getSportLabel={getSportLabel}
@@ -403,7 +405,7 @@ function LeagueDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <LeagueSeasonsWrapper
-                    seasons={seasons as Season[]}
+                    seasons={seasons as unknown as Season[]}
                     leagueId={leagueId}
                     leagueName={league.name}
                     onRefresh={fetchLeague}
@@ -425,7 +427,7 @@ function LeagueDetailPage() {
                   <LeagueSponsorsSection
                     sponsorships={sponsorships}
                     leagueId={leagueId}
-                    onSponsorDeleted={fetchLeague}
+                    onSponsorChanged={fetchLeague}
                   />
                 </CardContent>
               </Card>

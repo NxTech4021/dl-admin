@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 const DivisionsDataTable = lazy(() =>
   import("@/components/data-table/divisions-data-table").then((mod) => ({
@@ -52,10 +53,10 @@ function DivisionsPage() {
   const fetchSeasons = useCallback(async () => {
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
-      const seasonsData = response.data?.data || response.data || [];
+      const seasonsData = response.data?.data ?? [];
       setSeasons(Array.isArray(seasonsData) ? seasonsData : []);
     } catch (error) {
-      console.error("Failed to fetch seasons:", error);
+      logger.error("Failed to fetch seasons:", error);
     }
   }, []);
 

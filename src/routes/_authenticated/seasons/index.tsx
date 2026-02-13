@@ -26,6 +26,7 @@ import {
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 const SPORT_OPTIONS = [
   { value: "TENNIS", label: "Tennis" },
@@ -82,15 +83,9 @@ function SeasonsPage() {
     try {
       const response = await axiosInstance.get(endpoints.season.getAll);
 
-      let seasonsData: any[] = [];
+      let seasonsData: unknown[] = [];
 
-      if (Array.isArray(response.data)) {
-        seasonsData = response.data;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
-        seasonsData = response.data.data;
-      } else if (response.data?.seasons && Array.isArray(response.data.seasons)) {
-        seasonsData = response.data.seasons;
-      }
+      seasonsData = response.data?.data ?? [];
 
       if (!seasonsData || seasonsData.length === 0) {
         setData([]);
@@ -101,11 +96,11 @@ function SeasonsPage() {
       setData(parsedData);
       setError(null);
     } catch (err) {
-      console.error("Failed to fetch seasons:", err);
+      logger.error("Failed to fetch seasons:", err);
 
       if (err instanceof z.ZodError) {
         setError("Invalid data format");
-        console.error("Validation errors:", err.issues);
+        logger.error("Validation errors:", err.issues);
       } else if (err instanceof Error) {
         if (err.message.includes("Network Error")) {
           setError("Network error");

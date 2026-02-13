@@ -1,6 +1,0 @@
-import{Y as e}from"./index-CyUfinnt.js";/**
- * @license @tabler/icons-react v3.34.1 - MIT
- *
- * This source code is licensed under the MIT license.
- * See the LICENSE file in the root directory of this source tree.
- */const l=[["path",{d:"M14 3v4a1 1 0 0 0 1 1h4",key:"svg-0"}],["path",{d:"M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z",key:"svg-1"}],["path",{d:"M9 17h6",key:"svg-2"}],["path",{d:"M9 13h6",key:"svg-3"}]],t=e("outline","file-description","FileDescription",l),n=[{value:"PICKLEBALL",label:"Pickleball"},{value:"TENNIS",label:"Tennis"},{value:"PADEL",label:"Padel"}],s=[{value:"kuala-lumpur",label:"Kuala Lumpur"},{value:"petaling-jaya",label:"Petaling Jaya"},{value:"subang-jaya",label:"Subang Jaya"},{value:"shah-alam",label:"Shah Alam"},{value:"klang",label:"Klang"},{value:"ampang",label:"Ampang"},{value:"cheras",label:"Cheras"},{value:"puchong",label:"Puchong"},{value:"cyberjaya",label:"Cyberjaya"},{value:"putrajaya",label:"Putrajaya"}],r=[{value:"ACTIVE",label:"Active"},{value:"UPCOMING",label:"Upcoming"}],c=a=>{switch(a){case"TENNIS":return"#ABFE4D";case"PICKLEBALL":return"#A04DFE";case"PADEL":return"#4DABFE";default:return"#6B7280"}};export{t as I,s as L,n as S,r as a,c as g};

@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import axiosInstance from "@/lib/endpoints";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Mail, Loader2, UserPlus } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface AdminInviteModalProps {
   open: boolean;
@@ -42,31 +44,25 @@ export default function AdminInviteModal({
       const tempUsername =
         email.split("@")[0] + Math.floor(Math.random() * 1000);
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/invite`,
+      const res = await axiosInstance.post(
+        "/api/admin/invite",
         {
           email,
           name,
           username: tempUsername,
         }
       );
-      console.log("Success toast about to fire");
+      logger.debug("Success toast about to fire");
       toast.success(res.data.message || "Invitation sent successfully!");
 
-      console.log("email", res.data);
+      logger.debug("email", res.data);
       setSuccess(res.data.message);
       setEmail("");
       setName("");
       // Close modal after successful invite
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to send invite");
-      const message =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to send invite";
-
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to send invite");
       toast.error(message);
       setError(message);
     } finally {

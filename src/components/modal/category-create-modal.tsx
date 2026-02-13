@@ -38,6 +38,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 type GameType = "SINGLES" | "DOUBLES";
 type GenderType = "MALE" | "FEMALE" | "MIXED" | "OPEN";
@@ -177,7 +178,7 @@ export default function CategoryCreateModal({
           setExistingCategories(Array.isArray(categoriesData) ? categoriesData : []);
         })
         .catch((err) => {
-          console.error("Error fetching categories:", err);
+          logger.error("Error fetching categories:", err);
           setExistingCategories([]);
         })
         .finally(() => setCategoriesLoading(false));

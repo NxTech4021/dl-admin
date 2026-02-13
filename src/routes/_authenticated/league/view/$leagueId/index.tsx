@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ import type {
   JoinType,
   LeagueStatus,
   Sponsorship,
+  League,
 } from "@/constants/types/league";
 
 // Lazy load components
@@ -119,7 +121,7 @@ function LeagueViewPage() {
       }
       setLeague(data);
     } catch (error) {
-      console.error("Failed to fetch league:", error);
+      logger.error("Failed to fetch league:", error);
       toast.error("Failed to load league details");
     } finally {
       setIsLoading(false);
@@ -320,7 +322,7 @@ function LeagueViewPage() {
                 {/* Main Details - spans 2 columns */}
                 <div className="lg:col-span-2">
                   <LeagueDetailsSection
-                    league={league as any}
+                    league={league as unknown as League}
                     onLeagueUpdated={fetchLeague}
                     formatLocation={formatLocation}
                     getSportLabel={getSportLabel}
@@ -394,7 +396,7 @@ function LeagueViewPage() {
               </CardHeader>
               <CardContent>
                 <LeagueSeasonsWrapper
-                  seasons={seasons as Season[]}
+                  seasons={seasons as unknown as Season[]}
                   leagueId={leagueId}
                   leagueName={league.name}
                   onRefresh={fetchLeague}
@@ -416,7 +418,7 @@ function LeagueViewPage() {
                 <LeagueSponsorsSection
                   sponsorships={sponsorships}
                   leagueId={leagueId}
-                  onSponsorDeleted={fetchLeague}
+                  onSponsorChanged={fetchLeague}
                 />
               </CardContent>
             </Card>

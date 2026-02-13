@@ -42,6 +42,7 @@ import MatchResultsDrawer from "./MatchResultsDrawer";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // schemas & types
 
@@ -405,7 +406,7 @@ export default function SeasonLeaderboardCard({
           setExpandedDivisions(new Set([parsed[0].id]));
         }
       } catch (err) {
-        console.error("Failed to fetch divisions:", err);
+        logger.error("Failed to fetch divisions:", err);
         setDivisions([]);
       } finally {
         setIsLoadingDivisions(false);
@@ -491,7 +492,7 @@ export default function SeasonLeaderboardCard({
           return prev;
         });
       } catch (err) {
-        console.error("Failed to fetch standings:", err);
+        logger.error("Failed to fetch standings:", err);
         setDivisionDataMap((prev) => {
           const data = prev.get(divisionId);
           if (data) {
@@ -550,7 +551,7 @@ export default function SeasonLeaderboardCard({
           return prev;
         });
       } catch (err) {
-        console.error("Failed to fetch results:", err);
+        logger.error("Failed to fetch results:", err);
         setDivisionDataMap((prev) => {
           const data = prev.get(divisionId);
           if (data) {

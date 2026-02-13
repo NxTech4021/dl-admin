@@ -19,12 +19,20 @@ import {
   AnimatedGrid,
   AnimatedGridItem,
 } from "@/components/ui/animated-container";
+import {
+  usePlayerRegistrationReport,
+  usePlayerRetentionReport,
+} from "@/hooks/queries";
+import { formatValue } from "@/lib/utils/format";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   component: ReportsPage,
 });
 
 function ReportsPage() {
+  const { data: regData } = usePlayerRegistrationReport();
+  const { data: retData } = usePlayerRetentionReport();
+
   const reportCategories = [
     {
       title: "Player Reports",
@@ -34,11 +42,7 @@ function ReportsPage() {
           description: "Track player engagement, match participation, and activity trends over time.",
           icon: Users,
           href: "/reports/player-activity",
-          status: "available" as const,
-          metrics: [
-            { label: "Active Players", value: "1,234" },
-            { label: "This Month", value: "+56" },
-          ],
+          status: "coming-soon" as const,
         },
         {
           title: "Player Registration Report",
@@ -46,6 +50,12 @@ function ReportsPage() {
           icon: UserCheck,
           href: "/reports/player-registration",
           status: "available" as const,
+          metrics: regData
+            ? [
+                { label: "Total Registrations", value: formatValue(regData.totalRegistrations) },
+                { label: "New This Month", value: `+${formatValue(regData.newThisMonth)}` },
+              ]
+            : undefined,
         },
         {
           title: "Player Retention Report",
@@ -53,6 +63,12 @@ function ReportsPage() {
           icon: TrendingUp,
           href: "/reports/player-retention",
           status: "available" as const,
+          metrics: retData
+            ? [
+                { label: "Active Players", value: formatValue(retData.activePlayers) },
+                { label: "Retention Rate", value: formatValue(retData.retentionRate, "percentage") },
+              ]
+            : undefined,
         },
       ],
     },
@@ -64,11 +80,7 @@ function ReportsPage() {
           description: "Comprehensive match statistics including scores, durations, and outcomes.",
           icon: Swords,
           href: "/reports/match-statistics",
-          status: "available" as const,
-          metrics: [
-            { label: "Total Matches", value: "3,456" },
-            { label: "Completed", value: "3,102" },
-          ],
+          status: "coming-soon" as const,
         },
         {
           title: "Season Performance Report",

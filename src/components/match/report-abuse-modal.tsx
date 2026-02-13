@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Match, MatchReportCategory } from "@/constants/zod/match-schema";
-import { useReportMatchAbuse } from "@/hooks/use-queries";
+import { useReportMatchAbuse } from "@/hooks/queries";
 import { IconFlag, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 

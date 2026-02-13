@@ -34,7 +34,7 @@ export interface Questionnaire {
   qHash: string;
   completedAt: string | null;
   startedAt: string;
-  answersJson: any;
+  answersJson: Record<string, unknown> | null;
   result: {
     rating: number;
     confidence: string;
@@ -42,7 +42,7 @@ export interface Questionnaire {
     singles?: number;
     doubles?: number;
     source?: string;
-    detail?: any;
+    detail?: Record<string, unknown>;
   } | null;
 }
 

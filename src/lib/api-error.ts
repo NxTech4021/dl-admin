@@ -7,7 +7,6 @@ export interface ApiErrorResponse {
   response?: {
     data?: {
       message?: string;
-      error?: string;
     };
     status?: number;
   };
@@ -38,7 +37,6 @@ export function getErrorMessage(
   if (isApiError(error)) {
     return (
       error.response?.data?.message ||
-      error.response?.data?.error ||
       error.message ||
       fallback
     );

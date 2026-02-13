@@ -7,6 +7,10 @@ import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+
+// Import types
+import type { Conversation, ChatParticipant } from "@/constants/types/chat";
 
 // Import constants
 import {
@@ -19,11 +23,11 @@ import {
 import ChatMatchBadge from "./chat-match-badge";
 import ChatContextBadge from "./chat-context-badge";
 
-const useResponsive = (query: any, start: any) => {
+const useResponsive = (_query: string, _start: string) => {
   const [isMatch, setIsMatch] = useState(false);
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: 768px)`);
-    const handler = (e: any) => setIsMatch(e.matches);
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMatch(e.matches);
     mediaQuery.addEventListener("change", handler);
     handler(mediaQuery);
     return () => mediaQuery.removeEventListener("change", handler);
@@ -38,12 +42,12 @@ const getPreviewText = (text?: string, maxWords = 6) => {
   return words.slice(0, maxWords).join(" ") + "...";
 };
 
-const useGetNavItem = ({ conversation, currentUserId }: any) => {
+const useGetNavItem = ({ conversation, currentUserId }: { conversation: Conversation; currentUserId?: string }) => {
   const isGroup = conversation?.type === "group";
 
   const otherParticipants = isGroup
     ? conversation?.participants || []
-    : conversation?.participants?.filter((p: any) => p.id !== currentUserId) ||
+    : conversation?.participants?.filter((p: ChatParticipant) => p.id !== currentUserId) ||
       [];
 
   // Display name logic - use conversation.displayName as primary fallback for direct chats
@@ -60,7 +64,7 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
   const lastActivity = conversation?.lastMessage?.createdAt;
   const hasOnlineInGroup =
     isGroup &&
-    conversation?.participants?.some((p: any) => p.status === "online");
+    conversation?.participants?.some((p: ChatParticipant) => p.status === "online");
 
   // Extract division/season context for group chats
   const seasonName = conversation?.division?.season?.name;
@@ -79,7 +83,7 @@ const useGetNavItem = ({ conversation, currentUserId }: any) => {
 
   // Find sender from participants using ID (more reliable than name matching)
   const senderParticipant = senderId
-    ? conversation?.participants?.find((p: any) => p.id === senderId)
+    ? conversation?.participants?.find((p: ChatParticipant) => p.id === senderId)
     : null;
 
   // Fallback to message sender data if participant not found
@@ -141,7 +145,7 @@ const getGroupInitials = (groupName: string) => {
 // --- CHAT NAV ITEM COMPONENT ---
 interface ChatNavItemProps {
   selected?: boolean;
-  conversation: any;
+  conversation: Conversation;
   onCloseMobile?: () => void;
   hideContextBadge?: boolean;
 }
@@ -186,7 +190,7 @@ const ChatNavItem = ({
       if (!mdUp && onCloseMobile) onCloseMobile();
       navigate({ to: `${paths.dashboard.chat}?id=${conversation.id}` });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   }, [conversation.id, mdUp, onCloseMobile, navigate]);
 

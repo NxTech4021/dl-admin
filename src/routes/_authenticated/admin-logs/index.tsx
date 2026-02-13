@@ -32,7 +32,7 @@ import {
 } from "@tabler/icons-react";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterBar } from "@/components/ui/filter-bar";
-import { FilterSelect, type FilterOption } from "@/components/ui/filter-select";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -58,40 +58,17 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { DateRangePicker, ExportButton, type ExportColumn, type DateRange } from "@/components/shared";
-import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { AnimatedFilterBar, AnimatedEmptyState, AnimatedContainer } from "@/components/ui/animated-container";
+import { AnimatedFilterBar, AnimatedEmptyState } from "@/components/ui/animated-container";
 import { tableContainerVariants, tableRowVariants, fastTransition } from "@/lib/animation-variants";
-
-interface AdminLogEntry {
-  id: string;
-  actionType: string;
-  targetType: string;
-  targetId: string | null;
-  description: string;
-  oldValue: Record<string, unknown> | null;
-  newValue: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-  admin: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-  } | null;
-}
-
-interface LogsResponse {
-  success: boolean;
-  data: AdminLogEntry[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+import {
+  useAdminLogs,
+  useAdminLogActionTypes,
+  useAdminLogTargetTypes,
+  useUserActivityLogs,
+} from "@/hooks/queries";
+import type { AdminLogEntry, UserActivityLogEntry } from "@/constants/zod/admin-log-schema";
 
 // Get action type badge styling with dark mode support
 const getActionTypeBadgeClass = (actionType: string): string => {
@@ -172,82 +149,71 @@ export const Route = createFileRoute("/_authenticated/admin-logs/")({
   component: AdminLogsPage,
 });
 
-function AdminLogsPage() {
-  const [logs, setLogs] = React.useState<AdminLogEntry[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [pagination, setPagination] = React.useState({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0,
-  });
+type ActorType = "admin" | "player";
 
+function AdminLogsPage() {
+  const [actorType, setActorType] = React.useState<ActorType>("admin");
+  const [page, setPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [selectedActionType, setSelectedActionType] = React.useState<string | undefined>();
   const [selectedTargetType, setSelectedTargetType] = React.useState<string | undefined>();
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
-
   const [selectedLog, setSelectedLog] = React.useState<AdminLogEntry | null>(null);
-  const [actionTypes, setActionTypes] = React.useState<FilterOption[]>([]);
-  const [targetTypes, setTargetTypes] = React.useState<FilterOption[]>([]);
+  const [selectedPlayerLog, setSelectedPlayerLog] = React.useState<UserActivityLogEntry | null>(null);
 
+  // Debounce search input (300ms)
   React.useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        const [actionTypesRes, targetTypesRes] = await Promise.all([
-          axiosInstance.get(endpoints.admin.logs.getActionTypes),
-          axiosInstance.get(endpoints.admin.logs.getTargetTypes),
-        ]);
-        if (actionTypesRes.data.success) setActionTypes(actionTypesRes.data.data);
-        if (targetTypesRes.data.success) setTargetTypes(targetTypesRes.data.data);
-      } catch (err) {
-        console.error("Failed to fetch filter options:", err);
-      }
-    };
-    fetchFilterOptions();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const fetchLogs = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      params.append("page", String(pagination.page));
-      params.append("limit", String(pagination.limit));
-      if (searchQuery) params.append("search", searchQuery);
-      if (selectedActionType) params.append("actionType", selectedActionType);
-      if (selectedTargetType) params.append("targetType", selectedTargetType);
-      if (dateRange?.from) params.append("startDate", dateRange.from.toISOString());
-      if (dateRange?.to) params.append("endDate", dateRange.to.toISOString());
+  // Build filters object for the query
+  const filters = React.useMemo(() => ({
+    page,
+    limit: 50,
+    search: debouncedSearch || undefined,
+    actionType: selectedActionType,
+    targetType: selectedTargetType,
+    startDate: dateRange?.from?.toISOString(),
+    endDate: dateRange?.to?.toISOString(),
+  }), [page, debouncedSearch, selectedActionType, selectedTargetType, dateRange]);
 
-      const response = await axiosInstance.get<LogsResponse>(
-        `${endpoints.admin.logs.getAll}?${params.toString()}`
-      );
+  // Admin log hooks
+  const isAdmin = actorType === "admin";
+  const adminLogsQuery = useAdminLogs(filters, { enabled: isAdmin });
+  const { data: actionTypes = [] } = useAdminLogActionTypes();
+  const { data: targetTypes = [] } = useAdminLogTargetTypes();
 
-      if (response.data.success) {
-        setLogs(response.data.data);
-        setPagination(response.data.pagination);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to fetch admin logs";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pagination.page, pagination.limit, searchQuery, selectedActionType, selectedTargetType, dateRange]);
+  // Player activity log hooks
+  const playerLogsQuery = useUserActivityLogs(filters, { enabled: !isAdmin });
 
-  React.useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  // Unified data from whichever source is active
+  const activeQuery = isAdmin ? adminLogsQuery : playerLogsQuery;
+  const { isLoading, isError, error, refetch } = activeQuery;
+
+  const adminLogs = adminLogsQuery.data?.data ?? [];
+  const playerLogs = playerLogsQuery.data?.data ?? [];
+  const pagination = (isAdmin ? adminLogsQuery.data?.pagination : playerLogsQuery.data?.pagination)
+    ?? { page: 1, limit: 50, total: 0, totalPages: 0 };
+
+  const handleActorToggle = (type: ActorType) => {
+    setActorType(type);
+    setSelectedActionType(undefined);
+    setSelectedTargetType(undefined);
+    setPage(1);
+  };
 
   const handleClearFilters = () => {
     setSearchQuery("");
+    setDebouncedSearch("");
     setSelectedActionType(undefined);
     setSelectedTargetType(undefined);
     setDateRange(undefined);
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPage(1);
   };
 
   const formatDate = (dateString: string) => {
@@ -304,21 +270,43 @@ function AdminLogsPage() {
         <div className="@container/main flex flex-1 flex-col gap-2">
           <PageHeader
             icon={IconHistory}
-            title="Admin Activity Logs"
-            description="View and audit all administrative actions performed in the system"
+            title="Activity Logs"
+            description="View and audit all administrative and player actions performed in the system"
             actions={
               <>
-                <Button variant="outline" size="sm" onClick={fetchLogs}>
+                <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
+                  <Button
+                    variant={isAdmin ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => handleActorToggle("admin")}
+                  >
+                    <IconShield className="size-3.5 mr-1.5" />
+                    Admin
+                  </Button>
+                  <Button
+                    variant={!isAdmin ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => handleActorToggle("player")}
+                  >
+                    <IconUser className="size-3.5 mr-1.5" />
+                    Player
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
                   <IconRefresh className="mr-2 size-4" />
                   Refresh
                 </Button>
-                <ExportButton
-                  data={logs}
-                  columns={exportColumns}
-                  filename="admin-logs"
-                  formats={["csv", "excel"]}
-                  size="sm"
-                />
+                {isAdmin && (
+                  <ExportButton
+                    data={adminLogs}
+                    columns={exportColumns}
+                    filename="admin-logs"
+                    formats={["csv", "excel"]}
+                    size="sm"
+                  />
+                )}
               </>
             }
           >
@@ -327,20 +315,19 @@ function AdminLogsPage() {
                 onClearAll={handleClearFilters}
                 showClearButton={!!(searchQuery || selectedActionType || selectedTargetType || dateRange)}
               >
-                <SearchInput
-                  value={searchQuery}
-                  onChange={(value) => {
-                    setSearchQuery(value);
-                    setPagination((prev) => ({ ...prev, page: 1 }));
-                  }}
-                  placeholder="Search logs..."
-                  className="flex-1 min-w-[200px] max-w-sm"
-                />
+                {isAdmin && (
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={(value) => setSearchQuery(value)}
+                    placeholder="Search logs..."
+                    className="flex-1 min-w-[200px] max-w-sm"
+                  />
+                )}
                 <FilterSelect
                   value={selectedActionType}
                   onChange={(value) => {
                     setSelectedActionType(value);
-                    setPagination((prev) => ({ ...prev, page: 1 }));
+                    setPage(1);
                   }}
                   options={actionTypes}
                   allLabel="All Actions"
@@ -350,7 +337,7 @@ function AdminLogsPage() {
                   value={selectedTargetType}
                   onChange={(value) => {
                     setSelectedTargetType(value);
-                    setPagination((prev) => ({ ...prev, page: 1 }));
+                    setPage(1);
                   }}
                   options={targetTypes}
                   allLabel="All Targets"
@@ -360,7 +347,7 @@ function AdminLogsPage() {
                   value={dateRange}
                   onChange={(range) => {
                     setDateRange(range);
-                    setPagination((prev) => ({ ...prev, page: 1 }));
+                    setPage(1);
                   }}
                   placeholder="Date range"
                   className="w-[280px]"
@@ -377,17 +364,19 @@ function AdminLogsPage() {
                   <Skeleton key={i} className="h-14 w-full rounded-md" />
                 ))}
               </div>
-            ) : error ? (
+            ) : isError ? (
               <div className="flex flex-col items-center justify-center py-16 text-center rounded-md border bg-muted/10">
                 <IconAlertCircle className="size-12 text-destructive mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Failed to Load Logs</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
-                <Button variant="outline" onClick={fetchLogs} className="gap-2">
+                <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                  {error instanceof Error ? error.message : "Failed to fetch admin logs"}
+                </p>
+                <Button variant="outline" onClick={() => refetch()} className="gap-2">
                   <IconRefresh className="size-4" />
                   Retry
                 </Button>
               </div>
-            ) : logs.length > 0 ? (
+            ) : (isAdmin ? adminLogs.length : playerLogs.length) > 0 ? (
               <div className="space-y-3">
                 {/* Header with total count */}
                 <div className="flex items-center justify-between">
@@ -403,20 +392,24 @@ function AdminLogsPage() {
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <TableHead className="w-14 py-2.5 pl-4 font-medium text-xs">#</TableHead>
                         <TableHead className="w-44 py-2.5 font-medium text-xs">Date</TableHead>
-                        <TableHead className="w-56 py-2.5 font-medium text-xs">Admin</TableHead>
+                        <TableHead className="w-56 py-2.5 font-medium text-xs">
+                          {isAdmin ? "Admin" : "Player"}
+                        </TableHead>
                         <TableHead className="w-40 py-2.5 font-medium text-xs">Action</TableHead>
                         <TableHead className="w-36 py-2.5 font-medium text-xs">Target</TableHead>
-                        <TableHead className="py-2.5 font-medium text-xs">Description</TableHead>
+                        <TableHead className="py-2.5 font-medium text-xs">
+                          {isAdmin ? "Description" : "Details"}
+                        </TableHead>
                         <TableHead className="w-16 py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <motion.tbody
-                      key={`${searchQuery}-${selectedActionType || ''}-${selectedTargetType || ''}-${pagination.page}`}
+                      key={`${actorType}-${debouncedSearch}-${selectedActionType || ''}-${selectedTargetType || ''}-${page}`}
                       initial="hidden"
                       animate="visible"
                       variants={tableContainerVariants}
                     >
-                      {logs.map((log, index) => (
+                      {isAdmin ? adminLogs.map((log, index) => (
                         <motion.tr
                           key={log.id}
                           variants={tableRowVariants}
@@ -424,12 +417,9 @@ function AdminLogsPage() {
                           className="cursor-pointer hover:bg-muted/30 border-b transition-colors"
                           onClick={() => setSelectedLog(log)}
                         >
-                          {/* Row Number */}
                           <TableCell className="py-3 pl-4 text-sm text-muted-foreground font-mono">
                             {((pagination.page - 1) * pagination.limit) + index + 1}
                           </TableCell>
-
-                          {/* Date */}
                           <TableCell className="py-3 whitespace-nowrap">
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1.5">
@@ -443,8 +433,6 @@ function AdminLogsPage() {
                               </span>
                             </div>
                           </TableCell>
-
-                          {/* Admin */}
                           <TableCell className="py-3">
                             {log.admin ? (
                               <div className="flex items-center gap-2.5">
@@ -455,12 +443,8 @@ function AdminLogsPage() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-medium leading-tight">
-                                    {log.admin.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground leading-tight truncate max-w-[160px]">
-                                    {log.admin.email}
-                                  </span>
+                                  <span className="text-sm font-medium leading-tight">{log.admin.name}</span>
+                                  <span className="text-xs text-muted-foreground leading-tight truncate max-w-[160px]">{log.admin.email}</span>
                                 </div>
                               </div>
                             ) : (
@@ -472,31 +456,15 @@ function AdminLogsPage() {
                               </div>
                             )}
                           </TableCell>
-
-                          {/* Action */}
                           <TableCell className="py-3">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-xs font-medium border gap-1",
-                                getActionTypeBadgeClass(log.actionType)
-                              )}
-                            >
+                            <Badge variant="outline" className={cn("text-xs font-medium border gap-1", getActionTypeBadgeClass(log.actionType))}>
                               {getActionTypeIcon(log.actionType)}
                               {formatActionType(log.actionType)}
                             </Badge>
                           </TableCell>
-
-                          {/* Target */}
                           <TableCell className="py-3">
                             <div className="flex flex-col gap-1.5">
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-xs font-medium border w-fit gap-1",
-                                  getTargetTypeBadgeClass(log.targetType)
-                                )}
-                              >
+                              <Badge variant="outline" className={cn("text-xs font-medium border w-fit gap-1", getTargetTypeBadgeClass(log.targetType))}>
                                 {getTargetTypeIcon(log.targetType)}
                                 {log.targetType}
                               </Badge>
@@ -507,47 +475,108 @@ function AdminLogsPage() {
                               )}
                             </div>
                           </TableCell>
-
-                          {/* Description */}
                           <TableCell className="py-3">
-                            <p className="text-sm text-foreground line-clamp-2" title={log.description}>
-                              {log.description}
-                            </p>
+                            <p className="text-sm text-foreground line-clamp-2" title={log.description}>{log.description}</p>
                           </TableCell>
-
-                          {/* Actions */}
                           <TableCell className="py-3 pr-4 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                                <Button variant="ghost" size="icon" className="size-8" onClick={(e) => e.stopPropagation()}>
                                   <IconDotsVertical className="size-4" />
                                   <span className="sr-only">Open menu</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedLog(log);
-                                  }}
-                                >
-                                  <IconEye className="size-4 mr-2" />
-                                  View Details
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedLog(log); }}>
+                                  <IconEye className="size-4 mr-2" /> View Details
                                 </DropdownMenuItem>
                                 {log.targetId && (
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(log.targetId!);
-                                    }}
-                                  >
-                                    <IconCopy className="size-4 mr-2" />
-                                    Copy Target ID
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(log.targetId!); }}>
+                                    <IconCopy className="size-4 mr-2" /> Copy Target ID
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </motion.tr>
+                      )) : playerLogs.map((log, index) => (
+                        <motion.tr
+                          key={log.id}
+                          variants={tableRowVariants}
+                          transition={fastTransition}
+                          className="cursor-pointer hover:bg-muted/30 border-b transition-colors"
+                          onClick={() => setSelectedPlayerLog(log)}
+                        >
+                          <TableCell className="py-3 pl-4 text-sm text-muted-foreground font-mono">
+                            {((pagination.page - 1) * pagination.limit) + index + 1}
+                          </TableCell>
+                          <TableCell className="py-3 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <IconClock className="size-3.5 text-muted-foreground" />
+                                <span className="text-sm font-medium text-foreground">
+                                  {formatRelativeTime(log.createdAt)}
+                                </span>
+                              </div>
+                              <span className="text-xs text-muted-foreground ml-5">
+                                {formatDate(log.createdAt)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <div className="flex items-center gap-2.5">
+                              <Avatar className="size-7 border border-border">
+                                <AvatarImage src={log.user.image || undefined} />
+                                <AvatarFallback className="text-xs bg-muted">
+                                  {getInitials(log.user.name ?? log.user.email)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium leading-tight">{log.user.name ?? "Unknown"}</span>
+                                <span className="text-xs text-muted-foreground leading-tight truncate max-w-[160px]">{log.user.email}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <Badge variant="outline" className={cn("text-xs font-medium border gap-1", getActionTypeBadgeClass(log.actionType))}>
+                              {formatActionType(log.actionType)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <div className="flex flex-col gap-1.5">
+                              <Badge variant="outline" className={cn("text-xs font-medium border w-fit gap-1", getTargetTypeBadgeClass(log.targetType))}>
+                                {getTargetTypeIcon(log.targetType)}
+                                {log.targetType}
+                              </Badge>
+                              {log.targetId && (
+                                <code className="text-[10px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded w-fit">
+                                  {log.targetId.slice(0, 8)}...
+                                </code>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <p className="text-sm text-foreground line-clamp-2">
+                              {log.metadata && typeof log.metadata === 'object' && Object.keys(log.metadata).length > 0
+                                ? Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(', ')
+                                : formatActionType(log.actionType)}
+                            </p>
+                          </TableCell>
+                          <TableCell className="py-3 pr-4 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8" onClick={(e) => e.stopPropagation()}>
+                                  <IconDotsVertical className="size-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedPlayerLog(log); }}>
+                                  <IconEye className="size-4 mr-2" /> View Details
+                                </DropdownMenuItem>
+                                {log.targetId && (
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); copyToClipboard(log.targetId!); }}>
+                                    <IconCopy className="size-4 mr-2" /> Copy Target ID
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -567,7 +596,9 @@ function AdminLogsPage() {
                   <p className="text-sm text-muted-foreground">
                     {searchQuery || selectedActionType || selectedTargetType || dateRange
                       ? "Try adjusting your filters."
-                      : "No admin activity has been recorded yet."}
+                      : isAdmin
+                        ? "No admin activity has been recorded yet."
+                        : "No player activity has been recorded yet."}
                   </p>
                 </div>
               </AnimatedEmptyState>
@@ -584,7 +615,7 @@ function AdminLogsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                    onClick={() => setPage((p) => p - 1)}
                     disabled={pagination.page === 1}
                   >
                     <IconChevronLeft className="size-4 mr-1" />
@@ -610,7 +641,7 @@ function AdminLogsPage() {
                           className="w-8 h-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setPagination((prev) => ({ ...prev, page: pageNum }));
+                            setPage(pageNum);
                           }}
                         >
                           {pageNum}
@@ -621,7 +652,7 @@ function AdminLogsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                    onClick={() => setPage((p) => p + 1)}
                     disabled={pagination.page === pagination.totalPages}
                   >
                     Next
@@ -781,6 +812,116 @@ function AdminLogsPage() {
                       </label>
                       <pre className="text-xs p-3 rounded-lg bg-muted border overflow-auto max-h-40">
                         {JSON.stringify(selectedLog.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  </>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Player Activity Log Detail Dialog */}
+      <Dialog open={!!selectedPlayerLog} onOpenChange={(open) => !open && setSelectedPlayerLog(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <IconUser className="size-5" />
+              Player Activity Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPlayerLog && (
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-6 py-4 pr-4">
+                {/* Header with Action and Target Badges */}
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <Badge
+                      variant="outline"
+                      className={cn("text-sm font-medium border gap-1.5", getActionTypeBadgeClass(selectedPlayerLog.actionType))}
+                    >
+                      {formatActionType(selectedPlayerLog.actionType)}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                      <IconClock className="size-3.5" />
+                      {formatDate(selectedPlayerLog.createdAt)}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn("text-xs font-medium border gap-1", getTargetTypeBadgeClass(selectedPlayerLog.targetType))}
+                  >
+                    {getTargetTypeIcon(selectedPlayerLog.targetType)}
+                    {selectedPlayerLog.targetType}
+                  </Badge>
+                </div>
+
+                <Separator />
+
+                {/* Player Info */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Player
+                  </label>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+                    <Avatar className="size-10 border">
+                      <AvatarImage src={selectedPlayerLog.user.image || undefined} />
+                      <AvatarFallback className="bg-muted">
+                        {getInitials(selectedPlayerLog.user.name ?? selectedPlayerLog.user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{selectedPlayerLog.user.name ?? "Unknown"}</p>
+                      <p className="text-sm text-muted-foreground">{selectedPlayerLog.user.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Target ID */}
+                {selectedPlayerLog.targetId && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Target ID
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-mono p-2.5 rounded-lg bg-muted border flex-1 break-all">
+                        {selectedPlayerLog.targetId}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => copyToClipboard(selectedPlayerLog.targetId!)}
+                      >
+                        <IconCopy className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* IP Address */}
+                {selectedPlayerLog.ipAddress && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      IP Address
+                    </label>
+                    <code className="text-sm font-mono p-2.5 rounded-lg bg-muted border block">
+                      {selectedPlayerLog.ipAddress}
+                    </code>
+                  </div>
+                )}
+
+                {/* Metadata */}
+                {selectedPlayerLog.metadata && Object.keys(selectedPlayerLog.metadata).length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Metadata
+                      </label>
+                      <pre className="text-xs p-3 rounded-lg bg-muted border overflow-auto max-h-40">
+                        {JSON.stringify(selectedPlayerLog.metadata, null, 2)}
                       </pre>
                     </div>
                   </>

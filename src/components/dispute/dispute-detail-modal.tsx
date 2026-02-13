@@ -52,7 +52,7 @@ import { DisputeCategoryBadge } from "./dispute-category-badge";
 import { formatTableDate, formatDateTime } from "@/components/data-table/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { useResolveDispute } from "@/hooks/use-queries";
+import { useResolveDispute } from "@/hooks/queries";
 
 interface DisputeDetailModalProps {
   dispute: Dispute | null;

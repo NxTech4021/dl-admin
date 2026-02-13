@@ -6,6 +6,7 @@ import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { z } from "zod";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import { SiteHeader } from "@/components/site-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -83,6 +84,7 @@ function SeasonDetailPage() {
       const parsed = z.array(divisionSchema).parse(response.data.data);
       setDivisions(parsed);
     } catch (error) {
+      logger.error("Failed to load divisions:", error);
       setDivisions([]);
       toast.error("Unable to load divisions.");
     } finally {
@@ -99,7 +101,7 @@ function SeasonDetailPage() {
       const parsedData = seasonSchema.parse(response.data);
       setSeason(parsedData);
     } catch (error) {
-      console.error("Failed to fetch season details:", error);
+      logger.error("Failed to fetch season details:", error);
       toast.error("Failed to load season details");
     } finally {
       setIsLoading(false);
@@ -318,7 +320,7 @@ function SeasonDetailPage() {
                         <div className="text-sm font-medium">
                           {season.leagues && season.leagues.length > 0 ? (
                             <div className="space-y-1">
-                              {season.leagues.map((league: any) => (
+                              {season.leagues.map((league) => (
                                 <Badge key={league.id} variant="outline" className="text-xs">
                                   {league.name}
                                 </Badge>
@@ -357,7 +359,7 @@ function SeasonDetailPage() {
               divisions={divisions}
               seasonId={season.id}
               adminId={userId}
-              season={season as any}
+              season={season}
               onMembershipUpdated={handleMembershipUpdated}
             />
           </TabsContent>

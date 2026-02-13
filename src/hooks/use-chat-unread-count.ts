@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "@/lib/auth-client";
-import { useSocket } from "@/context/socket-context";
+import { useSocket } from "@/contexts/socket-context";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 interface Thread {
   id: string;
@@ -59,7 +60,7 @@ export function useChatUnreadCount(activeThreadId?: string | null) {
       );
       setTotalUnread(total);
     } catch (error) {
-      console.error("Failed to fetch chat unread count:", error);
+      logger.error("Failed to fetch chat unread count:", error);
     } finally {
       setLoading(false);
     }

@@ -25,9 +25,11 @@ import {
   IconAlertTriangle,
   IconLoader2,
   IconAlertCircle,
+  IconBan,
+  IconReceiptRefund,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useBulkUpdatePaymentStatus } from "@/hooks/use-queries";
+import { useBulkUpdatePaymentStatus } from "@/hooks/queries";
 import type { PaymentStatus } from "@/constants/zod/payment-schema";
 
 interface BulkPaymentModalProps {
@@ -56,6 +58,18 @@ const STATUS_OPTIONS: { value: PaymentStatus; label: string; icon: React.Element
     icon: IconAlertTriangle,
     className: "text-red-600",
   },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    icon: IconBan,
+    className: "text-gray-600",
+  },
+  {
+    value: "REFUNDED",
+    label: "Refunded",
+    icon: IconReceiptRefund,
+    className: "text-purple-600",
+  },
 ];
 
 export function BulkPaymentModal({
@@ -65,7 +79,7 @@ export function BulkPaymentModal({
   onSuccess,
 }: BulkPaymentModalProps) {
   const [newStatus, setNewStatus] = React.useState<PaymentStatus | "">("");
-  const [reason, setReason] = React.useState("");
+  const [notes, setNotes] = React.useState("");
 
   const bulkUpdate = useBulkUpdatePaymentStatus();
 
@@ -73,7 +87,7 @@ export function BulkPaymentModal({
   React.useEffect(() => {
     if (open) {
       setNewStatus("");
-      setReason("");
+      setNotes("");
     }
   }, [open]);
 
@@ -84,7 +98,7 @@ export function BulkPaymentModal({
       await bulkUpdate.mutateAsync({
         membershipIds,
         paymentStatus: newStatus,
-        reason: reason || undefined,
+        notes: notes || undefined,
       });
       toast.success(`Updated ${membershipIds.length} payment${membershipIds.length !== 1 ? "s" : ""} to ${newStatus === "COMPLETED" ? "Paid" : newStatus.toLowerCase()}`);
       onSuccess();
@@ -146,16 +160,16 @@ export function BulkPaymentModal({
             </Select>
           </div>
 
-          {/* Reason */}
+          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="bulk-reason">
-              Reason <span className="text-muted-foreground">(optional)</span>
+            <Label htmlFor="bulk-notes">
+              Notes <span className="text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
-              id="bulk-reason"
+              id="bulk-notes"
               placeholder="Add a note about this bulk update..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               className="min-h-[80px]"
             />
           </div>

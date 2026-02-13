@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 // Table Configuration
 export const TABLE_CONFIG = {
   PAGE_SIZES: [10, 20, 30, 40, 50] as const,
@@ -326,7 +328,7 @@ export const formatTableDate = (date: Date | string | null | undefined): string 
 
     return dateObj.toLocaleDateString(DATE_FORMATS.LOCALE, DATE_FORMATS.TABLE_DISPLAY);
   } catch (error) {
-    console.error('Error formatting date:', error, 'Input:', date);
+    logger.error('Error formatting date:', error, 'Input:', date);
     return 'Invalid date';
   }
 };
@@ -347,7 +349,7 @@ export const formatDateTime = (date: Date | string | null | undefined): string =
       hour12: true,
     });
   } catch (error) {
-    console.error('Error formatting datetime:', error, 'Input:', date);
+    logger.error('Error formatting datetime:', error, 'Input:', date);
     return 'Invalid date';
   }
 };

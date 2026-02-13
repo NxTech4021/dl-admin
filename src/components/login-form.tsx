@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2Icon, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { logger } from "@/lib/logger";
 
 /**
  * LoginForm - Secure authentication form with comprehensive error handling
@@ -86,7 +87,7 @@ export function LoginForm({
     } catch (err) {
       // Log but don't surface to user
       if (process.env.NODE_ENV === "development") {
-        console.warn("Failed to track login activity:", err);
+        logger.warn("Failed to track login activity:", err);
       }
     }
   };
@@ -123,10 +124,15 @@ export function LoginForm({
     return null;
   };
 
-  const parseLoginError = (err: any): LoginError => {
+  const parseLoginError = (err: unknown): LoginError => {
+    const errObj = err as Record<string, unknown> | null | undefined;
+    const errMessage = typeof errObj?.message === "string" ? errObj.message : undefined;
+    const errStatus = typeof errObj?.status === "number" ? errObj.status : undefined;
+    const errCode = typeof errObj?.code === "string" ? errObj.code : undefined;
+
     // Better Auth specific errors
-    if (err?.message) {
-      const message = err.message.toLowerCase();
+    if (errMessage) {
+      const message = errMessage.toLowerCase();
 
       if (message.includes("invalid") || message.includes("credential")) {
         return {
@@ -165,21 +171,21 @@ export function LoginForm({
     }
 
     // Status-based errors
-    if (err?.status === 401 || err?.status === 403) {
+    if (errStatus === 401 || errStatus === 403) {
       return {
         type: "auth",
         message: "Invalid email or password",
       };
     }
 
-    if (err?.status === 429) {
+    if (errStatus === 429) {
       return {
         type: "server",
         message: "Too many login attempts. Please wait before trying again.",
       };
     }
 
-    if (err?.status >= 500) {
+    if (errStatus !== undefined && errStatus >= 500) {
       return {
         type: "server",
         message: "Server error. Please try again later.",
@@ -187,7 +193,7 @@ export function LoginForm({
     }
 
     // Network errors
-    if (err?.code === "ECONNABORTED" || err?.code === "ERR_NETWORK") {
+    if (errCode === "ECONNABORTED" || errCode === "ERR_NETWORK") {
       return {
         type: "network",
         message: "Connection failed. Please check your internet connection.",
@@ -197,7 +203,7 @@ export function LoginForm({
     // Default error
     return {
       type: "unknown",
-      message: err?.message || "An unexpected error occurred. Please try again.",
+      message: errMessage || "An unexpected error occurred. Please try again.",
     };
   };
 

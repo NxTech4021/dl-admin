@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { getSportIcon } from "@/constants/sports";
 
@@ -169,13 +171,8 @@ export function SeasonsDataTable({
       onRefresh?.();
       setDeleteSeason(null);
       setIsDeleteOpen(false);
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        ACTION_MESSAGES.ERROR.DELETE_FAILED;
-      toast.error(errorMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, ACTION_MESSAGES.ERROR.DELETE_FAILED));
     } finally {
       setIsDeleting(false);
     }
@@ -357,7 +354,7 @@ export function SeasonsDataTable({
                   {paginatedData.map((group, index) => {
                     // Defensive check for malformed data
                     if (!group || !group.aggregated) {
-                      console.warn("Invalid group data:", group);
+                      logger.warn("Invalid group data:", group);
                       return null;
                     }
 

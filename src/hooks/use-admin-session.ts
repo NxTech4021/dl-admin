@@ -1,8 +1,9 @@
-
-
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "@tanstack/react-router";
+import { apiClient } from "@/lib/api-client";
+import { getErrorMessage } from "@/lib/api-error";
+import { isAxiosError } from "axios";
+import { logger } from "@/lib/logger";
 
 interface AdminUser {
   id: string;
@@ -37,12 +38,7 @@ export function useAdminSession(): UseAdminSessionReturn {
       setLoading(true);
       setError(null);
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/session`,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await apiClient.get("/api/admin/session");
 
       if (response.data.success) {
         setUser(response.data.data.user);
@@ -51,15 +47,15 @@ export function useAdminSession(): UseAdminSessionReturn {
         setUser(null);
         setAdmin(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Don't treat 401 as an error - it just means not logged in
-      if (err.response?.status === 401) {
+      if (isAxiosError(err) && err.response?.status === 401) {
         setUser(null);
         setAdmin(null);
         setError(null);
       } else {
-        console.error("Session fetch error:", err);
-        setError(err.response?.data?.message || "Failed to fetch session");
+        logger.error("Session fetch error:", err);
+        setError(getErrorMessage(err, "Failed to fetch session"));
         setUser(null);
         setAdmin(null);
       }
@@ -70,15 +66,9 @@ export function useAdminSession(): UseAdminSessionReturn {
 
   const logout = async () => {
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      await apiClient.post("/api/admin/logout");
     } catch (err) {
-      console.error("Logout error:", err);
+      logger.error("Logout error:", err);
     } finally {
       setUser(null);
       setAdmin(null);

@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
+import { getErrorMessage } from "@/lib/api-error";
 import { cn, formatDivisionLevel } from "@/lib/utils";
 
 import { DivisionRowActions } from "@/components/division/division-row-actions";
@@ -147,8 +148,8 @@ export function DivisionsDataTable({
       } catch {
         setData(divisionsArray);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || ACTION_MESSAGES.ERROR.LOAD_FAILED;
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, ACTION_MESSAGES.ERROR.LOAD_FAILED);
       setData([]);
       setError(errorMessage);
       toast.error(errorMessage);
@@ -173,8 +174,8 @@ export function DivisionsDataTable({
       } catch {
         setData(divisionsArray);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || error.message || "Failed to load divisions");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Failed to load divisions"));
       setData([]);
     } finally {
       setIsLoading(false);
@@ -209,9 +210,8 @@ export function DivisionsDataTable({
       await fetchDivisions();
       setDeleteDivision(null);
       setIsDeleteOpen(false);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || ACTION_MESSAGES.ERROR.DELETE_FAILED;
-      toast.error(errorMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, ACTION_MESSAGES.ERROR.DELETE_FAILED));
     } finally {
       setIsDeleting(false);
     }
@@ -258,7 +258,7 @@ export function DivisionsDataTable({
     return data
       .filter(d =>
         d.name.toLowerCase().includes(search) ||
-        (d as any).season?.name?.toLowerCase().includes(search) ||
+        d.season?.name?.toLowerCase().includes(search) ||
         d.divisionLevel?.toLowerCase().includes(search) ||
         d.gameType?.toLowerCase().includes(search)
       )
@@ -327,7 +327,7 @@ export function DivisionsDataTable({
                     const currentCount = isDoubles ? (division.currentDoublesCount || 0) : (division.currentSinglesCount || 0);
                     const maxCount = isDoubles ? division.maxDoublesTeams : division.maxSingles;
                     const capacity = getCapacityDisplay(currentCount, maxCount);
-                    const season = (division as any).season;
+                    const season = division.season;
 
                     return (
                       <motion.tr

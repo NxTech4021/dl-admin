@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { useDashboardKPI, useSportMetrics } from "@/hooks/use-queries";
+import { useDashboardKPI, useSportMetrics } from "@/hooks/queries";
 
 interface DashboardMetric {
   metric: string;

@@ -3,15 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { MatchParticipant } from "@/constants/zod/match-schema";
 import { getInitials, getStatusBadgeColor } from "@/components/data-table/constants";
 import { cn } from "@/lib/utils";
-
-/** Get display name with fallback for undefined user names */
-const getDisplayName = (participant: MatchParticipant): string => {
-  return participant.user?.name || participant.user?.username || "Unknown";
-};
+import { getDisplayName } from "@/lib/utils/format";
 
 /** Get safe initials with fallback */
 const getSafeInitials = (participant: MatchParticipant): string => {
-  const name = getDisplayName(participant);
+  const name = getDisplayName(participant.user);
   return getInitials(name);
 };
 
@@ -93,13 +89,13 @@ export function MatchParticipantsDisplay({
               <Avatar className="size-6">
                 <AvatarImage
                   src={participant.user?.image || undefined}
-                  alt={getDisplayName(participant)}
+                  alt={getDisplayName(participant.user)}
                 />
                 <AvatarFallback className="text-[10px]">
                   {getSafeInitials(participant)}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm truncate max-w-[140px]">{getDisplayName(participant)}</span>
+              <span className="text-sm truncate max-w-[140px]">{getDisplayName(participant.user)}</span>
             </div>
           ))}
         </div>
@@ -122,7 +118,7 @@ export function MatchParticipantsDisplay({
               >
                 <AvatarImage
                   src={participant.user?.image || undefined}
-                  alt={getDisplayName(participant)}
+                  alt={getDisplayName(participant.user)}
                 />
                 <AvatarFallback className="text-[10px]">
                   {getSafeInitials(participant)}
@@ -131,7 +127,7 @@ export function MatchParticipantsDisplay({
             ))}
           </div>
           <span className="text-sm truncate max-w-[120px]">
-            {team1.map(p => getDisplayName(p).split(' ')[0]).join(' & ')}
+            {team1.map(p => getDisplayName(p.user).split(' ')[0]).join(' & ')}
           </span>
         </div>
         {/* vs indicator */}
@@ -146,7 +142,7 @@ export function MatchParticipantsDisplay({
               >
                 <AvatarImage
                   src={participant.user?.image || undefined}
-                  alt={getDisplayName(participant)}
+                  alt={getDisplayName(participant.user)}
                 />
                 <AvatarFallback className="text-[10px]">
                   {getSafeInitials(participant)}
@@ -155,7 +151,7 @@ export function MatchParticipantsDisplay({
             ))}
           </div>
           <span className="text-sm truncate max-w-[120px]">
-            {team2.map(p => getDisplayName(p).split(' ')[0]).join(' & ')}
+            {team2.map(p => getDisplayName(p.user).split(' ')[0]).join(' & ')}
           </span>
         </div>
       </div>
@@ -171,13 +167,13 @@ export function MatchParticipantsDisplay({
             <Avatar className="size-6">
               <AvatarImage
                 src={participant.user?.image || undefined}
-                alt={getDisplayName(participant)}
+                alt={getDisplayName(participant.user)}
               />
               <AvatarFallback className="text-xs">
                 {getSafeInitials(participant)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">{getDisplayName(participant)}</span>
+            <span className="text-sm font-medium">{getDisplayName(participant.user)}</span>
             {showInvitationStatus && participant.invitationStatus && (
               <Badge
                 variant="outline"
@@ -212,7 +208,7 @@ export function MatchParticipantsDisplay({
           >
             <AvatarImage
               src={participant.user?.image || undefined}
-              alt={getDisplayName(participant)}
+              alt={getDisplayName(participant.user)}
             />
             <AvatarFallback className="text-[10px]">
               {getSafeInitials(participant)}
@@ -236,7 +232,7 @@ export function MatchParticipantsDisplay({
           >
             <AvatarImage
               src={participant.user?.image || undefined}
-              alt={getDisplayName(participant)}
+              alt={getDisplayName(participant.user)}
             />
             <AvatarFallback className="text-[10px]">
               {getSafeInitials(participant)}

@@ -62,6 +62,7 @@ import {
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { sponsorSchema, Sponsor } from "@/constants/zod/sponsor-schema";
+import { logger } from "@/lib/logger";
 
 const SponsorEditModal = React.lazy(() => import("@/components/modal/sponsor-edit-modal").then((mod) => ({ default: mod.SponsorEditModal })));
 
@@ -99,24 +100,36 @@ const getPackageTierBadgeVariant = (tier: string) => {
 };
 
 const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
-  if (!sponsor.league) {
-    return <span className="text-muted-foreground text-xs">No league</span>;
+  const leagues = sponsor.leagues;
+
+  if (!leagues || leagues.length === 0) {
+    return <span className="text-muted-foreground text-xs">No leagues</span>;
+  }
+
+  if (leagues.length === 1) {
+    return (
+      <Badge variant="secondary" className="cursor-default">
+        {leagues[0].name}
+      </Badge>
+    );
   }
 
   return (
     <HoverCard>
       <HoverCardTrigger>
         <Badge variant="secondary" className="cursor-pointer">
-          {sponsor.league.name}
+          {leagues.length} leagues
         </Badge>
       </HoverCardTrigger>
       <HoverCardContent>
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Linked League</h4>
+          <h4 className="text-sm font-medium">Linked Leagues</h4>
           <div className="flex flex-wrap gap-1">
-            <Badge variant="outline" className="text-xs">
-              {sponsor.league.name}
-            </Badge>
+            {leagues.map((league) => (
+              <Badge key={league.id} variant="outline" className="text-xs">
+                {league.name}
+              </Badge>
+            ))}
           </div>
         </div>
       </HoverCardContent>
@@ -192,8 +205,8 @@ const createColumns = (
     ),
   },
   {
-    accessorKey: "league",
-    header: "League",
+    accessorKey: "leagues",
+    header: "Leagues",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">
         {getLeagueDisplay(row.original)}
@@ -233,7 +246,7 @@ const createColumns = (
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               onClick={() => {
                 // TODO: Implement view sponsor functionality
-                console.log("View sponsor:", sponsor.id);
+                logger.debug("View sponsor:", sponsor.id);
               }}
             >
               <IconEye className="mr-2 size-4" />
@@ -255,7 +268,7 @@ const createColumns = (
               className="cursor-pointer focus:bg-destructive focus:text-destructive-foreground"
               onClick={() => {
                 // TODO: Implement delete sponsor functionality
-                console.log("Delete sponsor:", sponsor.id);
+                logger.debug("Delete sponsor:", sponsor.id);
               }}
             >
               <IconTrash className="mr-2 size-4" />
@@ -331,21 +344,21 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
           throw new Error("Network response was not ok");
         }
         const result = await response.data;
-        console.log("Sponsors API response:", result);
-        console.log("Sponsors data:", result.data);
+        logger.debug("Sponsors API response:", result);
+        logger.debug("Sponsors data:", result.data);
         
         // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
+        const processedData = result.data.map((sponsor: Record<string, unknown>) => ({
           ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
+          contractAmount: sponsor.contractAmount ? parseFloat(String(sponsor.contractAmount)) : null,
+          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(String(sponsor.sponsorRevenue)) : null,
         }));
         
         const parsedData = sponsorSchema.array().parse(processedData);
         setData(parsedData);
       } catch (error) {
-        console.error("Failed to fetch sponsors:", error);
-        console.error("Error details:", error);
+        logger.error("Failed to fetch sponsors:", error);
+        logger.error("Error details:", error);
       } finally {
         setIsLoading(false);
       }
@@ -366,21 +379,21 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
       const response = await axiosInstance.get(endpoints.sponsors.getAll);
       if (response.status === 200) {
         const result = await response.data;
-        console.log("Sponsors refresh response:", result);
+        logger.debug("Sponsors refresh response:", result);
         
         // Handle potential Decimal conversion
-        const processedData = result.data.map((sponsor: any) => ({
+        const processedData = result.data.map((sponsor: Record<string, unknown>) => ({
           ...sponsor,
-          contractAmount: sponsor.contractAmount ? parseFloat(sponsor.contractAmount.toString()) : null,
-          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(sponsor.sponsorRevenue.toString()) : null,
+          contractAmount: sponsor.contractAmount ? parseFloat(String(sponsor.contractAmount)) : null,
+          sponsorRevenue: sponsor.sponsorRevenue ? parseFloat(String(sponsor.sponsorRevenue)) : null,
         }));
         
         const parsedData = sponsorSchema.array().parse(processedData);
         setData(parsedData);
       }
     } catch (error) {
-      console.error("Failed to refresh sponsors:", error);
-      console.error("Error details:", error);
+      logger.error("Failed to refresh sponsors:", error);
+      logger.error("Error details:", error);
     } finally {
       setIsLoading(false);
     }

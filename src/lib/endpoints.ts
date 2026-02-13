@@ -1,28 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { apiClient } from "@/lib/api-client";
 
-const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
-});
-
-axiosInstance.interceptors.response.use(
-  (res) => res,
-  // (error) =>
-  //   Promise.reject(
-  //     (error.response && error.response.data) || "Something went wrong"
-  //   )
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
-);
-
-export default axiosInstance;
-
-export const fetcher = async (args: unknown) => {
-  const [url, config] = Array.isArray(args) ? args : [args];
-  const res = await axiosInstance.get(url, { ...config });
-  return res.data;
-};
+// Re-export apiClient as default for backward compatibility.
+// New code should import { apiClient } from "@/lib/api-client" directly.
+export default apiClient;
 
 export const endpoints = {
   user: {
@@ -103,6 +83,14 @@ export const endpoints = {
       getStatusHistory: (id: string) => `/api/admin/players/${id}/status-history`,
     },
 
+    // Admin status management (suspend, activate, status history, detail)
+    admins: {
+      getDetail: (id: string) => `/api/admin/admins/${id}`,
+      suspend: (id: string) => `/api/admin/admins/${id}/suspend`,
+      activate: (id: string) => `/api/admin/admins/${id}/activate`,
+      getStatusHistory: (id: string) => `/api/admin/admins/${id}/status-history`,
+    },
+
     // Admin action logs
     logs: {
       getAll: "/api/admin/logs",
@@ -110,6 +98,14 @@ export const endpoints = {
       getActionTypes: "/api/admin/logs/action-types",
       getTargetTypes: "/api/admin/logs/target-types",
       getForTarget: (targetType: string, targetId: string) => `/api/admin/logs/target/${targetType}/${targetId}`,
+    },
+
+    // User activity logs (player actions)
+    userActivity: {
+      getAll: "/api/admin/user-activity",
+      getForUser: (userId: string) => `/api/admin/user-activity/user/${userId}`,
+      getForTarget: (targetType: string, targetId: string) =>
+        `/api/admin/user-activity/target/${targetType}/${targetId}`,
     },
 
     // Admin reports

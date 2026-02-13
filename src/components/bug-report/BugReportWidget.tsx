@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 // import Image from "next/image";
 
 interface BugReportWidgetProps {
@@ -55,7 +56,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
       try {
         if (!apiUrl) {
           if (process.env.NODE_ENV === "development") {
-            console.warn("Bug reporting: API URL not configured");
+            logger.warn("Bug reporting: API URL not configured");
           }
           return;
         }
@@ -72,7 +73,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
 
         if (!res.ok) {
           if (process.env.NODE_ENV === "development") {
-            console.warn("Bug reporting: Failed to initialize -", res.status);
+            logger.warn("Bug reporting: Failed to initialize -", res.status);
           }
           return;
         }
@@ -81,14 +82,14 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
         setAppId(data.appId);
 
         if (process.env.NODE_ENV === "development") {
-          console.log("✅ Bug reporting ready");
+          logger.debug("Bug reporting ready");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (process.env.NODE_ENV === "development") {
-          if (error.name === "AbortError") {
-            console.warn("Bug reporting: Request timeout");
+          if (error instanceof Error && error.name === "AbortError") {
+            logger.warn("Bug reporting: Request timeout");
           } else {
-            console.warn("Bug reporting:", error.message);
+            logger.warn("Bug reporting:", error instanceof Error ? error.message : error);
           }
         }
       }
@@ -252,7 +253,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
           });
 
           if (!uploadRes.ok) {
-            console.error("Failed to upload screenshot:", file.name);
+            logger.error("Failed to upload screenshot:", file.name);
           }
           return uploadRes;
         });
@@ -264,7 +265,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
       await fetch(`${apiUrl}/api/bug/reports/${report.id}/sync`, {
         method: "POST",
         credentials: "include",
-      }).catch(console.error);
+      }).catch((err) => logger.error('Bug report submit error:', err));
 
       toast.success(`Bug report ${report.reportNumber} created successfully`);
 
@@ -285,7 +286,7 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
       setScreenshotPreviews([]);
       setIsOpen(false);
     } catch (error) {
-      console.error("Submit error:", error);
+      logger.error("Submit error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to submit bug report");
     } finally {
       setIsSubmitting(false);

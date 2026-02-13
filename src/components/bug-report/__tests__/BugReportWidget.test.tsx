@@ -1,27 +1,28 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { BugReportWidget } from '../BugReportWidget';
 
 // Mock sonner toast
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
-    success: jest.fn(),
-    error: jest.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
 import { toast } from 'sonner';
 
 // Mock fetch globally
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('BugReportWidget', () => {
   const mockApiUrl = 'http://localhost:3001';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Default successful init response
     mockFetch.mockResolvedValue({
       ok: true,
@@ -53,7 +54,7 @@ describe('BugReportWidget', () => {
     });
 
     it('should handle missing API URL gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       render(<BugReportWidget apiUrl="" />);
 
@@ -65,7 +66,7 @@ describe('BugReportWidget', () => {
     });
 
     it('should handle init API failure gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
 
       render(<BugReportWidget apiUrl={mockApiUrl} />);
@@ -368,7 +369,7 @@ describe('captureContext utility', () => {
   // Test the context capture logic by checking the submitted data
 
   it('should include browser and OS info in submission', async () => {
-    const mockFetch = jest.fn();
+    const mockFetch = vi.fn();
     global.fetch = mockFetch;
 
     mockFetch

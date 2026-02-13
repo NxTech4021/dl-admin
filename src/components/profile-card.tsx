@@ -17,7 +17,7 @@ interface ProfileCardProps {
     status?: string | null;
   } | null;
 
-  onSave: (data: any) => void;
+  onSave: (data: { name: string; area: string; gender: string }) => void;
   saving: boolean;
 }
 export function ProfileCard({

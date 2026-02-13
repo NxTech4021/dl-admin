@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   IconMail,
   IconMapPin,
@@ -29,7 +28,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -51,13 +49,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { Button } from "@/components/ui/button";
 import LeagueHistory from "./player-profile/league-history-card";
 import SeasonHistory from "./player-profile/season-history-card";
 import MatchHistory from "./player-profile/match-history-card";
 import { PlayerActions } from "./player-profile/player-actions";
 import { EditPlayerModal } from "./player-profile/edit-player-modal";
+import { usePlayerData } from "./player-profile/hooks/use-player-data";
+import { ProfileSkeleton } from "./player-profile/ProfileSkeleton";
 
 // Tab configuration for reuse
 const TABS = [
@@ -69,56 +68,6 @@ const TABS = [
   { value: "achievements", label: "Achievements", icon: IconStar },
   { value: "raw_data", label: "Raw Data", icon: IconDatabase },
 ] as const;
-
-interface PlayerProfileData {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  image: string | null;
-  username: string;
-  displayUsername: string | null;
-  role: string;
-  dateOfBirth: string | null;
-  gender: string | null;
-  area: string | null;
-  bio: string | null;
-  phoneNumber: string | null;
-  completedOnboarding: boolean;
-  lastActivityCheck: string | null;
-  lastLogin: string | null;
-  status: string;
-  registeredDate: string;
-  questionnaires: {
-    sport: string;
-    qVersion: number;
-    qHash: string;
-    completedAt: string | null;
-    startedAt: string;
-    answersJson: any;
-    result: {
-      rating: number;
-      confidence: string;
-      rd: number;
-      singles?: number;
-      doubles?: number;
-      source?: string;
-      detail?: any;
-    } | null;
-  }[];
-  skillRatings: Record<
-    string,
-    { rating: number; confidence: string; rd: number }
-  > | null;
-  accounts: { providerId: string; createdAt: string }[];
-  sessions: {
-    ipAddress: string | null;
-    userAgent: string | null;
-    expiresAt: string;
-    createdAt: string;
-  }[];
-  // Note: matches and achievements are loaded separately on-demand
-}
 
 interface PlayerProfileProps {
   playerId: string;
@@ -133,195 +82,68 @@ const formatQuestionKey = (key: string) => {
 };
 
 // Helper function to format various answer types into readable strings
-const formatAnswerValue = (value: any): string => {
-  if (Array.isArray(value)) {
-    return value.join(", ");
-  }
-  if (typeof value === "object" && value !== null) {
-    // Handle objects like skills - format them nicely
-    return Object.entries(value)
-      .map(([key, val]) => {
-        // Format key names (remove underscores, capitalize)
-        const formattedKey = key
-          .replace(/_/g, " ")
-          .replace(/([A-Z])/g, " $1")
-          .replace(/^./, (str) => str.toUpperCase());
-        return `${formattedKey}: ${val}`;
-      })
-      .join("; ");
+// Uses a seen Set to prevent circular reference crashes
+const formatAnswerValue = (value: unknown, seen = new WeakSet()): string => {
+  if (value === null || value === undefined) {
+    return "N/A";
   }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";
   }
-  if (value === null || value === undefined) {
-    return "N/A";
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => formatAnswerValue(v, seen)).join(", ");
+  }
+  if (typeof value === "object") {
+    // Check for circular reference
+    if (seen.has(value)) {
+      return "[Circular Reference]";
+    }
+    seen.add(value);
+
+    // Handle objects like skills - format them nicely
+    try {
+      return Object.entries(value)
+        .map(([key, val]) => {
+          // Format key names (remove underscores, capitalize)
+          const formattedKey = key
+            .replace(/_/g, " ")
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase());
+          return `${formattedKey}: ${formatAnswerValue(val, seen)}`;
+        })
+        .join("; ");
+    } catch {
+      return "[Object]";
+    }
   }
   return String(value);
 };
 
 export function PlayerProfile({ playerId }: PlayerProfileProps) {
-  const [profile, setProfile] = React.useState<PlayerProfileData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState("overview");
-
-  // History data states
-  const [leagueHistory, setLeagueHistory] = React.useState<any[] | null>(null);
-  const [seasonHistory, setSeasonHistory] = React.useState<any[] | null>(null);
-  const [matchHistory, setMatchHistory] = React.useState<any[] | null>(null);
-  const [historyLoading, setHistoryLoading] = React.useState({
-    leagues: false,
-    seasons: false,
-    matches: false,
-  });
-
-  React.useEffect(() => {
-    if (!playerId) return;
-
-    const fetchProfile = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axiosInstance.get(
-          endpoints.player.getById(playerId)
-        );
-        if (response.status !== 200) {
-          throw new Error("Failed to fetch profile");
-        }
-        const result = response.data;
-        setProfile(result.data);
-      } catch (error) {
-        console.error("Error fetching player profile:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [playerId]);
-
-  // Data fetching functions for history tabs
-  const fetchLeagueHistory = async () => {
-    if (leagueHistory) return; // Already loaded
-
-    setHistoryLoading((prev) => ({ ...prev, leagues: true }));
-    try {
-      const response = await axiosInstance.get(
-        endpoints.player.getLeagueHistory(playerId)
-      );
-      if (response.status === 200) {
-        setLeagueHistory(response.data.data.leagues);
-      }
-    } catch (error) {
-      console.error("Failed to load league history:", error);
-    } finally {
-      setHistoryLoading((prev) => ({ ...prev, leagues: false }));
-    }
-  };
-
-  const fetchSeasonHistory = async () => {
-    if (seasonHistory) return; // Already loaded
-
-    setHistoryLoading((prev) => ({ ...prev, seasons: true }));
-    try {
-      const response = await axiosInstance.get(
-        endpoints.player.getSeasonHistory(playerId)
-      );
-      if (response.status === 200) {
-        setSeasonHistory(response.data.data.seasons);
-      }
-    } catch (error) {
-      console.error("Failed to load season history:", error);
-    } finally {
-      setHistoryLoading((prev) => ({ ...prev, seasons: false }));
-    }
-  };
-
-  const fetchMatchHistory = async () => {
-    if (matchHistory) return; // Already loaded
-
-    setHistoryLoading((prev) => ({ ...prev, matches: true }));
-    try {
-      const response = await axiosInstance.get(
-        endpoints.player.getMatchHistoryAdmin(playerId)
-      );
-      if (response.status === 200) {
-        // Transform match data to player-specific format
-        const matches = response.data.data.matches || [];
-        const transformedMatches = matches.map((match: any) => {
-          // Use the pre-calculated scores from the backend
-          const playerScore = match.playerScore;
-          const opponentScore = match.opponentScore;
-
-          // Calculate outcome
-          let outcome = null;
-          if (match.status === "COMPLETED" && playerScore !== null && opponentScore !== null) {
-            if (playerScore > opponentScore) outcome = "win";
-            else if (playerScore < opponentScore) outcome = "loss";
-            else outcome = "draw";
-          }
-
-          // Format opponents info
-          const opponents = match.opponents || [];
-          const opponentNames = opponents.map((opp: any) => opp.name).filter(Boolean);
-
-          // Format set scores for display (e.g., "6-4, 7-5")
-          let formattedScore = null;
-          if (match.setScores && match.setScores.length > 0) {
-            formattedScore = match.setScores
-              .map((set: any) => {
-                let score = `${set.player}-${set.opponent}`;
-                if (set.tiebreak) {
-                  score += `(${set.tiebreak.player}-${set.tiebreak.opponent})`;
-                }
-                return score;
-              })
-              .join(", ");
-          } else if (match.pickleballScores && match.pickleballScores.length > 0) {
-            formattedScore = match.pickleballScores
-              .map((game: any) => `${game.player}-${game.opponent}`)
-              .join(", ");
-          }
-
-          return {
-            id: match.id,
-            sport: match.sport?.toLowerCase() || "unknown",
-            matchType: match.matchType?.toLowerCase() || "singles",
-            playerScore,
-            opponentScore,
-            formattedScore,
-            outcome,
-            matchDate: match.matchDate,
-            location: match.location,
-            venue: match.venue,
-            notes: match.notes,
-            duration: match.duration || null,
-            status: match.status,
-            isFriendly: match.isFriendly,
-            isWalkover: match.isWalkover,
-            isDisputed: match.isDisputed,
-            requiresAdminReview: match.requiresAdminReview,
-            isReportedForAbuse: match.isReportedForAbuse,
-            // Opponent info
-            opponents: opponents,
-            opponentName: opponentNames.length > 0 ? opponentNames.join(" & ") : null,
-            // Division info
-            division: match.division ? {
-              id: match.division.id,
-              name: match.division.name,
-              league: match.division.league ? {
-                id: match.division.league.id,
-                name: match.division.league.name,
-              } : null,
-            } : null,
-          };
-        });
-        setMatchHistory(transformedMatches);
-      }
-    } catch (error) {
-      console.error("Failed to load match history:", error);
-    } finally {
-      setHistoryLoading((prev) => ({ ...prev, matches: false }));
-    }
-  };
+  const {
+    profile,
+    setProfile,
+    isLoading,
+    profileError,
+    activeTab,
+    handleTabChange,
+    leagueHistory,
+    seasonHistory,
+    matchHistory,
+    historyLoading,
+    historyError,
+    retryProfile,
+    fetchLeagueHistory,
+    fetchSeasonHistory,
+    fetchMatchHistory,
+    setHistoryError,
+    setLeagueHistory,
+    setSeasonHistory,
+    setMatchHistory,
+  } = usePlayerData(playerId);
 
   if (isLoading) {
     return <ProfileSkeleton />;
@@ -332,10 +154,24 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       <div className="container p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Player Not Found</CardTitle>
+            <CardTitle>
+              {profileError ? "Error Loading Profile" : "Player Not Found"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>The requested player could not be found.</p>
+            <p>
+              {profileError ||
+                "The requested player could not be found."}
+            </p>
+            {profileError && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={retryProfile}
+              >
+                Retry
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -356,20 +192,6 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
       hour: "numeric",
       minute: "numeric",
     });
-
-  // Handle tab change and trigger data fetching
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    if (value === "matches") {
-      fetchMatchHistory();
-    }
-    if (value === "league_history") {
-      fetchLeagueHistory();
-    }
-    if (value === "season_history") {
-      fetchSeasonHistory();
-    }
-  };
 
   return (
     <Tabs
@@ -714,6 +536,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {profile.questionnaires && profile.questionnaires.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -780,6 +603,14 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                     ))}
                   </TableBody>
                 </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <IconListCheck className="size-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No questionnaire history available
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -902,27 +733,84 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
 
       {/* MATCHES TAB */}
       <TabsContent value="matches">
-        <MatchHistory
-          matches={matchHistory}
-          isLoading={historyLoading.matches}
-          playerId={playerId}
-        />
+        {historyError.matches ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconTarget className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.matches}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, matches: null }));
+                  setMatchHistory(null);
+                  fetchMatchHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <MatchHistory
+            matches={matchHistory}
+            isLoading={historyLoading.matches}
+            playerId={playerId}
+          />
+        )}
       </TabsContent>
 
       {/* LEAGUE HISTORY TAB */}
-      <TabsContent value="league_history" onFocus={fetchLeagueHistory}>
-        <LeagueHistory
-          leagues={leagueHistory}
-          isLoading={historyLoading.leagues}
-        />
+      <TabsContent value="league_history">
+        {historyError.leagues ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconTrophy className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.leagues}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, leagues: null }));
+                  setLeagueHistory(null);
+                  fetchLeagueHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <LeagueHistory
+            leagues={leagueHistory}
+            isLoading={historyLoading.leagues}
+          />
+        )}
       </TabsContent>
 
       {/* SEASON HISTORY TAB */}
-      <TabsContent value="season_history" onFocus={fetchSeasonHistory}>
-        <SeasonHistory
-          seasons={seasonHistory}
-          isLoading={historyLoading.seasons}
-        />
+      <TabsContent value="season_history">
+        {historyError.seasons ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconCalendar className="size-12 text-destructive mb-4" />
+              <p className="text-sm text-destructive mb-4">{historyError.seasons}</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setHistoryError((prev) => ({ ...prev, seasons: null }));
+                  setSeasonHistory(null);
+                  fetchSeasonHistory();
+                }}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <SeasonHistory
+            seasons={seasonHistory}
+            isLoading={historyLoading.seasons}
+          />
+        )}
       </TabsContent>
 
       {/* ACHIEVEMENTS TAB */}
@@ -957,7 +845,7 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
             </p>
           </div> */}
 
-          {profile.questionnaires.length > 0 ? (
+          {profile.questionnaires && profile.questionnaires.length > 0 ? (
             <div className="space-y-6">
               {profile.questionnaires.map((q, index) => (
                 <Card key={index} className="overflow-hidden">
@@ -1067,50 +955,3 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
   );
 }
 
-const ProfileSkeleton = () => (
-  <div className="grid gap-6 md:grid-cols-3">
-    <div className="md:col-span-1 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <Skeleton className="size-16 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-7 w-32" />
-              <Skeleton className="h-5 w-16" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-5/6" />
-          <Skeleton className="h-5 w-4/6" />
-          <Skeleton className="h-5 w-full" />
-        </CardContent>
-      </Card>
-    </div>
-    <div className="md:col-span-2 space-y-6">
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </CardContent>
-      </Card>
-    </div>
-  </div>
-);

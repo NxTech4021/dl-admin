@@ -38,6 +38,7 @@ import { WithdrawalRequest } from '@/constants/zod/season-schema';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import axiosInstance, { endpoints } from '@/lib/endpoints';
+import { logger } from "@/lib/logger";
 
 interface WithdrawalRequestsCardProps {
   requests: WithdrawalRequest[];
@@ -191,7 +192,7 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
       toast.success('Withdrawal request approved successfully');
       onRequestProcessed?.();
     } catch (error) {
-      console.error('Failed to approve withdrawal:', error);
+      logger.error('Failed to approve withdrawal:', error);
       toast.error('Failed to approve withdrawal request');
     } finally {
       setIsProcessing(null);
@@ -207,7 +208,7 @@ export default function WithdrawalRequestsCard({ requests, onRequestProcessed }:
       toast.success('Withdrawal request rejected');
       onRequestProcessed?.();
     } catch (error) {
-      console.error('Failed to reject withdrawal:', error);
+      logger.error('Failed to reject withdrawal:', error);
       toast.error('Failed to reject withdrawal request');
     } finally {
       setIsProcessing(null);

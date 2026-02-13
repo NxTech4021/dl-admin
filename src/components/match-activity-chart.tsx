@@ -39,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMatchActivity } from "@/hooks/use-queries";
+import { useMatchActivity } from "@/hooks/queries";
 import { MatchActivity } from "@/constants/zod/dashboard-schema";
 import { cn } from "@/lib/utils";
 

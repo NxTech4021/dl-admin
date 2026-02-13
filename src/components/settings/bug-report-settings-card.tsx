@@ -36,7 +36,7 @@ import {
   useBugReportSettings,
   useUpdateBugReportSettings,
   type BugReportSettings,
-} from "@/hooks/use-queries";
+} from "@/hooks/queries";
 
 const bugReportSettingsSchema = z.object({
   // Google Sheets

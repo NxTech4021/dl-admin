@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Match } from "@/constants/zod/match-schema";
-import { useReviewCancellation } from "@/hooks/use-queries";
+import { useReviewCancellation } from "@/hooks/queries";
 import {
   IconClock,
   IconLoader2,

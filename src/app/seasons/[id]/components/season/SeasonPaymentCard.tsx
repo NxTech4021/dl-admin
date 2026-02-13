@@ -220,7 +220,7 @@ export default function SeasonPaymentCard({
   const getUsername = (user: Membership["user"]) => {
     if (!user) return "unknown";
     return (
-      (user as any).displayUsername ||
+      (user as Membership["user"] & { displayUsername?: string })?.displayUsername ||
       user.username ||
       user.email?.split("@")[0] ||
       "unknown"

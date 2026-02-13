@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { getErrorMessage } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 // Schemas for each separate form
 const maintenanceSchema = z.object({
@@ -30,7 +31,7 @@ const tosSchema = z.object({
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  featureDetails: z.record(z.any()).optional(),
+  featureDetails: z.record(z.string(), z.unknown()).optional(),
   releaseDate: z.string().optional(),
   targetAudience: z.array(z.string()).optional(),
 });
@@ -39,6 +40,26 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 type TOSFormValues = z.infer<typeof tosSchema>;
 type AnnouncementFormValues = z.infer<typeof announcementSchema>;
 
+interface MaintenanceData {
+  id: string;
+  title: string;
+  description?: string;
+  startDateTime: string;
+  endDateTime: string;
+  affectedServices?: string[];
+}
+
+interface AnnouncementData {
+  id: string;
+  title: string;
+  description: string;
+  featureDetails?: Record<string, unknown>;
+  releaseDate?: string;
+  announcementDate?: string;
+  targetAudience?: string[];
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
 export function AppControlsCard() {
   const [isEditingMaintenance, setIsEditingMaintenance] = useState(false);
   const [isEditingTOS, setIsEditingTOS] = useState(false);
@@ -46,11 +67,11 @@ export function AppControlsCard() {
   const [isLoading, setIsLoading] = useState(false);
 
   // State for existing data
-  const [currentMaintenance, setCurrentMaintenance] = useState<any>(null);
+  const [currentMaintenance, setCurrentMaintenance] = useState<MaintenanceData | null>(null);
   const [currentTOS, setCurrentTOS] = useState<string>("");
-  const [currentAnnouncement, setCurrentAnnouncement] = useState<any>(null);
-  const [draftAnnouncements, setDraftAnnouncements] = useState<any[]>([]);
-  const [publishedAnnouncements, setPublishedAnnouncements] = useState<any[]>([]);
+  const [currentAnnouncement, setCurrentAnnouncement] = useState<AnnouncementData | null>(null);
+  const [draftAnnouncements, setDraftAnnouncements] = useState<AnnouncementData[]>([]);
+  const [publishedAnnouncements, setPublishedAnnouncements] = useState<AnnouncementData[]>([]);
 
   // Separate forms for each functionality
   const maintenanceForm = useForm<MaintenanceFormValues>({
@@ -134,7 +155,7 @@ export function AppControlsCard() {
         // }
 
       } catch (error) {
-        console.error("Failed to load data:", error);
+        logger.error("Failed to load data:", error);
         toast.error("Failed to load app controls: " + getErrorMessage(error));
       }
     };
@@ -286,7 +307,7 @@ export function AppControlsCard() {
       setDraftAnnouncements([]);
       
       // Update current announcement with published status
-      const publishedAnnouncement = publishedList.find((a: any) => a.id === currentAnnouncement.id);
+      const publishedAnnouncement = publishedList.find((a: AnnouncementData) => a.id === currentAnnouncement.id);
       if (publishedAnnouncement) {
         setCurrentAnnouncement(publishedAnnouncement);
       }
@@ -346,7 +367,7 @@ export function AppControlsCard() {
     setIsEditingAnnouncement(true);
   };
 
-  const handleEditAnnouncement = (announcement: any) => {
+  const handleEditAnnouncement = (announcement: AnnouncementData) => {
     setCurrentAnnouncement(announcement);
     announcementForm.reset({
       title: announcement.title || "",
@@ -655,7 +676,7 @@ export function AppControlsCard() {
                 <div className="space-y-2">
                   <h5 className="text-xs font-medium text-muted-foreground uppercase">Drafts ({draftAnnouncements.length})</h5>
                   <div className="grid gap-3">
-                    {draftAnnouncements.map((announcement: any) => (
+                    {draftAnnouncements.map((announcement: AnnouncementData) => (
                       <div key={announcement.id} className="rounded-lg border p-3 hover:bg-accent/50 transition-colors">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 space-y-1">
@@ -692,7 +713,7 @@ export function AppControlsCard() {
                 <div className="space-y-2">
                   <h5 className="text-xs font-medium text-muted-foreground uppercase">Published ({publishedAnnouncements.length})</h5>
                   <div className="grid gap-3">
-                    {publishedAnnouncements.map((announcement: any) => (
+                    {publishedAnnouncements.map((announcement: AnnouncementData) => (
                       <div key={announcement.id} className="rounded-lg border p-3 hover:bg-accent/50 transition-colors">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 space-y-1">

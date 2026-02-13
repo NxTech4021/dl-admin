@@ -20,7 +20,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Match, WalkoverReason } from "@/constants/zod/match-schema";
-import { useConvertToWalkover } from "@/hooks/use-queries";
+import { useConvertToWalkover } from "@/hooks/queries";
 import { IconWalk, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 

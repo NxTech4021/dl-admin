@@ -10,12 +10,13 @@ import ChatRoomGroup from "./chat-room-group"
 // import ChatRoomAttachments from "./chat-room-attachments"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import ChatRoomSingle from "./chat-room-single"
+import type { Conversation, ChatParticipant } from "@/constants/types/chat"
 
 const NAV_WIDTH = 240
 
 interface ChatRoomProps {
-  participants: any[];
-  conversation: any;
+  participants: ChatParticipant[];
+  conversation: Conversation;
 }
 
 export default function ChatRoom({ participants, conversation }: ChatRoomProps) {

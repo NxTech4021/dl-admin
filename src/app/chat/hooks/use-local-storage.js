@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from "@/lib/logger";
 
 // ----------------------------------------------------------------------
 
@@ -66,7 +67,7 @@ export const getStorage = (key) => {
       value = JSON.parse(result);
     }
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   }
 
   return value;
@@ -76,7 +77,7 @@ export const setStorage = (key, value) => {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   }
 };
 
@@ -84,6 +85,6 @@ export const removeStorage = (key) => {
   try {
     window.localStorage.removeItem(key);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   }
 };

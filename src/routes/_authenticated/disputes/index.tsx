@@ -20,7 +20,7 @@ import { DisputePriorityBadge } from "@/components/dispute/dispute-priority-badg
 import { DisputeCategoryBadge } from "@/components/dispute/dispute-category-badge";
 import { DisputeDetailModal } from "@/components/dispute/dispute-detail-modal";
 import { DisputeAddNoteModal } from "@/components/dispute/dispute-add-note-modal";
-import { useDisputes, useStartDisputeReview } from "@/hooks/use-queries";
+import { useDisputes, useStartDisputeReview } from "@/hooks/queries";
 import { formatTableDate } from "@/components/data-table/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {

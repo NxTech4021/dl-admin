@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { Division, divisionSchema } from "@/constants/zod/division-schema";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 import { SiteHeader } from "@/components/site-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,7 +82,7 @@ function DivisionDetailPage() {
       const parsed = divisionSchema.parse(data);
       setDivision(parsed);
     } catch (error) {
-      console.error("Failed to fetch division details:", error);
+      logger.error("Failed to fetch division details:", error);
       toast.error("Failed to load division details");
     } finally {
       setIsLoading(false);
@@ -97,9 +98,9 @@ function DivisionDetailPage() {
       const playersData =
         response.data?.data || response.data?.players || response.data || [];
       const mappedPlayers = Array.isArray(playersData)
-        ? playersData.map((p: any) => ({
-            id: p.userId || p.id,
-            odUserId: p.odUserId,
+        ? playersData.map((p: { userId?: string; id?: string; odUserId?: string; user?: { name?: string; email?: string; rating?: number }; name?: string; email?: string; rating?: number; wins?: number; losses?: number; matchesPlayed?: number; createdAt?: string; joinedAt?: string }) => ({
+            id: p.userId || p.id || "",
+            odUserId: p.odUserId || "",
             name: p.user?.name || p.name || "Unknown",
             email: p.user?.email || p.email || "",
             rating: p.user?.rating || p.rating,
@@ -111,7 +112,7 @@ function DivisionDetailPage() {
         : [];
       setPlayers(mappedPlayers);
     } catch (error) {
-      console.error("Failed to fetch division players:", error);
+      logger.error("Failed to fetch division players:", error);
       setPlayers([]);
     } finally {
       setIsPlayersLoading(false);
@@ -128,7 +129,7 @@ function DivisionDetailPage() {
         response.data?.data || response.data?.matches || response.data || [];
       setMatches(Array.isArray(matchesData) ? matchesData : []);
     } catch (error) {
-      console.log("Matches endpoint not available or no matches found");
+      logger.debug("Matches endpoint not available or no matches found");
       setMatches([]);
     } finally {
       setIsMatchesLoading(false);
@@ -260,7 +261,7 @@ function DivisionDetailPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Name</span>
                             <span className="font-medium text-sm">
-                              {(division as any).season?.name || "Not assigned"}
+                              {division.season?.name || "Not assigned"}
                             </span>
                           </div>
                         </div>
