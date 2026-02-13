@@ -135,8 +135,10 @@ export const useNotifications = () => {
         );
 
         if (response.data?.success) {
-          const newNotifications = response.data.data.notifications || [];
-          const paginationData = response.data.data.pagination;
+          // Handle both interceptor-flattened and raw envelope shapes
+          const payload = response.data.data;
+          const newNotifications = Array.isArray(payload) ? payload : (payload?.notifications || payload?.data || []);
+          const paginationData = response.data.pagination || payload?.pagination;
 
           if (options.append) {
             // Append to existing notifications (for load more)
@@ -186,7 +188,8 @@ export const useNotifications = () => {
         endpoints.notifications.unreadCount
       );
       if (response.data?.success) {
-        setUnreadCount(response.data.data.unreadCount || 0);
+        const countPayload = response.data.data;
+        setUnreadCount(countPayload?.unreadCount ?? (typeof countPayload === "number" ? countPayload : 0));
       }
     } catch (error) {
       logger.error("Failed to fetch unread count:", error);
