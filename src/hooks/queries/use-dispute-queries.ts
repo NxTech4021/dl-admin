@@ -25,7 +25,15 @@ export function useDisputes(filters?: {
       const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
-      return response.data;
+      const payload = response.data?.data ?? response.data;
+      const disputes = Array.isArray(payload) ? payload : [];
+      const pagination = response.data?.pagination;
+      return {
+        disputes,
+        total: pagination?.total ?? disputes.length,
+        totalPages: pagination?.totalPages ?? 1,
+        pagination: pagination ?? null,
+      };
     },
   });
 }
@@ -40,7 +48,7 @@ export function useDispute(id: string) {
       const response = await apiClient.get(
         endpoints.admin.disputes.getById(id)
       );
-      return response.data;
+      return response.data?.data ?? response.data;
     },
     enabled: !!id,
   });
@@ -124,7 +132,7 @@ export function useOpenDisputeCount() {
       const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
-      return response.data?.total || 0;
+      return response.data?.pagination?.total ?? response.data?.total ?? 0;
     },
     staleTime: 60000, // Cache for 1 minute
     refetchInterval: 60000, // Refetch every minute
