@@ -20,6 +20,7 @@ import {
   ArrowLeftRight,
   History,
   BarChart3,
+  Award,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavSection } from "@/components/nav-section";
@@ -133,6 +134,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               count: pendingTeamChangeCount,
               variant: "destructive" as const,
             } : undefined,
+          },
+          {
+            title: "Achievements",
+            url: "/achievements",
+            icon: Award,
           },
         ],
       },
