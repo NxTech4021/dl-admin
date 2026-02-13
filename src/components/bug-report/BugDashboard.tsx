@@ -256,7 +256,13 @@ export default function BugDashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setStats(data);
+        setStats({
+          ...DEFAULT_STATS,
+          ...data,
+          byStatus: { ...data.byStatus },
+          bySeverity: { ...data.bySeverity },
+          byPriority: { ...data.byPriority },
+        });
       } else {
         logger.error("Failed to fetch stats:", res.status);
         setStats(DEFAULT_STATS);
@@ -544,7 +550,7 @@ export default function BugDashboard() {
           <AnimatedStatsCard>
             <StatsCard
               title="Open"
-              value={(stats.byStatus.NEW || 0) + (stats.byStatus.TRIAGED || 0) + (stats.byStatus.IN_PROGRESS || 0)}
+              value={(stats.byStatus?.NEW || 0) + (stats.byStatus?.TRIAGED || 0) + (stats.byStatus?.IN_PROGRESS || 0)}
               description="Needs attention"
               icon={IconClock}
               iconColor="text-yellow-500"
@@ -554,7 +560,7 @@ export default function BugDashboard() {
           <AnimatedStatsCard>
             <StatsCard
               title="Critical"
-              value={stats.bySeverity.CRITICAL || 0}
+              value={stats.bySeverity?.CRITICAL || 0}
               description="High priority issues"
               icon={IconAlertTriangle}
               iconColor="text-red-500"
@@ -564,7 +570,7 @@ export default function BugDashboard() {
           <AnimatedStatsCard>
             <StatsCard
               title="Resolved"
-              value={(stats.byStatus.RESOLVED || 0) + (stats.byStatus.CLOSED || 0)}
+              value={(stats.byStatus?.RESOLVED || 0) + (stats.byStatus?.CLOSED || 0)}
               description={`Avg ${Math.round(stats.avgResolutionTimeMinutes / 60)}h to resolve`}
               icon={IconCircleCheck}
               iconColor="text-green-500"
