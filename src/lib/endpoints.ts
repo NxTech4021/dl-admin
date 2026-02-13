@@ -285,4 +285,15 @@ export const endpoints = {
     getDissolvedPartnerships: "/api/admin/partnerships/dissolved",
     getDissolvedPartnershipById: (id: string) => `/api/admin/partnerships/dissolved/${id}`,
   },
+
+  achievements: {
+    getAll: "/api/admin/achievements",
+    getById: (id: string) => `/api/admin/achievements/${id}`,
+    getEvaluators: "/api/admin/achievements/evaluators",
+    create: "/api/admin/achievements",
+    update: (id: string) => `/api/admin/achievements/${id}`,
+    delete: (id: string) => `/api/admin/achievements/${id}`,
+    grant: (id: string) => `/api/admin/achievements/${id}/grant`,
+    finalizeSeason: (seasonId: string) => `/api/admin/achievements/finalize-season/${seasonId}`,
+  },
 };
