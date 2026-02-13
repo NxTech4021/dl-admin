@@ -108,7 +108,7 @@ export function MatchStatsCards({
     },
     {
       title: "Scheduled",
-      value: stats.byStatus.SCHEDULED,
+      value: stats.byStatus?.SCHEDULED ?? 0,
       description: "Upcoming matches",
       icon: IconClock,
       iconColor: "text-green-500",
