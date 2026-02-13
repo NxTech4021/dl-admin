@@ -8,6 +8,7 @@ import {
   AdminStatusHistoryItem,
 } from "@/constants/zod/admin-schema";
 import { apiClient } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 import { queryKeys } from "./query-keys";
 
 export function useAdmins() {
@@ -16,7 +17,13 @@ export function useAdmins() {
     queryFn: async (): Promise<Admin[]> => {
       const response = await apiClient.get("/api/admin/getadmins");
       const result = response.data;
-      return z.array(adminSchema).parse(result.data.getAllAdmins);
+      const data = result.data?.getAllAdmins ?? result.data;
+      const parseResult = z.array(adminSchema).safeParse(data);
+      if (!parseResult.success) {
+        logger.error("Failed to parse admins list:", parseResult.error.issues);
+        return data;
+      }
+      return parseResult.data;
     },
   });
 }
@@ -41,7 +48,13 @@ export function useAdminDetail(adminId: string) {
         `/api/admin/admins/${adminId}`
       );
       const result = response.data;
-      return adminDetailSchema.parse(result.data);
+      const data = result.data;
+      const parseResult = adminDetailSchema.safeParse(data);
+      if (!parseResult.success) {
+        logger.error("Failed to parse admin detail:", parseResult.error.issues);
+        return data;
+      }
+      return parseResult.data;
     },
     enabled: !!adminId,
   });
