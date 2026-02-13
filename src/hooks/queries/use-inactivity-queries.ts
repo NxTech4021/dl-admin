@@ -29,7 +29,13 @@ export function useInactivitySettings(params?: { leagueId?: string; seasonId?: s
         return null;
       }
 
-      return inactivitySettingsSchema.parse(response.data.data);
+      const payload = response.data.data;
+      const parseResult = inactivitySettingsSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse inactivity settings:", parseResult.error.issues);
+        return null;
+      }
+      return parseResult.data;
     },
   });
 }
@@ -42,7 +48,13 @@ export function useAllInactivitySettings() {
     queryKey: queryKeys.inactivity.allSettings(),
     queryFn: async (): Promise<InactivitySettings[]> => {
       const response = await apiClient.get(endpoints.admin.inactivity.getAllSettings);
-      return z.array(inactivitySettingsSchema).parse(response.data.data || []);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(inactivitySettingsSchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse all inactivity settings:", parseResult.error.issues);
+        return Array.isArray(payload) ? payload : [];
+      }
+      return parseResult.data;
     },
   });
 }
@@ -55,7 +67,13 @@ export function useInactivityStats() {
     queryKey: queryKeys.inactivity.stats(),
     queryFn: async (): Promise<InactivityStats> => {
       const response = await apiClient.get(endpoints.admin.inactivity.getStats);
-      return inactivityStatsSchema.parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = inactivityStatsSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse inactivity stats:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
   });
 }
