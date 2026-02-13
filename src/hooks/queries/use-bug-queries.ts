@@ -54,7 +54,8 @@ export function useBugAppInit() {
     queryKey: queryKeys.bug.app("dla"),
     queryFn: async (): Promise<{ appId: string; name: string }> => {
       const response = await apiClient.get(endpoints.bug.init);
-      return { appId: response.data.appId, name: response.data.name || "DLA" };
+      const payload = response.data?.data ?? response.data;
+      return { appId: payload.appId, name: payload.name || "DLA" };
     },
     staleTime: Infinity, // App ID won't change
   });
@@ -69,7 +70,8 @@ export function useBugReportSettings(appId: string | null) {
     queryFn: async (): Promise<BugReportSettings | null> => {
       if (!appId) return null;
       const response = await apiClient.get(endpoints.bug.getSettings(appId));
-      return response.data;
+      const payload = response.data?.data ?? response.data;
+      return payload as BugReportSettings | null;
     },
     enabled: !!appId,
   });
