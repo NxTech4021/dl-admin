@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import axiosInstance, { endpoints } from "@/lib/endpoints";
 import { useSession } from "@/lib/auth-client";
 import { getErrorMessage } from "@/lib/api-error";
+import { useCreateLeague } from "@/hooks/queries";
 import {
   SPORTS_OPTIONS,
   LOCATION_OPTIONS,
@@ -46,19 +47,18 @@ import {
   type League,
   type SponsorOption,
   type SportType,
-  type LeagueStatus,
 } from "@/constants/types/league";
 
-interface LeagueCreatePayload {
+type LeagueCreatePayload = {
   name: string;
   location: string;
-  status: string;
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "UPCOMING" | "ONGOING" | "FINISHED" | "CANCELLED";
   sportType: SportType;
   gameType: "SINGLES" | "DOUBLES" | "MIXED";
   description: string | null;
   createdById: string | undefined;
   existingSponsorshipIds?: string[];
-}
+};
 
 interface LeagueCreateModalProps {
   open: boolean;
@@ -75,8 +75,8 @@ export default function LeagueCreateModal({
   onLeagueCreated,
   selectedTemplate,
 }: LeagueCreateModalProps) {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const createLeague = useCreateLeague();
   const [sponsors, setSponsors] = useState<SponsorOption[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(false);
   const [sponsorInputValue, setSponsorInputValue] = useState("");
@@ -98,7 +98,7 @@ export default function LeagueCreateModal({
     leagueName: "",
     sport: "",
     location: "",
-    status: "ACTIVE",
+    status: "ACTIVE" as LeagueCreatePayload["status"],
     description: "",
     hasSponsor: false,
     existingSponsorId: "",
@@ -156,11 +156,9 @@ React.useEffect(() => {
     setShowSuggestions(false);
   };
 
-  // Handle input blur (hide suggestions after a delay)
+  // Handle input blur
   const handleSponsorInputBlur = () => {
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
+    setShowSuggestions(false);
   };
 
   // Handle inline sponsor creation
@@ -225,13 +223,12 @@ React.useEffect(() => {
       leagueName: "",
       sport: "",
       location: "",
-      status: "ACTIVE",
+      status: "ACTIVE" as LeagueCreatePayload["status"],
       description: "",
       hasSponsor: false,
       existingSponsorId: "",
     });
     setError("");
-    setLoading(false);
     setSponsorInputValue("");
     setShowSuggestions(false);
     setFilteredSponsors([]);
@@ -240,23 +237,26 @@ React.useEffect(() => {
     setNewSponsor({ sponsoredName: "", packageTier: "", contractAmount: "" });
   };
 
-  const isFormValid = formData.leagueName && formData.sport && formData.location;
+  const isFormValid =
+    formData.leagueName.trim() &&
+    formData.sport &&
+    formData.location &&
+    (!formData.hasSponsor || formData.existingSponsorId);
 
 const handleCreateLeague = async () => {
-  if (!isFormValid) return;
+  if (!isFormValid || !userId) return;
 
-  setLoading(true);
   setError("");
 
   try {
     // Base league data
     const leagueData: LeagueCreatePayload = {
-      name: formData.leagueName,
+      name: formData.leagueName.trim(),
       location: formData.location,
       status: formData.status,
       sportType: (formData.sport as SportType) || "TENNIS",
       gameType: "SINGLES",
-      description: formData.description || null,
+      description: formData.description.trim() || null,
       createdById: userId,
     };
 
@@ -265,22 +265,17 @@ const handleCreateLeague = async () => {
       leagueData.existingSponsorshipIds = [formData.existingSponsorId];
     }
 
-    // Send request
-    const response = await axiosInstance.post(endpoints.league.create, leagueData);
+    const result = await createLeague.mutateAsync(leagueData);
 
-    if (response.data) {
-      toast.success("League created successfully!");
-      resetModal();
-      onOpenChange(false);
-      onLeagueCreated?.(response.data);
-    }
+    toast.success("League created successfully!");
+    resetModal();
+    onOpenChange(false);
+    onLeagueCreated?.(result);
 
   } catch (err: unknown) {
     const message = getErrorMessage(err, "Failed to create league");
     setError(message);
     toast.error(message);
-  } finally {
-    setLoading(false);
   }
 };
 
@@ -462,9 +457,10 @@ const handleCreateLeague = async () => {
                         </Label>
                         <Input
                           id="existingSponsor"
-                          placeholder="Type to search sponsors..."
+                          placeholder={sponsorsLoading ? "Loading sponsors..." : "Type to search sponsors..."}
                           value={sponsorInputValue}
                           onChange={(e) => handleSponsorInputChange(e.target.value)}
+                          disabled={sponsorsLoading}
                           onFocus={() => {
                             if (sponsorInputValue.trim() !== "") {
                               setShowSuggestions(true);
@@ -481,6 +477,7 @@ const handleCreateLeague = async () => {
                               <div
                                 key={sponsor.id}
                                 className="px-3 py-2 hover:bg-muted cursor-pointer text-sm transition-colors"
+                                onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => handleSponsorSelect(sponsor)}
                               >
                                 {sponsor.name}
@@ -661,7 +658,7 @@ const handleCreateLeague = async () => {
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              disabled={loading}
+              disabled={createLeague.isPending}
               className="text-muted-foreground hover:text-foreground"
             >
               Cancel
@@ -669,10 +666,10 @@ const handleCreateLeague = async () => {
             <Button
               type="button"
               onClick={handleCreateLeague}
-              disabled={loading || !isFormValid}
+              disabled={createLeague.isPending || !isFormValid}
               className="gap-2 min-w-[140px]"
             >
-              {loading ? (
+              {createLeague.isPending ? (
                 <>
                   <IconLoader2 className="animate-spin size-4" />
                   Creating...
