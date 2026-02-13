@@ -37,20 +37,22 @@ export function usePayments(filters: Partial<PaymentFilters> = {}) {
         `${endpoints.payments.getAll}?${params.toString()}`
       );
 
+      // Unwrap the API envelope (response.data has { success, data, pagination })
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+
       // Safe parse with error handling
-      const parseResult = paginatedPaymentsSchema.safeParse(response.data);
+      const parseResult = paginatedPaymentsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("Payments schema validation failed:", parseResult.error.issues);
-        // Return raw data as fallback
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? {
-            page: 1,
-            limit: 20,
-            total: 0,
-            totalPages: 0,
-          },
-        };
+        return unwrapped;
       }
 
       return parseResult.data;
