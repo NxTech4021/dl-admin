@@ -118,6 +118,7 @@ export function EditResultModal({
                 min="0"
                 value={team1Score}
                 onChange={(e) => setTeam1Score(parseInt(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
                 className="text-center text-2xl font-bold h-14"
               />
             </div>
@@ -134,6 +135,7 @@ export function EditResultModal({
                 min="0"
                 value={team2Score}
                 onChange={(e) => setTeam2Score(parseInt(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
                 className="text-center text-2xl font-bold h-14"
               />
             </div>
