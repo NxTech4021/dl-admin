@@ -25,7 +25,13 @@ export function useTeamChangeRequests(filters?: {
         : endpoints.teamChangeRequests.getAll;
 
       const response = await apiClient.get(url);
-      return teamChangeRequestsResponseSchema.parse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = teamChangeRequestsResponseSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Team change requests schema validation failed:", parseResult.error.issues);
+        return Array.isArray(payload) ? payload : [];
+      }
+      return parseResult.data;
     },
   });
 }
@@ -39,7 +45,13 @@ export function useTeamChangeRequest(id: string | null) {
     queryFn: async (): Promise<TeamChangeRequest | null> => {
       if (!id) return null;
       const response = await apiClient.get(endpoints.teamChangeRequests.getById(id));
-      return teamChangeRequestSchema.parse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = teamChangeRequestSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Team change request schema validation failed:", parseResult.error.issues);
+        return payload ?? null;
+      }
+      return parseResult.data;
     },
     enabled: !!id,
   });
@@ -53,7 +65,8 @@ export function usePendingTeamChangeRequestsCount() {
     queryKey: queryKeys.teamChangeRequests.pendingCount(),
     queryFn: async (): Promise<number> => {
       const response = await apiClient.get(endpoints.teamChangeRequests.getPendingCount);
-      return response.data.count || 0;
+      const payload = response.data?.data ?? response.data;
+      return payload?.count || 0;
     },
   });
 }
