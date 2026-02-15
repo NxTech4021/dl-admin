@@ -123,7 +123,7 @@ function DivisionDetailPage() {
     setIsMatchesLoading(true);
     try {
       const response = await axiosInstance.get(
-        `/api/division/${divisionId}/matches`
+        endpoints.match.getDivisionResults(divisionId)
       );
       const matchesData =
         response.data?.data || response.data?.matches || response.data || [];
