@@ -22,8 +22,8 @@ export const achievementSchema = z.object({
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  unlockCount: z.number().optional(),
-  totalPlayers: z.number().optional(),
+  unlockCount: z.number().default(0),
+  totalPlayers: z.number().default(0),
 });
 
 export type Achievement = z.infer<typeof achievementSchema>;
