@@ -842,12 +842,11 @@ export function useAvailableUsers(currentUserId?: string) {
       let usersData: AvailableUser[] = [];
 
       if (response.data) {
-        if (response.data.success && response.data.data) {
-          usersData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          usersData = response.data;
-        } else if (response.data.users && Array.isArray(response.data.users)) {
-          usersData = response.data.users;
+        const payload = response.data.success ? response.data.data : response.data;
+        if (Array.isArray(payload)) {
+          usersData = payload;
+        } else if (payload?.users && Array.isArray(payload.users)) {
+          usersData = payload.users;
         }
       }
 
