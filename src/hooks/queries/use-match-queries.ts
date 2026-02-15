@@ -261,7 +261,7 @@ export function useEditMatchResult() {
       outcome?: string;
       reason: string;
     }) => {
-      const response = await apiClient.post(
+      const response = await apiClient.put(
         endpoints.admin.matches.editResult(matchId),
         {
           team1Score,
