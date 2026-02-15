@@ -27,6 +27,7 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBugsIndexRouteImport } from './routes/_authenticated/bugs/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authenticated/admin-logs/index'
+import { Route as AuthenticatedAchievementsIndexRouteImport } from './routes/_authenticated/achievements/index'
 import { Route as AuthenticatedReportsSeasonPerformanceRouteImport } from './routes/_authenticated/reports/season-performance'
 import { Route as AuthenticatedReportsRevenueRouteImport } from './routes/_authenticated/reports/revenue'
 import { Route as AuthenticatedReportsPlayerRetentionRouteImport } from './routes/_authenticated/reports/player-retention'
@@ -143,6 +144,12 @@ const AuthenticatedAdminLogsIndexRoute =
     path: '/admin-logs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAchievementsIndexRoute =
+  AuthenticatedAchievementsIndexRouteImport.update({
+    id: '/achievements/',
+    path: '/achievements/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSeasonPerformanceRoute =
   AuthenticatedReportsSeasonPerformanceRouteImport.update({
     id: '/reports/season-performance',
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
   '/reports/revenue': typeof AuthenticatedReportsRevenueRoute
   '/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
+  '/achievements': typeof AuthenticatedAchievementsIndexRoute
   '/admin-logs': typeof AuthenticatedAdminLogsIndexRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
   '/reports/revenue': typeof AuthenticatedReportsRevenueRoute
   '/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
+  '/achievements': typeof AuthenticatedAchievementsIndexRoute
   '/admin-logs': typeof AuthenticatedAdminLogsIndexRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
@@ -305,6 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/player-retention': typeof AuthenticatedReportsPlayerRetentionRoute
   '/_authenticated/reports/revenue': typeof AuthenticatedReportsRevenueRoute
   '/_authenticated/reports/season-performance': typeof AuthenticatedReportsSeasonPerformanceRoute
+  '/_authenticated/achievements/': typeof AuthenticatedAchievementsIndexRoute
   '/_authenticated/admin-logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bugs/': typeof AuthenticatedBugsIndexRoute
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/reports/player-retention'
     | '/reports/revenue'
     | '/reports/season-performance'
+    | '/achievements'
     | '/admin-logs'
     | '/admin'
     | '/bugs'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/reports/player-retention'
     | '/reports/revenue'
     | '/reports/season-performance'
+    | '/achievements'
     | '/admin-logs'
     | '/admin'
     | '/bugs'
@@ -407,6 +419,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/player-retention'
     | '/_authenticated/reports/revenue'
     | '/_authenticated/reports/season-performance'
+    | '/_authenticated/achievements/'
     | '/_authenticated/admin-logs/'
     | '/_authenticated/admin/'
     | '/_authenticated/bugs/'
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLogsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/achievements/': {
+      id: '/_authenticated/achievements/'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AuthenticatedAchievementsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/season-performance': {
       id: '/_authenticated/reports/season-performance'
       path: '/reports/season-performance'
@@ -674,6 +694,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsPlayerRetentionRoute: typeof AuthenticatedReportsPlayerRetentionRoute
   AuthenticatedReportsRevenueRoute: typeof AuthenticatedReportsRevenueRoute
   AuthenticatedReportsSeasonPerformanceRoute: typeof AuthenticatedReportsSeasonPerformanceRoute
+  AuthenticatedAchievementsIndexRoute: typeof AuthenticatedAchievementsIndexRoute
   AuthenticatedAdminLogsIndexRoute: typeof AuthenticatedAdminLogsIndexRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedBugsIndexRoute: typeof AuthenticatedBugsIndexRoute
@@ -710,6 +731,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsRevenueRoute: AuthenticatedReportsRevenueRoute,
   AuthenticatedReportsSeasonPerformanceRoute:
     AuthenticatedReportsSeasonPerformanceRoute,
+  AuthenticatedAchievementsIndexRoute: AuthenticatedAchievementsIndexRoute,
   AuthenticatedAdminLogsIndexRoute: AuthenticatedAdminLogsIndexRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedBugsIndexRoute: AuthenticatedBugsIndexRoute,

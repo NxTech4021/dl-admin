@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { divisionSchema, Division } from "@/constants/zod/division-schema";
 import { apiClient } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 import { queryKeys } from "./query-keys";
 
 export function useDivisions() {
@@ -9,8 +10,13 @@ export function useDivisions() {
     queryKey: queryKeys.divisions.list(),
     queryFn: async (): Promise<Division[]> => {
       const response = await apiClient.get("/api/division/");
-      const result = response.data;
-      return z.array(divisionSchema).parse(result.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = z.array(divisionSchema).safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse divisions:", parseResult.error.issues);
+        return Array.isArray(payload) ? payload : [];
+      }
+      return parseResult.data;
     },
   });
 }
@@ -20,7 +26,13 @@ export function useDivision(id: string) {
     queryKey: queryKeys.divisions.detail(id),
     queryFn: async (): Promise<Division> => {
       const response = await apiClient.get(`/api/division/${id}`);
-      return divisionSchema.parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = divisionSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse division:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     enabled: !!id,
   });

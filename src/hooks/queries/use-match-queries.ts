@@ -60,26 +60,27 @@ export function useMatches(filters: MatchFilters = {}) {
         `${endpoints.admin.matches.getAll}?${params.toString()}`
       );
 
+      const payload = response.data?.data ?? response.data;
       // Safe parse with error handling for schema mismatches
-      const parseResult = z.array(matchSchema).safeParse(response.data.matches);
+      const parseResult = z.array(matchSchema).safeParse(payload.matches);
       if (!parseResult.success) {
         logger.error("Match schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback to prevent complete failure
         return {
-          matches: response.data.matches ?? [],
-          total: response.data.total,
-          page: response.data.page,
-          limit: response.data.limit,
-          totalPages: response.data.totalPages,
+          matches: payload.matches ?? [],
+          total: payload.total,
+          page: payload.page,
+          limit: payload.limit,
+          totalPages: payload.totalPages,
         };
       }
 
       return {
         matches: parseResult.data,
-        total: response.data.total,
-        page: response.data.page,
-        limit: response.data.limit,
-        totalPages: response.data.totalPages,
+        total: payload.total,
+        page: payload.page,
+        limit: payload.limit,
+        totalPages: payload.totalPages,
       };
     },
     staleTime: 30000, // 30 seconds
@@ -96,12 +97,13 @@ export function useMatch(id: string) {
       const response = await apiClient.get(
         endpoints.admin.matches.getById(id)
       );
+      const payload = response.data?.data ?? response.data;
       // Safe parse with error handling for schema mismatches
-      const parseResult = matchSchema.safeParse(response.data.data);
+      const parseResult = matchSchema.safeParse(payload);
       if (!parseResult.success) {
         logger.error("Match detail schema validation failed:", parseResult.error.issues);
         // Return raw data as fallback
-        return response.data.data;
+        return payload;
       }
       return parseResult.data;
     },
@@ -129,11 +131,20 @@ export function useMatchStats(filters?: {
         `${endpoints.admin.matches.getStats}?${params.toString()}`
       );
       // Safe parse with error handling for schema mismatches
-      const parseResult = matchStatsSchema.safeParse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = matchStatsSchema.safeParse(payload);
       if (!parseResult.success) {
         logger.error("Match stats schema validation failed:", parseResult.error.issues);
-        // Return raw data as fallback
-        return response.data;
+        const DEFAULT_BY_STATUS = { DRAFT: 0, SCHEDULED: 0, ONGOING: 0, COMPLETED: 0, UNFINISHED: 0, CANCELLED: 0, VOID: 0 };
+        return {
+          totalMatches: payload?.totalMatches ?? 0,
+          byStatus: { ...DEFAULT_BY_STATUS, ...(payload?.byStatus ?? {}) },
+          disputed: payload?.disputed ?? 0,
+          pendingConfirmation: payload?.pendingConfirmation ?? 0,
+          lateCancellations: payload?.lateCancellations ?? 0,
+          walkovers: payload?.walkovers ?? 0,
+          requiresAdminReview: payload?.requiresAdminReview ?? 0,
+        };
       }
       return parseResult.data;
     },
@@ -388,7 +399,8 @@ export function useAvailablePlayers(
       const response = await apiClient.get(
         `${endpoints.admin.divisions.availablePlayers(divisionId!)}?${params.toString()}`
       );
-      return response.data as AvailablePlayer[];
+      const payload = response.data?.data ?? response.data;
+      return (Array.isArray(payload) ? payload : []) as AvailablePlayer[];
     },
     enabled: !!divisionId,
   });
@@ -410,7 +422,8 @@ export function useValidateParticipants() {
         endpoints.admin.matches.validateParticipants(matchId),
         { participants }
       );
-      return response.data as {
+      const payload = response.data?.data ?? response.data;
+      return payload as {
         isValid: boolean;
         errors: string[];
         warnings: string[];

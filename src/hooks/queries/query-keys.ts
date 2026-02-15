@@ -143,4 +143,11 @@ export const queryKeys = {
     forTarget: (targetType?: string, targetId?: string) =>
       [...queryKeys.userActivity.all, "forTarget", targetType, targetId] as const,
   },
+  achievements: {
+    all: ["achievements"] as const,
+    lists: () => [...queryKeys.achievements.all, "list"] as const,
+    list: (filters?: unknown) => [...queryKeys.achievements.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.achievements.all, "detail", id] as const,
+    evaluators: () => [...queryKeys.achievements.all, "evaluators"] as const,
+  },
 };

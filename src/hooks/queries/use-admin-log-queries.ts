@@ -45,13 +45,14 @@ export function useAdminLogs(filters: Partial<AdminLogFilters> = {}, options?: {
         `${endpoints.admin.logs.getAll}?${params.toString()}`
       );
 
-      const parseResult = paginatedAdminLogsSchema.safeParse(response.data);
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? DEFAULT_PAGINATION,
+      };
+      const parseResult = paginatedAdminLogsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("Admin logs schema validation failed:", parseResult.error.issues);
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? DEFAULT_PAGINATION,
-        };
+        return unwrapped;
       }
 
       return parseResult.data;
@@ -143,13 +144,14 @@ export function useAdminLogForTarget(targetType?: string, targetId?: string) {
         endpoints.admin.logs.getForTarget(targetType!, targetId!)
       );
 
-      const parseResult = paginatedAdminLogsSchema.safeParse(response.data);
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? DEFAULT_PAGINATION,
+      };
+      const parseResult = paginatedAdminLogsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("Admin logs for target schema validation failed:", parseResult.error.issues);
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? DEFAULT_PAGINATION,
-        };
+        return unwrapped;
       }
 
       return parseResult.data;
@@ -186,13 +188,14 @@ export function useUserActivityLogs(filters: Partial<UserActivityFilters> = {}, 
         `${endpoints.admin.userActivity.getAll}?${params.toString()}`
       );
 
-      const parseResult = paginatedUserActivityLogsSchema.safeParse(response.data);
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? DEFAULT_PAGINATION,
+      };
+      const parseResult = paginatedUserActivityLogsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("User activity logs schema validation failed:", parseResult.error.issues);
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? DEFAULT_PAGINATION,
-        };
+        return unwrapped;
       }
 
       return parseResult.data;
@@ -212,13 +215,14 @@ export function useUserActivityForUser(userId?: string) {
         endpoints.admin.userActivity.getForUser(userId!)
       );
 
-      const parseResult = paginatedUserActivityLogsSchema.safeParse(response.data);
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? DEFAULT_PAGINATION,
+      };
+      const parseResult = paginatedUserActivityLogsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("User activity for user schema validation failed:", parseResult.error.issues);
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? DEFAULT_PAGINATION,
-        };
+        return unwrapped;
       }
 
       return parseResult.data;
@@ -239,13 +243,14 @@ export function useUserActivityForTarget(targetType?: string, targetId?: string)
         endpoints.admin.userActivity.getForTarget(targetType!, targetId!)
       );
 
-      const parseResult = paginatedUserActivityLogsSchema.safeParse(response.data);
+      const unwrapped = {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? DEFAULT_PAGINATION,
+      };
+      const parseResult = paginatedUserActivityLogsSchema.safeParse(unwrapped);
       if (!parseResult.success) {
         logger.error("User activity for target schema validation failed:", parseResult.error.issues);
-        return {
-          data: response.data.data ?? [],
-          pagination: response.data.pagination ?? DEFAULT_PAGINATION,
-        };
+        return unwrapped;
       }
 
       return parseResult.data;

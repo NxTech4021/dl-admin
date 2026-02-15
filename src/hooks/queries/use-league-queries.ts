@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { leagueSchema, League } from "@/constants/zod/league-schema";
 import { apiClient } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 import { queryKeys } from "./query-keys";
 
 export function useLeagues() {
@@ -22,7 +23,13 @@ export function useLeague(id: string) {
     queryKey: queryKeys.leagues.detail(id),
     queryFn: async (): Promise<League> => {
       const response = await apiClient.get(`/api/league/${id}`);
-      return leagueSchema.parse(response.data.data);
+      const payload = response.data?.data ?? response.data;
+      const parseResult = leagueSchema.safeParse(payload);
+      if (!parseResult.success) {
+        logger.error("Failed to parse league:", parseResult.error.issues);
+        return payload;
+      }
+      return parseResult.data;
     },
     enabled: !!id,
   });
@@ -32,7 +39,7 @@ export function useCreateLeague() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<League>) => {
+    mutationFn: async (data: Partial<League> & Record<string, unknown>) => {
       const response = await apiClient.post("/api/league/create", data);
       return response.data;
     },
