@@ -101,6 +101,17 @@ const SCOPE_OPTIONS = [
   { value: "LIFETIME", label: "Lifetime" },
 ];
 
+const SPORT_OPTIONS = [
+  { value: "TENNIS", label: "Tennis" },
+  { value: "PICKLEBALL", label: "Pickleball" },
+  { value: "PADEL", label: "Padel" },
+];
+
+const GAME_TYPE_OPTIONS = [
+  { value: "SINGLES", label: "Singles" },
+  { value: "DOUBLES", label: "Doubles" },
+];
+
 type AchievementFormData = {
   title: string;
   description: string;
@@ -279,6 +290,16 @@ function AchievementsPage() {
       toast.error("Failed to deactivate achievement");
     }
   }, [deletingAchievement, deleteMutation]);
+
+  // Reactivate achievement
+  const handleReactivate = React.useCallback(async (achievement: Achievement) => {
+    try {
+      await updateMutation.mutateAsync({ id: achievement.id, data: { isActive: true } });
+      toast.success(`"${achievement.title}" reactivated successfully`);
+    } catch {
+      toast.error("Failed to reactivate achievement");
+    }
+  }, [updateMutation]);
 
   // Confirm grant
   const handleConfirmGrant = React.useCallback(async () => {
@@ -583,15 +604,27 @@ function AchievementsPage() {
                                   >
                                     <IconGift className="size-4" />
                                   </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-destructive hover:text-destructive"
-                                    onClick={() => handleOpenDelete(achievement)}
-                                    title="Deactivate"
-                                  >
-                                    <IconTrash className="size-4" />
-                                  </Button>
+                                  {!achievement.isActive ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 text-emerald-600 hover:text-emerald-600"
+                                      onClick={() => handleReactivate(achievement)}
+                                      title="Reactivate"
+                                    >
+                                      <IconTrophy className="size-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 text-destructive hover:text-destructive"
+                                      onClick={() => handleOpenDelete(achievement)}
+                                      title="Deactivate"
+                                    >
+                                      <IconTrash className="size-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -774,22 +807,42 @@ function AchievementsPage() {
             {/* Sport Filter & Game Type Filter */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="sportFilter">Sport Filter (optional)</Label>
-                <Input
-                  id="sportFilter"
-                  value={form.sportFilter}
-                  onChange={(e) => setForm((f) => ({ ...f, sportFilter: e.target.value }))}
-                  placeholder="e.g. TENNIS"
-                />
+                <Label>Sport Filter (optional)</Label>
+                <Select
+                  value={form.sportFilter || "_none"}
+                  onValueChange={(v) => setForm((f) => ({ ...f, sportFilter: v === "_none" ? "" : v }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No filter</SelectItem>
+                    {SPORT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="gameTypeFilter">Game Type Filter (optional)</Label>
-                <Input
-                  id="gameTypeFilter"
-                  value={form.gameTypeFilter}
-                  onChange={(e) => setForm((f) => ({ ...f, gameTypeFilter: e.target.value }))}
-                  placeholder="e.g. SINGLES"
-                />
+                <Label>Game Type Filter (optional)</Label>
+                <Select
+                  value={form.gameTypeFilter || "_none"}
+                  onValueChange={(v) => setForm((f) => ({ ...f, gameTypeFilter: v === "_none" ? "" : v }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No filter</SelectItem>
+                    {GAME_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -858,8 +911,12 @@ function AchievementsPage() {
                 id="grantUserId"
                 value={grantUserId}
                 onChange={(e) => setGrantUserId(e.target.value)}
-                placeholder="Enter user ID..."
+                placeholder="e.g. cm3abc123..."
+                className="font-mono text-sm"
               />
+              <p className="text-xs text-muted-foreground">
+                You can find user IDs in the Players management page.
+              </p>
             </div>
           </div>
 
@@ -869,7 +926,7 @@ function AchievementsPage() {
             </Button>
             <Button
               onClick={handleConfirmGrant}
-              disabled={!grantUserId.trim() || grantMutation.isPending}
+              disabled={!grantUserId.trim() || grantUserId.trim().length < 10 || grantMutation.isPending}
             >
               {grantMutation.isPending ? "Granting..." : "Grant"}
             </Button>
