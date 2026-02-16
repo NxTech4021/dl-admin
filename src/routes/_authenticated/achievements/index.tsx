@@ -67,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/achievements/")({
 
 // Tier badge colors
 const TIER_COLORS: Record<string, string> = {
+  NONE: "#6B7280",
   BRONZE: "#CD7F32",
   SILVER: "#C0C0C0",
   GOLD: "#FFD700",
@@ -75,20 +76,23 @@ const TIER_COLORS: Record<string, string> = {
 
 // Category badge colors
 const CATEGORY_COLORS: Record<string, string> = {
-  COMPETITION: "#3B82F6",
-  RATING: "#8B5CF6",
-  SEASON: "#10B981",
-  SOCIAL: "#F59E0B",
+  MATCH_COUNTER: "#3B82F6",
+  LEAGUE_SEASON: "#10B981",
+  WINNING: "#F59E0B",
+  MULTI_SPORT: "#8B5CF6",
+  MATCH_STREAK: "#EF4444",
 };
 
 const CATEGORY_OPTIONS = [
-  { value: "COMPETITION", label: "Competition" },
-  { value: "RATING", label: "Rating" },
-  { value: "SEASON", label: "Season" },
-  { value: "SOCIAL", label: "Social" },
+  { value: "MATCH_COUNTER", label: "Match Counter" },
+  { value: "LEAGUE_SEASON", label: "League & Season" },
+  { value: "WINNING", label: "Winning" },
+  { value: "MULTI_SPORT", label: "Multi-Sport" },
+  { value: "MATCH_STREAK", label: "Match Streak" },
 ];
 
 const TIER_OPTIONS = [
+  { value: "NONE", label: "None" },
   { value: "BRONZE", label: "Bronze" },
   { value: "SILVER", label: "Silver" },
   { value: "GOLD", label: "Gold" },
@@ -133,7 +137,7 @@ const DEFAULT_FORM: AchievementFormData = {
   title: "",
   description: "",
   icon: "trophy-outline",
-  category: "COMPETITION",
+  category: "MATCH_COUNTER",
   tier: "BRONZE",
   scope: "LIFETIME",
   evaluatorKey: "",
@@ -563,7 +567,7 @@ function AchievementsPage() {
                                 <Badge
                                   style={{
                                     backgroundColor: TIER_COLORS[achievement.tier] ?? "#6B7280",
-                                    color: achievement.tier === "SILVER" ? "#1a1a1a" : "#fff",
+                                    color: (achievement.tier === "SILVER" || achievement.tier === "NONE") ? "#1a1a1a" : "#fff",
                                     borderColor: "transparent",
                                   }}
                                 >
