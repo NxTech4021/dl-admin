@@ -155,7 +155,7 @@ export function useProcessWithdrawalRequest() {
       status: "APPROVED" | "REJECTED";
       adminNotes?: string;
     }) => {
-      const response = await apiClient.patch(
+      const response = await apiClient.put(
         endpoints.withdrawal.process(requestId),
         { status, adminNotes }
       );
