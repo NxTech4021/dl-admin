@@ -61,6 +61,7 @@ interface LeagueDetailData {
   };
   seasons?: SeasonWithMemberships[];
   sponsorships?: Sponsorship[];
+  uniquePlayerCount?: number;
   _count?: {
     memberships?: number;
     seasons?: number;
@@ -133,16 +134,10 @@ function LeagueDetailPage() {
 
   const { uniqueMemberCount, totalDivisions, activeSeasonCount } =
     React.useMemo(() => {
-      const playerIds = new Set<string>();
       let divisions = 0;
       let activeSeasons = 0;
 
       seasons.forEach((season) => {
-        const memberships = season?.memberships ?? [];
-        memberships.forEach((m) => {
-          if (m.userId) playerIds.add(m.userId);
-        });
-
         divisions += season?.divisions?.length ?? 0;
 
         if (season?.status?.toUpperCase() === "ACTIVE") {
@@ -151,11 +146,11 @@ function LeagueDetailPage() {
       });
 
       return {
-        uniqueMemberCount: playerIds.size,
+        uniqueMemberCount: league?.uniquePlayerCount ?? 0,
         totalDivisions: divisions,
         activeSeasonCount: activeSeasons,
       };
-    }, [seasons]);
+    }, [seasons, league]);
 
   if (isLoading || !league) {
     return (
