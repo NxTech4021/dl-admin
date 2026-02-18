@@ -537,7 +537,10 @@ export default function SeasonLeaderboardCard({
           { params: { limit: 20 } }
         );
 
-        const matchesData = response.data.matches || response.data.data || [];
+        const raw = response.data?.data;
+        const matchesData = Array.isArray(raw)
+          ? raw
+          : raw?.matches || response.data?.matches || [];
 
         setDivisionDataMap((prev) => {
           const data = prev.get(divisionId);
