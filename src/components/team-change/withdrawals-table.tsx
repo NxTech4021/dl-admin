@@ -118,20 +118,41 @@ export function WithdrawalsTable({
                 {(currentPage - 1) * pageSize + index + 1}
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <PartnershipAvatars
-                    captain={request.partnership?.captain || null}
-                    partner={request.partnership?.partner || null}
-                  />
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-medium text-sm truncate">
-                      {request.partnership?.captain?.name || "Unknown"}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      & {request.partnership?.partner?.name || "Unknown"}
-                    </span>
+                {request.partnership ? (
+                  <div className="flex items-center gap-2">
+                    <PartnershipAvatars
+                      captain={request.partnership.captain || null}
+                      partner={request.partnership.partner || null}
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium text-sm truncate">
+                        {request.partnership.captain?.name || "Unknown"}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        & {request.partnership.partner?.name || "Unknown"}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Avatar className="size-7 ring-1 ring-background flex-shrink-0">
+                      {request.user?.image && (
+                        <AvatarImage src={request.user.image} alt={request.user?.name || ""} />
+                      )}
+                      <AvatarFallback className={cn("text-white text-[9px] font-semibold", getAvatarColor(request.user?.name))}>
+                        {getInitials(request.user?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium text-sm truncate">
+                        {request.user?.name || "Unknown"}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        Singles
+                      </span>
+                    </div>
+                  </div>
+                )}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
