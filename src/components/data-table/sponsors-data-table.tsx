@@ -65,6 +65,7 @@ import { sponsorSchema, Sponsor } from "@/constants/zod/sponsor-schema";
 import { logger } from "@/lib/logger";
 
 const SponsorEditModal = React.lazy(() => import("@/components/modal/sponsor-edit-modal").then((mod) => ({ default: mod.SponsorEditModal })));
+const SponsorDetailModal = React.lazy(() => import("@/components/modal/sponsor-detail-modal").then((mod) => ({ default: mod.SponsorDetailModal })));
 
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return "N/A";
@@ -138,7 +139,8 @@ const getLeagueDisplay = (sponsor: Sponsor): React.ReactNode => {
 };
 
 const createColumns = (
-  handleEditSponsor: (sponsorId: string) => void
+  handleEditSponsor: (sponsorId: string) => void,
+  handleViewSponsor: (sponsorId: string) => void
 ): ColumnDef<Sponsor>[] => [
   {
     id: "select",
@@ -244,10 +246,7 @@ const createColumns = (
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-              onClick={() => {
-                // TODO: Implement view sponsor functionality
-                logger.debug("View sponsor:", sponsor.id);
-              }}
+              onClick={() => handleViewSponsor(sponsor.id)}
             >
               <IconEye className="mr-2 size-4" />
               View Details
@@ -296,6 +295,7 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
   
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const [detailModalOpen, setDetailModalOpen] = React.useState(false);
   const [selectedSponsorId, setSelectedSponsorId] = React.useState<string>("");
 
   // Filter states
@@ -367,6 +367,11 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
     fetchSponsors();
   }, [refreshTrigger]);
 
+  const handleViewSponsor = (sponsorId: string) => {
+    setSelectedSponsorId(sponsorId);
+    setDetailModalOpen(true);
+  };
+
   const handleEditSponsor = (sponsorId: string) => {
     setSelectedSponsorId(sponsorId);
     setEditModalOpen(true);
@@ -399,7 +404,7 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
     }
   };
 
-  const columns = createColumns(handleEditSponsor);
+  const columns = createColumns(handleEditSponsor, handleViewSponsor);
 
   const table = useReactTable({
     data: filteredData,
@@ -468,6 +473,8 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
               table.getRowModel().rows.map((row) => (
                 <motion.tr
                   key={row.id}
+                  initial="hidden"
+                  animate="visible"
                   variants={tableRowVariants}
                   transition={fastTransition}
                   data-state={row.getIsSelected() && "selected"}
@@ -521,6 +528,18 @@ export function SponsorsDataTable({ refreshTrigger, searchQuery = "" }: Sponsors
           </Button>
         </div>
       </div>
+
+      {/* View Sponsor Detail Modal */}
+      {selectedSponsorId && (
+        <React.Suspense fallback={null}>
+          <SponsorDetailModal
+            open={detailModalOpen}
+            onOpenChange={setDetailModalOpen}
+            sponsorId={selectedSponsorId}
+            onEditClick={handleEditSponsor}
+          />
+        </React.Suspense>
+      )}
 
       {/* Edit Sponsor Modal */}
       {selectedSponsorId && (
