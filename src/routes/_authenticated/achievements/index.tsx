@@ -67,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/achievements/")({
 
 // Tier badge colors
 const TIER_COLORS: Record<string, string> = {
+  NONE: "#6B7280",
   BRONZE: "#CD7F32",
   SILVER: "#C0C0C0",
   GOLD: "#FFD700",
@@ -75,20 +76,23 @@ const TIER_COLORS: Record<string, string> = {
 
 // Category badge colors
 const CATEGORY_COLORS: Record<string, string> = {
-  COMPETITION: "#3B82F6",
-  RATING: "#8B5CF6",
-  SEASON: "#10B981",
-  SOCIAL: "#F59E0B",
+  MATCH_COUNTER: "#3B82F6",
+  LEAGUE_SEASON: "#10B981",
+  WINNING: "#F59E0B",
+  MULTI_SPORT: "#8B5CF6",
+  MATCH_STREAK: "#EF4444",
 };
 
 const CATEGORY_OPTIONS = [
-  { value: "COMPETITION", label: "Competition" },
-  { value: "RATING", label: "Rating" },
-  { value: "SEASON", label: "Season" },
-  { value: "SOCIAL", label: "Social" },
+  { value: "MATCH_COUNTER", label: "Match Counter" },
+  { value: "LEAGUE_SEASON", label: "League & Season" },
+  { value: "WINNING", label: "Winning" },
+  { value: "MULTI_SPORT", label: "Multi-Sport" },
+  { value: "MATCH_STREAK", label: "Match Streak" },
 ];
 
 const TIER_OPTIONS = [
+  { value: "NONE", label: "None" },
   { value: "BRONZE", label: "Bronze" },
   { value: "SILVER", label: "Silver" },
   { value: "GOLD", label: "Gold" },
@@ -99,6 +103,17 @@ const SCOPE_OPTIONS = [
   { value: "MATCH", label: "Match" },
   { value: "SEASON", label: "Season" },
   { value: "LIFETIME", label: "Lifetime" },
+];
+
+const SPORT_OPTIONS = [
+  { value: "TENNIS", label: "Tennis" },
+  { value: "PICKLEBALL", label: "Pickleball" },
+  { value: "PADEL", label: "Padel" },
+];
+
+const GAME_TYPE_OPTIONS = [
+  { value: "SINGLES", label: "Singles" },
+  { value: "DOUBLES", label: "Doubles" },
 ];
 
 type AchievementFormData = {
@@ -122,7 +137,7 @@ const DEFAULT_FORM: AchievementFormData = {
   title: "",
   description: "",
   icon: "trophy-outline",
-  category: "COMPETITION",
+  category: "MATCH_COUNTER",
   tier: "BRONZE",
   scope: "LIFETIME",
   evaluatorKey: "",
@@ -279,6 +294,16 @@ function AchievementsPage() {
       toast.error("Failed to deactivate achievement");
     }
   }, [deletingAchievement, deleteMutation]);
+
+  // Reactivate achievement
+  const handleReactivate = React.useCallback(async (achievement: Achievement) => {
+    try {
+      await updateMutation.mutateAsync({ id: achievement.id, data: { isActive: true } });
+      toast.success(`"${achievement.title}" reactivated successfully`);
+    } catch {
+      toast.error("Failed to reactivate achievement");
+    }
+  }, [updateMutation]);
 
   // Confirm grant
   const handleConfirmGrant = React.useCallback(async () => {
@@ -542,7 +567,7 @@ function AchievementsPage() {
                                 <Badge
                                   style={{
                                     backgroundColor: TIER_COLORS[achievement.tier] ?? "#6B7280",
-                                    color: achievement.tier === "SILVER" ? "#1a1a1a" : "#fff",
+                                    color: (achievement.tier === "SILVER" || achievement.tier === "NONE") ? "#1a1a1a" : "#fff",
                                     borderColor: "transparent",
                                   }}
                                 >
@@ -583,15 +608,27 @@ function AchievementsPage() {
                                   >
                                     <IconGift className="size-4" />
                                   </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-destructive hover:text-destructive"
-                                    onClick={() => handleOpenDelete(achievement)}
-                                    title="Deactivate"
-                                  >
-                                    <IconTrash className="size-4" />
-                                  </Button>
+                                  {!achievement.isActive ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 text-emerald-600 hover:text-emerald-600"
+                                      onClick={() => handleReactivate(achievement)}
+                                      title="Reactivate"
+                                    >
+                                      <IconTrophy className="size-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 text-destructive hover:text-destructive"
+                                      onClick={() => handleOpenDelete(achievement)}
+                                      title="Deactivate"
+                                    >
+                                      <IconTrash className="size-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -774,22 +811,42 @@ function AchievementsPage() {
             {/* Sport Filter & Game Type Filter */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="sportFilter">Sport Filter (optional)</Label>
-                <Input
-                  id="sportFilter"
-                  value={form.sportFilter}
-                  onChange={(e) => setForm((f) => ({ ...f, sportFilter: e.target.value }))}
-                  placeholder="e.g. TENNIS"
-                />
+                <Label>Sport Filter (optional)</Label>
+                <Select
+                  value={form.sportFilter || "_none"}
+                  onValueChange={(v) => setForm((f) => ({ ...f, sportFilter: v === "_none" ? "" : v }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No filter</SelectItem>
+                    {SPORT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="gameTypeFilter">Game Type Filter (optional)</Label>
-                <Input
-                  id="gameTypeFilter"
-                  value={form.gameTypeFilter}
-                  onChange={(e) => setForm((f) => ({ ...f, gameTypeFilter: e.target.value }))}
-                  placeholder="e.g. SINGLES"
-                />
+                <Label>Game Type Filter (optional)</Label>
+                <Select
+                  value={form.gameTypeFilter || "_none"}
+                  onValueChange={(v) => setForm((f) => ({ ...f, gameTypeFilter: v === "_none" ? "" : v }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No filter</SelectItem>
+                    {GAME_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -858,8 +915,12 @@ function AchievementsPage() {
                 id="grantUserId"
                 value={grantUserId}
                 onChange={(e) => setGrantUserId(e.target.value)}
-                placeholder="Enter user ID..."
+                placeholder="e.g. cm3abc123..."
+                className="font-mono text-sm"
               />
+              <p className="text-xs text-muted-foreground">
+                You can find user IDs in the Players management page.
+              </p>
             </div>
           </div>
 
@@ -869,7 +930,7 @@ function AchievementsPage() {
             </Button>
             <Button
               onClick={handleConfirmGrant}
-              disabled={!grantUserId.trim() || grantMutation.isPending}
+              disabled={!grantUserId.trim() || grantUserId.trim().length < 10 || grantMutation.isPending}
             >
               {grantMutation.isPending ? "Granting..." : "Grant"}
             </Button>

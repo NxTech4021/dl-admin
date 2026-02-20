@@ -25,14 +25,19 @@ export function useDisputes(filters?: {
       const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
-      const payload = response.data?.data ?? response.data;
-      const disputes = Array.isArray(payload) ? payload : [];
-      const pagination = response.data?.pagination;
+      const raw = response.data?.data ?? response.data;
+      const disputes = raw?.disputes ?? (Array.isArray(raw) ? raw : []);
+      const pagination = response.data?.pagination ?? {
+        total: raw?.total ?? disputes.length,
+        totalPages: raw?.totalPages ?? 1,
+        page: raw?.page ?? 1,
+        limit: raw?.limit ?? 20,
+      };
       return {
         disputes,
-        total: pagination?.total ?? disputes.length,
-        totalPages: pagination?.totalPages ?? 1,
-        pagination: pagination ?? null,
+        total: pagination.total ?? disputes.length,
+        totalPages: pagination.totalPages ?? 1,
+        pagination,
       };
     },
   });

@@ -270,7 +270,7 @@ export function DisputeDetailModal({
       <DialogContent
         className={cn(
           "max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 transition-[max-width] duration-500 ease-out",
-          isResolveMode ? "sm:max-w-[1100px]" : "sm:max-w-[720px]"
+          isResolveMode ? "sm:max-w-[1100px] h-[90vh]" : "sm:max-w-[720px]"
         )}
       >
         <AnimatePresence mode="wait">
@@ -282,7 +282,7 @@ export function DisputeDetailModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col h-full max-h-[90vh]"
+              className="flex flex-col flex-1 min-h-0"
             >
               {/* Header Section */}
               <DialogHeader className="px-6 pt-6 pb-4 space-y-4 border-b border-border/50 shrink-0">
@@ -343,7 +343,7 @@ export function DisputeDetailModal({
               </DialogHeader>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="px-6 py-5 space-y-5">
                   {/* Raised By Section */}
                   <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
@@ -842,7 +842,7 @@ export function DisputeDetailModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col h-full max-h-[90vh]"
+              className="flex flex-col flex-1 min-h-0"
             >
               {/* Header */}
               <div className="px-6 pt-5 pb-4 border-b border-border/50 shrink-0">
@@ -870,7 +870,7 @@ export function DisputeDetailModal({
               </div>
 
               {/* Two-Column Content */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden min-h-0">
                 <div className="grid md:grid-cols-2 h-full divide-x divide-border/50">
                   {/* LEFT COLUMN: Context */}
                   <motion.div

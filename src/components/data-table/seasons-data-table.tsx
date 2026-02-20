@@ -351,13 +351,15 @@ export function SeasonsDataTable({
                   animate="visible"
                   variants={tableContainerVariants}
                 >
-                  {paginatedData.map((group, index) => {
-                    // Defensive check for malformed data
+                  {paginatedData
+                  .filter((group) => {
                     if (!group || !group.aggregated) {
                       logger.warn("Invalid group data:", group);
-                      return null;
+                      return false;
                     }
-
+                    return true;
+                  })
+                  .map((group, index) => {
                     const leagues = group.aggregated.leagues || [];
                     const sportType = group.aggregated.sportType;
                     const sportIcon = sportType ? (

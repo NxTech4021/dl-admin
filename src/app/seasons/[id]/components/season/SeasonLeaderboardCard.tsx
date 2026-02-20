@@ -48,7 +48,7 @@ import { logger } from "@/lib/logger";
 
 export const divisionLevelEnum = z.enum(["beginner", "improver", "intermediate", "upper_intermediate", "expert", "advanced"]);
 export const gameTypeEnum = z.enum(["singles", "doubles"]);
-export const genderCategoryEnum = z.enum(["male", "female", "mixed"]);
+export const genderCategoryEnum = z.enum(["male", "female", "mixed", "open"]);
 
 export const divisionSchema = z.object({
   id: z.string(),
@@ -58,7 +58,7 @@ export const divisionSchema = z.object({
   threshold: z.number().int().nullable().optional(),
   divisionLevel: divisionLevelEnum,
   gameType: gameTypeEnum,
-  genderCategory: genderCategoryEnum,
+  genderCategory: genderCategoryEnum.nullable().optional(),
   maxSingles: z.number().int().nullable().optional(),
   maxDoublesTeams: z.number().int().nullable().optional(),
   currentSinglesCount: z.number().int().nullable().optional(),
@@ -537,7 +537,10 @@ export default function SeasonLeaderboardCard({
           { params: { limit: 20 } }
         );
 
-        const matchesData = response.data.matches || response.data.data || [];
+        const raw = response.data?.data;
+        const matchesData = Array.isArray(raw)
+          ? raw
+          : raw?.matches || response.data?.matches || [];
 
         setDivisionDataMap((prev) => {
           const data = prev.get(divisionId);

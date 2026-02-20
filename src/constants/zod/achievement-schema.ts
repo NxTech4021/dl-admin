@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const achievementTierEnum = z.enum(["BRONZE", "SILVER", "GOLD", "PLATINUM"]);
-export const achievementCategoryEnum = z.enum(["COMPETITION", "RATING", "SEASON", "SOCIAL"]);
+export const achievementTierEnum = z.enum(["NONE", "BRONZE", "SILVER", "GOLD", "PLATINUM"]);
+export const achievementCategoryEnum = z.enum(["MATCH_COUNTER", "LEAGUE_SEASON", "WINNING", "MULTI_SPORT", "MATCH_STREAK"]);
 export const achievementScopeEnum = z.enum(["MATCH", "SEASON", "LIFETIME"]);
 
 export const achievementSchema = z.object({
@@ -20,10 +20,12 @@ export const achievementSchema = z.object({
   isHidden: z.boolean(),
   points: z.number(),
   isActive: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  unlockCount: z.number().optional(),
-  totalPlayers: z.number().optional(),
+  isRevocable: z.boolean().default(false),
+  badgeGroup: z.string().nullable().optional(),
+  createdAt: z.coerce.string(),
+  updatedAt: z.coerce.string(),
+  unlockCount: z.number().default(0),
+  totalPlayers: z.number().default(0),
 });
 
 export type Achievement = z.infer<typeof achievementSchema>;

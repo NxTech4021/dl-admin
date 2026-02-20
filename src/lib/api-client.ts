@@ -119,7 +119,8 @@ apiClient.interceptors.response.use(
         d.success = false;
       }
     }
-    if (import.meta.env.DEV) {
+    // Don't log canceled requests — these are intentional AbortController cleanups from React effects
+    if (import.meta.env.DEV && !axios.isCancel(error)) {
       logger.error(
         `[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`,
         getErrorMessage(error)

@@ -146,7 +146,7 @@ export const queryKeys = {
   achievements: {
     all: ["achievements"] as const,
     lists: () => [...queryKeys.achievements.all, "list"] as const,
-    list: (filters?: unknown) => [...queryKeys.achievements.lists(), filters] as const,
+    list: (filters?: { category?: string; tier?: string; isActive?: boolean; search?: string }) => [...queryKeys.achievements.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.achievements.all, "detail", id] as const,
     evaluators: () => [...queryKeys.achievements.all, "evaluators"] as const,
   },

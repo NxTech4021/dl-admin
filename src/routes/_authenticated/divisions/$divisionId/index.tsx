@@ -123,10 +123,12 @@ function DivisionDetailPage() {
     setIsMatchesLoading(true);
     try {
       const response = await axiosInstance.get(
-        `/api/division/${divisionId}/matches`
+        endpoints.match.getDivisionResults(divisionId)
       );
-      const matchesData =
-        response.data?.data || response.data?.matches || response.data || [];
+      const raw = response.data?.data;
+      const matchesData = Array.isArray(raw)
+        ? raw
+        : raw?.matches || response.data?.matches || response.data || [];
       setMatches(Array.isArray(matchesData) ? matchesData : []);
     } catch (error) {
       logger.debug("Matches endpoint not available or no matches found");

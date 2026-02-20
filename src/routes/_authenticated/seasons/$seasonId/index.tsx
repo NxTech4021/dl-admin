@@ -98,7 +98,8 @@ function SeasonDetailPage() {
       const response = await axiosInstance.get(
         endpoints.season.getById(seasonId)
       );
-      const parsedData = seasonSchema.parse(response.data);
+      const payload = response.data?.data ?? response.data;
+      const parsedData = seasonSchema.parse(payload);
       setSeason(parsedData);
     } catch (error) {
       logger.error("Failed to fetch season details:", error);

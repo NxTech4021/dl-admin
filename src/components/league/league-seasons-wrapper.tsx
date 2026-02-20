@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { SeasonsDataTable } from "@/components/data-table/seasons-data-table";
 import { Season } from "@/constants/zod/season-schema";
@@ -30,9 +30,18 @@ export function LeagueSeasonsWrapper({
   const [seasonsWithPlayers, setSeasonsWithPlayers] = useState<Season[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
 
+  // Stable key derived from season IDs to prevent unnecessary re-fetches
+  const seasonsKey = useMemo(
+    () => seasons.map((s) => s.id).sort().join(","),
+    [seasons]
+  );
+  const seasonsRef = useRef(seasons);
+  seasonsRef.current = seasons;
+
   // Fetch detailed season data with players for each season
   useEffect(() => {
-    if (!seasons || seasons.length === 0) {
+    const currentSeasons = seasonsRef.current;
+    if (!currentSeasons || currentSeasons.length === 0) {
       setSeasonsWithPlayers([]);
       return;
     }
@@ -43,12 +52,12 @@ export function LeagueSeasonsWrapper({
       setSeasonsLoading(true);
       try {
         // Fetch detailed data for each season using Promise.allSettled to handle partial failures
-        const seasonPromises = seasons.map((season) =>
+        const seasonPromises = currentSeasons.map((season) =>
           axiosInstance
             .get(endpoints.season.getById(season.id), {
               signal: abortController.signal,
             })
-            .then((response) => response.data as Season)
+            .then((response) => (response.data?.data || response.data) as Season)
         );
 
         const results = await Promise.allSettled(seasonPromises);
@@ -57,14 +66,14 @@ export function LeagueSeasonsWrapper({
 
         // Map results: use fetched data for fulfilled, fallback to original for rejected
         const detailedSeasons = results.map((result, index) =>
-          result.status === "fulfilled" ? result.value : seasons[index]
+          result.status === "fulfilled" ? result.value : currentSeasons[index]
         );
 
         setSeasonsWithPlayers(detailedSeasons);
       } catch {
         if (abortController.signal.aborted) return;
         // Fallback to original seasons on unexpected failure
-        setSeasonsWithPlayers(seasons);
+        setSeasonsWithPlayers(currentSeasons);
       } finally {
         if (!abortController.signal.aborted) {
           setSeasonsLoading(false);
@@ -77,13 +86,18 @@ export function LeagueSeasonsWrapper({
     return () => {
       abortController.abort();
     };
-  }, [seasons]);
+  }, [seasonsKey]);
 
   // Fetch categories for the league
+  const hasFetchedCategories = useRef(false);
   useEffect(() => {
     if (!leagueId) return;
 
+    // Prevent StrictMode double-fetch — leagueId doesn't change between mounts
+    if (hasFetchedCategories.current) return;
+
     const abortController = new AbortController();
+    hasFetchedCategories.current = true;
 
     const fetchCategories = async () => {
       setIsCategoriesLoading(true);
@@ -95,7 +109,10 @@ export function LeagueSeasonsWrapper({
         const categoriesData = response.data?.data || response.data || [];
         setCategories(categoriesData);
       } catch {
-        if (abortController.signal.aborted) return;
+        if (abortController.signal.aborted) {
+          hasFetchedCategories.current = false;
+          return;
+        }
         // Fallback to empty categories on fetch failure
         setCategories([]);
         toast.error("Failed to load categories");
