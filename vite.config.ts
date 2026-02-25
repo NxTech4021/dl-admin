@@ -37,7 +37,8 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: process.env.VITE_API_BASE_URL || "http://localhost:82",
+        // VITE_PROXY_TARGET is set in Docker for internal network, falls back to localhost:82
+        target: process.env.VITE_PROXY_TARGET || "http://localhost:82",
         changeOrigin: true,
         secure: false,
       },
