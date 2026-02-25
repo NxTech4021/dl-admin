@@ -3,7 +3,10 @@ import { getErrorMessage } from '@/lib/api-error';
 import { logger } from '@/lib/logger';
 
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  // Use nullish coalescing (??) so empty string works for production (relative URLs)
+  // Falls back to localhost only if VITE_API_BASE_URL is undefined/null
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  return baseUrl !== undefined ? baseUrl : 'http://localhost:3001';
 }
 
 export const apiClient = axios.create({
