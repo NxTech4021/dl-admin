@@ -11,6 +11,7 @@ import { BugReportWidget } from "@/components/bug-report/BugReportWidget";
 import { ModalProvider } from "@/contexts/modal-context";
 // CommandPalette and GlobalModals are in __root.tsx to be inside Router context
 import { useSession } from "@/lib/auth-client";
+import { shouldRetryQuery, shouldRetryMutation } from "@/lib/api-error";
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -18,12 +19,12 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
-      retry: 2,
+      retry: shouldRetryQuery,
       refetchOnWindowFocus: import.meta.env.PROD,
       refetchOnMount: false,
     },
     mutations: {
-      retry: 1,
+      retry: shouldRetryMutation,
     },
   },
 });
