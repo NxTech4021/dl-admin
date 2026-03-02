@@ -375,6 +375,7 @@ function SeasonDetailPage() {
               onDivisionCreated={handleDivisionCreated}
               onDivisionUpdated={handleDivisionUpdated}
               onDivisionDeleted={handleDivisionDeleted}
+              season={season}
             />
           </TabsContent>
 
