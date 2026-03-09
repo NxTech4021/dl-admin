@@ -710,14 +710,14 @@ export default function SeasonLeaderboardCard({
                         animate="visible"
                         variants={tableContainerVariants}
                       >
-                        {(standings as StandingsTeam[]).map((team) => {
+                        {(standings as StandingsTeam[]).map((team, index) => {
                           const winRate =
                             team.played > 0
                               ? Math.round((team.wins / team.played) * 100)
                               : 0;
                           return (
                             <motion.tr
-                              key={`team-${team.rank}`}
+                              key={team.players.map(p => p.id).join('-') || `team-${index}`}
                               variants={tableRowVariants}
                               transition={fastTransition}
                               className="hover:bg-muted/30 border-b transition-colors"
@@ -786,7 +786,7 @@ export default function SeasonLeaderboardCard({
                       >
                         {(standings as LeaderboardPlayer[]).map((player, index) => (
                           <motion.tr
-                            key={player.id}
+                            key={player.id || `player-${index}`}
                             variants={tableRowVariants}
                             transition={fastTransition}
                             className="hover:bg-muted/30 border-b transition-colors"

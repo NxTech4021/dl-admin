@@ -68,9 +68,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { apiClient } from "@/lib/api-client";
 // import Image from "next/image";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const PAGE_SIZE = 20;
 
@@ -237,13 +236,8 @@ export default function BugDashboard() {
 
   const fetchAdmins = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/admin/getadmins`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAdmins(data.data?.getAllAdmins || []);
-      }
+      const res = await apiClient.get('/api/admin/getadmins');
+      setAdmins(res.data.data?.getAllAdmins || []);
     } catch (error) {
       logger.error("Failed to fetch admins:", error);
     }
@@ -251,22 +245,15 @@ export default function BugDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/stats`, {
-        credentials: "include",
+      const res = await apiClient.get('/api/bug/admin/stats');
+      const data = res.data.data || res.data;
+      setStats({
+        ...DEFAULT_STATS,
+        ...data,
+        byStatus: { ...data.byStatus },
+        bySeverity: { ...data.bySeverity },
+        byPriority: { ...data.byPriority },
       });
-      if (res.ok) {
-        const data = await res.json();
-        setStats({
-          ...DEFAULT_STATS,
-          ...data,
-          byStatus: { ...data.byStatus },
-          bySeverity: { ...data.bySeverity },
-          byPriority: { ...data.byPriority },
-        });
-      } else {
-        logger.error("Failed to fetch stats:", res.status);
-        setStats(DEFAULT_STATS);
-      }
     } catch (error) {
       logger.error("Failed to fetch stats:", error);
       setStats(DEFAULT_STATS);
@@ -288,20 +275,10 @@ export default function BugDashboard() {
       if (priorityFilter && priorityFilter !== "all") params.append("priority", priorityFilter);
       if (search) params.append("search", search);
 
-      const res = await fetch(`${API_URL}/api/bug/admin/reports?${params}`, {
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data.data ?? []);
-        setTotalPages(data.pagination?.totalPages ?? 1);
-        setTotalCount(data.pagination?.total ?? 0);
-      } else {
-        logger.error("Failed to fetch reports:", res.status);
-        toast.error("Failed to load bug reports");
-        setReports([]);
-      }
+      const res = await apiClient.get(`/api/bug/admin/reports?${params}`);
+      setReports(res.data.data ?? []);
+      setTotalPages(res.data.pagination?.totalPages ?? 1);
+      setTotalCount(res.data.pagination?.total ?? 0);
     } catch (error) {
       logger.error("Failed to fetch reports:", error);
       toast.error("Failed to load bug reports");
@@ -326,23 +303,13 @@ export default function BugDashboard() {
   const handleStatusChange = async (reportId: string, newStatus: string) => {
     setStatusLoading(reportId);
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/reports/${reportId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (res.ok) {
-        toast.success("Status updated");
-        fetchReports();
-        fetchStats();
-      } else {
-        const error = await res.json().catch(() => ({}));
-        toast.error(error.message || "Failed to update status");
-      }
-    } catch (error) {
-      toast.error("Failed to update status");
+      await apiClient.put(`/api/bug/admin/reports/${reportId}`, { status: newStatus });
+      toast.success("Status updated");
+      fetchReports();
+      fetchStats();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to update status");
     } finally {
       setStatusLoading(null);
     }
@@ -358,21 +325,13 @@ export default function BugDashboard() {
 
     setDeleteLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/reports/${reportToDelete}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        toast.success("Bug report deleted");
-        fetchReports();
-        fetchStats();
-      } else {
-        const error = await res.json().catch(() => ({}));
-        toast.error(error.message || "Failed to delete bug report");
-      }
-    } catch (error) {
-      toast.error("Failed to delete bug report");
+      await apiClient.delete(`/api/bug/admin/reports/${reportToDelete}`);
+      toast.success("Bug report deleted");
+      fetchReports();
+      fetchStats();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to delete bug report");
     } finally {
       setDeleteLoading(false);
       setDeleteDialogOpen(false);
@@ -386,17 +345,9 @@ export default function BugDashboard() {
     setSelectedReport(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/reports/${report.id}`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedReport(data);
-      } else {
-        toast.error("Failed to load report details");
-        setDetailOpen(false);
-      }
-    } catch (error) {
+      const res = await apiClient.get(`/api/bug/admin/reports/${report.id}`);
+      setSelectedReport(res.data.data || res.data);
+    } catch {
       toast.error("Failed to load report details");
       setDetailOpen(false);
     } finally {
@@ -452,30 +403,20 @@ export default function BugDashboard() {
   const handleAssigneeChange = async (reportId: string, adminId: string | null) => {
     setAssigneeLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/reports/${reportId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ assignedToId: adminId || null }),
-      });
-
-      if (res.ok) {
-        toast.success("Assignee updated");
-        // Update local state
-        if (selectedReport) {
-          const admin = admins.find(a => a.id === adminId);
-          setSelectedReport({
-            ...selectedReport,
-            assignedTo: admin ? { id: adminId!, user: { name: admin.name } } : undefined,
-          });
-        }
-        fetchReports();
-      } else {
-        const error = await res.json().catch(() => ({}));
-        toast.error(error.message || "Failed to update assignee");
+      await apiClient.put(`/api/bug/admin/reports/${reportId}`, { assignedToId: adminId || null });
+      toast.success("Assignee updated");
+      // Update local state
+      if (selectedReport) {
+        const admin = admins.find(a => a.id === adminId);
+        setSelectedReport({
+          ...selectedReport,
+          assignedTo: admin ? { id: adminId!, user: { name: admin.name } } : undefined,
+        });
       }
-    } catch (error) {
-      toast.error("Failed to update assignee");
+      fetchReports();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to update assignee");
     } finally {
       setAssigneeLoading(false);
     }
@@ -487,28 +428,21 @@ export default function BugDashboard() {
 
     setCommentLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/bug/admin/reports/${selectedReport.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content: newComment, isInternal: false }),
+      const res = await apiClient.post(`/api/bug/admin/reports/${selectedReport.id}/comments`, {
+        content: newComment,
+        isInternal: false,
       });
-
-      if (res.ok) {
-        const comment = await res.json();
-        toast.success("Comment added");
-        setNewComment("");
-        // Add comment to local state
-        setSelectedReport({
-          ...selectedReport,
-          comments: [...(selectedReport.comments || []), comment],
-        });
-      } else {
-        const error = await res.json().catch(() => ({}));
-        toast.error(error.message || "Failed to add comment");
-      }
-    } catch (error) {
-      toast.error("Failed to add comment");
+      const comment = res.data.data || res.data;
+      toast.success("Comment added");
+      setNewComment("");
+      // Add comment to local state
+      setSelectedReport({
+        ...selectedReport,
+        comments: [...(selectedReport.comments || []), comment],
+      });
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setCommentLoading(false);
     }

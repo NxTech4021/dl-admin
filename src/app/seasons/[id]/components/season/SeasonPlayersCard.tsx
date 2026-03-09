@@ -34,11 +34,30 @@ import {
   IconArrowsSort,
   IconSortAscending,
   IconSortDescending,
+  IconClock,
+  IconTrash,
+  IconLoader2,
 } from "@tabler/icons-react";
+import axiosInstance from "@/lib/endpoints";
 import AssignDivisionModal from "@/components/modal/assign-playerToDivision";
 import { cn } from "@/lib/utils";
 
 type Partnership = NonNullable<NonNullable<SeasonPlayersCardProps["season"]>["partnerships"]>[number];
+
+// Type for waitlist users from the API
+interface WaitlistUser {
+  id: string;
+  waitlistId: string;
+  userId: string;
+  waitlistDate: string;
+  promotedToRegistered: boolean;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+}
 
 interface SeasonPlayersCardProps {
   memberships: Membership[];
@@ -130,6 +149,11 @@ export default function SeasonPlayersCard({
   const [waitlistSortDirection, setWaitlistSortDirection] = useState<"asc" | "desc" | null>(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
   const [isBatchAssigning, setIsBatchAssigning] = useState(false);
+
+  // Pre-registration waitlist state
+  const [waitlistUsers, setWaitlistUsers] = useState<WaitlistUser[]>([]);
+  const [isLoadingWaitlist, setIsLoadingWaitlist] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   // Helper function to get initials from name
   const getInitials = (name: string | null | undefined): string => {
@@ -382,6 +406,40 @@ export default function SeasonPlayersCard({
   useEffect(() => {
     setSelectedPlayerIds(new Set());
   }, [activeTab]);
+
+  // Fetch pre-registration waitlist users
+  useEffect(() => {
+    const fetchWaitlistUsers = async () => {
+      if (!seasonId) return;
+      setIsLoadingWaitlist(true);
+      try {
+        const response = await axiosInstance.get(`/api/waitlist/${seasonId}`);
+        // Handle normalized response: { success: true, data: [...] }
+        const users = response.data?.data || response.data || [];
+        setWaitlistUsers(Array.isArray(users) ? users : []);
+      } catch (error) {
+        console.error("Failed to fetch waitlist users:", error);
+        setWaitlistUsers([]);
+      } finally {
+        setIsLoadingWaitlist(false);
+      }
+    };
+    fetchWaitlistUsers();
+  }, [seasonId]);
+
+  // Remove user from waitlist
+  const handleRemoveFromWaitlist = async (userId: string) => {
+    if (!seasonId || removingUserId) return;
+    setRemovingUserId(userId);
+    try {
+      await axiosInstance.delete(`/api/waitlist/${seasonId}/users/${userId}`);
+      setWaitlistUsers((prev) => prev.filter((u) => u.userId !== userId));
+    } catch (error) {
+      console.error("Failed to remove user from waitlist:", error);
+    } finally {
+      setRemovingUserId(null);
+    }
+  };
 
   // Group memberships by partnerships
   const groupMembershipsByPartnerships = (players: Membership[]) => {
@@ -979,12 +1037,16 @@ export default function SeasonPlayersCard({
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="active" className="text-sm">
               In Division ({activePlayers.length})
             </TabsTrigger>
             <TabsTrigger value="waitlisted" className="text-sm">
               Awaiting Division ({waitlistedPlayers.length})
+            </TabsTrigger>
+            <TabsTrigger value="pre-waitlist" className="text-sm">
+              <IconClock className="size-3.5 mr-1.5" />
+              Waitlist ({waitlistUsers.length})
             </TabsTrigger>
           </TabsList>
           <TabsContent value="active" className="mt-0">
@@ -1032,6 +1094,101 @@ export default function SeasonPlayersCard({
               sortDirection={waitlistSortDirection}
               onSortChange={setWaitlistSortDirection}
             />
+          </TabsContent>
+          <TabsContent value="pre-waitlist" className="mt-0">
+            {isLoadingWaitlist ? (
+              <div className="flex items-center justify-center h-32">
+                <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : waitlistUsers.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-[50px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
+                      <TableHead className="py-2.5 font-medium text-xs min-w-[240px]">Player</TableHead>
+                      <TableHead className="w-[160px] py-2.5 font-medium text-xs">Joined Waitlist</TableHead>
+                      <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>
+                      <TableHead className="w-[100px] py-2.5 pr-4 font-medium text-xs text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {waitlistUsers.map((wUser, index) => (
+                      <TableRow key={wUser.id} className="hover:bg-muted/30 border-b transition-colors">
+                        <TableCell className="py-3 pl-4 text-sm text-muted-foreground">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-8 ring-2 ring-background">
+                              <AvatarImage src={wUser.user?.image || undefined} />
+                              <AvatarFallback className={`text-white font-semibold text-[10px] ${getAvatarColor(wUser.user?.name)}`}>
+                                {getInitials(wUser.user?.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {wUser.user?.name || "Unknown"}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {wUser.user?.email || "No email"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 text-sm text-muted-foreground">
+                          {new Date(wUser.waitlistDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-xs font-medium border",
+                              wUser.promotedToRegistered
+                                ? "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                                : "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                            )}
+                          >
+                            {wUser.promotedToRegistered ? "Promoted" : "Waiting"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3 pr-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveFromWaitlist(wUser.userId)}
+                            disabled={removingUserId === wUser.userId}
+                          >
+                            {removingUserId === wUser.userId ? (
+                              <IconLoader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <IconTrash className="size-3.5" />
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-muted-foreground h-32 justify-center border rounded-md">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                  <IconClock className="size-6 opacity-50" />
+                </div>
+                <div className="space-y-1 text-center">
+                  <p className="text-sm font-medium">No waitlist entries</p>
+                  <p className="text-xs">Users will appear here when they join the waitlist for this season</p>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
