@@ -189,6 +189,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/bugs",
             icon: Bug,
           },
+          {
+            title: "Crash Reports",
+            url: "/crash-reports",
+            icon: AlertTriangle,
+          },
         ],
       },
     ],

@@ -23,6 +23,7 @@ import { Route as AuthenticatedLeagueIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDivisionsIndexRouteImport } from './routes/_authenticated/divisions/index'
 import { Route as AuthenticatedDisputesIndexRouteImport } from './routes/_authenticated/disputes/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
+import { Route as AuthenticatedCrashReportsIndexRouteImport } from './routes/_authenticated/crash-reports/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat/index'
 import { Route as AuthenticatedBugsIndexRouteImport } from './routes/_authenticated/bugs/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -121,6 +122,12 @@ const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/dashboard/',
     path: '/dashboard/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCrashReportsIndexRoute =
+  AuthenticatedCrashReportsIndexRouteImport.update({
+    id: '/crash-reports/',
+    path: '/crash-reports/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
@@ -249,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/crash-reports': typeof AuthenticatedCrashReportsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/disputes': typeof AuthenticatedDisputesIndexRoute
   '/divisions': typeof AuthenticatedDivisionsIndexRoute
@@ -283,6 +291,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bugs': typeof AuthenticatedBugsIndexRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/crash-reports': typeof AuthenticatedCrashReportsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/disputes': typeof AuthenticatedDisputesIndexRoute
   '/divisions': typeof AuthenticatedDivisionsIndexRoute
@@ -319,6 +328,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bugs/': typeof AuthenticatedBugsIndexRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/crash-reports/': typeof AuthenticatedCrashReportsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/disputes/': typeof AuthenticatedDisputesIndexRoute
   '/_authenticated/divisions/': typeof AuthenticatedDivisionsIndexRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bugs'
     | '/chat'
+    | '/crash-reports'
     | '/dashboard'
     | '/disputes'
     | '/divisions'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bugs'
     | '/chat'
+    | '/crash-reports'
     | '/dashboard'
     | '/disputes'
     | '/divisions'
@@ -424,6 +436,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/bugs/'
     | '/_authenticated/chat/'
+    | '/_authenticated/crash-reports/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/disputes/'
     | '/_authenticated/divisions/'
@@ -549,6 +562,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crash-reports/': {
+      id: '/_authenticated/crash-reports/'
+      path: '/crash-reports'
+      fullPath: '/crash-reports'
+      preLoaderRoute: typeof AuthenticatedCrashReportsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat/': {
@@ -699,6 +719,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedBugsIndexRoute: typeof AuthenticatedBugsIndexRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
+  AuthenticatedCrashReportsIndexRoute: typeof AuthenticatedCrashReportsIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDisputesIndexRoute: typeof AuthenticatedDisputesIndexRoute
   AuthenticatedDivisionsIndexRoute: typeof AuthenticatedDivisionsIndexRoute
@@ -736,6 +757,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedBugsIndexRoute: AuthenticatedBugsIndexRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
+  AuthenticatedCrashReportsIndexRoute: AuthenticatedCrashReportsIndexRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedDisputesIndexRoute: AuthenticatedDisputesIndexRoute,
   AuthenticatedDivisionsIndexRoute: AuthenticatedDivisionsIndexRoute,

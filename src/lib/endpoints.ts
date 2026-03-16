@@ -51,6 +51,14 @@ export const endpoints = {
       resolve: (id: string) => `/api/admin/disputes/${id}/resolve`,
     },
 
+    // Crash reports
+    crashReports: {
+      getAll: "/api/crash-reports/admin",
+      getStats: "/api/crash-reports/admin/stats",
+      getById: (id: string) => `/api/crash-reports/admin/${id}`,
+      update: (id: string) => `/api/crash-reports/admin/${id}`,
+    },
+
     // Inactivity settings
     inactivity: {
       getSettings: "/api/admin/inactivity/settings",
