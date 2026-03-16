@@ -52,16 +52,9 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     const socketInstance = io(
       getApiBaseUrl(),
       {
-        auth: {
-          userId: user.id,
-          userName: user.name,
-        },
         transports: ["websocket", "polling"],
         withCredentials: true,
         path: "/socket.io/",
-        extraHeaders: {
-          'x-user-id': user.id,
-        },
       }
     );
 
