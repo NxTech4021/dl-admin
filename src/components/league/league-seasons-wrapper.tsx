@@ -75,9 +75,7 @@ export function LeagueSeasonsWrapper({
         // Fallback to original seasons on unexpected failure
         setSeasonsWithPlayers(currentSeasons);
       } finally {
-        if (!abortController.signal.aborted) {
-          setSeasonsLoading(false);
-        }
+        setSeasonsLoading(false);
       }
     };
 
@@ -117,9 +115,7 @@ export function LeagueSeasonsWrapper({
         setCategories([]);
         toast.error("Failed to load categories");
       } finally {
-        if (!abortController.signal.aborted) {
-          setIsCategoriesLoading(false);
-        }
+        setIsCategoriesLoading(false);
       }
     };
 

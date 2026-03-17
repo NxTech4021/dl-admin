@@ -18,18 +18,18 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 3030,
+    port: 3032,
     strictPort: true,
   },
   server: {
-    port: 3030,
+    port: 3032,
     host: true,
     strictPort: true,
-    origin: "http://0.0.0.0:3030",
+    origin: "http://0.0.0.0:3032",
     hmr: {
       host: "localhost",
-      port: 3030,
-      clientPort: 3030,
+      port: 3032,
+      clientPort: 3032,
     },
     watch: {
       usePolling: true,

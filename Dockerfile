@@ -12,7 +12,7 @@ RUN yarn config set network-timeout 600000 -g && yarn install
 # Copy source code
 COPY . .
 
-EXPOSE 3030
+EXPOSE 3032
 
 # Vite dev server with host binding for Docker
 CMD ["yarn", "dev"]
@@ -46,7 +46,7 @@ COPY --from=build /app/package.json ./
 # Install only production dependencies (for serve)
 RUN yarn add serve --production
 
-EXPOSE 3030
+EXPOSE 3032
 
 # Serve the built static files
-CMD ["npx", "serve", "-s", "dist", "-l", "3030"]
+CMD ["npx", "serve", "-s", "dist", "-l", "3032"]
