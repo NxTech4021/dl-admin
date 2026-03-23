@@ -217,7 +217,10 @@ export default function LeagueEditModal({
                     value={LOCATION_OPTIONS.some((o) => o.value === formData.location) ? formData.location : formData.location ? "other" : ""}
                     onValueChange={(value) => {
                       if (value === "other") {
-                        updateFormData("location", "");
+                        // Only clear if switching FROM a predefined location
+                        if (LOCATION_OPTIONS.some((o) => o.value === formData.location)) {
+                          updateFormData("location", "");
+                        }
                       } else {
                         updateFormData("location", value);
                       }
