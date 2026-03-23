@@ -372,7 +372,16 @@ const handleCreateLeague = async () => {
                     Location
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Select value={formData.location} onValueChange={(value) => updateFormData("location", value)}>
+                  <Select
+                    value={LOCATION_OPTIONS.some((o) => o.value === formData.location) ? formData.location : formData.location ? "other" : ""}
+                    onValueChange={(value) => {
+                      if (value === "other") {
+                        updateFormData("location", "");
+                      } else {
+                        updateFormData("location", value);
+                      }
+                    }}
+                  >
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
@@ -384,6 +393,14 @@ const handleCreateLeague = async () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {(!LOCATION_OPTIONS.some((o) => o.value === formData.location) || formData.location === "") && (
+                    <Input
+                      placeholder="Enter location name..."
+                      value={formData.location === "" ? "" : formData.location}
+                      onChange={(e) => updateFormData("location", e.target.value)}
+                      className="h-9 mt-1.5"
+                    />
+                  )}
                 </div>
 
                 {/* Status */}
