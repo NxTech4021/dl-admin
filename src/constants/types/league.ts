@@ -156,6 +156,7 @@ export const SPORTS_OPTIONS: SelectOption<SportType>[] = [
 ];
 
 export const LOCATION_OPTIONS: SelectOption[] = [
+  // KL / Selangor
   { value: "kuala-lumpur", label: "Kuala Lumpur" },
   { value: "petaling-jaya", label: "Petaling Jaya" },
   { value: "subang-jaya", label: "Subang Jaya" },
@@ -166,6 +167,48 @@ export const LOCATION_OPTIONS: SelectOption[] = [
   { value: "puchong", label: "Puchong" },
   { value: "cyberjaya", label: "Cyberjaya" },
   { value: "putrajaya", label: "Putrajaya" },
+  { value: "kajang", label: "Kajang" },
+  { value: "bangi", label: "Bangi" },
+  { value: "rawang", label: "Rawang" },
+  { value: "seri-kembangan", label: "Seri Kembangan" },
+  { value: "damansara", label: "Damansara" },
+  { value: "setia-alam", label: "Setia Alam" },
+  { value: "bukit-jalil", label: "Bukit Jalil" },
+  // Penang
+  { value: "george-town", label: "George Town" },
+  { value: "butterworth", label: "Butterworth" },
+  { value: "bayan-lepas", label: "Bayan Lepas" },
+  // Johor
+  { value: "johor-bahru", label: "Johor Bahru" },
+  { value: "iskandar-puteri", label: "Iskandar Puteri" },
+  { value: "kulai", label: "Kulai" },
+  // Perak
+  { value: "ipoh", label: "Ipoh" },
+  // Melaka
+  { value: "melaka", label: "Melaka" },
+  // Negeri Sembilan
+  { value: "seremban", label: "Seremban" },
+  // Pahang
+  { value: "kuantan", label: "Kuantan" },
+  // Terengganu
+  { value: "kuala-terengganu", label: "Kuala Terengganu" },
+  // Kelantan
+  { value: "kota-bharu", label: "Kota Bharu" },
+  // Kedah
+  { value: "alor-setar", label: "Alor Setar" },
+  { value: "sungai-petani", label: "Sungai Petani" },
+  // Perlis
+  { value: "kangar", label: "Kangar" },
+  // Sabah
+  { value: "kota-kinabalu", label: "Kota Kinabalu" },
+  { value: "sandakan", label: "Sandakan" },
+  // Sarawak
+  { value: "kuching", label: "Kuching" },
+  { value: "miri", label: "Miri" },
+  // Federal Territory
+  { value: "labuan", label: "Labuan" },
+  // Fallback
+  { value: "other", label: "Other" },
 ];
 
 export const FORMAT_OPTIONS: SelectOption<GameType>[] = [
