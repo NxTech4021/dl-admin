@@ -21,13 +21,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { apiClient } from "@/lib/api-client";
 // import Image from "next/image";
 
-interface BugReportWidgetProps {
-  apiUrl?: string;
-}
-
-export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || "" }: BugReportWidgetProps) {
+export function BugReportWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appId, setAppId] = useState<string | null>(null);
@@ -52,34 +49,16 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
 
   // Initialize DLA app on mount (auto-creates if needed)
   useEffect(() => {
+    const controller = new AbortController();
+
     const initApp = async () => {
       try {
-        if (!apiUrl) {
-          if (process.env.NODE_ENV === "development") {
-            logger.warn("Bug reporting: API URL not configured");
-          }
-          return;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const res = await fetch(`${apiUrl}/api/bug/init/dla`, {
-          credentials: "include",
+        const res = await apiClient.get('/api/bug/init/dla', {
           signal: controller.signal,
+          timeout: 5000,
         });
 
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          if (process.env.NODE_ENV === "development") {
-            logger.warn("Bug reporting: Failed to initialize -", res.status);
-          }
-          return;
-        }
-
-        const data = await res.json();
-        setAppId(data.appId);
+        setAppId(res.data.data?.appId || res.data.appId);
 
         if (process.env.NODE_ENV === "development") {
           logger.debug("Bug reporting ready");
@@ -96,7 +75,9 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
     };
 
     initApp();
-  }, [apiUrl]);
+
+    return () => controller.abort();
+  }, []);
 
   // Auto-capture browser context
   const captureContext = () => {
@@ -218,54 +199,38 @@ export function BugReportWidget({ apiUrl = import.meta.env.VITE_API_BASE_URL || 
       const context = captureContext();
 
       // Create bug report
-      const reportRes = await fetch(`${apiUrl}/api/bug/reports`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          appId,
-          ...formData,
-          ...context,
-          // Map form fields to backend expected fields
-          anonymousName: formData.reporterName || undefined,
-          anonymousEmail: formData.reporterEmail || undefined,
-        }),
+      const reportRes = await apiClient.post('/api/bug/reports', {
+        appId,
+        ...formData,
+        ...context,
+        // Map form fields to backend expected fields
+        anonymousName: formData.reporterName || undefined,
+        anonymousEmail: formData.reporterEmail || undefined,
       });
 
-      if (!reportRes.ok) {
-        const error = await reportRes.json();
-        throw new Error(error.error || "Failed to create bug report");
-      }
-
-      const report = await reportRes.json();
+      const report = reportRes.data.data || reportRes.data;
 
       // Upload screenshots if any
       if (screenshots.length > 0) {
         const uploadPromises = screenshots.map(async (file) => {
-          const formData = new FormData();
-          formData.append("screenshot", file);
-          formData.append("bugReportId", report.id);
+          const uploadFormData = new FormData();
+          uploadFormData.append("screenshot", file);
+          uploadFormData.append("bugReportId", report.id);
 
-          const uploadRes = await fetch(`${apiUrl}/api/bug/screenshots/upload`, {
-            method: "POST",
-            credentials: "include",
-            body: formData,
-          });
-
-          if (!uploadRes.ok) {
+          try {
+            await apiClient.post('/api/bug/screenshots/upload', uploadFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } catch {
             logger.error("Failed to upload screenshot:", file.name);
           }
-          return uploadRes;
         });
 
         await Promise.allSettled(uploadPromises);
       }
 
       // Sync to Google Sheets after all uploads complete (single sync to avoid duplicates)
-      await fetch(`${apiUrl}/api/bug/reports/${report.id}/sync`, {
-        method: "POST",
-        credentials: "include",
-      }).catch((err) => logger.error('Bug report submit error:', err));
+      await apiClient.post(`/api/bug/reports/${report.id}/sync`).catch((err) => logger.error('Bug report submit error:', err));
 
       toast.success(`Bug report ${report.reportNumber} created successfully`);
 
