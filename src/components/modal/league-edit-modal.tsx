@@ -214,8 +214,17 @@ export default function LeagueEditModal({
                     <span className="text-destructive">*</span>
                   </Label>
                   <Select
-                    value={formData.location}
-                    onValueChange={(value) => updateFormData("location", value)}
+                    value={LOCATION_OPTIONS.some((o) => o.value === formData.location) ? formData.location : formData.location ? "other" : ""}
+                    onValueChange={(value) => {
+                      if (value === "other") {
+                        // Only clear if switching FROM a predefined location
+                        if (LOCATION_OPTIONS.some((o) => o.value === formData.location)) {
+                          updateFormData("location", "");
+                        }
+                      } else {
+                        updateFormData("location", value);
+                      }
+                    }}
                   >
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue placeholder="Select location" />
@@ -228,6 +237,14 @@ export default function LeagueEditModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {(!LOCATION_OPTIONS.some((o) => o.value === formData.location) || formData.location === "") && (
+                    <Input
+                      placeholder="Enter location name..."
+                      value={formData.location === "" ? "" : formData.location}
+                      onChange={(e) => updateFormData("location", e.target.value)}
+                      className="h-9 mt-1.5"
+                    />
+                  )}
                 </div>
 
                 {/* Status */}

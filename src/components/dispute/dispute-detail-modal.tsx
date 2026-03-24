@@ -144,6 +144,36 @@ export function DisputeDetailModal({
   const [team2Score, setTeam2Score] = useState("0");
   const [notifyPlayers, setNotifyPlayers] = useState(true);
 
+  // Per-set game scores for detailed score entry
+  const [gameScores, setGameScores] = useState<{ t1: string; t2: string }[]>([
+    { t1: "", t2: "" },
+    { t1: "", t2: "" },
+    { t1: "", t2: "" },
+  ]);
+
+  const updateGameScore = (setIdx: number, team: "t1" | "t2", value: string) => {
+    const cleaned = value.replace(/[^0-9]/g, "").slice(0, 2);
+    setGameScores((prev) => {
+      const next = [...prev];
+      next[setIdx] = { ...next[setIdx], [team]: cleaned };
+
+      // Auto-calculate set tally
+      let s1 = 0, s2 = 0;
+      for (const gs of next) {
+        const g1 = parseInt(gs.t1) || 0;
+        const g2 = parseInt(gs.t2) || 0;
+        if (g1 === 0 && g2 === 0) continue;
+        if (g1 > g2) s1++;
+        else if (g2 > g1) s2++;
+      }
+      setTeam1Score(String(s1));
+      setTeam2Score(String(s2));
+      return next;
+    });
+  };
+
+  const hasGameScores = gameScores.some((gs) => gs.t1 !== "" || gs.t2 !== "");
+
   const resolveDispute = useResolveDispute();
 
   // Sync resolve mode when modal opens with initialResolveMode
@@ -158,6 +188,7 @@ export function DisputeDetailModal({
     setReason("");
     setTeam1Score("0");
     setTeam2Score("0");
+    setGameScores([{ t1: "", t2: "" }, { t1: "", t2: "" }, { t1: "", t2: "" }]);
     setNotifyPlayers(true);
   };
 
@@ -199,8 +230,18 @@ export function DisputeDetailModal({
     }
 
     try {
+      const setScoresPayload = hasGameScores
+        ? gameScores
+            .map((gs, idx) => ({
+              setNumber: idx + 1,
+              team1Games: parseInt(gs.t1) || 0,
+              team2Games: parseInt(gs.t2) || 0,
+            }))
+            .filter((s) => s.team1Games > 0 || s.team2Games > 0)
+        : undefined;
+
       const finalScore = requiresScore
-        ? { team1Score: score1, team2Score: score2 }
+        ? { team1Score: score1, team2Score: score2, setScores: setScoresPayload }
         : undefined;
 
       await resolveDispute.mutateAsync({
@@ -1148,11 +1189,49 @@ export function DisputeDetailModal({
                                 Final Score
                               </span>
                             </div>
-                            <div className="p-3">
-                              <div className="flex items-center gap-3">
+                            <div className="p-3 space-y-3">
+                              {/* Per-set game scores */}
+                              <div className="space-y-2">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                  Game Scores (per set)
+                                </p>
+                                {[0, 1, 2].map((setIdx) => (
+                                  <div key={setIdx} className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground w-16 shrink-0">
+                                      Set {setIdx + 1}{setIdx === 2 ? " (opt)" : ""}
+                                    </span>
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      placeholder="0"
+                                      value={gameScores[setIdx].t1}
+                                      onChange={(e) =>
+                                        updateGameScore(setIdx, "t1", e.target.value)
+                                      }
+                                      className="h-8 w-14 text-center text-sm font-bold font-mono"
+                                    />
+                                    <span className="text-sm text-muted-foreground/50">-</span>
+                                    <Input
+                                      type="text"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                      placeholder="0"
+                                      value={gameScores[setIdx].t2}
+                                      onChange={(e) =>
+                                        updateGameScore(setIdx, "t2", e.target.value)
+                                      }
+                                      className="h-8 w-14 text-center text-sm font-bold font-mono"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Auto-calculated set tally */}
+                              <div className="flex items-center gap-3 pt-2 border-t border-border/50">
                                 <div className="flex-1 space-y-1">
                                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                    {team1Name}
+                                    {team1Name} (sets)
                                   </Label>
                                   <Input
                                     type="text"
@@ -1169,6 +1248,7 @@ export function DisputeDetailModal({
                                       if (team1Score === "") setTeam1Score("0");
                                     }}
                                     className="h-10 text-center text-xl font-bold font-mono"
+                                    readOnly={hasGameScores}
                                   />
                                 </div>
                                 <span className="text-xl text-muted-foreground/50 pt-5">
@@ -1176,7 +1256,7 @@ export function DisputeDetailModal({
                                 </span>
                                 <div className="flex-1 space-y-1">
                                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                    {team2Name}
+                                    {team2Name} (sets)
                                   </Label>
                                   <Input
                                     type="text"
@@ -1193,9 +1273,15 @@ export function DisputeDetailModal({
                                       if (team2Score === "") setTeam2Score("0");
                                     }}
                                     className="h-10 text-center text-xl font-bold font-mono"
+                                    readOnly={hasGameScores}
                                   />
                                 </div>
                               </div>
+                              {hasGameScores && (
+                                <p className="text-[10px] text-muted-foreground text-center">
+                                  Set tally auto-calculated from game scores
+                                </p>
+                              )}
                             </div>
                           </div>
                         </motion.div>
