@@ -2,13 +2,14 @@ import { z } from "zod";
 
 // ===== ENUMS =====
 export const matchStatusEnum = z.enum([
-  "DRAFT",        // Match created but invitations expired/declined
-  "SCHEDULED",    // Match confirmed and scheduled
-  "ONGOING",      // Match currently in progress
-  "COMPLETED",    // Match finished with result
-  "UNFINISHED",   // Match started but not completed
-  "CANCELLED",    // Match cancelled by user
-  "VOID",         // Match voided by admin
+  "DRAFT",              // Match created but invitations expired/declined
+  "SCHEDULED",          // Match confirmed and scheduled
+  "ONGOING",            // Match currently in progress
+  "COMPLETED",          // Match finished with result
+  "UNFINISHED",         // Match started but not completed
+  "CANCELLED",          // Match cancelled by user
+  "VOID",               // Match voided by admin
+  "WALKOVER_PENDING",   // Walkover reported, awaiting 24h dispute window
 ]);
 
 export const matchTypeEnum = z.enum(["SINGLES", "DOUBLES"]);
@@ -416,6 +417,7 @@ export const matchStatsSchema = z.object({
     UNFINISHED: z.number(),
     CANCELLED: z.number(),
     VOID: z.number(),
+    WALKOVER_PENDING: z.number().default(0),
   }),
   disputed: z.number(),
   pendingConfirmation: z.number(),
