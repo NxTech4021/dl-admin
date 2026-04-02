@@ -63,7 +63,8 @@ export function MatchRowActions({
   const isOngoing = match.status === "ONGOING";
   const canVoid = !isVoided && !isCancelled;
   const canConvertToWalkover = !isVoided && !isCancelled && !match.isWalkover;
-  const canEdit = isCompleted || isOngoing;
+  const isWalkoverPending = match.status === "WALKOVER_PENDING";
+  const canEdit = isCompleted || isOngoing || isWalkoverPending;
   const canEditParticipants = !isVoided && !isCancelled && !isOngoing;
   const canReviewCancellation = match.isLateCancellation && isCancelled;
 
