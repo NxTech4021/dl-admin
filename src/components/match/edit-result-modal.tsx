@@ -86,8 +86,8 @@ export function EditResultModal({
           const idx = score.setNumber - 1;
           if (idx >= 0 && idx < 3) {
             populated[idx] = {
-              t1: score.player1Games > 0 ? String(score.player1Games) : "",
-              t2: score.player2Games > 0 ? String(score.player2Games) : "",
+              t1: (score.player1Games != null && (score.player1Games > 0 || score.player2Games > 0)) ? String(score.player1Games) : "",
+              t2: (score.player2Games != null && (score.player1Games > 0 || score.player2Games > 0)) ? String(score.player2Games) : "",
             };
           }
         }
