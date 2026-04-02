@@ -68,6 +68,7 @@ const MATCH_STATUSES: { value: MatchStatus; label: string }[] = [
   { value: "UNFINISHED", label: "Unfinished" },
   { value: "CANCELLED", label: "Cancelled" },
   { value: "VOID", label: "Void" },
+  { value: "WALKOVER_PENDING", label: "Walkover Pending" },
 ];
 
 const FLAG_OPTIONS: { value: MatchFlagType; label: string }[] = [
