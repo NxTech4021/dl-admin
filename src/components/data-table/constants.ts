@@ -62,6 +62,7 @@ export const STATUS_BADGE_VARIANTS = {
     UNFINISHED: 'secondary',
     CANCELLED: 'destructive',
     VOID: 'destructive',
+    WALKOVER_PENDING: 'secondary',
   },
 
   INVITATION: {
@@ -124,6 +125,7 @@ export const STATUS_BADGE_COLORS = {
     UNFINISHED: 'bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-yellow-400',
     CANCELLED: 'bg-red-500 hover:bg-red-600 text-white border-transparent',
     VOID: 'bg-red-700 hover:bg-red-800 text-white border-transparent',
+    WALKOVER_PENDING: 'bg-amber-400 hover:bg-amber-500 text-gray-900 border-amber-400',
   },
 
   INVITATION: {
@@ -460,6 +462,7 @@ export const MATCH_STATUS_LABELS = {
   UNFINISHED: 'Unfinished',
   CANCELLED: 'Cancelled',
   VOID: 'Voided',
+  WALKOVER_PENDING: 'Walkover Pending',
 } as const;
 
 export const CANCELLATION_REASON_LABELS = {
