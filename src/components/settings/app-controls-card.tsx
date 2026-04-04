@@ -46,7 +46,9 @@ interface MaintenanceData {
   description?: string;
   startDateTime: string;
   endDateTime: string;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   affectedServices?: string[];
+  notificationSent?: boolean;
 }
 
 interface AnnouncementData {
@@ -109,7 +111,7 @@ export function AppControlsCard() {
       try {
         // Fetch upcoming maintenance
         const maintResponse = await axiosInstance.get(endpoints.admin.systemControls.maintenance.getUpcoming);
-        const maintenance = maintResponse.data?.[0];
+        const maintenance = maintResponse.data?.data?.[0];
         if (maintenance) {
           setCurrentMaintenance(maintenance);
           // Calculate duration from start and end times
@@ -127,7 +129,7 @@ export function AppControlsCard() {
 
         // Fetch published announcements (backend doesn't have getAll endpoint yet)
         const publishedResponse = await axiosInstance.get(endpoints.admin.systemControls.announcements.getPublished);
-        const published = publishedResponse.data || [];
+        const published = publishedResponse.data?.data || [];
         
         setDraftAnnouncements([]);
         setPublishedAnnouncements(published);
@@ -180,12 +182,13 @@ export function AppControlsCard() {
 
       if (currentMaintenance?.id) {
         // Update existing maintenance
-        await axiosInstance.put(endpoints.admin.systemControls.maintenance.update(currentMaintenance.id), payload);
+        const response = await axiosInstance.put(endpoints.admin.systemControls.maintenance.update(currentMaintenance.id), payload);
+        setCurrentMaintenance(response.data?.data || currentMaintenance);
         toast.success("Maintenance updated successfully");
       } else {
         // Create new maintenance
         const response = await axiosInstance.post(endpoints.admin.systemControls.maintenance.create, payload);
-        setCurrentMaintenance(response.data);
+        setCurrentMaintenance(response.data?.data);
         toast.success("Maintenance scheduled successfully");
       }
       
@@ -199,11 +202,11 @@ export function AppControlsCard() {
 
   const handleCompleteMaintenance = async () => {
     if (!currentMaintenance?.id) return;
-    
+
     setIsLoading(true);
     try {
       await axiosInstance.post(endpoints.admin.systemControls.maintenance.complete(currentMaintenance.id));
-      toast.success("Maintenance marked as completed");
+      toast.success("Maintenance marked as completed — users notified");
       setCurrentMaintenance(null);
       maintenanceForm.reset();
       setIsEditingMaintenance(false);
@@ -214,12 +217,58 @@ export function AppControlsCard() {
     }
   };
 
-  const handleCancelMaintenance = () => {
+  const handleStartMaintenance = async () => {
+    if (!currentMaintenance?.id) return;
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post(endpoints.admin.systemControls.maintenance.start(currentMaintenance.id));
+      setCurrentMaintenance(response.data?.data);
+      toast.success("Maintenance started — users notified");
+      setIsEditingMaintenance(false);
+    } catch (error) {
+      toast.error("Failed to start maintenance: " + getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelMaintenanceAction = async () => {
+    if (!currentMaintenance?.id) return;
+
+    setIsLoading(true);
+    try {
+      await axiosInstance.post(endpoints.admin.systemControls.maintenance.cancel(currentMaintenance.id));
+      toast.success("Maintenance cancelled — users notified");
+      setCurrentMaintenance(null);
+      maintenanceForm.reset();
+      setIsEditingMaintenance(false);
+    } catch (error) {
+      toast.error("Failed to cancel maintenance: " + getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendNotification = async () => {
+    if (!currentMaintenance?.id) return;
+
+    setIsLoading(true);
+    try {
+      await axiosInstance.post(endpoints.admin.systemControls.maintenance.notify(currentMaintenance.id));
+      toast.success("Notification sent to all users");
+    } catch (error) {
+      toast.error("Failed to send notification: " + getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelEditMaintenance = () => {
     if (currentMaintenance) {
-      // Calculate duration from start and end times
       const durationMs = new Date(currentMaintenance.endDateTime).getTime() - new Date(currentMaintenance.startDateTime).getTime();
       const durationHours = durationMs / (1000 * 60 * 60);
-      
+
       maintenanceForm.reset({
         title: currentMaintenance.title || "",
         description: currentMaintenance.description || "",
@@ -269,17 +318,18 @@ export function AppControlsCard() {
         const response = await axiosInstance.put(endpoints.admin.systemControls.announcements.update(currentAnnouncement.id), payload);
         
         // Update in the appropriate list
-        if (response.data.status === 'DRAFT') {
-          setDraftAnnouncements(prev => prev.map(a => a.id === response.data.id ? response.data : a));
-        } else if (response.data.status === 'PUBLISHED') {
-          setPublishedAnnouncements(prev => prev.map(a => a.id === response.data.id ? response.data : a));
+        const updated = response.data?.data;
+        if (updated?.status === 'DRAFT') {
+          setDraftAnnouncements(prev => prev.map(a => a.id === updated.id ? updated : a));
+        } else if (updated?.status === 'PUBLISHED') {
+          setPublishedAnnouncements(prev => prev.map(a => a.id === updated.id ? updated : a));
         }
         
         toast.success("Announcement updated successfully");
       } else {
         // Create new announcement (will be in DRAFT status)
         const response = await axiosInstance.post(endpoints.admin.systemControls.announcements.create, payload);
-        setDraftAnnouncements(prev => [response.data, ...prev]);
+        setDraftAnnouncements(prev => [response.data?.data, ...prev].filter(Boolean));
         toast.success("Announcement created successfully");
       }
       
@@ -302,10 +352,10 @@ export function AppControlsCard() {
       
       // Refresh published announcements
       const response = await axiosInstance.get(endpoints.admin.systemControls.announcements.getPublished);
-      const publishedList = response.data || [];
+      const publishedList = response.data?.data || [];
       setPublishedAnnouncements(publishedList);
       setDraftAnnouncements([]);
-      
+
       // Update current announcement with published status
       const publishedAnnouncement = publishedList.find((a: AnnouncementData) => a.id === currentAnnouncement.id);
       if (publishedAnnouncement) {
@@ -330,7 +380,7 @@ export function AppControlsCard() {
       
       // Refresh published announcements
       const response = await axiosInstance.get(endpoints.admin.systemControls.announcements.getPublished);
-      setPublishedAnnouncements(response.data || []);
+      setPublishedAnnouncements(response.data?.data || []);
       
       setCurrentAnnouncement(null);
       announcementForm.reset();
@@ -476,22 +526,33 @@ export function AppControlsCard() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-2">
                   <Button type="submit" disabled={isLoading}>
                     {currentMaintenance ? "Update Maintenance" : "Schedule Maintenance"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={handleCancelMaintenance} disabled={isLoading}>
+                  <Button type="button" variant="outline" onClick={handleCancelEditMaintenance} disabled={isLoading}>
                     Cancel
                   </Button>
-                  {currentMaintenance && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={handleCompleteMaintenance}
-                      disabled={isLoading}
-                    >
-                      <IconRefresh className="size-4 mr-2" />
-                      Mark as Completed
+                  {currentMaintenance?.status === 'SCHEDULED' && (
+                    <Button type="button" onClick={handleStartMaintenance} disabled={isLoading}>
+                      Start Maintenance
+                    </Button>
+                  )}
+                  {currentMaintenance && currentMaintenance.status !== 'COMPLETED' && currentMaintenance.status !== 'CANCELLED' && (
+                    <>
+                      <Button type="button" variant="destructive" onClick={handleCompleteMaintenance} disabled={isLoading}>
+                        <IconRefresh className="size-4 mr-2" />
+                        Mark as Completed
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleCancelMaintenanceAction} disabled={isLoading}>
+                        Cancel Maintenance
+                      </Button>
+                    </>
+                  )}
+                  {currentMaintenance?.status === 'SCHEDULED' && (
+                    <Button type="button" variant="outline" onClick={handleSendNotification} disabled={isLoading}>
+                      <IconBell className="size-4 mr-2" />
+                      Send Notification
                     </Button>
                   )}
                 </div>
@@ -501,8 +562,19 @@ export function AppControlsCard() {
             <div className="rounded-lg border p-3">
               {currentMaintenance ? (
                 <div className="space-y-2">
-                  <p className="font-medium">{currentMaintenance.title}</p>
-                  <p className="text-sm text-muted-foreground">{currentMaintenance.description}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{currentMaintenance.title}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      currentMaintenance.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                      currentMaintenance.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {currentMaintenance.status === 'IN_PROGRESS' ? 'In Progress' : currentMaintenance.status}
+                    </span>
+                  </div>
+                  {currentMaintenance.description && (
+                    <p className="text-sm text-muted-foreground">{currentMaintenance.description}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {new Date(currentMaintenance.startDateTime).toLocaleString()} - {new Date(currentMaintenance.endDateTime).toLocaleString()}
                     {(() => {
