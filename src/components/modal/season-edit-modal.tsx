@@ -24,6 +24,13 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   IconEdit,
   IconArrowLeft,
   IconArrowRight,
@@ -49,34 +56,41 @@ interface SeasonEditModalProps {
   onSeasonUpdated?: () => Promise<void>;
 }
 
+type SeasonStatusOption = 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST';
+
 // Zod schema for form validation
 const seasonEditSchema = z
   .object({
     name: z.string().min(2, "Season name is required"),
     description: z.string().optional().nullable(),
     entryFee: z.number().nonnegative("Entry fee must be positive"),
-    startDate: z.date({ message: "Start date is required" }),
-    endDate: z.date({ message: "End date is required" }),
-    regiDeadline: z.date({ message: "Registration deadline is required" }),
-    isActive: z.boolean(),
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    regiDeadline: z.date().optional(),
+    status: z.enum(['ACTIVE', 'UPCOMING', 'REGISTER_INTEREST']),
     paymentRequired: z.boolean(),
     promoCodeSupported: z.boolean(),
     withdrawalEnabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
-    // Date validation
+    // Dates not required for register interest seasons
+    if (data.status !== 'REGISTER_INTEREST') {
+      if (!data.startDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["startDate"], message: "Start date is required" });
+      }
+      if (!data.endDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "End date is required" });
+      }
+      if (!data.regiDeadline) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["regiDeadline"], message: "Registration deadline is required" });
+      }
+    }
+    // Date order validation when both are present
     if (data.startDate && data.endDate && data.startDate >= data.endDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["endDate"],
         message: "End date must be after start date",
-      });
-    }
-    if (data.regiDeadline && data.startDate && data.regiDeadline >= data.startDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["regiDeadline"],
-        message: "Registration deadline must be before start date",
       });
     }
   });
@@ -117,7 +131,7 @@ export default function SeasonEditModal({
       startDate: undefined,
       endDate: undefined,
       regiDeadline: undefined,
-      isActive: false,
+      status: 'UPCOMING' as SeasonStatusOption,
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
@@ -126,6 +140,10 @@ export default function SeasonEditModal({
 
   const formValues = watch();
   const entryFee = watch("entryFee");
+  const status = watch("status");
+  const isRegisterInterestMode = status === 'REGISTER_INTEREST';
+  const hasRegisteredPlayers = (season?.registeredUserCount ?? 0) > 0 || (season?.memberships?.length ?? 0) > 0;
+  const isActiveWithRegisteredPlayers = season?.status === 'ACTIVE' && hasRegisteredPlayers;
 
   // Auto-manage paymentRequired based on entryFee
   // - Entry fee > 0: automatically enable payment required
@@ -138,6 +156,13 @@ export default function SeasonEditModal({
   // Initialize form with season data when season changes
   useEffect(() => {
     if (season && open) {
+      const resolvedStatus: SeasonStatusOption =
+        season.status === 'REGISTER_INTEREST' || season.status === 'ACTIVE' || season.status === 'UPCOMING'
+          ? season.status
+          : season.isActive
+            ? 'ACTIVE'
+            : 'UPCOMING';
+
       reset({
         name: season.name || "",
         description: season.description || "",
@@ -145,7 +170,7 @@ export default function SeasonEditModal({
         startDate: season.startDate ? new Date(season.startDate) : undefined,
         endDate: season.endDate ? new Date(season.endDate) : undefined,
         regiDeadline: season.regiDeadline ? new Date(season.regiDeadline) : undefined,
-        isActive: season.isActive || false,
+        status: resolvedStatus,
         paymentRequired: season.paymentRequired || false,
         promoCodeSupported: season.promoCodeSupported || false,
         withdrawalEnabled: season.withdrawalEnabled || false,
@@ -155,15 +180,16 @@ export default function SeasonEditModal({
 
   // Check if form step is valid
   const isFormStepValid = useMemo(() => {
+    const hasBasics = formValues.name?.length >= 2;
+    if (isRegisterInterestMode) return hasBasics;
     return (
-      formValues.name?.length >= 2 &&
+      hasBasics &&
       formValues.startDate &&
       formValues.endDate &&
       formValues.regiDeadline &&
-      formValues.startDate < formValues.endDate &&
-      formValues.regiDeadline < formValues.startDate
+      formValues.startDate < formValues.endDate
     );
-  }, [formValues]);
+  }, [formValues, isRegisterInterestMode]);
 
   const resetModal = useCallback(() => {
     setCurrentStep("form");
@@ -174,7 +200,7 @@ export default function SeasonEditModal({
       startDate: undefined,
       endDate: undefined,
       regiDeadline: undefined,
-      isActive: false,
+      status: 'UPCOMING' as SeasonStatusOption,
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
@@ -212,18 +238,31 @@ export default function SeasonEditModal({
     setError("");
 
     try {
-      const payload = {
-        name: data.name,
-        description: data.description || null,
-        entryFee: data.entryFee,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
-        regiDeadline: data.regiDeadline.toISOString(),
-        isActive: data.isActive,
-        paymentRequired: data.paymentRequired,
-        promoCodeSupported: data.promoCodeSupported,
-        withdrawalEnabled: data.withdrawalEnabled,
-      };
+      if (isActiveWithRegisteredPlayers && data.status !== 'ACTIVE') {
+        const transitionError = "This active season already has registered players. Status cannot be changed to Upcoming or Register Interest. Only the end date can be updated.";
+        setError(transitionError);
+        toast.error(transitionError);
+        setLoading(false);
+        return;
+      }
+
+      const payload = isActiveWithRegisteredPlayers
+        ? {
+            ...(data.endDate ? { endDate: data.endDate.toISOString() } : {}),
+            status: 'ACTIVE' as const,
+          }
+        : {
+            name: data.name,
+            description: data.description || null,
+            entryFee: data.entryFee,
+            ...(data.startDate ? { startDate: data.startDate.toISOString() } : {}),
+            ...(data.endDate ? { endDate: data.endDate.toISOString() } : {}),
+            ...(data.regiDeadline ? { regiDeadline: data.regiDeadline.toISOString() } : {}),
+            status: data.status,
+            paymentRequired: data.paymentRequired,
+            promoCodeSupported: data.promoCodeSupported,
+            withdrawalEnabled: data.withdrawalEnabled,
+          };
 
       await axiosInstance.put(endpoints.season.update(season.id), payload);
 
@@ -358,6 +397,7 @@ export default function SeasonEditModal({
                       </Label>
                       <Input
                         {...register("name")}
+                        disabled={isActiveWithRegisteredPlayers}
                         className={cn(
                           "h-9",
                           errors.name && "border-destructive focus-visible:ring-destructive"
@@ -389,6 +429,7 @@ export default function SeasonEditModal({
                               onChange={(e) => field.onChange(parseCurrencyInput(e.target.value))}
                               onFocus={() => setIsEntryFeeFocused(true)}
                               onBlur={() => setIsEntryFeeFocused(false)}
+                              disabled={isActiveWithRegisteredPlayers}
                               className={cn(
                                 "h-9 pl-10",
                                 errors.entryFee && "border-destructive"
@@ -409,6 +450,7 @@ export default function SeasonEditModal({
                     <Label className="text-sm font-medium">Description</Label>
                     <Textarea
                       {...register("description")}
+                      disabled={isActiveWithRegisteredPlayers}
                       placeholder="Describe this season..."
                       rows={2}
                       className="resize-none"
@@ -426,53 +468,60 @@ export default function SeasonEditModal({
                   </span>
                 </div>
                 <div className="p-3">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    {[
-                      { label: "Registration Deadline", key: "regiDeadline" as const },
-                      { label: "Start Date", key: "startDate" as const },
-                      { label: "End Date", key: "endDate" as const },
-                    ].map((field) => (
-                      <div key={field.key} className="space-y-1.5">
-                        <Label className="text-sm font-medium flex items-center gap-1">
-                          {field.label}
-                          <span className="text-destructive">*</span>
-                        </Label>
-                        <Controller
-                          control={control}
-                          name={field.key}
-                          render={({ field: { value, onChange } }) => (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "w-full justify-start text-left font-normal h-9 text-sm",
-                                    !value && "text-muted-foreground",
-                                    errors[field.key] && "border-destructive"
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                                  {value ? format(value, "MMM dd, yyyy") : "Select date"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={value}
-                                  onSelect={onChange}
-                                />
-                              </PopoverContent>
-                            </Popover>
+                  {isRegisterInterestMode ? (
+                    <p className="text-sm text-muted-foreground py-2">
+                      No dates required for Register Interest seasons. Dates can be set later when converting to a full season.
+                    </p>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {[
+                        { label: "Registration Deadline", key: "regiDeadline" as const },
+                        { label: "Start Date", key: "startDate" as const },
+                        { label: "End Date", key: "endDate" as const },
+                      ].map((field) => (
+                        <div key={field.key} className="space-y-1.5">
+                          <Label className="text-sm font-medium flex items-center gap-1">
+                            {field.label}
+                            <span className="text-destructive">*</span>
+                          </Label>
+                          <Controller
+                            control={control}
+                            name={field.key}
+                            render={({ field: { value, onChange } }) => (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    disabled={isActiveWithRegisteredPlayers && field.key !== "endDate"}
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal h-9 text-sm",
+                                      !value && "text-muted-foreground",
+                                      errors[field.key] && "border-destructive"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                    {value ? format(value, "MMM dd, yyyy") : "Select date"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={value}
+                                    onSelect={onChange}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          />
+                          {errors[field.key] && (
+                            <p className="text-xs text-destructive">
+                              {errors[field.key]?.message}
+                            </p>
                           )}
-                        />
-                        {errors[field.key] && (
-                          <p className="text-xs text-destructive">
-                            {errors[field.key]?.message}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -485,31 +534,59 @@ export default function SeasonEditModal({
                   </span>
                 </div>
                 <div className="p-3">
+                  <div className="mb-3 space-y-1.5">
+                    <Label className="text-sm font-medium">Season Status</Label>
+                    <Controller
+                      control={control}
+                      name="status"
+                      render={({ field: { value, onChange } }) => (
+                        <Select value={value} onValueChange={onChange} disabled={isActiveWithRegisteredPlayers}>
+                          <SelectTrigger className="h-9 text-sm" disabled={isActiveWithRegisteredPlayers}>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ACTIVE">Current</SelectItem>
+                            <SelectItem value="UPCOMING" disabled={isActiveWithRegisteredPlayers}>Upcoming - Waitlist</SelectItem>
+                            <SelectItem value="REGISTER_INTEREST" disabled={isActiveWithRegisteredPlayers}>Upcoming - Register Interest</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {isActiveWithRegisteredPlayers ? (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-500">
+                        Players are already registered. Status is locked to Current; only end date should be edited.
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground">
+                        You can transition seasons between Register Interest, Upcoming, and Current.
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { key: "isActive" as const, label: "Active" },
                       { key: "paymentRequired" as const, label: "Payment Required" },
                       { key: "promoCodeSupported" as const, label: "Promo Codes" },
                       { key: "withdrawalEnabled" as const, label: "Withdrawals" },
                     ].map(({ key, label }) => {
-                      // Payment Required is auto-managed based on entry fee
                       const isPaymentRequired = key === "paymentRequired";
                       const isFreeEntry = !entryFee || entryFee === 0;
-                      const isDisabled = isPaymentRequired; // Always disabled - auto-managed
+                      const isDisabled = isActiveWithRegisteredPlayers || isRegisterInterestMode || isPaymentRequired;
 
                       return (
                         <div
                           key={key}
                           className={cn(
                             "flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background",
-                            isDisabled && "opacity-60"
+                            isDisabled && "opacity-50"
                           )}
                         >
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
                                 "size-2 rounded-full transition-colors",
-                                formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                                formValues[key] && !isRegisterInterestMode
+                                  ? "bg-emerald-500"
+                                  : "bg-slate-300 dark:bg-slate-600"
                               )}
                             />
                             <div className="flex flex-col">
@@ -529,7 +606,7 @@ export default function SeasonEditModal({
                             render={({ field: { value, onChange } }) => (
                               <Switch
                                 id={key}
-                                checked={value}
+                                checked={value && !isRegisterInterestMode}
                                 onCheckedChange={onChange}
                                 disabled={isDisabled}
                                 className="scale-90"
@@ -624,9 +701,16 @@ export default function SeasonEditModal({
                 <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Configuration
                 </span>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="size-2 rounded-full bg-primary/60" />
+                  <span className="text-sm text-muted-foreground">
+                    Status: <span className="font-medium text-foreground">
+                      {{ ACTIVE: 'Current', UPCOMING: 'Upcoming - Waitlist', REGISTER_INTEREST: 'Upcoming - Register Interest' }[formValues.status] || 'Upcoming - Waitlist'}
+                    </span>
+                  </span>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: "isActive" as const, label: "Active" },
                     { key: "paymentRequired" as const, label: "Payment Required" },
                     { key: "promoCodeSupported" as const, label: "Promo Codes" },
                     { key: "withdrawalEnabled" as const, label: "Withdrawals" },
