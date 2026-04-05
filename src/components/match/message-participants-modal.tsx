@@ -43,14 +43,22 @@ export function MessageParticipantsModal({
     if (!match || !subject.trim() || !message.trim()) return;
 
     try {
-      await messageParticipants.mutateAsync({
+      const result = await messageParticipants.mutateAsync({
         matchId: match.id,
         subject: subject.trim(),
         message: message.trim(),
         sendEmail,
         sendPush,
       });
-      toast.success("Message sent to participants");
+      const dr = result?.data?.deliveryResults || result?.deliveryResults;
+      if (dr) {
+        const parts = [`${dr.inApp || 0} in-app`];
+        if (sendEmail) parts.push(`${dr.email || 0} email${dr.emailSkipped ? ` (${dr.emailSkipped} skipped)` : ''}`);
+        if (sendPush) parts.push(`${dr.push || 0} push${dr.pushSkipped ? ` (${dr.pushSkipped} skipped)` : ''}`);
+        toast.success(`Message sent: ${parts.join(', ')}`);
+      } else {
+        toast.success("Message sent to participants");
+      }
       onOpenChange(false);
       resetForm();
       onSuccess?.();

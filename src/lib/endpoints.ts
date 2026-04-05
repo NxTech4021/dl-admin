@@ -31,6 +31,7 @@ export const endpoints = {
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
       reviewCancellation: (id: string) => `/api/admin/cancellations/${id}/review`, // Fixed: correct path
       messageParticipants: (id: string) => `/api/admin/matches/${id}/message`, // Fixed: was /message-participants
+      messageLogs: "/api/admin/message-logs",
       // Friendly match moderation
       hideMatch: (id: string) => `/api/admin/matches/${id}/hide`,
       unhideMatch: (id: string) => `/api/admin/matches/${id}/unhide`,
@@ -132,7 +133,10 @@ export const endpoints = {
         create: "/api/admin/system/maintenance",
         update: (id: string) => `/api/admin/system/maintenance/${id}`,
         getUpcoming: "/api/admin/system/maintenance/upcoming",
+        notify: (id: string) => `/api/admin/system/maintenance/${id}/notify`,
+        start: (id: string) => `/api/admin/system/maintenance/${id}/start`,
         complete: (id: string) => `/api/admin/system/maintenance/${id}/complete`,
+        cancel: (id: string) => `/api/admin/system/maintenance/${id}/cancel`,
       },
       announcements: {
         create: "/api/admin/system/announcements",
