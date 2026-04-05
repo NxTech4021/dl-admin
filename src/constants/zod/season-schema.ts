@@ -92,7 +92,7 @@ export const seasonSchema = z.object({
   promoCodeSupported: z.boolean().default(false),
   withdrawalEnabled: z.boolean().default(false),
   status: z
-    .enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED", "WAITLISTED"])
+    .enum(["UPCOMING", "ACTIVE", "REGISTER_INTEREST", "FINISHED", "CANCELLED", "WAITLISTED"])
     .default("UPCOMING"),
   current: z.boolean().default(false),
   createdAt: z.coerce.date(),

@@ -26,6 +26,13 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   IconTrophy,
   IconArrowLeft,
   IconArrowRight,
@@ -58,12 +65,12 @@ interface SeasonCreatePayload {
   name: string;
   description: string | null;
   entryFee: number;
-  startDate: string;
-  endDate: string;
-  regiDeadline: string;
+  startDate?: string;
+  endDate?: string;
+  regiDeadline?: string;
   categoryId: string;
   leagueIds: string[];
-  isActive: boolean;
+  status: 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST';
   paymentRequired: boolean;
   promoCodeSupported: boolean;
   withdrawalEnabled: boolean;
@@ -84,17 +91,29 @@ const seasonCreateSchema = z
     name: z.string().min(2, "Season name is required"),
     description: z.string().optional().nullable(),
     entryFee: z.number().nonnegative("Entry fee must be positive"),
-    startDate: z.date({ message: "Start date is required" }),
-    endDate: z.date({ message: "End date is required" }),
-    regiDeadline: z.date({ message: "Registration deadline is required" }),
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    regiDeadline: z.date().optional(),
     categoryIds: z.array(z.string()).min(1, "Select at least one category"),
-    isActive: z.boolean(),
+    status: z.enum(['ACTIVE', 'UPCOMING', 'REGISTER_INTEREST']),
     paymentRequired: z.boolean(),
     promoCodeSupported: z.boolean(),
     withdrawalEnabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
-    // Date validation
+    // Dates not required for register interest seasons
+    if (data.status !== 'REGISTER_INTEREST') {
+      if (!data.startDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["startDate"], message: "Start date is required" });
+      }
+      if (!data.endDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "End date is required" });
+      }
+      if (!data.regiDeadline) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["regiDeadline"], message: "Registration deadline is required" });
+      }
+    }
+    // Date order validation when both are present
     if (data.startDate && data.endDate && data.startDate >= data.endDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -159,7 +178,7 @@ export default function SeasonCreateModal({
       endDate: undefined,
       regiDeadline: undefined,
       categoryIds: [],
-      isActive: false,
+      status: 'UPCOMING' as 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST',
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
@@ -169,26 +188,28 @@ export default function SeasonCreateModal({
   const formValues = watch();
   const categoryIds = watch("categoryIds");
   const entryFee = watch("entryFee");
+  const status = watch("status");
 
   // Auto-manage paymentRequired based on entryFee
-  // - Entry fee > 0: automatically enable payment required
-  // - Entry fee = 0 or empty: automatically disable payment required
   useEffect(() => {
     const isFree = !entryFee || entryFee === 0;
     setValue("paymentRequired", !isFree, { shouldValidate: true });
   }, [entryFee, setValue]);
 
+  const isRegisterInterestMode = status === 'REGISTER_INTEREST';
+
   // Check if form step is valid
   const isFormStepValid = useMemo(() => {
+    const hasBasics = (formValues.name?.length ?? 0) >= 2 && (formValues.categoryIds?.length ?? 0) >= 1;
+    if (isRegisterInterestMode) return hasBasics;
     return (
-      formValues.name?.length >= 2 &&
-      formValues.categoryIds?.length >= 1 &&
+      hasBasics &&
       formValues.startDate &&
       formValues.endDate &&
       formValues.regiDeadline &&
       formValues.startDate < formValues.endDate
     );
-  }, [formValues]);
+  }, [formValues, isRegisterInterestMode]);
 
   // Fetch categories when dropdown opens
   useEffect(() => {
@@ -262,7 +283,7 @@ export default function SeasonCreateModal({
       endDate: undefined,
       regiDeadline: undefined,
       categoryIds: [],
-      isActive: false,
+      status: 'UPCOMING' as 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST',
       paymentRequired: false,
       promoCodeSupported: false,
       withdrawalEnabled: false,
@@ -337,12 +358,12 @@ export default function SeasonCreateModal({
           name: data.name,
           description: data.description || null,
           entryFee: data.entryFee,
-          startDate: data.startDate.toISOString(),
-          endDate: data.endDate.toISOString(),
-          regiDeadline: data.regiDeadline.toISOString(),
+          ...(data.startDate ? { startDate: data.startDate.toISOString() } : {}),
+          ...(data.endDate ? { endDate: data.endDate.toISOString() } : {}),
+          ...(data.regiDeadline ? { regiDeadline: data.regiDeadline.toISOString() } : {}),
           categoryId,
           leagueIds: [leagueId],
-          isActive: data.isActive,
+          status: data.status,
           paymentRequired: data.paymentRequired,
           promoCodeSupported: data.promoCodeSupported,
           withdrawalEnabled: data.withdrawalEnabled,
@@ -698,53 +719,64 @@ export default function SeasonCreateModal({
                   </span>
                 </div>
                 <div className="p-3">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    {[
-                      { label: "Registration Deadline", key: "regiDeadline" as const },
-                      { label: "Start Date", key: "startDate" as const },
-                      { label: "End Date", key: "endDate" as const },
-                    ].map((field) => (
-                      <div key={field.key} className="space-y-1.5">
-                        <Label className="text-sm font-medium flex items-center gap-1">
-                          {field.label}
-                          <span className="text-destructive">*</span>
-                        </Label>
-                        <Controller
-                          control={control}
-                          name={field.key}
-                          render={({ field: { value, onChange } }) => (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "w-full justify-start text-left font-normal h-9 text-sm",
-                                    !value && "text-muted-foreground",
-                                    errors[field.key] && "border-destructive"
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                                  {value ? format(value, "MMM dd, yyyy") : "Select date"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={value}
-                                  onSelect={onChange}
-                                />
-                              </PopoverContent>
-                            </Popover>
+                  {/* Date grid — hidden in Register Interest mode */}
+                  {!isRegisterInterestMode && (
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {[
+                        { label: "Registration Deadline", key: "regiDeadline" as const },
+                        { label: "Start Date", key: "startDate" as const },
+                        { label: "End Date", key: "endDate" as const },
+                      ].map((field) => (
+                        <div key={field.key} className="space-y-1.5">
+                          <Label className="text-sm font-medium flex items-center gap-1">
+                            {field.label}
+                            <span className="text-destructive">*</span>
+                          </Label>
+                          <Controller
+                            control={control}
+                            name={field.key}
+                            render={({ field: { value, onChange } }) => (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal h-9 text-sm",
+                                      !value && "text-muted-foreground",
+                                      errors[field.key] && "border-destructive"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                    {value ? format(value, "MMM dd, yyyy") : "Select date"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={value}
+                                    onSelect={onChange}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          />
+                          {errors[field.key] && (
+                            <p className="text-xs text-destructive">
+                              {errors[field.key]?.message}
+                            </p>
                           )}
-                        />
-                        {errors[field.key] && (
-                          <p className="text-xs text-destructive">
-                            {errors[field.key]?.message}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Register Interest mode — no dates hint */}
+                  {isRegisterInterestMode && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/40 border border-border/50 text-sm text-muted-foreground">
+                      <IconCalendarEvent className="size-4 shrink-0" />
+                      <span>Dates are not required for Register Interest seasons. You can add them later when the season is confirmed.</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -757,31 +789,50 @@ export default function SeasonCreateModal({
                   </span>
                 </div>
                 <div className="p-3">
+                  {/* Season Status Select */}
+                  <div className="mb-3 space-y-1.5">
+                    <Label className="text-sm font-medium">Season Status</Label>
+                    <Controller
+                      control={control}
+                      name="status"
+                      render={({ field: { value, onChange } }) => (
+                        <Select value={value} onValueChange={onChange}>
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ACTIVE">Current</SelectItem>
+                            <SelectItem value="UPCOMING">Upcoming — Waitlist</SelectItem>
+                            <SelectItem value="REGISTER_INTEREST">Upcoming — Register Interest</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { key: "isActive" as const, label: "Active" },
+                    {([
                       { key: "paymentRequired" as const, label: "Payment Required" },
                       { key: "promoCodeSupported" as const, label: "Promo Codes" },
                       { key: "withdrawalEnabled" as const, label: "Withdrawals" },
-                    ].map(({ key, label }) => {
-                      // Payment Required is auto-managed based on entry fee
+                    ] as const).map(({ key, label }) => {
                       const isPaymentRequired = key === "paymentRequired";
                       const isFreeEntry = !entryFee || entryFee === 0;
-                      const isDisabled = isPaymentRequired; // Always disabled - auto-managed
+                      // All pills disabled when Register Interest status is selected
+                      const isDisabled = isRegisterInterestMode || isPaymentRequired;
 
                       return (
                         <div
                           key={key}
                           className={cn(
                             "flex items-center justify-between p-2.5 rounded-lg border border-border/50 bg-background",
-                            isDisabled && "opacity-60"
+                            isDisabled && "opacity-50"
                           )}
                         >
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
                                 "size-2 rounded-full transition-colors",
-                                formValues[key] ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                                formValues[key] && !isRegisterInterestMode ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
                               )}
                             />
                             <div className="flex flex-col">
@@ -801,7 +852,7 @@ export default function SeasonCreateModal({
                             render={({ field: { value, onChange } }) => (
                               <Switch
                                 id={key}
-                                checked={value}
+                                checked={value && !isRegisterInterestMode}
                                 onCheckedChange={onChange}
                                 disabled={isDisabled}
                                 className="scale-90"
@@ -886,12 +937,20 @@ export default function SeasonCreateModal({
                 </div>
                 <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Status
+                  </span>
+                  <div className="text-lg font-semibold">
+                    {{ ACTIVE: 'Current', UPCOMING: 'Upcoming — Waitlist', REGISTER_INTEREST: 'Upcoming — Register Interest' }[formValues.status] || 'Upcoming — Waitlist'}
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Duration
                   </span>
                   <div className="text-lg font-semibold">
                     {formValues.startDate && formValues.endDate
                       ? `${format(formValues.startDate, "MMM dd")} - ${format(formValues.endDate, "MMM dd, yyyy")}`
-                      : "Not set"}
+                      : "TBD"}
                   </div>
                 </div>
               </div>
@@ -907,13 +966,13 @@ export default function SeasonCreateModal({
                 <div className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm text-muted-foreground">Start Date</span>
                   <span className="text-sm font-medium">
-                    {formValues.startDate ? format(formValues.startDate, "MMM dd, yyyy") : "—"}
+                    {formValues.startDate ? format(formValues.startDate, "MMM dd, yyyy") : "TBD"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
                   <span className="text-sm text-muted-foreground">End Date</span>
                   <span className="text-sm font-medium">
-                    {formValues.endDate ? format(formValues.endDate, "MMM dd, yyyy") : "—"}
+                    {formValues.endDate ? format(formValues.endDate, "MMM dd, yyyy") : "TBD"}
                   </span>
                 </div>
               </div>
@@ -924,12 +983,11 @@ export default function SeasonCreateModal({
                   Configuration
                 </span>
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { key: "isActive" as const, label: "Active" },
+                  {([
                     { key: "paymentRequired" as const, label: "Payment Required" },
                     { key: "promoCodeSupported" as const, label: "Promo Codes" },
                     { key: "withdrawalEnabled" as const, label: "Withdrawals" },
-                  ].map(({ key, label }) => (
+                  ] as const).map(({ key, label }) => (
                     <div key={key} className="flex items-center gap-1.5">
                       <div
                         className={cn(
