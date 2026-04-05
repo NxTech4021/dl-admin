@@ -107,8 +107,13 @@ export function InactivitySettingsCard() {
 
   const handleTriggerCheck = async () => {
     try {
-      await triggerCheckMutation.mutateAsync();
-      toast.success("Inactivity check triggered successfully. Players have been updated.");
+      const result = await triggerCheckMutation.mutateAsync();
+      const data = result?.data?.data || result?.data || result;
+      if (data?.total !== undefined) {
+        toast.success(`Check complete: ${data.total} players checked, ${data.markedInactive || 0} marked inactive, ${data.warnings || 0} warnings sent`);
+      } else {
+        toast.success("Inactivity check triggered successfully.");
+      }
       refetchStats();
     } catch {
       toast.error("Failed to trigger inactivity check. Please try again.");
