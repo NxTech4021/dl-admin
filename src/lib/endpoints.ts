@@ -68,6 +68,20 @@ export const endpoints = {
       deleteSettings: (id: string) => `/api/admin/inactivity/settings/${id}`,
       triggerCheck: "/api/admin/inactivity/check",
       getStats: "/api/admin/inactivity/stats",
+      toggleExempt: (userId: string) => `/api/admin/inactivity/exempt/${userId}`,
+    },
+
+    // Rating management
+    ratings: {
+      getDivisionRatings: (divisionId: string) => `/api/admin/ratings/division/${divisionId}`,
+      getDivisionSummary: (divisionId: string) => `/api/admin/ratings/division/${divisionId}/summary`,
+      adjust: "/api/admin/ratings/adjust",
+      recalculateDivision: (divisionId: string) => `/api/admin/ratings/recalculate/division/${divisionId}`,
+      recalculateSeason: (seasonId: string) => `/api/admin/ratings/recalculate/${seasonId}`,
+      lockSeason: (seasonId: string) => `/api/admin/ratings/lock/${seasonId}`,
+      unlockSeason: (seasonId: string) => `/api/admin/ratings/unlock/${seasonId}`,
+      getLockStatus: (seasonId: string) => `/api/admin/ratings/lock-status/${seasonId}`,
+      exportSeason: (seasonId: string) => `/api/admin/ratings/export/${seasonId}`,
     },
 
     // Dashboard statistics
