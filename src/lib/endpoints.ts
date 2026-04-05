@@ -31,6 +31,7 @@ export const endpoints = {
       convertWalkover: (id: string) => `/api/admin/matches/${id}/convert-walkover`,
       reviewCancellation: (id: string) => `/api/admin/cancellations/${id}/review`, // Fixed: correct path
       messageParticipants: (id: string) => `/api/admin/matches/${id}/message`, // Fixed: was /message-participants
+      messageLogs: "/api/admin/message-logs",
       // Friendly match moderation
       hideMatch: (id: string) => `/api/admin/matches/${id}/hide`,
       unhideMatch: (id: string) => `/api/admin/matches/${id}/unhide`,
