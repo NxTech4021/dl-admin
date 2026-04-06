@@ -8,6 +8,9 @@ import {
   IconHistory,
   IconAlertCircle,
   IconLoader2,
+  IconUserOff,
+  IconUserCheck,
+  IconShieldOff,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +84,53 @@ export function PlayerActions({
   const [banNotes, setBanNotes] = React.useState("");
   const [unbanNotes, setUnbanNotes] = React.useState("");
   const [deleteReason, setDeleteReason] = React.useState("");
+  const [statusChangeDialogOpen, setStatusChangeDialogOpen] = React.useState(false);
+  const [statusChangeTarget, setStatusChangeTarget] = React.useState<"INACTIVE" | "ACTIVE" | null>(null);
+  const [statusChangeNotes, setStatusChangeNotes] = React.useState("");
+
+  const isInactive = currentStatus === "INACTIVE";
+
+  const handleStatusChange = async () => {
+    if (!statusChangeTarget) return;
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.patch(
+        endpoints.admin.players.updateStatus(playerId),
+        {
+          status: statusChangeTarget,
+          notes: statusChangeNotes.trim() || undefined,
+        }
+      );
+      if (response.data?.success || response.data?.data) {
+        toast.success(`Player ${statusChangeTarget === "INACTIVE" ? "marked as inactive" : "reactivated"}`);
+        setStatusChangeDialogOpen(false);
+        setStatusChangeNotes("");
+        setStatusChangeTarget(null);
+        onStatusChange?.(statusChangeTarget);
+      }
+    } catch (error: unknown) {
+      logger.error("Failed to change player status:", error);
+      toast.error(getErrorMessage(error, "Failed to change player status"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleExempt = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.put(
+        endpoints.admin.inactivity.toggleExempt(playerId)
+      );
+      const data = response.data?.data || response.data;
+      toast.success(data?.message || `Inactivity exemption toggled`);
+    } catch (error: unknown) {
+      logger.error("Failed to toggle inactivity exemption:", error);
+      toast.error(getErrorMessage(error, "Failed to toggle exemption"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchStatusHistory = async () => {
     setHistoryLoading(true);
@@ -265,14 +315,52 @@ export function PlayerActions({
               <IconHistory className="mr-2 size-4" />
               Status History
             </Button>
-            {/* TODO(#048): Add these buttons when UI components are built:
-              1. "Exempt from Inactivity" toggle — PUT /api/admin/inactivity/exempt/:playerId
-                 (endpoint ready, see endpoints.admin.inactivity.toggleExempt)
-              2. "Adjust Rating" button — POST /api/admin/ratings/adjust
-                 (endpoint ready, see endpoints.admin.ratings.adjust)
-                 → Opens modal: old rating, new rating input, reason field (required)
-                 → Sends notification to player with new rating + reason
-            */}
+            {/* Mark Inactive / Reactivate */}
+            {currentStatus === "ACTIVE" && !isBanned && !isDeleted && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-gray-600 border-gray-400 hover:bg-gray-50"
+                onClick={() => {
+                  setStatusChangeTarget("INACTIVE");
+                  setStatusChangeDialogOpen(true);
+                }}
+                disabled={isLoading}
+              >
+                <IconUserOff className="mr-2 size-4" />
+                Mark Inactive
+              </Button>
+            )}
+            {isInactive && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-green-600 border-green-600 hover:bg-green-50"
+                onClick={() => {
+                  setStatusChangeTarget("ACTIVE");
+                  setStatusChangeDialogOpen(true);
+                }}
+                disabled={isLoading}
+              >
+                <IconUserCheck className="mr-2 size-4" />
+                Reactivate
+              </Button>
+            )}
+            {/* Inactivity Exemption */}
+            {!isBanned && !isDeleted && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleExempt}
+                disabled={isLoading}
+              >
+                <IconShieldOff className="mr-2 size-4" />
+                Toggle Exempt
+              </Button>
+            )}
+            {/* TODO(#048): Add "Adjust Rating" button — POST /api/admin/ratings/adjust
+                → Opens modal: old rating, new rating input, reason field (required)
+                → Sends notification to player with new rating + reason */}
           </div>
         </CardContent>
       </Card>
@@ -476,6 +564,55 @@ export function PlayerActions({
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark Inactive / Reactivate Dialog */}
+      <Dialog open={statusChangeDialogOpen} onOpenChange={(open) => {
+        setStatusChangeDialogOpen(open);
+        if (!open) { setStatusChangeNotes(""); setStatusChangeTarget(null); }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {statusChangeTarget === "INACTIVE" ? "Mark Player as Inactive" : "Reactivate Player"}
+            </DialogTitle>
+            <DialogDescription>
+              {statusChangeTarget === "INACTIVE"
+                ? `This will mark ${playerName} as inactive. They will be excluded from matchmaking and pairing.`
+                : `This will reactivate ${playerName}. They will be included in matchmaking and pairing again.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="status-change-notes">Notes (optional)</Label>
+              <Textarea
+                id="status-change-notes"
+                placeholder="Reason for status change..."
+                value={statusChangeNotes}
+                onChange={(e) => setStatusChangeNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusChangeDialogOpen(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStatusChange}
+              disabled={isLoading}
+              variant={statusChangeTarget === "INACTIVE" ? "secondary" : "default"}
+              className={statusChangeTarget === "ACTIVE" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              {isLoading ? (
+                <><IconLoader2 className="mr-2 size-4 animate-spin" />Processing...</>
+              ) : statusChangeTarget === "INACTIVE" ? (
+                <><IconUserOff className="mr-2 size-4" />Mark Inactive</>
+              ) : (
+                <><IconUserCheck className="mr-2 size-4" />Reactivate</>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
