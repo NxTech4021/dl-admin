@@ -146,6 +146,10 @@ export const endpoints = {
     },
 
     // Admin reports
+    // TODO(#050): Add walkover analytics endpoint when backend aggregation is built.
+    //   Needs: GET /api/admin/reports/walkover-analytics
+    //   Returns: walkover count by reason, sport, season; dispute rate; penalty rate
+    //   Display: New report card in admin Reports page with charts
     reports: {
       playerRegistration: "/api/admin/reports/player-registration",
       playerRetention: "/api/admin/reports/player-retention",
