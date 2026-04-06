@@ -39,6 +39,14 @@ export const endpoints = {
       clearReport: (id: string) => `/api/admin/matches/${id}/clear-report`,
     },
 
+    // Penalty management
+    // TODO(#050): Build penalty management page using these endpoints.
+    //   Needs: penalty list table, apply penalty modal, player penalty history view.
+    penalties: {
+      apply: "/api/admin/penalties/apply",
+      getPlayerPenalties: (userId: string) => `/api/admin/penalties/player/${userId}`,
+    },
+
     // Division helpers
     divisions: {
       availablePlayers: (divisionId: string) => `/api/admin/divisions/${divisionId}/available-players`,
