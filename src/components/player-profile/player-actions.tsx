@@ -265,6 +265,14 @@ export function PlayerActions({
               <IconHistory className="mr-2 size-4" />
               Status History
             </Button>
+            {/* TODO(#048): Add these buttons when UI components are built:
+              1. "Exempt from Inactivity" toggle — PUT /api/admin/inactivity/exempt/:playerId
+                 (endpoint ready, see endpoints.admin.inactivity.toggleExempt)
+              2. "Adjust Rating" button — POST /api/admin/ratings/adjust
+                 (endpoint ready, see endpoints.admin.ratings.adjust)
+                 → Opens modal: old rating, new rating input, reason field (required)
+                 → Sends notification to player with new rating + reason
+            */}
           </div>
         </CardContent>
       </Card>

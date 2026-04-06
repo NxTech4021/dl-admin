@@ -72,6 +72,12 @@ export const endpoints = {
     },
 
     // Rating management
+    // TODO(#048): Backend endpoints are ready (15 total). UI components needed:
+    //   1. "Adjust Rating" button on player profile → modal with old/new rating + reason field
+    //   2. "Recalculate" button on division page → confirmation dialog showing affected players
+    //   3. Lock/Unlock toggle on season page → prevents rating changes after finalization
+    //   4. Export button on season page → CSV/JSON download of all ratings
+    //   See docs/issues/dissections/048-admin-rating-inactivity-controls.md for full spec
     ratings: {
       getDivisionRatings: (divisionId: string) => `/api/admin/ratings/division/${divisionId}`,
       getDivisionSummary: (divisionId: string) => `/api/admin/ratings/division/${divisionId}/summary`,

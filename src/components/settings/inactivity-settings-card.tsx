@@ -279,7 +279,8 @@ export function InactivitySettingsCard() {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Players approaching inactivity will receive a warning after this many days
+                    Players approaching inactivity will receive a warning after this many days.
+                    Note: Players also receive automated reminders at 7 and 14 days regardless of this setting.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -232,6 +232,10 @@ function DivisionDetailPage() {
           <TabsTrigger value="standings" className="flex items-center gap-2">
             <IconTarget className="size-4" />
             Standings
+            {/* TODO(#048): Add "Recalculate Ratings" button next to standings tab.
+              Uses endpoints.admin.ratings.recalculateDivision(divisionId).
+              Should show confirmation dialog with affected player count before executing.
+              Also add "Export" button using endpoints.admin.ratings.exportSeason(seasonId). */}
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <IconSettings className="size-4" />

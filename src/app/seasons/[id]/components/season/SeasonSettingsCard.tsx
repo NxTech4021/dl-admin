@@ -69,6 +69,29 @@ export default function SeasonSettingsCard({ season }: SeasonSettingsCardProps) 
           ))}
         </div>
 
+        {/* TODO(#048): Add "Lock Ratings" / "Unlock Ratings" toggle here.
+          Backend ready:
+            - GET  endpoints.admin.ratings.getLockStatus(season.id) → { locked: boolean }
+            - POST endpoints.admin.ratings.lockSeason(season.id)   → prevents rating changes
+            - POST endpoints.admin.ratings.unlockSeason(season.id) → re-enables rating changes
+          UX: Show lock status badge + toggle button with confirmation dialog.
+          Use case: Lock ratings at end of season to prevent accidental changes during awards/reporting.
+        */}
+
+        {/* TODO(#048): Add "Recalculate Season Ratings" button here.
+          Backend ready:
+            - POST endpoints.admin.ratings.recalculateSeason(season.id)
+          UX: Confirmation dialog showing affected division/player count.
+          Use case: After voiding/editing multiple match results, recalculate all standings at once.
+        */}
+
+        {/* TODO(#048): Add "Export Ratings" button here.
+          Backend ready:
+            - GET endpoints.admin.ratings.exportSeason(season.id) → CSV/JSON download
+          UX: Simple download button, maybe with format selector (CSV vs JSON).
+          Use case: End-of-season reporting, sharing standings with stakeholders.
+        */}
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button className="w-full" disabled={!isDirty}>
