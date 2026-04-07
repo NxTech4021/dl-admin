@@ -217,9 +217,12 @@ export const FORMAT_OPTIONS: SelectOption<GameType>[] = [
   { value: "MIXED", label: "Mixed Doubles" },
 ];
 
-export const STATUS_OPTIONS: SelectOption<"ACTIVE" | "UPCOMING">[] = [
+export const STATUS_OPTIONS: SelectOption<"ACTIVE" | "UPCOMING" | "INACTIVE" | "FINISHED" | "CANCELLED">[] = [
   { value: "ACTIVE", label: "Active" },
   { value: "UPCOMING", label: "Upcoming" },
+  { value: "INACTIVE", label: "Inactive" },
+  { value: "FINISHED", label: "Finished" },
+  { value: "CANCELLED", label: "Cancelled" },
 ];
 
 // Helper function to get sport color
