@@ -46,6 +46,7 @@ export const divisionSchema = z.object({
     name: z.string(),
     startDate: z.string().or(z.date()).nullable().optional(),
     endDate: z.string().or(z.date()).nullable().optional(),
+    entryFee: z.number().nullable().optional(),
   }).passthrough().nullable().optional(),
 }).passthrough();
 
