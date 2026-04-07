@@ -108,6 +108,7 @@ export type SeasonsDataTableProps = {
   onRefresh?: () => void;
   searchQuery?: string;
   sportFilter?: string;
+  statusFilter?: string;
   leagueFilter?: string;
 };
 
@@ -118,6 +119,7 @@ export function SeasonsDataTable({
   onRefresh,
   searchQuery = "",
   sportFilter,
+  statusFilter,
   leagueFilter,
 }: SeasonsDataTableProps) {
   const navigate = useNavigate();
@@ -129,7 +131,7 @@ export function SeasonsDataTable({
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sportFilter, leagueFilter]);
+  }, [searchQuery, sportFilter, statusFilter, leagueFilter]);
 
   // Modal states
   const [viewSeason, setViewSeason] = React.useState<Season | null>(null);
@@ -277,6 +279,18 @@ export function SeasonsDataTable({
       });
     }
 
+    // Apply status filter
+    if (statusFilter) {
+      const filterUpper = statusFilter.toUpperCase();
+      filtered = filtered.filter((group) => {
+        // Check aggregated statuses
+        if (group.aggregated.statuses.some((s) => s.toUpperCase() === filterUpper))
+          return true;
+        // Check individual seasons
+        return group.seasons.some((s) => s.status?.toUpperCase() === filterUpper);
+      });
+    }
+
     // Apply league filter
     if (leagueFilter) {
       filtered = filtered.filter((group) => {
@@ -291,7 +305,7 @@ export function SeasonsDataTable({
     }
 
     return filtered;
-  }, [data, searchQuery, sportFilter, leagueFilter]);
+  }, [data, searchQuery, sportFilter, statusFilter, leagueFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -346,7 +360,7 @@ export function SeasonsDataTable({
                   </TableRow>
                 </TableHeader>
                 <motion.tbody
-                  key={`${searchQuery}-${sportFilter}-${leagueFilter}-${currentPage}`}
+                  key={`${searchQuery}-${sportFilter}-${statusFilter}-${leagueFilter}-${currentPage}`}
                   initial="hidden"
                   animate="visible"
                   variants={tableContainerVariants}
