@@ -270,6 +270,30 @@ function DivisionDetailPage() {
                               {division.season?.name || "Not assigned"}
                             </span>
                           </div>
+                          {division.season?.startDate && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Start Date</span>
+                              <span className="font-medium text-sm">
+                                {new Date(division.season.startDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          )}
+                          {division.season?.endDate && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">End Date</span>
+                              <span className="font-medium text-sm">
+                                {new Date(division.season.endDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          )}
+                          {division.season?.entryFee != null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Entry Fee</span>
+                              <span className="font-medium text-sm text-emerald-600">
+                                RM {Number(division.season.entryFee).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
