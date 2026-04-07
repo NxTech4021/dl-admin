@@ -56,7 +56,7 @@ interface SeasonEditModalProps {
   onSeasonUpdated?: () => Promise<void>;
 }
 
-type SeasonStatusOption = 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST';
+type SeasonStatusOption = 'ACTIVE' | 'UPCOMING' | 'REGISTER_INTEREST' | 'FINISHED' | 'CANCELLED';
 
 // Zod schema for form validation
 const seasonEditSchema = z
@@ -67,7 +67,7 @@ const seasonEditSchema = z
     startDate: z.date().optional(),
     endDate: z.date().optional(),
     regiDeadline: z.date().optional(),
-    status: z.enum(['ACTIVE', 'UPCOMING', 'REGISTER_INTEREST']),
+    status: z.enum(['ACTIVE', 'UPCOMING', 'REGISTER_INTEREST', 'FINISHED', 'CANCELLED']),
     paymentRequired: z.boolean(),
     promoCodeSupported: z.boolean(),
     withdrawalEnabled: z.boolean(),
@@ -156,9 +156,10 @@ export default function SeasonEditModal({
   // Initialize form with season data when season changes
   useEffect(() => {
     if (season && open) {
+      const validStatuses: SeasonStatusOption[] = ['ACTIVE', 'UPCOMING', 'REGISTER_INTEREST', 'FINISHED', 'CANCELLED'];
       const resolvedStatus: SeasonStatusOption =
-        season.status === 'REGISTER_INTEREST' || season.status === 'ACTIVE' || season.status === 'UPCOMING'
-          ? season.status
+        validStatuses.includes(season.status as SeasonStatusOption)
+          ? (season.status as SeasonStatusOption)
           : season.isActive
             ? 'ACTIVE'
             : 'UPCOMING';
@@ -238,8 +239,10 @@ export default function SeasonEditModal({
     setError("");
 
     try {
-      if (isActiveWithRegisteredPlayers && data.status !== 'ACTIVE') {
-        const transitionError = "This active season already has registered players. Status cannot be changed to Upcoming or Register Interest. Only the end date can be updated.";
+      const isTerminalTransition = data.status === 'FINISHED' || data.status === 'CANCELLED';
+
+      if (isActiveWithRegisteredPlayers && data.status !== 'ACTIVE' && !isTerminalTransition) {
+        const transitionError = "This active season already has registered players. Status can only be changed to Finished or Cancelled.";
         setError(transitionError);
         toast.error(transitionError);
         setLoading(false);
@@ -249,7 +252,7 @@ export default function SeasonEditModal({
       const payload = isActiveWithRegisteredPlayers
         ? {
             ...(data.endDate ? { endDate: data.endDate.toISOString() } : {}),
-            status: 'ACTIVE' as const,
+            status: isTerminalTransition ? data.status : 'ACTIVE' as const,
           }
         : {
             name: data.name,
@@ -540,21 +543,27 @@ export default function SeasonEditModal({
                       control={control}
                       name="status"
                       render={({ field: { value, onChange } }) => (
-                        <Select value={value} onValueChange={onChange} disabled={isActiveWithRegisteredPlayers}>
-                          <SelectTrigger className="h-9 text-sm" disabled={isActiveWithRegisteredPlayers}>
+                        <Select value={value} onValueChange={onChange}>
+                          <SelectTrigger className="h-9 text-sm">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="ACTIVE">Current</SelectItem>
                             <SelectItem value="UPCOMING" disabled={isActiveWithRegisteredPlayers}>Upcoming - Waitlist</SelectItem>
                             <SelectItem value="REGISTER_INTEREST" disabled={isActiveWithRegisteredPlayers}>Upcoming - Register Interest</SelectItem>
+                            {isActiveWithRegisteredPlayers && (
+                              <>
+                                <SelectItem value="FINISHED">Finished</SelectItem>
+                                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       )}
                     />
                     {isActiveWithRegisteredPlayers ? (
                       <p className="text-[10px] text-amber-600 dark:text-amber-500">
-                        Players are already registered. Status is locked to Current; only end date should be edited.
+                        Players are registered. You can mark the season as Finished or Cancelled, or update the end date.
                       </p>
                     ) : (
                       <p className="text-[10px] text-muted-foreground">
@@ -705,7 +714,7 @@ export default function SeasonEditModal({
                   <div className="size-2 rounded-full bg-primary/60" />
                   <span className="text-sm text-muted-foreground">
                     Status: <span className="font-medium text-foreground">
-                      {{ ACTIVE: 'Current', UPCOMING: 'Upcoming - Waitlist', REGISTER_INTEREST: 'Upcoming - Register Interest' }[formValues.status] || 'Upcoming - Waitlist'}
+                      {{ ACTIVE: 'Current', UPCOMING: 'Upcoming - Waitlist', REGISTER_INTEREST: 'Upcoming - Register Interest', FINISHED: 'Finished', CANCELLED: 'Cancelled' }[formValues.status] || 'Upcoming - Waitlist'}
                     </span>
                   </span>
                 </div>
