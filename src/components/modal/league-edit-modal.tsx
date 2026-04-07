@@ -92,7 +92,7 @@ export default function LeagueEditModal({
     setLoading(false);
   };
 
-  const isFormValid = formData.name && formData.sportType && formData.location;
+  const isFormValid = formData.name && formData.location;
 
   const handleUpdateLeague = async () => {
     if (!isFormValid) return;
@@ -103,7 +103,6 @@ export default function LeagueEditModal({
     try {
       await axiosInstance.put(endpoints.league.getById(league.id), {
         name: formData.name,
-        sportType: formData.sportType,
         location: formData.location,
         status: formData.status,
         description: formData.description || null,
@@ -177,17 +176,17 @@ export default function LeagueEditModal({
                   />
                 </div>
 
-                {/* Sport */}
+                {/* Sport (read-only after creation — backend ignores sportType on update) */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium flex items-center gap-1">
                     Sport
-                    <span className="text-destructive">*</span>
                   </Label>
                   <Select
                     value={formData.sportType}
                     onValueChange={(value) => updateFormData("sportType", value)}
+                    disabled
                   >
-                    <SelectTrigger className="h-9 w-full">
+                    <SelectTrigger className="h-9 w-full opacity-60 cursor-not-allowed">
                       <SelectValue placeholder="Select a sport" />
                     </SelectTrigger>
                     <SelectContent>
@@ -267,7 +266,10 @@ export default function LeagueEditModal({
                             <div className={cn(
                               "size-2 rounded-full",
                               option.value === "ACTIVE" && "bg-emerald-500",
-                              option.value === "UPCOMING" && "bg-blue-500"
+                              option.value === "UPCOMING" && "bg-blue-500",
+                              option.value === "INACTIVE" && "bg-slate-500",
+                              option.value === "FINISHED" && "bg-purple-500",
+                              option.value === "CANCELLED" && "bg-red-500"
                             )} />
                             {option.label}
                           </div>
