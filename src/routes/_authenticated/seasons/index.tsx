@@ -50,6 +50,7 @@ function SeasonsPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [leagueFilter, setLeagueFilter] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
 
@@ -68,11 +69,20 @@ function SeasonsPage() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [data]);
 
-  const hasActiveFilters = searchQuery || sportFilter || leagueFilter;
+  const STATUS_OPTIONS = [
+    { value: "ACTIVE", label: "Active" },
+    { value: "UPCOMING", label: "Upcoming" },
+    { value: "REGISTER_INTEREST", label: "Register Interest" },
+    { value: "FINISHED", label: "Finished" },
+    { value: "CANCELLED", label: "Cancelled" },
+  ];
+
+  const hasActiveFilters = searchQuery || sportFilter || statusFilter || leagueFilter;
 
   const handleClearFilters = useCallback(() => {
     setSearchQuery("");
     setSportFilter(undefined);
+    setStatusFilter(undefined);
     setLeagueFilter(undefined);
   }, []);
 
@@ -265,6 +275,13 @@ function SeasonsPage() {
                 allLabel="All Sports"
                 triggerClassName="w-[140px]"
               />
+              <FilterSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={STATUS_OPTIONS}
+                allLabel="All Statuses"
+                triggerClassName="w-[160px]"
+              />
               {leagueOptions.length > 0 && (
                 <FilterSelect
                   value={leagueFilter}
@@ -308,6 +325,7 @@ function SeasonsPage() {
                 onRefresh={fetchSeasons}
                 searchQuery={searchQuery}
                 sportFilter={sportFilter}
+                statusFilter={statusFilter}
                 leagueFilter={leagueFilter}
               />
             </Suspense>
