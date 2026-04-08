@@ -74,11 +74,15 @@ export const divisionSchema = z.object({
 export type Division = z.infer<typeof divisionSchema>;
 
 // API returns standings with odlayer* fields (from standingsCalculationService)
+// For doubles, also includes partnerId/partnerName/partnerImage
 const standingSchema = z
   .object({
     odlayerId: z.string(),
     odlayerName: z.string(),
     odlayerImage: z.string().nullable().optional(),
+    partnerId: z.string().optional(),
+    partnerName: z.string().optional(),
+    partnerImage: z.string().nullable().optional(),
     rank: z.number(),
     wins: z.number(),
     losses: z.number(),
@@ -455,6 +459,9 @@ export default function SeasonLeaderboardCard({
 
         const parsedStandings = z.array(standingSchema).parse(response.data.data);
 
+        const division = divisions.find((d) => d.id === divisionId);
+        const isDoubles = division?.gameType === "doubles";
+
         // Transform from API format (odlayer*) to component format
         const players: LeaderboardPlayer[] = parsedStandings.map((standing) => ({
           id: standing.odlayerId,
@@ -475,9 +482,51 @@ export default function SeasonLeaderboardCard({
           return b.winRate - a.winRate;
         });
 
-        const division = divisions.find((d) => d.id === divisionId);
-        const isDoubles = division?.gameType === "doubles";
-        const groupedStandings = isDoubles ? groupPlayersByTeam(players) : [];
+        // For doubles: build teams directly from API data (backend returns one entry per partnership)
+        // Each entry has captain (odlayer*) + partner (partnerId/partnerName/partnerImage)
+        let groupedStandings: StandingsTeam[] = [];
+        if (isDoubles) {
+          groupedStandings = parsedStandings.map((standing, i) => {
+            const captainPlayer: LeaderboardPlayer = {
+              id: standing.odlayerId,
+              name: standing.odlayerName || "Unknown",
+              avatarUrl: standing.odlayerImage || null,
+              matchesPlayed: standing.matchesPlayed,
+              wins: standing.wins,
+              losses: standing.losses,
+              points: standing.totalPoints,
+              winRate: standing.matchesPlayed > 0 ? Math.round((standing.wins / standing.matchesPlayed) * 100) : 0,
+            };
+            const teamPlayers: LeaderboardPlayer[] = [captainPlayer];
+            if (standing.partnerId && standing.partnerName) {
+              teamPlayers.push({
+                id: standing.partnerId,
+                name: standing.partnerName,
+                avatarUrl: standing.partnerImage || null,
+                matchesPlayed: standing.matchesPlayed,
+                wins: standing.wins,
+                losses: standing.losses,
+                points: standing.totalPoints,
+                winRate: captainPlayer.winRate,
+              });
+            }
+            return {
+              rank: standing.rank || i + 1,
+              players: teamPlayers,
+              played: standing.matchesPlayed,
+              wins: standing.wins,
+              losses: standing.losses,
+              points: standing.totalPoints,
+            };
+          });
+          groupedStandings.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            const aWinRate = a.played > 0 ? a.wins / a.played : 0;
+            const bWinRate = b.played > 0 ? b.wins / b.played : 0;
+            return bWinRate - aWinRate;
+          });
+          groupedStandings.forEach((team, index) => { team.rank = index + 1; });
+        }
 
         setDivisionDataMap((prev) => {
           const data = prev.get(divisionId);
@@ -730,11 +779,16 @@ export default function SeasonLeaderboardCard({
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   <TeamAvatars players={team.players} size="sm" />
-                                  <span className="text-sm font-medium">
-                                    {team.players
-                                      .map((p) => formatPlayerName(p.name, true))
-                                      .join(" & ")}
-                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium">
+                                      {formatPlayerName(team.players[0]?.name || "Unknown", true)}
+                                    </span>
+                                    {team.players[1] && (
+                                      <span className="text-xs text-muted-foreground">
+                                        & {formatPlayerName(team.players[1].name, true)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell className="text-center text-sm font-medium">
