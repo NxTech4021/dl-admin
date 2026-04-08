@@ -220,50 +220,6 @@ const formatPlayerName = (name: string, abbreviated = false): string => {
   return `${parts[0]} ${parts.slice(1).map((p) => p[0]).join("")}.`;
 };
 
-const groupPlayersByTeam = (players: LeaderboardPlayer[]): StandingsTeam[] => {
-  if (players.length === 0) return [];
-
-  const groups = new Map<string, LeaderboardPlayer[]>();
-
-  players.forEach((player) => {
-    const key = `${player.points}-${player.wins}-${player.losses}-${player.matchesPlayed}`;
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(player);
-  });
-
-  const teams: StandingsTeam[] = [];
-  groups.forEach((teamPlayers) => {
-    const sortedPlayers = teamPlayers.sort((a, b) => a.name.localeCompare(b.name));
-
-    for (let i = 0; i < sortedPlayers.length; i += 2) {
-      const pair = sortedPlayers.slice(i, i + 2);
-      teams.push({
-        rank: 0,
-        players: pair,
-        played: pair[0].matchesPlayed,
-        wins: pair[0].wins,
-        losses: pair[0].losses,
-        points: pair[0].points,
-      });
-    }
-  });
-
-  teams.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    const aWinRate = a.played > 0 ? a.wins / a.played : 0;
-    const bWinRate = b.played > 0 ? b.wins / b.played : 0;
-    return bWinRate - aWinRate;
-  });
-
-  teams.forEach((team, index) => {
-    team.rank = index + 1;
-  });
-
-  return teams;
-};
-
 // sub-components
 
 const PositionBadge = ({ position }: { position: number }) => {
