@@ -271,14 +271,12 @@ export function PlayerProfile({ playerId }: PlayerProfileProps) {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* <Badge
-                      variant={
-                        profile.status === "active" ? "default" : "secondary"
-                      }
-                        className="capitalize"
-                    >
-                      {profile.status}
-                      </Badge> */}
+                      <Badge
+                        variant={profile.status === "ACTIVE" ? "default" : profile.status === "BANNED" ? "destructive" : "secondary"}
+                        className={profile.status === "ACTIVE" ? "bg-green-600" : profile.status === "SUSPENDED" ? "bg-orange-500 text-white" : ""}
+                      >
+                        {profile.status}
+                      </Badge>
                       {profile.emailVerified && (
                         <Badge variant="outline" className="text-green-600">
                           <IconShield className="size-3 mr-1" />

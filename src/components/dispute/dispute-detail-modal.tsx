@@ -252,6 +252,15 @@ export function DisputeDetailModal({
         notifyPlayers,
       });
 
+      // TODO(#050): After resolution, optionally apply penalty to the responsible player.
+      //   Design decision needed: which resolution actions penalize which player?
+      //   - UPHOLD_ORIGINAL → penalize disputer (filed invalid dispute against valid walkover)
+      //   - ACCEPT_CLAIM / REJECT → penalize reporter (filed false walkover)
+      //   - AWARD_WALKOVER → penalize defaulting player (no-show)
+      //   Implementation: add penalty checkbox + type selector to resolve form,
+      //   then call endpoints.admin.penalties.apply after resolveDispute succeeds.
+      //   Keep as separate API call (not modifying resolveDispute backend) for safety.
+
       toast.success("Dispute resolved successfully");
       handleClose(false);
       onSuccess?.();

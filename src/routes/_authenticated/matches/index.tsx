@@ -267,7 +267,11 @@ function MatchesPage() {
             title="Matches Dashboard"
             description="Manage and oversee all matches across the season"
             actions={
-              <Button variant="outline" size="sm">
+              {/* TODO(#055): Implement match export.
+                Infrastructure exists: use-league-export.ts pattern, export-button.tsx component.
+                Needs: match export columns definition, click handler with current filters applied.
+                Export should include: matchId, sport, type, date, teams, scores, status, division, season */}
+              <Button variant="outline" size="sm" disabled title="Export coming soon">
                 <IconDownload className="mr-2 size-4" />
                 Export
               </Button>

@@ -39,6 +39,14 @@ export const endpoints = {
       clearReport: (id: string) => `/api/admin/matches/${id}/clear-report`,
     },
 
+    // Penalty management
+    // TODO(#050): Build penalty management page using these endpoints.
+    //   Needs: penalty list table, apply penalty modal, player penalty history view.
+    penalties: {
+      apply: "/api/admin/penalties/apply",
+      getPlayerPenalties: (userId: string) => `/api/admin/penalties/player/${userId}`,
+    },
+
     // Division helpers
     divisions: {
       availablePlayers: (divisionId: string) => `/api/admin/divisions/${divisionId}/available-players`,
@@ -68,6 +76,26 @@ export const endpoints = {
       deleteSettings: (id: string) => `/api/admin/inactivity/settings/${id}`,
       triggerCheck: "/api/admin/inactivity/check",
       getStats: "/api/admin/inactivity/stats",
+      toggleExempt: (userId: string) => `/api/admin/inactivity/exempt/${userId}`,
+    },
+
+    // Rating management
+    // TODO(#048): Backend endpoints are ready (15 total). UI components needed:
+    //   1. "Adjust Rating" button on player profile → modal with old/new rating + reason field
+    //   2. "Recalculate" button on division page → confirmation dialog showing affected players
+    //   3. Lock/Unlock toggle on season page → prevents rating changes after finalization
+    //   4. Export button on season page → CSV/JSON download of all ratings
+    //   See docs/issues/dissections/048-admin-rating-inactivity-controls.md for full spec
+    ratings: {
+      getDivisionRatings: (divisionId: string) => `/api/admin/ratings/division/${divisionId}`,
+      getDivisionSummary: (divisionId: string) => `/api/admin/ratings/division/${divisionId}/summary`,
+      adjust: "/api/admin/ratings/adjust",
+      recalculateDivision: (divisionId: string) => `/api/admin/ratings/recalculate/division/${divisionId}`,
+      recalculateSeason: (seasonId: string) => `/api/admin/ratings/recalculate/${seasonId}`,
+      lockSeason: (seasonId: string) => `/api/admin/ratings/lock/${seasonId}`,
+      unlockSeason: (seasonId: string) => `/api/admin/ratings/unlock/${seasonId}`,
+      getLockStatus: (seasonId: string) => `/api/admin/ratings/lock-status/${seasonId}`,
+      exportSeason: (seasonId: string) => `/api/admin/ratings/export/${seasonId}`,
     },
 
     // Dashboard statistics
@@ -118,6 +146,10 @@ export const endpoints = {
     },
 
     // Admin reports
+    // TODO(#050): Add walkover analytics endpoint when backend aggregation is built.
+    //   Needs: GET /api/admin/reports/walkover-analytics
+    //   Returns: walkover count by reason, sport, season; dispute rate; penalty rate
+    //   Display: New report card in admin Reports page with charts
     reports: {
       playerRegistration: "/api/admin/reports/player-registration",
       playerRetention: "/api/admin/reports/player-retention",

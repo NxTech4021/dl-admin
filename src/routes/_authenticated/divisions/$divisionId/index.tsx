@@ -232,6 +232,10 @@ function DivisionDetailPage() {
           <TabsTrigger value="standings" className="flex items-center gap-2">
             <IconTarget className="size-4" />
             Standings
+            {/* TODO(#048): Add "Recalculate Ratings" button next to standings tab.
+              Uses endpoints.admin.ratings.recalculateDivision(divisionId).
+              Should show confirmation dialog with affected player count before executing.
+              Also add "Export" button using endpoints.admin.ratings.exportSeason(seasonId). */}
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <IconSettings className="size-4" />
@@ -266,6 +270,30 @@ function DivisionDetailPage() {
                               {division.season?.name || "Not assigned"}
                             </span>
                           </div>
+                          {division.season?.startDate && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Start Date</span>
+                              <span className="font-medium text-sm">
+                                {new Date(division.season.startDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          )}
+                          {division.season?.endDate && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">End Date</span>
+                              <span className="font-medium text-sm">
+                                {new Date(division.season.endDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          )}
+                          {division.season?.entryFee != null && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Entry Fee</span>
+                              <span className="font-medium text-sm text-emerald-600">
+                                RM {Number(division.season.entryFee).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 

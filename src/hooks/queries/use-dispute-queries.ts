@@ -10,6 +10,8 @@ import { queryKeys } from "./query-keys";
 export function useDisputes(filters?: {
   status?: string;
   priority?: string;
+  category?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }) {
@@ -19,6 +21,8 @@ export function useDisputes(filters?: {
       const params = new URLSearchParams();
       if (filters?.status) params.append("status", filters.status);
       if (filters?.priority) params.append("priority", filters.priority);
+      if (filters?.category) params.append("category", filters.category);
+      if (filters?.search) params.append("search", filters.search);
       if (filters?.page) params.append("page", String(filters.page));
       if (filters?.limit) params.append("limit", String(filters.limit));
 

@@ -149,6 +149,13 @@ export default function DivisionStandingsCard({
             <span>
               {standings.length} {gameType === "singles" ? "Players" : "Teams"}
             </span>
+            {/* TODO(#048): Add action buttons here:
+              1. "Recalculate" button → POST endpoints.admin.ratings.recalculateDivision(divisionId)
+                 Recalculates all ratings in this division after match edits/voids.
+                 Show confirmation dialog with division name before executing.
+              2. "View Detailed Ratings" button → GET endpoints.admin.ratings.getDivisionRatings(divisionId)
+                 Shows full rating breakdown (DMR, rating deviation, match history) per player.
+            */}
           </div>
         </div>
       </CardHeader>

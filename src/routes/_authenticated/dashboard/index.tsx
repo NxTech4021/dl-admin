@@ -194,6 +194,10 @@ function DashboardPage() {
             </Suspense>
           </div>
         </motion.div>
+
+        {/* TODO(activity-feed): Add a "Recent Activity" timeline section here.
+            Backend ready: GET /api/admin/logs provides admin action history.
+            Show: "Player X registered", "Match Y completed", "Season Z went live", etc. */}
       </motion.div>
     </>
   );

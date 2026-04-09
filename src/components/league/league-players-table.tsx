@@ -410,6 +410,7 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
   const [areaFilter, setAreaFilter] = React.useState<string>("all");
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [isAddPlayerOpen, setIsAddPlayerOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedPlayers, setSelectedPlayers] = React.useState<Set<string>>(new Set());
@@ -446,6 +447,11 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
   const filtered = React.useMemo(() => {
     let result = players;
 
+    // Filter by status
+    if (statusFilter && statusFilter !== "all") {
+      result = result.filter(p => p.status === statusFilter);
+    }
+
     // Filter by area
     if (areaFilter && areaFilter !== "all") {
       result = result.filter(p => p.area === areaFilter);
@@ -462,7 +468,7 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
     }
 
     return result;
-  }, [players, globalFilter, areaFilter]);
+  }, [players, globalFilter, areaFilter, statusFilter]);
 
   const table = useReactTable({
     data: filtered,
@@ -603,6 +609,19 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
             />
           </div>
 
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="ACTIVE">Active</SelectItem>
+              <SelectItem value="INACTIVE">Inactive</SelectItem>
+              <SelectItem value="SUSPENDED">Suspended</SelectItem>
+              <SelectItem value="BANNED">Banned</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={areaFilter} onValueChange={setAreaFilter}>
             <SelectTrigger className="w-[180px]">
               <IconFilter className="mr-2 h-4 w-4" />
@@ -618,13 +637,14 @@ export function LeaguePlayersTable({ players, leagueId }: LeaguePlayersTableProp
             </SelectContent>
           </Select>
 
-          {(globalFilter || areaFilter !== "all") && (
+          {(globalFilter || areaFilter !== "all" || statusFilter !== "all") && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setGlobalFilter("");
                 setAreaFilter("all");
+                setStatusFilter("all");
               }}
             >
               <IconX className="h-4 w-4 mr-2" />

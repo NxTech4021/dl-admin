@@ -98,6 +98,7 @@ export default function LeagueCreateModal({
     leagueName: "",
     sport: "",
     location: "",
+    gameType: "SINGLES" as "SINGLES" | "DOUBLES",
     status: "ACTIVE" as LeagueCreatePayload["status"],
     description: "",
     hasSponsor: false,
@@ -223,6 +224,7 @@ React.useEffect(() => {
       leagueName: "",
       sport: "",
       location: "",
+      gameType: "SINGLES" as "SINGLES" | "DOUBLES",
       status: "ACTIVE" as LeagueCreatePayload["status"],
       description: "",
       hasSponsor: false,
@@ -255,7 +257,7 @@ const handleCreateLeague = async () => {
       location: formData.location,
       status: formData.status,
       sportType: (formData.sport as SportType) || "TENNIS",
-      gameType: "SINGLES",
+      gameType: formData.gameType,
       description: formData.description.trim() || null,
       createdById: userId,
     };
@@ -405,6 +407,23 @@ const handleCreateLeague = async () => {
                   )}
                 </div>
 
+                {/* Game Type */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1">
+                    <IconTrophy className="size-3.5" />
+                    Game Type
+                  </Label>
+                  <Select value={formData.gameType} onValueChange={(value) => updateFormData("gameType", value)}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select game type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SINGLES">Singles</SelectItem>
+                      <SelectItem value="DOUBLES">Doubles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Status */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium flex items-center gap-1">
@@ -422,7 +441,10 @@ const handleCreateLeague = async () => {
                             <div className={cn(
                               "size-2 rounded-full",
                               option.value === "ACTIVE" && "bg-emerald-500",
-                              option.value === "UPCOMING" && "bg-blue-500"
+                              option.value === "UPCOMING" && "bg-blue-500",
+                              option.value === "INACTIVE" && "bg-slate-500",
+                              option.value === "FINISHED" && "bg-purple-500",
+                              option.value === "CANCELLED" && "bg-red-500"
                             )} />
                             {option.label}
                           </div>

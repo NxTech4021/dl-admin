@@ -394,7 +394,7 @@ function SeasonDetailPage() {
 
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <SeasonSettingsCard season={season} />
+            <SeasonSettingsCard season={season} onSeasonUpdated={fetchSeasonData} />
           </TabsContent>
 
           {/* Payment Tab */}

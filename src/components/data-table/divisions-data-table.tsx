@@ -51,6 +51,7 @@ import { cn, formatDivisionLevel } from "@/lib/utils";
 
 import { DivisionRowActions } from "@/components/division/division-row-actions";
 import { DivisionDetailModal } from "@/components/division/division-detail-modal";
+import { ExportButton, type ExportColumn } from "@/components/shared/export-button";
 
 import {
   ACTION_MESSAGES,
@@ -82,6 +83,35 @@ const getCapacityDisplay = (current: number, max: number | null | undefined) => 
   if (percentage >= 70) return { percentage, colorClass: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400", label: "Filling" };
   return { percentage, colorClass: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", label: "" };
 };
+
+/** Export column definitions */
+const exportColumns: ExportColumn<Division>[] = [
+  { key: "name", header: "Division Name" },
+  { key: "season.name", header: "Season" },
+  { key: "divisionLevel", header: "Level", formatter: (v) => formatDivisionLevel(String(v ?? "")) },
+  { key: "gameType", header: "Game Type", formatter: (v) => String(v ?? "").charAt(0).toUpperCase() + String(v ?? "").slice(1) },
+  { key: "genderCategory", header: "Gender", formatter: (v) => String(v ?? "").charAt(0).toUpperCase() + String(v ?? "").slice(1) },
+  {
+    key: "currentSinglesCount",
+    header: "Current Players",
+    formatter: (_v, row) => {
+      const isDoubles = row.gameType?.toLowerCase() === "doubles";
+      return isDoubles ? (row.currentDoublesCount || 0) : (row.currentSinglesCount || 0);
+    },
+  },
+  {
+    key: "maxSingles",
+    header: "Max Capacity",
+    formatter: (_v, row) => {
+      const isDoubles = row.gameType?.toLowerCase() === "doubles";
+      const max = isDoubles ? row.maxDoublesTeams : row.maxSingles;
+      return max ?? "No limit";
+    },
+  },
+  { key: "isActive", header: "Status", formatter: (v) => v ? "Active" : "Inactive" },
+  { key: "threshold", header: "Rating Threshold", formatter: (v) => v != null ? String(v) : "None" },
+  { key: "prizePoolTotal", header: "Prize Pool (RM)", formatter: (v) => v != null ? Number(v).toFixed(2) : "" },
+];
 
 interface DivisionsDataTableProps {
   searchQuery?: string;
@@ -289,6 +319,25 @@ export function DivisionsDataTable({
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Export + Count */}
+        {!isLoading && filteredData.length > 0 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {filteredData.length} division{filteredData.length !== 1 ? "s" : ""}
+              {searchQuery && " found"}
+            </p>
+            <ExportButton
+              data={filteredData}
+              columns={exportColumns}
+              filename="divisions"
+              formats={["csv", "excel"]}
+              size="sm"
+              onExportComplete={(format) => toast.success(`Exported as ${format.toUpperCase()}`)}
+              onExportError={(err) => toast.error(err.message)}
+            />
           </div>
         )}
 

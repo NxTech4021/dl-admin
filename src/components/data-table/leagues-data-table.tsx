@@ -469,7 +469,7 @@ export function LeaguesDataTable({
             <AlertDialogDescription>
               {ACTION_MESSAGES.DELETE_CONFIRM}
               <br />
-              <span className="font-semibold">{deleteLeague?.name ?? "this league"}</span>? This action cannot be undone and will remove all associated seasons, divisions, and matches.
+              <span className="font-semibold">{deleteLeague?.name ?? "this league"}</span>? This action cannot be undone. The league must have no seasons before it can be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

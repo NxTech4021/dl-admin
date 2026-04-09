@@ -1,7 +1,7 @@
 
 
 import { format } from "date-fns";
-import { Reply, Trash2 } from "lucide-react";
+import { Reply, Trash2, Copy, Check } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
@@ -109,6 +109,26 @@ function ChatMessageItem({
       />
     );
   }
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = message.content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
 
   const handleReply = () => {
     if (onReply && !isDeleted) {
@@ -338,17 +358,24 @@ function ChatMessageItem({
           >
             <Reply className="h-3.5 w-3.5" />
           </Button>
-          {me && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive rounded-full"
-              onClick={handleDelete}
-              title="Delete message"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 hover:bg-muted rounded-full"
+            onClick={handleCopy}
+            title={copied ? "Copied!" : "Copy message"}
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive rounded-full"
+            onClick={handleDelete}
+            title={me ? "Delete message" : "Delete message (admin)"}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </motion.div>
       )}
     </AnimatePresence>
