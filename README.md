@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DeuceLeague Admin
 
-## Getting Started
+Web admin dashboard for managing leagues, seasons, divisions, players, and sponsors.
 
-First, run the development server:
+**Stack:** React 19 + TypeScript + Vite + TailwindCSS + shadcn/ui
+
+## Prerequisites
+
+- Node.js 20+
+- npm or yarn
+- Running [dl-backend](https://github.com/deuceleague/dl-backend) instance
+
+## Setup
 
 ```bash
-npm run dev
-# or
+# Install dependencies
+yarn install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your backend API URLs
+
+# Start dev server (http://localhost:5173)
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Purpose |
+|---------|---------|
+| `yarn dev` | Start Vite dev server |
+| `yarn build` | Build production bundle to `dist/` |
+| `yarn start` | Serve the built `dist/` on port 3030 |
+| `yarn preview` | Preview production build locally |
+| `yarn lint` | Run ESLint |
+| `yarn test` | Run Vitest unit tests |
+| `yarn test:ui` | Vitest UI mode |
+| `yarn test:coverage` | Run tests with coverage report |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+See [.env.example](.env.example) for the full list. Required:
 
-To learn more about Next.js, take a look at the following resources:
+- `VITE_API_BASE_URL` — backend REST API URL
+- `VITE_AUTH_URL` — better-auth endpoint URL
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## E2E Tests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Playwright tests live in `e2e/`. Run with:
 
-## Deploy on Vercel
+```bash
+npx playwright test
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. `yarn build` produces a static `dist/` folder
+2. Serve via any static host (Nginx, Vercel, Netlify, S3+CloudFront, etc.)
+3. Ensure `VITE_API_BASE_URL` points to the correct production backend at build time
+
+## Project Structure
+
+```
+src/
+├── components/   # Reusable UI components
+├── routes/       # Route handlers
+├── services/     # API clients
+├── hooks/        # Custom React hooks
+├── lib/          # Utilities
+└── types/        # TypeScript types
+```
