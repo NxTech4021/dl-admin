@@ -267,14 +267,16 @@ function MatchesPage() {
             title="Matches Dashboard"
             description="Manage and oversee all matches across the season"
             actions={
-              {/* TODO(#055): Implement match export.
-                Infrastructure exists: use-league-export.ts pattern, export-button.tsx component.
-                Needs: match export columns definition, click handler with current filters applied.
-                Export should include: matchId, sport, type, date, teams, scores, status, division, season */}
-              <Button variant="outline" size="sm" disabled title="Export coming soon">
-                <IconDownload className="mr-2 size-4" />
-                Export
-              </Button>
+              <>
+                {/* TODO(#055): Implement match export.
+                  Infrastructure exists: use-league-export.ts pattern, export-button.tsx component.
+                  Needs: match export columns definition, click handler with current filters applied.
+                  Export should include: matchId, sport, type, date, teams, scores, status, division, season */}
+                <Button variant="outline" size="sm" disabled title="Export coming soon">
+                  <IconDownload className="mr-2 size-4" />
+                  Export
+                </Button>
+              </>
             }
             containerClassName="pb-4 sm:pb-5 md:pb-5"
             childrenContainerClassName="gap-3 sm:gap-4 md:gap-4"

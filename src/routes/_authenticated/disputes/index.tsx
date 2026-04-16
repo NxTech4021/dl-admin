@@ -136,14 +136,16 @@ function DisputesPage() {
             title="Dispute Resolution"
             description="Review and resolve match disputes raised by players"
             actions={
-              {/* TODO(#053): Implement dispute export.
-                Needs: backend GET /api/admin/disputes/export?format=csv&includeNotes=true
-                Returns: CSV with columns: id, raisedBy, category, priority, status, matchDate, resolution, adminNotes
-                Frontend: onClick handler that triggers download via fetch + blob */}
-              <Button variant="outline" size="sm" disabled title="Export coming soon">
-                <IconDownload className="mr-2 size-4" />
-                Export
-              </Button>
+              <>
+                {/* TODO(#053): Implement dispute export.
+                  Needs: backend GET /api/admin/disputes/export?format=csv&includeNotes=true
+                  Returns: CSV with columns: id, raisedBy, category, priority, status, matchDate, resolution, adminNotes
+                  Frontend: onClick handler that triggers download via fetch + blob */}
+                <Button variant="outline" size="sm" disabled title="Export coming soon">
+                  <IconDownload className="mr-2 size-4" />
+                  Export
+                </Button>
+              </>
             }
           >
             <DisputeStatsCards />
