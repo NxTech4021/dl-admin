@@ -127,25 +127,25 @@ function DisputesPage() {
   };
 
   return (
-    <>
-      <SiteHeader />
-      <div className="flex flex-1 flex-col">
-        <div className="@container/main flex flex-1 flex-col gap-2">
-          <PageHeader
-            icon={IconAlertTriangle}
-            title="Dispute Resolution"
-            description="Review and resolve match disputes raised by players"
-            actions={
-              {/* TODO(#053): Implement dispute export.
+      <>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            {/* TODO(#053): Implement dispute export.
                 Needs: backend GET /api/admin/disputes/export?format=csv&includeNotes=true
                 Returns: CSV with columns: id, raisedBy, category, priority, status, matchDate, resolution, adminNotes
                 Frontend: onClick handler that triggers download via fetch + blob */}
-              <Button variant="outline" size="sm" disabled title="Export coming soon">
-                <IconDownload className="mr-2 size-4" />
-                Export
-              </Button>
-            }
-          >
+            <PageHeader
+              icon={IconAlertTriangle}
+              title="Dispute Resolution"
+              description="Review and resolve match disputes raised by players"
+              actions={
+                <Button variant="outline" size="sm" disabled title="Export coming soon">
+                  <IconDownload className="mr-2 size-4" />
+                  Export
+                </Button>
+              }
+            >
             <DisputeStatsCards />
 
             <AnimatedFilterBar>
