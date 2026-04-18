@@ -73,8 +73,9 @@ const seasonEditSchema = z
     withdrawalEnabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
-    // Dates not required for register interest seasons
-    if (data.status !== 'REGISTER_INTEREST') {
+    // Dates not required for terminal or register interest seasons
+    const isTerminalStatus = data.status === 'FINISHED' || data.status === 'CANCELLED';
+    if (data.status !== 'REGISTER_INTEREST' && !isTerminalStatus) {
       if (!data.startDate) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["startDate"], message: "Start date is required" });
       }
@@ -182,7 +183,8 @@ export default function SeasonEditModal({
   // Check if form step is valid
   const isFormStepValid = useMemo(() => {
     const hasBasics = formValues.name?.length >= 2;
-    if (isRegisterInterestMode) return hasBasics;
+    const isTerminalStatus = formValues.status === 'FINISHED' || formValues.status === 'CANCELLED';
+    if (isRegisterInterestMode || isTerminalStatus) return hasBasics;
     return (
       hasBasics &&
       formValues.startDate &&
@@ -551,12 +553,8 @@ export default function SeasonEditModal({
                             <SelectItem value="ACTIVE">Current</SelectItem>
                             <SelectItem value="UPCOMING" disabled={isActiveWithRegisteredPlayers}>Upcoming - Waitlist</SelectItem>
                             <SelectItem value="REGISTER_INTEREST" disabled={isActiveWithRegisteredPlayers}>Upcoming - Register Interest</SelectItem>
-                            {isActiveWithRegisteredPlayers && (
-                              <>
-                                <SelectItem value="FINISHED">Finished</SelectItem>
-                                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                              </>
-                            )}
+                            <SelectItem value="FINISHED">Finished</SelectItem>
+                            <SelectItem value="CANCELLED">Cancelled</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -567,7 +565,7 @@ export default function SeasonEditModal({
                       </p>
                     ) : (
                       <p className="text-[10px] text-muted-foreground">
-                        You can transition seasons between Register Interest, Upcoming, and Current.
+                        You can transition seasons between Register Interest, Upcoming, Current, Finished, or Cancelled.
                       </p>
                     )}
                   </div>
