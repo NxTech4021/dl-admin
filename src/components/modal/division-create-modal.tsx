@@ -419,6 +419,11 @@ export default function DivisionCreateModal({
 
   // Auto-fill gameType and genderCategory when season is selected or passed
   useEffect(() => {
+    // Don't auto-fill while the modal is closed — the reset effect runs on
+    // close and would overwrite whatever we set here, causing a stale "singles"
+    // default to persist the next time the modal is opened.
+    if (!open) return;
+
     // Use passed season if available, otherwise use selected season from dropdown
     const seasonToUse = passedSeason || selectedSeason;
     if (!selectedSeasonId || !seasonToUse) return;
@@ -449,7 +454,7 @@ export default function DivisionCreateModal({
       setValue("genderCategory", genderCategoryLower);
       trigger(["gameType", "genderCategory"]);
     }
-  }, [selectedSeasonId, selectedSeason, passedSeason, setValue, trigger]);
+  }, [open, selectedSeasonId, selectedSeason, passedSeason, setValue, trigger]);
 
   useEffect(() => {
     if (open && isEditMode && division) {
