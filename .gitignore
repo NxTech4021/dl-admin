@@ -33,6 +33,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -47,4 +48,8 @@ docker-compose.override.yml
 
 #package
 package-lock.json
-yarn.lockdist/
+yarn.lock
+
+# testing artifacts
+/playwright-report
+/test-results
