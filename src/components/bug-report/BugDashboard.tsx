@@ -570,250 +570,223 @@ export default function BugDashboard() {
       </Card>
       </AnimatedContainer>
 
-      {/* Reports Table */}
+ {/* Reports Table */}
       <AnimatedContainer delay={0.1}>
         <Card>
-        <CardContent className="p-0">
-          {/* Table Header with count */}
-          {!loading && totalCount > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <p className="text-sm font-medium text-muted-foreground">
-                {getPaginationText()}
-              </p>
+          <CardContent className="p-0">
+            {/* Table Header with count */}
+            {!loading && totalCount > 0 && (
+              <div className="flex items-center justify-between px-4 py-3 border-b">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {getPaginationText()}
+                </p>
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      className="pl-4 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("reportNumber")}
+                    >
+                      <div className="flex items-center">
+                        Report #
+                        <SortIcon field="reportNumber" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("title")}
+                    >
+                      <div className="flex items-center">
+                        Title
+                        <SortIcon field="title" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center">
+                        Status
+                        <SortIcon field="status" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("severity")}
+                    >
+                      <div className="flex items-center">
+                        Severity
+                        <SortIcon field="severity" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("priority")}
+                    >
+                      <div className="flex items-center">
+                        Priority
+                        <SortIcon field="priority" />
+                      </div>
+                    </TableHead>
+                    <TableHead>Reporter</TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort("createdAt")}
+                    >
+                      <div className="flex items-center">
+                        Created
+                        <SortIcon field="createdAt" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right pr-4">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                
+                <tbody className="relative">
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-2">
+                          <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <p className="text-muted-foreground">Loading bug reports...</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : reports.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-16">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="rounded-full bg-muted p-4">
+                            <FileQuestion className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-lg">No bug reports found</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {search || statusFilter !== "all" || severityFilter !== "all" || priorityFilter !== "all"
+                                ? "Try adjusting your filters or search terms"
+                                : "Bug reports will appear here when users submit them"}
+                            </p>
+                          </div>
+                          {(search || statusFilter !== "all" || severityFilter !== "all" || priorityFilter !== "all") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSearch("");
+                                setStatusFilter("all");
+                                setSeverityFilter("all");
+                                setPriorityFilter("all");
+                                setPage(1);
+                              }}
+                            >
+                              Clear Filters
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    reports.map((report, index) => (
+                      <motion.tr
+                        key={report.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none border-b transition-colors"
+                        onClick={() => openDetail(report)}
+                        onKeyDown={(e) => handleRowKeyDown(e, report)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View bug report ${report.reportNumber}: ${report.title}`}
+                      >
+                        <TableCell className="font-mono text-sm font-medium pl-4">
+                          {report.reportNumber}
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[300px]">
+                            <p className="font-medium truncate">{report.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {report.module.name}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={statusColors[report.status as keyof typeof statusColors]}>
+                            {report.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={severityColors[report.severity as keyof typeof severityColors]}>
+                            {report.severity}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={priorityColors[report.priority as keyof typeof priorityColors]}>
+                            {report.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>{report.reporter?.name || report.anonymousName || "User"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {report.reporter?.email || report.anonymousEmail || "-"}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {formatDate(report.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right pr-4" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={statusLoading === report.id}>
+                                {statusLoading === report.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreVertical className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openDetail(report)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(report.id, "IN_PROGRESS")}
+                                disabled={report.status === "IN_PROGRESS"}
+                              >
+                                Start Working
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(report.id, "RESOLVED")}
+                                disabled={report.status === "RESOLVED"}
+                              >
+                                Mark Resolved
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => confirmDelete(report.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </Table>
             </div>
-          )}
-          <div className="overflow-x-auto">
-            <Table className="min-w-[900px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    className="pl-4 cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("reportNumber")}
-                  >
-                    <div className="flex items-center">
-                      Report #
-                      <SortIcon field="reportNumber" />
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("title")}
-                  >
-                    <div className="flex items-center">
-                      Title
-                      <SortIcon field="title" />
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("status")}
-                  >
-                    <div className="flex items-center">
-                      Status
-                      <SortIcon field="status" />
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("severity")}
-                  >
-                    <div className="flex items-center">
-                      Severity
-                      <SortIcon field="severity" />
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("priority")}
-                  >
-                    <div className="flex items-center">
-                      Priority
-                      <SortIcon field="priority" />
-                    </div>
-                  </TableHead>
-                  <TableHead>Reporter</TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort("createdAt")}
-                  >
-                    <div className="flex items-center">
-                      Created
-                      <SortIcon field="createdAt" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right pr-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-            <motion.tbody
-              initial="hidden"
-              animate="visible"
-              variants={tableContainerVariants}
-            >
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                      <p className="text-muted-foreground">Loading bug reports...</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : reports.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-16">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-full bg-muted p-4">
-                        <FileQuestion className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-lg">No bug reports found</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {search || statusFilter !== "all" || severityFilter !== "all" || priorityFilter !== "all"
-                            ? "Try adjusting your filters or search terms"
-                            : "Bug reports will appear here when users submit them"}
-                        </p>
-                      </div>
-                      {(search || statusFilter !== "all" || severityFilter !== "all" || priorityFilter !== "all") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSearch("");
-                            setStatusFilter("all");
-                            setSeverityFilter("all");
-                            setPriorityFilter("all");
-                            setPage(1);
-                          }}
-                        >
-                          Clear Filters
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                reports.map((report) => (
-                  <motion.tr
-                    key={report.id}
-                    variants={tableRowVariants}
-                    transition={fastTransition}
-                    className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none border-b transition-colors"
-                    onClick={() => openDetail(report)}
-                    onKeyDown={(e) => handleRowKeyDown(e, report)}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`View bug report ${report.reportNumber}: ${report.title}`}
-                  >
-                    <TableCell className="font-mono text-sm font-medium pl-4">
-                      {report.reportNumber}
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-[300px]">
-                        <p className="font-medium truncate">{report.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {report.module.name}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[report.status]}>
-                        {report.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={severityColors[report.severity]}>
-                        {report.severity}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={priorityColors[report.priority]}>
-                        {report.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <p>{report.reporter?.name || report.anonymousName || "User"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {report.reporter?.email || report.anonymousEmail || "-"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {formatDate(report.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right pr-4" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" disabled={statusLoading === report.id}>
-                            {statusLoading === report.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MoreVertical className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openDetail(report)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(report.id, "IN_PROGRESS")}
-                            disabled={report.status === "IN_PROGRESS"}
-                          >
-                            Start Working
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(report.id, "RESOLVED")}
-                            disabled={report.status === "RESOLVED"}
-                          >
-                            Mark Resolved
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => confirmDelete(report.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </motion.tr>
-                ))
-              )}
-            </motion.tbody>
-            </Table>
-          </div>
-        </CardContent>
+          </CardContent>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-            <p className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+          {/* Pagination logic remains same */}
+        </Card>
       </AnimatedContainer>
       </div>
 

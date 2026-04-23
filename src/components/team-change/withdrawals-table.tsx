@@ -92,7 +92,7 @@ export function WithdrawalsTable({
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="w-[40px] py-2.5 pl-4 font-medium text-xs">#</TableHead>
             <TableHead className="w-[180px] py-2.5 font-medium text-xs">Partnership</TableHead>
-            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Who Left</TableHead>
+            <TableHead className="w-[140px] py-2.5 font-medium text-xs">Requested By</TableHead>
             <TableHead className="w-[200px] py-2.5 font-medium text-xs">Reason</TableHead>
             <TableHead className="w-[140px] py-2.5 font-medium text-xs">Season</TableHead>
             <TableHead className="w-[100px] py-2.5 font-medium text-xs">Status</TableHead>

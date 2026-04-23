@@ -91,13 +91,6 @@ const navigationItems: NavItem[] = [
     keywords: ["admin", "administrator", "moderator"],
     group: "User Management",
   },
-  {
-    title: "Feedback",
-    url: "/feedback",
-    icon: MessageSquare,
-    keywords: ["feedback", "suggestions", "comments"],
-    group: "User Management",
-  },
 
   // Financial
   {
