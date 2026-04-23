@@ -37,7 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useNotifications } from "@/hooks/use-notifications";
-import { useOpenDisputeCount, usePendingTeamChangeRequestsCount } from "@/hooks/queries";
+import { useOpenDisputeCount, usePendingTeamChangeRequestsCount, useOpenBugCount } from "@/hooks/queries";
 import { useChatUnreadCount } from "@/hooks/use-chat-unread-count";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -46,6 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { unreadCount, notifications } = useNotifications();
   const { data: openDisputeCount = 0 } = useOpenDisputeCount();
   const { data: pendingTeamChangeCount = 0 } = usePendingTeamChangeRequestsCount();
+  const { data: openBugCount = 0 } = useOpenBugCount();
 
   // Detect platform for keyboard shortcut display
   const [isMac, setIsMac] = useState(false);
@@ -188,6 +189,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Bug Reports",
             url: "/bugs",
             icon: Bug,
+            badge: openBugCount > 0 ? {
+              count: openBugCount,
+              variant: "destructive" as const,
+            } : undefined,
           },
           {
             title: "Crash Reports",

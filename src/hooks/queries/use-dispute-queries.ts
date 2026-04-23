@@ -141,7 +141,7 @@ export function useOpenDisputeCount() {
       const response = await apiClient.get(
         `${endpoints.admin.disputes.getAll}?${params.toString()}`
       );
-      return response.data?.pagination?.total ?? response.data?.total ?? 0;
+      return response.data?.data?.total ?? response.data?.pagination?.total ?? response.data?.total ?? 0;
     },
     staleTime: 60000, // Cache for 1 minute
     refetchInterval: 60000, // Refetch every minute

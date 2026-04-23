@@ -96,3 +96,22 @@ export function useUpdateBugReportSettings() {
     },
   });
 }
+
+/**
+ * Get open bug reports count for sidebar badge
+ * Counts reports with statuses: NEW, TRIAGED, IN_PROGRESS, NEEDS_INFO, IN_REVIEW
+ */
+export function useOpenBugCount() {
+  return useQuery({
+    queryKey: queryKeys.bug.openCount(),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append("status", "NEW,TRIAGED,IN_PROGRESS,NEEDS_INFO,IN_REVIEW");
+      params.append("limit", "1");
+      const response = await apiClient.get(`/api/bug/admin/reports?${params}`);
+      return response.data?.pagination?.total ?? 0;
+    },
+    staleTime: 60000,
+    refetchInterval: 60000,
+  });
+}

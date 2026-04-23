@@ -275,6 +275,13 @@ export function DisputeDetailModal({
     dispute.status === "RESOLVED" || dispute.status === "REJECTED";
   const match = dispute.match;
 
+  // disputerScore is stored as JSON string on the backend; parse it if needed
+  const parsedDisputerScore = dispute.disputerScore
+    ? (typeof dispute.disputerScore === 'string'
+        ? JSON.parse(dispute.disputerScore)
+        : dispute.disputerScore)
+    : dispute.claimedScore ?? null;
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "?";
     return name
@@ -568,7 +575,7 @@ export function DisputeDetailModal({
                             )}
                           </div>
 
-                          {dispute.claimedScore ? (
+                          {parsedDisputerScore ? (
                             <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
                               <div className="flex items-center gap-1.5 mb-2">
                                 <IconAlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
@@ -577,10 +584,19 @@ export function DisputeDetailModal({
                                 </p>
                               </div>
                               <p className="text-2xl font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400">
-                                {dispute.claimedScore.team1Score ?? "?"}{" "}
+                                {parsedDisputerScore.team1Score ?? "?"}{" "}
                                 <span className="text-amber-500/50">-</span>{" "}
-                                {dispute.claimedScore.team2Score ?? "?"}
+                                {parsedDisputerScore.team2Score ?? "?"}
                               </p>
+                              {parsedDisputerScore.setScores && parsedDisputerScore.setScores.length > 0 && (
+                                <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-amber-200/50 dark:border-amber-800/50">
+                                  {parsedDisputerScore.setScores.map((s: any, i: number) => (
+                                    <span key={i} className="text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-100/50 dark:bg-amber-900/30 px-2 py-0.5 rounded">
+                                      {s.team1Games ?? s.player1Points ?? 0}-{s.team2Games ?? s.player2Points ?? 0}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="p-3.5 rounded-xl border border-dashed border-border/50 bg-muted/10 flex items-center justify-center">

@@ -158,6 +158,15 @@ export const disputeSchema = z.object({
 
   // Claimed score (what the disputer says should be the score)
   claimedScore: z.object({ team1Score: z.number().nullable().optional(), team2Score: z.number().nullable().optional() }).passthrough().nullable().optional(), // JSON field
+  // disputerScore is the actual DB field name (stored as JSON string or object)
+  disputerScore: z.union([
+    z.string(),
+    z.object({
+      team1Score: z.number().nullable().optional(),
+      team2Score: z.number().nullable().optional(),
+      setScores: z.array(z.any()).optional(),
+    }).passthrough(),
+  ]).nullable().optional(),
 
   // Description and evidence
   description: z.string().nullable().optional(),

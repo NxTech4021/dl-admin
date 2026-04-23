@@ -86,6 +86,7 @@ export const queryKeys = {
     all: ["bug"] as const,
     app: (appId: string) => [...queryKeys.bug.all, "app", appId] as const,
     settings: (appId: string) => [...queryKeys.bug.all, "settings", appId] as const,
+    openCount: () => [...queryKeys.bug.all, "openCount"] as const,
   },
   payments: {
     all: ["payments"] as const,

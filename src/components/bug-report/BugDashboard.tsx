@@ -104,7 +104,7 @@ interface BugReport {
   reporter: { id: string; name: string; email: string } | null;
   anonymousName?: string | null;
   anonymousEmail?: string | null;
-  assignedTo?: { id: string; user: { name: string } };
+  assignedTo?: { id: string; userId?: string | null; user: { name: string } };
   _count: { comments: number; screenshots: number };
 }
 
@@ -410,7 +410,7 @@ export default function BugDashboard() {
         const admin = admins.find(a => a.id === adminId);
         setSelectedReport({
           ...selectedReport,
-          assignedTo: admin ? { id: adminId!, user: { name: admin.name } } : undefined,
+          assignedTo: admin ? { id: adminId!, userId: adminId!, user: { name: admin.name } } : undefined,
         });
       }
       fetchReports();
@@ -944,7 +944,7 @@ export default function BugDashboard() {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Assignee</Label>
                     <Select
-                      value={selectedReport.assignedTo?.id || "unassigned"}
+                      value={selectedReport.assignedTo?.userId || selectedReport.assignedTo?.id || "unassigned"}
                       onValueChange={(value) => {
                         handleAssigneeChange(selectedReport.id, value === "unassigned" ? null : value);
                       }}
