@@ -98,26 +98,20 @@ export function useDashboardExport() {
       });
     }
 
-    // Convert to CSV
-    // TODO (2026-04-22, docs/issues/backlog/admin-dashboard-export-issues-2026-04-22.md CSV-1):
-    // Fields are NOT escaped — values from Intl.NumberFormat and toLocaleString
-    // produce strings like "RM 10,500" for amounts >=1000. The inline comma is
-    // then interpreted as a column separator by Excel/Google Sheets, splitting
-    // the number across columns. Observed: "Total Revenue | RM 10 | 500" where
-    // real value is RM 10,500. Same breakage for all sport Revenue + Matches
-    // rows when values exceed 1000.
-    // Fix (RFC 4180):
-    //   function csvEscape(v: string): string {
-    //     return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-    //   }
-    //   headers.map(csvEscape).join(",")
-    //   [row.metric, row.current, row.previous, row.change].map(csvEscape).join(",")
+    // CSV-1: RFC 4180 escaping. Values from Intl.NumberFormat and toLocaleString
+    // produce strings like "RM 10,500" for amounts ≥1000. The inline comma was
+    // previously interpreted as a column separator by Excel/Google Sheets,
+    // splitting the number across columns. Wrapping such values in quotes (and
+    // escaping any embedded quotes by doubling them) is the RFC 4180 standard.
     // Related: CSV-3 (Conversion Rate previous N/A) and SPORT-1 (sport prev N/A).
+    const csvEscape = (v: string): string =>
+      /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+
     const headers = ["Metric", "Current Period", "Previous Period", "Change"];
     const csvContent = [
-      headers.join(","),
+      headers.map(csvEscape).join(","),
       ...exportData.map((row) =>
-        [row.metric, row.current, row.previous, row.change].join(",")
+        [row.metric, row.current, row.previous, row.change].map(csvEscape).join(",")
       ),
     ].join("\n");
 
