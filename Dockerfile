@@ -22,6 +22,12 @@ FROM node:24-alpine AS build
 
 WORKDIR /app
 
+# Build-time args for URLs (baked into bundle)
+ARG VITE_API_BASE_URL=https://api.deuceleague.com
+ARG VITE_AUTH_URL=https://api.deuceleague.com
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_AUTH_URL=$VITE_AUTH_URL
+
 # Copy package files
 COPY package.json yarn.lock ./
 
